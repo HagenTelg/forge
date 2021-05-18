@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Data Visualization Login</title>
+{% include 'global/header.html' %}
+  <link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/login.css') }}" />
+{% if enable_google %}
+  <link rel="stylesheet" type="text/css" href="//fonts.googleapis.com/css?family=Open+Sans" />
+  <link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/login_google.css') }}" />
+{% endif %}
+</head>
+<body>
+
+<h1>Visualization Tool Login</h1>
+
+<div class="centered">
+  <form class="login-container" action="{{ request.url_for('login_password') }}" method="post">
+    <div class="imgcontainer">
+      <img src="{{ request.url_for('static', path='/images/logo.svg') }}" alt="Logo" class="logo">
+    </div>
+
+    <div class="container">
+      <label for="email"><b>Email address</b></label>
+      <input type="text" id="email" placeholder="Enter Email Address" name="email" class="login-field" required>
+
+      <label for="password"><b>Password</b></label>
+      <div class="password-container">
+        <div toggle="#password" class="mdi mdi-eye toggle-password"></div>
+        <input type="password" id="password" placeholder="Enter Password" name="password" class="login-field" required>
+      </div>
+
+      <button id="login_button" type="submit" disabled="disabled">Login</button>
+
+      <div id="login_error" class="error-display"></div>
+    </div>
+
+    <div class="container account-actions">
+      <span class="forgot-password"><a href="#" onclick="showResetPassword();">Forgot password?</a></span><br>
+      <span class="create-account"><a href="#" onclick="showCreateAccount();">Create account</a></span>
+    </div>
+
+  </form>
+</div>
+
+<div id="create-account-modal" class="modal">
+  <form class="modal-content animate" action="{{ request.url_for('create_password') }}" method="post">
+    <span onclick="document.getElementById('create-account-modal').style.display='none'" class="close" title="Close Modal">&times;</span>
+
+    <div class="container">
+      <h2>Create Account</h2>
+    </div>
+
+    <div class="container">
+      <label for="create_email"><b>Email address</b></label>
+      <input type="text" id="create_email" placeholder="Enter Email Address" name="email" class="create-field" required>
+
+      <label for="create_name"><b>Name</b></label>
+      <input type="text" id="create_name" placeholder="Enter Full Name (optional)" name="name">
+
+      <label for="create_password"><b>Password</b></label>
+      <div class="password-container">
+        <div toggle="#create_password" class="mdi mdi-eye toggle-password"></div>
+        <input type="password" id="create_password" placeholder="Enter Password" name="password" class="create-field" required>
+      </div>
+
+      <label for="confirm_password"><b>Confirm Password</b></label>
+      <div class="password-container">
+        <div toggle="#confirm_password" class="mdi mdi-eye toggle-password"></div>
+        <input type="password" id="confirm_password" placeholder="Retype Password" class="create-field" required>
+      </div>
+
+      <button id="create_account" type="submit" disabled="disabled">Create Account</button>
+
+      <div id="create_error" class="error-display"></div>
+    </div>
+  </form>
+</div>
+
+<div id="reset-password-modal" class="modal">
+  <form class="modal-content animate" action="{{ request.url_for('reset_password_send') }}" method="post">
+    <span onclick="document.getElementById('reset-password-modal').style.display='none'" class="close" title="Close Modal">&times;</span>
+
+    <div class="container">
+      <h2>Reset Password</h2>
+    </div>
+
+    <div class="container">
+      <label for="reset_email"><b>Email address</b></label>
+      <input type="text" id="reset_email" placeholder="Enter Email Address" name="email" class="reset-field" required>
+
+      <button id="reset_password" type="submit" disabled="disabled">Send Password Reset</button>
+
+      <div id="reset_error" class="error-display"></div>
+    </div>
+  </form>
+</div>
+
+<div class="centered external-account">
+{% if enable_google %}
+  <a href="{{ request.url_for('login_google') }}">
+    <div class="google-button">
+      <div class="google-icon-wrapper">
+        <img class="google-icon" src="{{ request.url_for('static', path='/images/Google_Logo.svg') }}"/>
+      </div>
+      <p class="google-button-text"><b>Sign in with Google</b></p>
+    </div>
+  </a><br>
+{% endif %}
+{% if enable_microsoft %}
+  <a href="{{ request.url_for('login_microsoft') }}">
+    <div class="microsoft-button">
+      <img class="microsoft-signin" src="{{ request.url_for('static', path='/images/Microsoft_Signin.svg') }}"/>
+    </div>
+  </a><br>
+{% endif %}
+{% if enable_apple %}
+  <a href="{{ request.url_for('login_yahoo') }}">
+    <div class="apple-button">
+      <span class="apple-button-text"><span class="mdi mdi-apple apple-icon"></span><b>Sign in with Apple</b></span>
+    </div>
+  </a><br>
+{% endif %}
+{% if enable_yahoo %}
+  <a href="{{ request.url_for('login_yahoo') }}">
+    <div class="yahoo-button">
+      <p class="yahoo-button-text"><b>Sign in with Yahoo</b></p>
+    </div>
+  </a><br>
+{% endif %}
+</div>
+
+<script>
+
+$('.toggle-password').click(function() {
+    $(this).toggleClass('mdi-eye mdi-eye-off');
+    const input = $($(this).attr('toggle'));
+    if (input.attr('type') === 'password') {
+        input.attr('type', 'text');
+    } else {
+        input.attr('type', 'password');
+    }
+});
+
+function showResetPassword() {
+    const loginEmail = document.getElementById('email');
+    const resetEmail = document.getElementById('reset_email');
+    if (loginEmail.value.length > 0 && resetEmail.value.length === 0) {
+        resetEmail.value = loginEmail.value;
+    }
+
+    document.getElementById('reset-password-modal').style.display = 'block';
+}
+
+function showCreateAccount() {
+    const loginEmail = document.getElementById('email');
+    const createEmail = document.getElementById('create_email');
+    if (loginEmail.value.length > 0 && createEmail.value.length === 0) {
+        createEmail.value = loginEmail.value;
+    }
+
+    const loginPassword = document.getElementById('password');
+    const createPassword = document.getElementById('create_password');
+    if (loginPassword.value.length > 0 && createPassword.value.length === 0) {
+        createPassword.value = loginPassword.value;
+    }
+
+    document.getElementById('confirm_password').value = '';
+    document.getElementById('create-account-modal').style.display = 'block';
+}
+
+function loginVerify() {
+    function failed(message) {
+        document.getElementById('login_button').setAttribute('disabled', 'disabled');
+        document.getElementById('login_error').innerHTML = message;
+    }
+
+    const email = document.getElementById('email');
+    if (email.value.length > 0 && !email.value.match(/^[^@]+@[^@]+$/)) {
+        failed("Invalid email address");
+        return;
+    }
+
+    const password = document.getElementById('password');
+    if (password.value.length > 0 && password.value.length < 8) {
+        failed("Password must be at least eight characters long");
+        return;
+    }
+
+    if (email.value.length === 0 || password.value.length === 0) {
+        failed("");
+        return;
+    }
+
+    document.getElementById('login_button').removeAttribute('disabled');
+    document.getElementById('login_error').innerHTML = '';
+}
+$('.login-field').change(loginVerify);
+$('.login-field').on('input', loginVerify);
+
+function createVerify() {
+    function failed(message) {
+        document.getElementById('create_account').setAttribute('disabled', 'disabled');
+        document.getElementById('create_error').innerHTML = message;
+    }
+
+    const email = document.getElementById('create_email');
+    if (email.value.length > 0 && !email.value.match(/^[^@]+@[^@]+$/)) {
+        failed("Invalid email address");
+        return;
+    }
+
+    const password = document.getElementById('create_password');
+    if (password.value.length > 0 && password.value.length < 8) {
+        failed("Password must be at least eight characters long");
+        return;
+    }
+
+    const confirmPassword = document.getElementById('confirm_password');
+    if (confirmPassword.value.length > 0 && confirmPassword.value !== password.value) {
+        failed("Passwords do not match");
+        return;
+    }
+
+    if (email.value.length === 0 || password.value.length === 0) {
+        failed("");
+        return;
+    }
+
+    document.getElementById('create_account').removeAttribute('disabled');
+    document.getElementById('create_error').innerHTML = '';
+}
+$('.create-field').change(createVerify);
+$('.create-field').on('input', createVerify);
+
+function resetVerify() {
+    function failed(message) {
+        document.getElementById('reset_password').setAttribute('disabled', 'disabled');
+        document.getElementById('reset_error').innerHTML = message;
+    }
+
+    const email = document.getElementById('reset_email');
+    if (email.value.length > 0 && !email.value.match(/^[^@]+@[^@]+$/)) {
+        failed("Invalid email address");
+        return;
+    }
+
+    if (email.value.length === 0) {
+        failed("");
+        return;
+    }
+
+    document.getElementById('reset_password').removeAttribute('disabled');
+    document.getElementById('reset_error').innerHTML = '';
+}
+$('.reset-field').change(resetVerify);
+$('.reset-field').on('input', resetVerify);
+
+</script>
+
+</body>
+</html>

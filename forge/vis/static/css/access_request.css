@@ -1,0 +1,61 @@
+.request-container {
+  width: 700px;
+  margin: 0 auto;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+
+.request-container h1 {
+  text-align: center;
+}
+
+.request-item {
+  width: 100%;
+}
+
+input[type=text], input[type=password], textarea {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+select {
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: block;
+  border: none;
+  box-sizing: border-box;
+  width: 150px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #0080ff;
+  color: white;
+  cursor: pointer;
+}
+
+textarea {
+  min-height: 300px;
+  resize: none;
+}
+
+button.action {
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+
+  border: none;
+  outline: none;
+  padding: 14px 16px;
+  font-family: inherit;
+  font-weight: bold;
+}
+
+button.action:hover,
+button.action:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}

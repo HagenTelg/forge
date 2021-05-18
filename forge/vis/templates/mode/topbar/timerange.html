@@ -1,0 +1,18 @@
+<button class="topbar-button" id="time_display" title="Change the displayed data range">Loading Data</button>
+
+<script>
+$(document).ready(function(e) {
+    const timeButton = document.getElementById("time_display");
+
+    function updateTimeBar() {
+        timeButton.textContent = TimeParse.toDisplayTime(TimeSelect.start_ms) + " to " + TimeParse.toDisplayTime(TimeSelect.end_ms);
+    }
+    updateTimeBar();
+    TimeSelect.onChanged(timeButton, updateTimeBar);
+
+    $(timeButton).click(function(e) {
+        showModal("{{ request.url_for('static', path='/modal/timeselect.html') }}");
+        e.preventDefault();
+    });
+});
+</script>

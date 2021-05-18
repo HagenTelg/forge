@@ -1,0 +1,208 @@
+<style>
+.timeselect-footer {
+  padding: 2px 16px;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+}
+
+.timeselect-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 16px;
+  background-color: inherit;
+  font-family: inherit;
+  font-weight: bold;
+  float: right;
+}
+
+.timeselect-footer button:hover,
+.timeselect-footer button:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.timeselect-entry table {
+  padding: 40px 40px 16px 16px;
+  border: none;
+  width: 100%;
+}
+
+.timeselect-entry td:first-child,
+.timeselect-entry td:last-child {
+  white-space: nowrap;
+}
+
+.timeselect-entry td:first-child {
+  width: 100px;
+}
+
+.timeselect-entry td:first-child label {
+  right: 0;
+  padding: 16px 16px 0 16px;
+  font-weight: bold;
+}
+
+.timeselect-entry td:last-child {
+  width: 300px;
+}
+
+.timeselect-entry td:last-child label {
+  padding: 16px 32px 0 32px;
+}
+
+.timeselect-entry td:not(:last-child) td:not(:last-child) {
+  width: 100%;
+}
+
+.timeselect-entry input {
+  border: none;
+  border-bottom: 2px solid black;
+  padding: 12px 20px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.timeselect-entry input.invalid {
+  border-bottom: 2px solid red;
+}
+
+.timeselect-entry label.invalid {
+  color: red;
+}
+</style>
+
+<form class="timeselect-entry">
+  <table>
+    <tr>
+      <td><label for="input-start-time">Start</label></td>
+      <td><input type="text" id="input-start-time" name="start"></td>
+      <td><label id="parsed-start-time"></label></td>
+    </tr>
+    <tr>
+      <td><label for="input-end-time">End</label></td>
+      <td><input type="text" id="input-end-time" name="end"></td>
+      <td><label id="parsed-end-time"></label></td>
+    </tr>
+  </table>
+
+  <div class="timeselect-footer">
+    <button id="timeselect-apply">Apply</button>
+    <button id="timeselect-reset">Reset</button>
+    <button id="timeselect-default">Default</button>
+    <button id="timeselect-unzoom">Un-zoom</button>
+  </div>
+</form>
+
+<script>
+(function() {
+    const startTimeEntry = document.getElementById("input-start-time");
+    const startTimeDisplay = document.getElementById("parsed-start-time");
+    const endTimeEntry = document.getElementById("input-end-time");
+    const endTimeDisplay = document.getElementById("parsed-end-time");
+
+    $('#timeselect-apply').click(function(event) {
+        event.preventDefault();
+        hideModal();
+
+        let parsedStart = TimeParse.parseTime(startTimeEntry.value, TimeSelect.end_ms, -1);
+        const parsedEnd = TimeParse.parseTime(endTimeEntry.value, parsedStart, 1);
+        parsedStart = TimeParse.parseTime(startTimeEntry.value, parsedEnd, -1);
+
+        if (!parsedStart || !parsedEnd) {
+            return;
+        }
+
+        TimeSelect.change(parsedStart, parsedEnd);
+    });
+    $('#timeselect-reset').click(function(event) {
+        event.preventDefault();
+        hideModal();
+        TimeSelect.resetTimeRange();
+    });
+    $('#timeselect-default').click(function(event) {
+        event.preventDefault();
+        hideModal();
+        TimeSelect.setDefaultTimeRange();
+    });
+
+    function startTimeEdited() {
+        const parsedEnd = TimeParse.parseTime(endTimeEntry.value, TimeSelect.start_ms, 1);
+        const parsedStart = TimeParse.parseTime(startTimeEntry.value, parsedEnd, -1);
+
+        if (!parsedStart) {
+            startTimeEntry.classList.add('invalid');
+            startTimeDisplay.classList.add('invalid');
+
+            startTimeDisplay.textContent = "ERROR";
+            return;
+        }
+
+        startTimeEntry.classList.remove('invalid');
+        startTimeDisplay.classList.remove('invalid');
+        startTimeDisplay.textContent = TimeParse.toDisplayTime(parsedStart);
+    }
+    $('#input-start-time').change(startTimeEdited);
+    $('#input-start-time').on('input', startTimeEdited);
+    startTimeEntry.value = startTimeDisplay.textContent = TimeParse.toDisplayTime(TimeSelect.start_ms);
+
+    function endTimeEdited() {
+        const parsedStart = TimeParse.parseTime(startTimeEntry.value, TimeSelect.end_ms, -1);
+        const parsedEnd = TimeParse.parseTime(endTimeEntry.value, parsedStart, 1);
+
+        if (!parsedEnd) {
+            endTimeEntry.classList.add('invalid');
+            endTimeDisplay.classList.add('invalid');
+
+            endTimeDisplay.textContent = "ERROR";
+            return;
+        }
+
+        endTimeEntry.classList.remove('invalid');
+        endTimeDisplay.classList.remove('invalid');
+        endTimeDisplay.textContent = TimeParse.toDisplayTime(parsedEnd);
+    }
+    $('#input-end-time').change(endTimeEdited);
+    $('#input-end-time').on('input', endTimeEdited);
+    endTimeEntry.value = endTimeDisplay.textContent = TimeParse.toDisplayTime(TimeSelect.end_ms);
+
+    const unzoomButton = document.getElementById("timeselect-unzoom");
+    function updateZoom() {
+        if (!TimeSelect.zoom_start_ms || !TimeSelect.zoom_end_ms) {
+            unzoomButton.style.display = 'none';
+            return;
+        }
+
+        startTimeEntry.value = startTimeDisplay.textContent = TimeParse.toDisplayTime(TimeSelect.zoom_start_ms);
+        startTimeEntry.classList.remove('invalid');
+        startTimeDisplay.classList.remove('invalid');
+        endTimeEntry.value = endTimeDisplay.textContent = TimeParse.toDisplayTime(TimeSelect.zoom_end_ms);
+        endTimeEntry.classList.remove('invalid');
+        endTimeDisplay.classList.remove('invalid');
+
+        if (TimeSelect.zoom_start_ms === TimeSelect.start_ms && TimeSelect.zoom_end_ms === TimeSelect.end_ms) {
+            unzoomButton.style.display = 'none';
+        } else {
+            unzoomButton.style.display = '';
+        }
+    }
+    TimeSelect.onZoom('TimeSelectModal', updateZoom);
+    updateZoom();
+
+    $('#timeselect-unzoom').click(function(event) {
+        event.preventDefault();
+
+        startTimeEntry.value = startTimeDisplay.textContent = TimeParse.toDisplayTime(TimeSelect.start_ms);
+        startTimeEntry.classList.remove('invalid');
+        startTimeDisplay.classList.remove('invalid');
+        endTimeEntry.value = endTimeDisplay.textContent = TimeParse.toDisplayTime(TimeSelect.end_ms);
+        endTimeEntry.classList.remove('invalid');
+        endTimeDisplay.classList.remove('invalid');
+
+        unzoomButton.style.display = 'none';
+    });
+})();
+</script>

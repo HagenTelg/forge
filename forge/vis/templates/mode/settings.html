@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Settings</title>
+{% include 'global/header.html' %}
+  <link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/settings.css') }}"/>
+</head>
+<body>
+
+<div class="settings-container">
+  <h1>Display Settings</h1>
+
+  <table>
+    <tr>
+      <td><label for="plot_scroll_switch">Always enable plot scrolling</label></td>
+      <td>
+        <label id="plot_scroll_switch" class="switch">
+          <input id="enable_plot_scrolling" type="checkbox">
+          <span class="slider"></span>
+        </label>
+      </td>
+    </tr>
+
+    <tr>
+      <td><label for="doy_switch">Display times in year and DOY</label></td>
+      <td>
+        <label id="doy_switch" class="switch">
+          <input id="use_doy" type="checkbox">
+          <span class="slider"></span>
+        </label>
+      </td>
+    </tr>
+  </table>
+
+  <button class="action" id="apply_settings">Save</button>
+</div>
+
+<script>
+(function() {
+{% include 'mode/settings.js' %}
+})();
+</script>
+
+</body>
+</html>

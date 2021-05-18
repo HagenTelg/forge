@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Data View</title>
+{% include 'global/header.html' %}
+{% include 'view/header.html' %}
+</head>
+<body>
+
+<style>
+body, html {
+    margin: 0;
+    padding: 0;
+}
+#view_content {
+  position: relative;
+  display: flex;
+  min-height: 100vh;
+}
+</style>
+
+<div id="view_content"></div>
+
+<script>
+$(document).ready(function() {
+    $('#view_content').load('{{ view_url }}');
+});
+</script>
+
+</body>
+</html>

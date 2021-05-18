@@ -1,0 +1,77 @@
+.info-container {
+  width: 700px;
+  margin: 10px auto;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+
+.info-container h1 {
+  text-align: center;
+}
+
+.info-item {
+  width: 100%;
+}
+
+input[type=text], input[type=password] {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+button.action {
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+
+  border: none;
+  outline: none;
+  padding: 14px 16px;
+  font-family: inherit;
+  font-weight: bold;
+}
+
+button.action:hover,
+button.action:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button.action.success {
+  background-color: #00cc60;
+}
+
+button.action.failure {
+  background-color: red;
+  color: #000;
+}
+
+button.action:disabled {
+  background-color: #AF4C50;
+  cursor: default;
+}
+
+.password-container {
+  width: 100%;
+  display: inline-block;
+  position: relative;
+  justify-content: center;
+  align-items: center;
+}
+
+.toggle-password {
+  position: absolute;
+  top: 20px;
+  right: 25px;
+  cursor: pointer;
+}
+
+.error-display {
+  color: red;
+  height: 16px;
+  margin-bottom: 3px;
+}

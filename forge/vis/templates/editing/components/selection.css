@@ -1,0 +1,51 @@
+.details-selection-scroll {
+  overflow: auto;
+  position: relative;
+  max-height: 200px;
+}
+
+table.details-selection-list {
+  position: relative;
+  border-spacing: 0;
+  min-width: 200px;
+  width: 100%;
+}
+
+table.details-selection-list > tbody > tr {
+  cursor: pointer;
+  font-family: monospace;
+}
+table.details-selection-list > tbody > tr:nth-child(odd):not(.selected) {
+  background-color: #f8f8f8;
+}
+table.details-selection-list > tbody > tr:not(:nth-child(odd)):not(.selected) {
+  background-color: #f0f0f0;
+}
+table.details-selection-list > tbody > tr.selected:nth-child(odd) {
+  background-color: #4af;
+}
+table.details-selection-list > tbody > tr.selected:not(:nth-child(odd)) {
+  background-color: #3bf;
+}
+
+nav.details-selection-options {
+  display: flex;
+  margin: 0;
+  padding: 0 0 4px;
+}
+nav.details-selection-options > ul {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  display: flex;
+}
+
+#details_selection_instrument > li > button {
+  font-family: monospace;
+  white-space: nowrap;
+  min-width: 100px;
+}

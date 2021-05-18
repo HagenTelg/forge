@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Data Access Request</title>
+</head>
+<body>
+
+{% if any_added %}
+
+<h1>Access Granted</h1>
+Your access request has been confirmed.  You can return to the main page by clicking <a href="{{ request.url_for('root') }}">here</a>.
+
+Please be sure to reload any other logged in windows to make sure the new access applies to them.
+
+{% else %}
+
+<h1>No authentication found</h1>
+
+No authentication found for this confirmation request.  Please be sure you are logged in to the correct user.
+
+{% endif }
+
+</body>
+</html>

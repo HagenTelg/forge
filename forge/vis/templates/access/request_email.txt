@@ -1,0 +1,14 @@
+An access request has been submitted for {{ user.name }} <{{ user.email }}> requesting access to
+{{ station|upper }}.  If this is not a valid request, simply disregard this email.
+
+{% if comment %}
+The comment with the request was:
+{{ comment }}
+{% endif %}
+
+
+To approve access for this user and station run:
+
+    forge-vis-access grant --user={{ user.id }} {{ station }}
+
+To grant more restricted access (e.g. to meteorological data only) refer the the command help.

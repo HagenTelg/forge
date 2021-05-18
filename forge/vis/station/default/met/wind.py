@@ -1,0 +1,41 @@
+import typing
+from collections import OrderedDict
+from forge.vis.view.timeseries import TimeSeries
+
+
+class Wind(TimeSeries):
+    def __init__(self, record: str, measurements: typing.Optional[typing.Dict[str, str]] = None):
+        super().__init__()
+        self.title = "Winds"
+
+        if measurements is None:
+            measurements = OrderedDict([
+                ('10m', '{type} at 10 meters'),
+            ])
+
+        speed = TimeSeries.Graph()
+        self.graphs.append(speed)
+        mps = TimeSeries.Axis()
+        mps.title = "m/s"
+        mps.range = 0
+        speed.axes.append(mps)
+
+        direction = TimeSeries.Graph()
+        self.graphs.append(direction)
+        degrees = TimeSeries.Axis()
+        degrees.title = "degrees"
+        degrees.range = [0, 360]
+        direction.axes.append(degrees)
+
+        for field, legend in measurements.items():
+            ws = TimeSeries.Trace(mps)
+            ws.legend = legend.format(type='Speed')
+            ws.data_record = record
+            ws.data_field = f'{field}-ws'
+            speed.traces.append(ws)
+
+            wd = TimeSeries.Trace(degrees)
+            wd.legend = legend.format(type='Direction')
+            wd.data_record = record
+            wd.data_field = f'{field}-wd'
+            direction.traces.append(wd)

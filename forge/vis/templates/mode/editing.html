@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ station|upper }}</title>
+{% include 'global/header.html' %}
+{% include 'view/header.html' %}
+  <link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/viewlist.css') }}"/>
+  <link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/topbar.css') }}"/>
+</head>
+<body>
+
+<div class="center-content">
+  <nav class="sidebar" title="Available displays">
+    <ul>
+  {% for view in mode.views %}
+      <li><a class="view-select" name="{{ view.view_name }}" href="{{ request.url_for('view_standalone', station=station, view_name=view.view_name) }}"  interior="{{ request.url_for('view', station=station, view_name=view.view_name) }}">{{ view.display_name }}</a></li>
+  {% endfor %}
+    </ul>
+  </nav>
+
+  <div class="view-content" id="view_content"></div>
+</div>
+
+<nav class="topbar">
+  <ul>
+    <li class="topbar-left">
+      {% include 'mode/topbar/stations.html' %}
+    </li>
+    <li class="topbar-left">
+      {% include 'mode/topbar/modes.html' %}
+    </li>
+    <li class="topbar-center">
+      {% include 'mode/topbar/timerange.html' %}
+    </li>
+
+    <li class="topbar-right">
+      <button class="topbar-button dropdown-button mdi mdi-menu"></button>
+      <ul class="dropdown-content main-menu-list">
+        <li><a id="show_edit_directives" class="main-menu-item" href="{{ request.url_for('editing', station=station, mode_name=mode.mode_name) }}" title="Show edit directives">Edit directives</a></li>
+
+        {% include 'mode/topbar/menuitems.html' %}
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+{% include 'modal.html' %}
+
+<script>
+(function() {
+{% include 'mode/viewlist.js' %}
+})();
+(function() {
+{% include 'mode/editing.js' %}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+import typing
+from forge.vis.view.timeseries import TimeSeries
+
+
+class UMACStatus(TimeSeries):
+    def __init__(self, mode: str):
+        super().__init__()
+
+        self.title = "μMAC Status"
+
+        temperatures = TimeSeries.Graph()
+        temperatures.title = "Internal Temperature"
+        self.graphs.append(temperatures)
+
+        degrees = TimeSeries.Axis()
+        degrees.title = "°C"
+        temperatures.axes.append(degrees)
+
+        internal = TimeSeries.Trace(degrees)
+        internal.legend = "Internal"
+        internal.data_record = f'{mode}-umacstatus'
+        internal.data_field = 'T'
+        temperatures.traces.append(internal)
+
+
+        voltage = TimeSeries.Graph()
+        voltage.title = "Supply Voltage"
+        self.graphs.append(voltage)
+
+        V = TimeSeries.Axis()
+        V.title = "V"
+        voltage.axes.append(V)
+
+        supply = TimeSeries.Trace(V)
+        supply.legend = "Supply"
+        supply.data_record = f'{mode}-umacstatus'
+        supply.data_field = 'V'
+        voltage.traces.append(supply)
+

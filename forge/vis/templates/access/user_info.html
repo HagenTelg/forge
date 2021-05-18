@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>User Info</title>
+{% include 'global/header.html' %}
+  <link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/user_info.css') }}"/>
+</head>
+<body>
+
+<form class="info-container">
+  <h1>User Settings</h1>
+
+  <div class="info-item">
+    <label for="email"><b>Email address</b></label>
+    <input type="text" id="email" placeholder="Enter Email Address" name="email" class="info-field" value="{{ request.user.auth_user.email|e }}" original="{{ request.user.auth_user.email|e }}"  required>
+  </div>
+
+  <div class="info-item">
+    <label for="name"><b>Full name</b></label>
+    <input type="text" id="name" placeholder="Enter Full Name" name="name" class="info-field" value="{{ request.user.auth_user.name|e }}" original="{{ request.user.auth_user.name|e }}">
+  </div>
+
+  <div class="info-item">
+    <label for="initials"><b>Initials</b></label>
+    <input type="text" id="initials" placeholder="Enter Initials" name="initials" class="info-field" value="{{ request.user.auth_user.initials|e }}" original="{{ request.user.auth_user.initials|e }}">
+  </div>
+
+  <button class="action" id="apply_changes">Save</button>
+</form>
+
+{% if enable_password_change %}
+<form class="info-container">
+  <h1>Change Password</h1>
+
+  <label for="set_password"><b>Password</b></label>
+  <div class="password-container">
+    <div toggle="#set_password" class="mdi mdi-eye toggle-password"></div>
+    <input type="password" id="set_password" placeholder="Enter New Password" name="password" class="password-field" required>
+  </div>
+
+  <label for="confirm_password"><b>Confirm Password</b></label>
+  <div class="password-container">
+    <div toggle="#confirm_password" class="mdi mdi-eye toggle-password"></div>
+    <input type="password" id="confirm_password" placeholder="Retype Password" class="password-field" required>
+  </div>
+
+  <div id="password_error" class="error-display"></div>
+
+  <button class="action" id="change_password" disabled="disabled">Change Password</button>
+</form>
+{% endif %}
+
+<script>
+(function() {
+{% include 'access/user_info.js' %}
+})();
+</script>
+
+</body>
+</html>

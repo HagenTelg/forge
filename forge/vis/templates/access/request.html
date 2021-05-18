@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Data Access Request</title>
+{% include 'global/header.html' %}
+  <link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/access_request.css') }}"/>
+</head>
+<body>
+
+<form class="request-container" action="{{ request.url_for('request_access') }}" method="post">
+  <h1>Access Request</h1>
+
+  <div class="request-item">
+    <label for="station_select"><b>Station</b></label>
+    <select name="station" id="station_select" class="request-field">
+      {% set display_stations = request.user.visible_stations %}
+      {% set request_station = request.query_params.get('station') %}
+      {% for station in STATIONS|sort %}
+        {% if station not in display_stations %}
+        <option value="{{ station }}" {% if station == request_station %}selected="selected"{% endif %}>{{ station|upper }}</option>
+        {% endif %}}
+      {% endfor %}
+      {% for station in STATIONS|sort %}
+        {% if station in display_stations %}
+        <option value="{{ station }}" {% if station == request_station %}selected="selected"{% endif %}>{{ station|upper }}</option>
+        {% endif %}}
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="request-item">
+    <label for="comment"><b>Comments</b></label>
+    <textarea id="comment" placeholder="This comment is included in the access request.  Please enter any additional information here that may be required to interpret the request.  For example, please note if this request is only for a subset of data (e.g. meteorological data only)." name="comment" class="request-field"></textarea>
+  </div>
+
+  <button id="submit_request" type="submit" class="action">Submit</button>
+</form>
+
+</body>
+</html>

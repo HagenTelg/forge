@@ -1,0 +1,8 @@
+Access request approved for {{ stations|join(',')|upper }}.
+
+If you are the one that initiated the request, please go to {{ confirm_url }} while logged in to the system.
+
+If you did not request this access grant, please disregard this email.
+
+Note for those that initiated the approval: only the granted user needs to use the confirmation link above.
+You are simply CC'ed on this email for documentation purposes.

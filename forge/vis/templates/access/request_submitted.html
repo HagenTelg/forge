@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Data Access Request</title>
+</head>
+<body>
+
+<h1>Access Request Submitted</h1>
+Your access request has been submitted.  You will receive an email at
+<a href="mailto:{{ request.user.auth_user.email|e }}">{{ request.user.auth_user.email|e }}</a> once the request is
+processed.
+
+</body>
+</html>

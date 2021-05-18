@@ -1,0 +1,38 @@
+<div class="details-selection details-vertical">
+  <nav class="details-selection-options">
+    <ul>
+      <li>
+        <button class="details-dropdown" title="Quick selection options">Selection <i class="mdi mdi-menu-down"></i></button>
+        <ul class="details-dropdown-content" id="details_selection_shortcut">
+          <li>
+            <button class="details-menu-right" title="Instrument selection">Instrument <i class="mdi mdi-menu-right"></i></button>
+            <ul class="details-menu-content" id="details_selection_instrument">
+
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="details-selection-scroll">
+    <table class="details-selection-list">
+      <tbody id="details_selection_list">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+var Selection = {};
+Selection.list = document.getElementById('details_selection_list');
+Selection.shortcut_menu = document.getElementById('details_selection_shortcut');
+Selection.instrument_menu = document.getElementById('details_selection_instrument');
+(function() {
+{% include 'editing/components/selection.js' %}
+})();
+</script>
+
+<style>
+{% include 'editing/components/selection.css' %}
+</style>

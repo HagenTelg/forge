@@ -1,0 +1,57 @@
+<link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/topbar.css') }}"/>
+
+<nav class="topbar">
+  <ul>
+    {% if writable %}
+    <li class="topbar-left">
+      <button class="topbar-button" id="add_directive" title="Add a new edit directive">Add</button>
+    </li>
+    <li class="topbar-left">
+      <button class="topbar-button requires-selected" id="remove_directive" disabled="disabled" title="Change the edit directive deleted state">Remove</button>
+    </li>
+    {% endif %}
+    <li class="topbar-left">
+      <button class="topbar-button requires-selected" id="modify_directive" disabled="disabled" title="View or modify the parameters of the selected edit directive">{% if writable %}Modify{% else %}Details{% endif %}</button>
+    </li>
+    {% if writable %}
+    <li class="topbar-left">
+      <button class="topbar-button requires-selected" id="duplicate_directive" disabled="disabled" title="Add a new edit directive based on the selected one">Duplicate</button>
+    </li>
+    {% endif %}
+
+    <li class="topbar-center"></li>
+
+    <li class="topbar-right">
+      <button class="topbar-button dropdown-button mdi mdi-menu" title="Additional options"></button>
+      <ul class="dropdown-content main-menu-list">
+        <li class="toggle-menu-item">
+          <label for="modified_time_switch">Show modified time</label>
+          <label id="modified_time_switch" class="switch">
+            <input id="show_modified_time" title="Show modified time column" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </li>
+        <li class="toggle-menu-item">
+          <label for="type_switch">Show all edit types</label>
+          <label id="type_switch" class="switch">
+            <input id="show_type" title="Show modified time column" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </li>
+        <li class="toggle-menu-item">
+          <label for="deleted_switch">Show deleted edits</label>
+          <label id="deleted_switch" class="switch">
+            <input id="show_deleted" title="Show deleted directives in the table" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </li>
+        <li class="action-menu-item">
+          <a id="export_csv" base="{{ request.url_for('edits_csv', station=station, mode_name=mode_name) }}" href="{{ request.url_for('edits_csv', station=station, mode_name=mode_name) }}">Export CSV</a>
+        </li>
+        <li class="action-menu-item">
+          <a id="export_json" base="{{ request.url_for('edits_json', station=station, mode_name=mode_name) }}" href="{{ request.url_for('edits_json', station=station, mode_name=mode_name) }}">Export JSON</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>

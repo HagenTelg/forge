@@ -1,0 +1,7 @@
+<script>
+const DATASOCKET_URL = "{{ request.url_for('data_socket', station=station) }}";
+</script>
+<script defer src="{{ request.url_for('static', path='/js/time.js') }}"></script>
+<script defer src="{{ request.url_for('static', path='/js/datasocket.js') }}"></script>
+
+<link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/editing.css') }}"/>

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Data Visualization</title>
+{% include 'global/header.html' %}
+</head>
+<body>
+
+<script>
+(function() {
+    const lastMode = localStorage.getItem('forge-last-mode');
+    if (lastMode === null || lastMode.length === 0) {
+        window.location.replace("{{ request.url_for('mode', station=station, mode_name=default_mode.mode_name) }}");
+        return;
+    }
+    window.location.replace("{{ request.url_for('default_mode', station=station }}" + lastMode);
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+<link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/edit_table.css') }}"/>
+
+<table class="edits">
+  <thead>
+    <tr class="edit-header">
+      <th scope="col" colspan="2">Time <div sort="0" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></div><div sort="0" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></div></th>
+      <th scope="col">Type <div sort="2" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></div><div sort="2" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></div></th>
+      <th scope="col">Author <div sort="3" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></div><div sort="3" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></div></th>
+      <th scope="col">Modified <div sort="4" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></div><div sort="4" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></div></th>
+      <th scope="col">Action <div sort="5" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></div><div sort="5" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></div></th>
+      <th scope="col">Summary <div sort="6" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></div><div sort="6" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></div></th>
+      <th scope="col">Comment <div sort="7" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></div><div sort="7" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></div></th>
+    </tr>
+  </thead>
+  <tbody id="edit_directives">
+
+  </tbody>
+</table>
+
+<script>
+{% include 'editing/table.js' %}
+</script>

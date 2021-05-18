@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Data Visualization</title>
+{% include 'global/header.html' %}
+</head>
+<body>
+
+<script>
+(function() {
+    const lastStation = localStorage.getItem('forge-last-station');
+    const defaultURL = "{{ request.url_for('default_mode', station=default_station) }}";
+    if (lastStation === null || lastStation.length === 0) {
+        window.location.replace(defaultURL);
+        return;
+    }
+
+    const availableStations = [
+        // {% for station in visible_stations %}
+        "{{ station }}",
+        // {% endfor %}
+    ];
+    if (!availableStations.includes(lastStation.toLowerCase())) {
+        window.location.replace(defaultURL);
+        return;
+    }
+
+    window.location.replace("{{ request.url_for('root') }}station/" + lastStation);
+})();
+</script>
+
+</body>
+</html>

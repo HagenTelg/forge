@@ -1,0 +1,107 @@
+table.edits {
+  width: 100%;
+  margin-top: 48px;
+  position: relative;
+  border-spacing: 0;
+}
+
+tr.edit-header th {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 48px;
+  text-align: left;
+  height: 32px;
+  margin: 0;
+  padding: 4px;
+  border-bottom: 1px solid black;
+  background: white;
+  background-clip: padding-box;
+}
+tr.edit-header th:nth-child(1) {
+  min-width: 320px;
+}
+tr.edit-header th:nth-child(2) {
+  min-width: 90px;
+}
+tr.edit-header th:nth-child(3) {
+  min-width: 90px;
+}
+tr.edit-header th:nth-child(4) {
+  min-width: 160px;
+}
+tr.edit-header th:nth-child(5) {
+  min-width: 100px;
+}
+tr.edit-header th:nth-child(6) {
+  min-width: 110px;
+}
+tr.edit-header th.hidden {
+  display: none;
+}
+
+tr.edit-header th div.sort-down {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+tr.edit-header th div.sort-up  {
+  position: absolute;
+  top: 0;
+  right: 0;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+tr.edit-header th:not(:last-child),
+table.edits > tbody > tr td:not(:last-child) {
+  white-space: nowrap;
+  border-right: 1px solid black;
+}
+
+tr.edit-header th:last-child,
+table.edits > tbody > tr td:last-child {
+  width: 100%;
+  border-right: none;
+}
+
+table.edits > tbody > tr {
+  cursor: pointer;
+}
+table.edits > tbody > tr td {
+  border-right: 1px solid black;
+  padding: 4px;
+}
+table.edits > tbody > tr:nth-child(odd):not(.selected) {
+  background-color: #f8f8f8;
+}
+table.edits > tbody > tr:not(:nth-child(odd)):not(.selected) {
+  background-color: #f0f0f0;
+}
+table.edits > tbody > tr.selected {
+  background-color: #4af;
+}
+table.edits > tbody > tr.hidden,
+table.edits > tbody > tr td.hidden {
+  display: none;
+}
+
+
+table.edits > tbody > tr td:nth-child(1),
+table.edits > tbody > tr td:nth-child(2),
+table.edits > tbody > tr td:nth-child(5) {
+  font-family: monospace;
+}
+
+table.edits > tbody > tr.edit-deleted {
+  opacity: 0.5;
+}
+table.edits > tbody > tr.edit-other-type td:nth-child(3) {
+  color: #faa;
+}
+
+table.edits > tbody > tr td:nth-child(8) {
+  white-space: pre;
+}

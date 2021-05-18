@@ -1,0 +1,9 @@
+<li><a class="main-menu-item" href="{{ request.url_for('local_settings') }}" title="Settings controlling the display of data">Settings</a></li>
+
+{% if enable_user_actions %}
+<li><a class="main-menu-item" href="{{ request.url_for('change_user_info') }}" title="Set information for your user">User Profile</a></li>
+<li><a class="main-menu-item" href="{{ request.url_for('request_access') }}" title="Request data access for a station">Request Access</a></li>
+<li><a class="main-menu-item" href="{{ request.url_for('logout') }}">Logout</a></li>
+{% elif ENABLE_LOGIN %}
+<li><a class="main-menu-item" href="{{ request.url_for('login') }}">Login</a></li>
+{% endif %}

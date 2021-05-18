@@ -1,0 +1,15 @@
+<div class="edit-action-invalidate-selection">
+  {% include 'editing/components/selection.html' %}
+</div>
+
+<script>
+selectEditDirectiveAction = function(directive) {
+  Selection.configure(directive);
+};
+</script>
+
+<style>
+.edit-action-invalidate-selection {
+  padding: 8px;
+}
+</style>

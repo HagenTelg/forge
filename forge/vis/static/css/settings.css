@@ -1,0 +1,36 @@
+@import "input_switch.css";
+
+.settings-container {
+  width: 500px;
+  margin: 0 auto;
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+
+.settings-container h1 {
+  text-align: center;
+}
+
+.settings-container table {
+  border: none;
+  width: 100%;
+}
+
+button.action {
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+
+  border: none;
+  outline: none;
+  padding: 14px 16px;
+  font-family: inherit;
+  font-weight: bold;
+}
+
+button.action:hover,
+button.action:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}

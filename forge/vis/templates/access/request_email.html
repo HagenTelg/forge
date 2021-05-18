@@ -1,0 +1,21 @@
+<h1>Forge Visualization Tool Access Requested</h1>
+
+<p>
+An access request has been submitted for <a href="mailto:{{ user.email|e }}">{{ user.name|e }}</a> requesting access to
+  <b>{{ station|upper }}</b>.  If this is not a valid request, simply disregard this email.
+</p>
+
+{% if comment %}
+<p>
+The comment with the request was:
+<q>{{ comment|e }}</q>
+</p>
+{% endif %}
+
+<p>
+To approve access for this user and station run:
+  <code>
+    forge-vis-access grant --user={{ user.id }} {{ station }}
+  </code>
+To grant more restricted access (e.g. to meteorological data only) refer the the command help.
+</p>

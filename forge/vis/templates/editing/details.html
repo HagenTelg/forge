@@ -1,0 +1,82 @@
+<div class="details-container details-vertical">
+  <table class="details-times">
+    <tr>
+      <td><label for="details-input-start-time">Start</label></td>
+      <td><input type="text" id="details-input-start-time"></td>
+      <td><label id="details-parsed-start-time"></label></td>
+    </tr>
+    <tr>
+      <td><label for="details-input-end-time">End</label></td>
+      <td><input type="text" id="details-input-end-time"></td>
+      <td><label id="details-parsed-end-time"></label></td>
+    </tr>
+  </table>
+
+
+  <div class="details-comment details-vertical">
+    <!--<label for="details_comment"><b>Comment</b></label>-->
+    <textarea id="details_comment" placeholder="Enter the reason for the edit and any additional information about why it is needed."></textarea>
+  </div>
+
+  <div class="details-author details-horizontal">
+    <label for="details_author"><b>Author</b></label>
+    <input type="text" id="details_author" placeholder="Enter the author of the edit (initials)" required>
+  </div>
+
+  <nav class="details-category-select">
+    <ul class="details-horizontal">
+      <li><button category="#details_category_action">Action</button></li>
+      <li><button category="#details_category_history" class="requires-history">History</button></li>
+    </ul>
+  </nav>
+
+  <div class="details-category-content">
+    <div class="details-category" id="details_category_action">
+      <div class="details-vertical">
+        <div class="details-horizontal">
+          <select id="details_action" class="details-combobox">
+          {% for code, action in actions.items() %}
+            <option value="{{ code }}" editor="{{ request.url_for('edit_action', station=station, action=code) }}">{{ action.display }}</option>
+          {% endfor %}
+          </select>
+          {% for code, action in actions.items() %}
+            {% if action.description %}
+              <label code="{{ code }}" class="details-action-description" for="details_action">{{ action.description }}</label>
+            {% endif %}
+          {% endfor %}
+        </div>
+
+        <div id="details_action_content"></div>
+      </div>
+    </div>
+
+    <div class="details-category requires-history" id="details_category_history">
+      <table class="details-history">
+        <thead>
+          <tr class="details-history-header">
+            <th scope="col">Time</th>
+            <th scope="col">User</th>
+            <th scope="col">Operation</th>
+          </tr>
+        </thead>
+        <tbody id="details_history_events">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="details-modal-footer">
+    <button id="details_accept">Ok</button>
+    <button id="details_cancel" onclick="hideModal();">Cancel</button>
+  </div>
+</div>
+
+<script>
+(function() {
+{% include 'editing/details.js' %}
+})();
+</script>
+
+<style>
+{% include 'editing/details.css' %}
+</style>

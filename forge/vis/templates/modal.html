@@ -1,0 +1,30 @@
+<link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/modal.css') }}"/>
+
+<div id="modal-container" class="modal">
+  <div class="modal-content animate">
+    <div class="modal-container" id="modal-content"></div>
+
+    <span onclick="hideModal();" class="modal-close" title="Close Modal">&times;</span>
+  </div>
+</div>
+
+<script>
+function showModal(content, onready, onhide) {
+    $.ajax(content).done(function(responseText) {
+        let loading = $('#modal-content').html(responseText);
+        if (onready) {
+            loading.ready(onready);
+        }
+    });
+    const modal = document.getElementById('modal-container');
+    modal.onmodalhide = onhide;
+    modal.style.display = 'block';
+}
+function hideModal() {
+    const modal = document.getElementById('modal-container');
+    modal.style.display = 'none';
+    if (modal.onmodalhide) {
+        modal.onmodalhide();
+    }
+}
+</script>

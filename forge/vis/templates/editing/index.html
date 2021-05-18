@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ station|upper }} - Edits</title>
+{% include 'global/header.html' %}
+{% include 'editing/header.html' %}
+</head>
+<body>
+
+<script>
+{% include 'editing/available.js' %}
+{% include 'editing/plots.js' %}
+</script>
+
+{% include 'editing/table.html' %}
+{% include 'editing/controlbar.html' %}
+{% include 'modal.html' %}
+
+<span id="loading">
+  <span class="mdi mdi-loading mdi-spin"></span>
+</span>
+
+</body>
+</html>
