@@ -111,6 +111,7 @@ let DataSocket = {};
             });
     
             const fields = content.data;
+            const fieldOutput = new Map();
             for (const fieldName of Object.keys(fields)) {
                 const fieldRaw = fields[fieldName];
                 if (Array.isArray(fieldRaw)) {
@@ -120,7 +121,7 @@ let DataSocket = {};
                             target[index] = Number.NaN;
                         }
                     });
-                    this.incomingData(fieldName, plotTime, fieldRaw, epoch);
+                    fieldOutput.set(fieldName, fieldRaw);
                     continue;
                 }
     
@@ -137,10 +138,17 @@ let DataSocket = {};
                     value += fieldOrigin;
                     target[index] = value;
                 });
-    
-                this.incomingData(fieldName, plotTime, fieldValues, epoch);
+                fieldOutput.set(fieldName, fieldValues);
             }
+
+            this.processRecord(fieldOutput, epoch, plotTime);
+
+            fieldOutput.forEach((values, fieldName) => {
+                this.incomingData(fieldName, plotTime, values, epoch);
+            });
         }
+
+        processRecord(record, epoch, plotTime) {}
     
         incomingData(fieldName, plotTime, values, epoch) {}
     };
@@ -171,7 +179,7 @@ let DataSocket = {};
         }
     });
 
-    const RecordDispatch = class extends DataSocket.RecordStream {
+    DataSocket.RecordDispatch = class extends DataSocket.RecordStream {
         constructor(dataName) {
             super(dataName);
             this.fieldToCallbacks = new Map();
@@ -186,6 +194,15 @@ let DataSocket = {};
                 cb(plotTime, values, epoch);
             });
         }
+
+        addFieldCallback(field, callback) {
+            let cbs = this.fieldToCallbacks.get(field);
+            if (cbs === undefined) {
+                cbs = [];
+                this.fieldToCallbacks.set(field, cbs);
+            }
+            cbs.push(callback);
+        }
     };
     
     const loadingRecords = new Map();
@@ -197,18 +214,18 @@ let DataSocket = {};
         loadingRecords.clear();
         DataSocket.onRecordReload = () => {};
     };
-    DataSocket.addLoadedRecordField = function(dataName, field, callback) {
+    DataSocket.addLoadedRecordField = function(dataName, field, callback, loader) {
         let dispatch = loadingRecords.get(dataName);
         if (dispatch === undefined) {
-            dispatch = new RecordDispatch(dataName);
+            if (loader === undefined) {
+                dispatch = new DataSocket.RecordDispatch(dataName);
+            } else {
+                dispatch = loader(dataName);
+            }
             loadingRecords.set(dataName, dispatch);
         }
-        let cbs = dispatch.fieldToCallbacks.get(field);
-        if (cbs === undefined) {
-            cbs = [];
-            dispatch.fieldToCallbacks.set(field, cbs);
-        }
-        cbs.push(callback);
+        dispatch.addFieldCallback(field, callback);
+        return dispatch;
     }
     DataSocket.startLoadingRecords = function() {
         loadingRecords.forEach((dispatch) => {

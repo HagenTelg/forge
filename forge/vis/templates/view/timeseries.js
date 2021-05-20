@@ -151,7 +151,7 @@ DataSocket.resetLoadedRecords();
     DataSocket.addLoadedRecordField('{{ trace.data_record }}', '{{ trace.data_field }}',
     (plotTime, values) => {
         extendData(traceIndex, plotTime, values);
-    });
+    }, RecordProcessing.get('{{ trace.data_record }}'));
 })('{{ trace_loop.index }}' * 1);
 //      {% endif %}
 //      {% set trace_loop.index = trace_loop.index + 1 %}

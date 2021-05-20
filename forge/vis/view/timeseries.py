@@ -1,4 +1,5 @@
 import typing
+from collections import OrderedDict
 from starlette.responses import HTMLResponse
 from forge.vis.util import package_template
 from . import View, Request, Response
@@ -24,9 +25,16 @@ class TimeSeries(View):
             self.axes: typing.List[TimeSeries.Axis] = []
             self.traces: typing.List[TimeSeries.Trace] = []
 
+    class Processing:
+        def __init__(self):
+            self.components: typing.List[str] = []
+            self.script = str()
+
     def __init__(self):
+        super().__init__()
         self.title: typing.Optional[str] = None
         self.graphs: typing.List[TimeSeries.Graph] = []
+        self.processing: typing.Dict[str, TimeSeries.Processing] = dict()
 
     @staticmethod
     def _index_code(index, base: str) -> str:
@@ -57,6 +65,13 @@ class TimeSeries(View):
                 return self._index_code(index, base)
             index += 1
         raise KeyError
+
+    def required_components(self) -> typing.List[str]:
+        components = OrderedDict()
+        for processing in self.processing.values():
+            for name in processing.components:
+                components[name] = True
+        return list(components.keys())
 
     async def __call__(self, request: Request, **kwargs) -> Response:
         return HTMLResponse(await package_template('view', 'timeseries.html').render_async(
