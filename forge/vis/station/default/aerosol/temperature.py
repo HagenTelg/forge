@@ -4,7 +4,8 @@ from ..met.temperature import Temperature as BaseTemperature
 
 
 class Temperature(BaseTemperature):
-    def __init__(self, mode: str, measurements: typing.Optional[typing.Dict[str, str]] = None):
+    def __init__(self, mode: str, measurements: typing.Optional[typing.Dict[str, str]] = None,
+                 omit_traces: typing.Optional[typing.Set[str]] = None):
         if measurements is None:
             measurements = OrderedDict([
                 ('{code}inlet', '{code}_V51 (inlet)'),
@@ -14,5 +15,9 @@ class Temperature(BaseTemperature):
                 ('{code}aux', 'Auxiliary {type}'),
                 ('{code}ambient', 'Ambient {type}'),
             ])
-        super().__init__(f'{mode}-temperature', measurements)
+        if omit_traces is None:
+            omit_traces = {'TDnephinlet'}
+        super().__init__(f'{mode}-temperature', measurements, omit_traces)
         self.title = "System Conditions"
+
+

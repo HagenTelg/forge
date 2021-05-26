@@ -228,7 +228,7 @@ var WavelengthAdjust = {};
 
     const emptyInput = [];
     WavelengthAdjust.RecordAdjust = class extends DataSocket.RecordDispatch {
-        constructor(dataName, inputFields, outputFields, assumedAngstromExponent, precision) {
+        constructor(dataName, inputFields, outputFields, assumedAngstromExponent) {
             super(dataName);
             this._constantAngstromExponents = [];
             if (assumedAngstromExponent) {
