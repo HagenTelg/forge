@@ -227,9 +227,8 @@ var WavelengthAdjust = {};
     }
 
     const emptyInput = [];
-    WavelengthAdjust.RecordAdjust = class extends DataSocket.RecordDispatch {
-        constructor(dataName, inputFields, outputFields, assumedAngstromExponent) {
-            super(dataName);
+    WavelengthAdjust.RecordAdjust = class {
+        constructor(inputFields, outputFields, assumedAngstromExponent) {
             this._constantAngstromExponents = [];
             if (assumedAngstromExponent) {
                 convertAssumedAngstromExponents(assumedAngstromExponent, this._constantAngstromExponents);
@@ -260,12 +259,12 @@ var WavelengthAdjust = {};
                     this._outputPrecision.push(fieldData.precision);
                 }
             });
-            
+
             this._inputValues = [];
             this._outputValues = [];
         }
 
-        processRecord(record, epoch) {
+        adjustRecord(record, numberOfValues) {
             this._inputFieldNames.forEach((fieldName, index) => {
                 let fieldData = record.get(fieldName);
                 if (!fieldData) {
@@ -278,7 +277,7 @@ var WavelengthAdjust = {};
                 let fieldData = record.get(fieldName);
                 if (!fieldData) {
                     fieldData = [];
-                    for (let i=0; i<epoch.length; i++) {
+                    for (let i=0; i<numberOfValues; i++) {
                         fieldData.push(undefined);
                     }
                     record.set(fieldName, fieldData);
@@ -286,7 +285,7 @@ var WavelengthAdjust = {};
                 this._outputFieldData[index] = fieldData;
             });
 
-            for (let timeIndex=0; timeIndex<epoch.length; timeIndex++) {
+            for (let timeIndex=0; timeIndex<numberOfValues; timeIndex++) {
                 this._inputValues.length = 0;
                 this._inputFieldData.forEach((fieldData) => {
                     this._inputValues.push(fieldData[timeIndex]);
@@ -315,6 +314,16 @@ var WavelengthAdjust = {};
                     fieldData[timeIndex] = resultValue;
                 });
             }
+        }
+    }
+    WavelengthAdjust.AdjustedDispatch = class extends DataSocket.RecordDispatch {
+        constructor(dataName, inputFields, outputFields, assumedAngstromExponent) {
+            super(dataName);
+            this.adjuster = new WavelengthAdjust.RecordAdjust(inputFields, outputFields, assumedAngstromExponent);
+        }
+
+        processRecord(record, epoch) {
+            this.adjuster.adjustRecord(record, epoch.length);
         }
     }
 })();

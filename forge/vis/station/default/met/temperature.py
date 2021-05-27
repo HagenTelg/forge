@@ -9,7 +9,7 @@ class Temperature(TimeSeries):
             super().__init__()
             self.components.append('numeric_solve')
             self.components.append('dewpoint')
-            self.script = r"""(function(dataName) { return new Dewpoint.RecordCalculate(dataName); })"""
+            self.script = r"""(function(dataName) { return new Dewpoint.CalculateDispatch(dataName); })"""
 
     def __init__(self, record: str, measurements: typing.Optional[typing.Dict[str, str]] = None,
                  omit_traces: typing.Optional[typing.Set[str]] = None):

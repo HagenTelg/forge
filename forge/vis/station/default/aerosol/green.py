@@ -17,7 +17,7 @@ const inputFields = new Map();
             for field, wavelength in input_fields.items():
                 self.script += f"inputFields.set('{field}', {wavelength});\n"
             self.script += r"""
-return new WavelengthAdjust.RecordAdjust(dataName, inputFields, outputFields, 
+return new WavelengthAdjust.AdjustedDispatch(dataName, inputFields, outputFields, 
     { center: 550, validDistance: 50, angstrom: 1.0 });
 })"""
 

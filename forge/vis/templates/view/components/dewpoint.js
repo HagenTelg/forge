@@ -120,7 +120,7 @@ var Dewpoint = {};
     }
 
     const recordFieldMatch = /^(TD|T|U)(.+)$/;
-    Dewpoint.RecordCalculate = class extends DataSocket.RecordDispatch {
+    Dewpoint.CalculateDispatch = class extends DataSocket.RecordDispatch {
         constructor(dataName) {
             super(dataName);
             this.forceWater = false;
