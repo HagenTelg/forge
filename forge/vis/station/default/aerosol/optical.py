@@ -12,6 +12,7 @@ class Optical(TimeSeries):
 
             Mm_1 = TimeSeries.Axis()
             Mm_1.title = "Mm⁻¹"
+            Mm_1.format_code = '.2f'
             self.axes.append(Mm_1)
 
             B0 = TimeSeries.Trace(Mm_1)

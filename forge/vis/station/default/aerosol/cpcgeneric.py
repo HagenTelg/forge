@@ -12,6 +12,7 @@ class SystemCPCFlow(TimeSeries):
 
         lpm = TimeSeries.Axis()
         lpm.title = "lpm"
+        lpm.format_code = '.3f'
         cpc_flow.axes.append(lpm)
 
         sample = TimeSeries.Trace(lpm)

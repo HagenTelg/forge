@@ -11,7 +11,7 @@ class Green(TimeSeries):
             self.components.append('wavelength_adjust')
             self.script = r"""(function(dataName) {
 const outputFields = new Map();
-outputFields.set('G', { wavelength: 550, precision: 2 });
+outputFields.set('G', 550);
 const inputFields = new Map();
 """
             for field, wavelength in input_fields.items():
@@ -31,6 +31,7 @@ return new WavelengthAdjust.AdjustedDispatch(dataName, inputFields, outputFields
 
         Mm_1 = TimeSeries.Axis()
         Mm_1.title = "Mm⁻¹"
+        Mm_1.format_code = '.2f'
         scattering.axes.append(Mm_1)
 
         G0 = TimeSeries.Trace(Mm_1)
@@ -60,6 +61,7 @@ return new WavelengthAdjust.AdjustedDispatch(dataName, inputFields, outputFields
 
         Mm_1 = TimeSeries.Axis()
         Mm_1.title = "Mm⁻¹"
+        Mm_1.format_code = '.2f'
         absorption.axes.append(Mm_1)
 
         G0 = TimeSeries.Trace(Mm_1)

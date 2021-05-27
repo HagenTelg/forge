@@ -34,14 +34,6 @@ var Intensive = {};
         }
 
         processRecord(record, epoch) {
-            function applyPrecision(value, precision) {
-                if (!isFinite(value)) {
-                    return undefined;
-                }
-                const scale = Math.pow(10, precision);
-                return Math.round(value * scale) / scale;
-            }
-
             const angstromOutput = [];
             record.set('Ang', angstromOutput);
             for (let timeIndex=0; timeIndex<epoch.length; timeIndex++) {
@@ -69,8 +61,8 @@ var Intensive = {};
                     }
                 });
 
-                angstromOutput.push(applyPrecision(Math.log(firstScatteringValue / lastScatteringValue) /
-                    Math.log(lastScatteringWavelength / firstScatteringWavelength), 3));
+                angstromOutput.push(Math.log(firstScatteringValue / lastScatteringValue) /
+                    Math.log(lastScatteringWavelength / firstScatteringWavelength));
             }
 
             this.scatteringAdjuster.adjustRecord(record, epoch.length);
@@ -119,17 +111,12 @@ var Intensive = {};
                 let Ba = record.get('Ba' + fieldName);
                 let Be = record.get('Be' + fieldName);
 
-                Bs = processField('Bs' + fieldName,
-                    (Be, Ba) => { return applyPrecision(Be - Ba, 2); }, Be, Ba);
-                Ba = processField('Ba' + fieldName,
-                    (Be, Bs) => { return applyPrecision(Be - Bs, 2); }, Be, Bs);
-                Be = processField('Be' + fieldName,
-                    (Bs, Ba) => { return applyPrecision(Bs + Ba, 2); }, Bs, Ba);
+                Bs = processField('Bs' + fieldName, (Be, Ba) => { return Be - Ba; }, Be, Ba);
+                Ba = processField('Ba' + fieldName, (Be, Bs) => { return Be - Bs; }, Be, Bs);
+                Be = processField('Be' + fieldName, (Bs, Ba) => { return Bs + Ba; }, Bs, Ba);
 
-                processField('SSA' + fieldName,
-                    (Bs, Be) => { return applyPrecision(Bs / Be, 3); }, Bs, Be);
-                processField('Bfr' + fieldName,
-                    (Bbs, Bs) => { return applyPrecision(Bbs / Bs, 3); }, Bbs, Bs);
+                processField('SSA' + fieldName, (Bs, Be) => { return Bs / Be; }, Bs, Be);
+                processField('Bfr' + fieldName, (Bbs, Bs) => { return Bbs / Bs; }, Bbs, Bs);
             });
         }
     }

@@ -12,11 +12,13 @@ class Pressure(TimeSeries):
 
         hpa_ambient = TimeSeries.Axis()
         hpa_ambient.title = "hPa"
+        hpa_ambient.format_code = '.1f'
         pressure.axes.append(hpa_ambient)
 
         hpa_delta = TimeSeries.Axis()
         hpa_delta.title = "Delta Pressure (hPa)"
         hpa_delta.range = 0
+        hpa_delta.format_code = '.3f'
         pressure.axes.append(hpa_delta)
 
         ambient = TimeSeries.Trace(hpa_ambient)
@@ -62,6 +64,7 @@ class Pressure(TimeSeries):
 
         hpa_vacuum = TimeSeries.Axis()
         hpa_vacuum.title = "hPa"
+        hpa_vacuum.format_code = '.2f'
         system_vacuum.axes.append(hpa_vacuum)
 
         vacuum = TimeSeries.Trace(hpa_vacuum)

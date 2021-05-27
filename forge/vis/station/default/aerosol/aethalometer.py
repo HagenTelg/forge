@@ -6,11 +6,12 @@ class AethalometerOptical(TimeSeries):
     class SevenWavelength(TimeSeries.Graph):
         WAVELENGTH_NM = [370, 470, 520, 590, 660, 880, 950]
 
-        def __init__(self, axis_title: typing.Optional[str], trace_title: str, record: str, field: str):
+        def __init__(self, axis_title: typing.Optional[str], axis_format: typing.Optional[str], trace_title: str, record: str, field: str):
             super().__init__()
 
             axis = TimeSeries.Axis()
             axis.title = axis_title
+            axis.format_code = axis_format
             self.axes.append(axis)
 
             for wavelength in range(7):
@@ -24,11 +25,11 @@ class AethalometerOptical(TimeSeries):
         super().__init__()
         self.title = "Aethalometer"
 
-        absorption = self.SevenWavelength("Mm⁻¹", "Absorption ({wavelength} nm)", f'{mode}-aethalometer', 'Ba{index}')
+        absorption = self.SevenWavelength("Mm⁻¹", '.2f', "Absorption ({wavelength} nm)", f'{mode}-aethalometer', 'Ba{index}')
         absorption.title = "Absorption Coefficient"
         self.graphs.append(absorption)
 
-        ebc = self.SevenWavelength("μg/m³", "EBC ({wavelength} nm)", f'{mode}-aethalometer', 'X{index}')
+        ebc = self.SevenWavelength("μg/m³", '.3f', "EBC ({wavelength} nm)", f'{mode}-aethalometer', 'X{index}')
         ebc.title = "Equivalent Black Carbon"
         self.graphs.append(ebc)
 
@@ -40,15 +41,15 @@ class AE33(TimeSeries):
         super().__init__()
         self.title = "AE33"
 
-        absorption = self.SevenWavelength("Mm⁻¹", "Ba ({wavelength} nm)", f'{mode}-aethalometer', 'Ba{index}')
+        absorption = self.SevenWavelength("Mm⁻¹", '.2f', "Ba ({wavelength} nm)", f'{mode}-aethalometer', 'Ba{index}')
         absorption.title = "Absorption Coefficient"
         self.graphs.append(absorption)
 
-        ebc = self.SevenWavelength("μg/m³", "X ({wavelength} nm)", f'{mode}-aethalometer', 'X{index}')
+        ebc = self.SevenWavelength("μg/m³", '.2f', "X ({wavelength} nm)", f'{mode}-aethalometer', 'X{index}')
         ebc.title = "Equivalent Black Carbon"
         self.graphs.append(ebc)
 
-        factor = self.SevenWavelength(None, "Correction ({wavelength} nm)", f'{mode}-aethalometer', 'CF{index}')
+        factor = self.SevenWavelength(None, '.6f', "Correction ({wavelength} nm)", f'{mode}-aethalometer', 'CF{index}')
         factor.title = "Loading Correction Factor"
         self.graphs.append(factor)
 
@@ -60,7 +61,7 @@ class AE33Status(TimeSeries):
         super().__init__()
         self.title = "AE33 Status"
 
-        transmittance = self.SevenWavelength(None, "Transmittance ({wavelength} nm)",
+        transmittance = self.SevenWavelength(None, '.7f', "Transmittance ({wavelength} nm)",
                                              f'{mode}-aethalometer', 'Ir{index}')
         transmittance.title = "Transmittance"
         self.graphs.append(transmittance)
@@ -72,6 +73,7 @@ class AE33Status(TimeSeries):
 
         degrees = TimeSeries.Axis()
         degrees.title = "°C"
+        degrees.format_code = '.1f'
         temperatures.axes.append(degrees)
 
         controller = TimeSeries.Trace(degrees)
@@ -100,16 +102,16 @@ class AE33OpticalStatus(TimeSeries):
         super().__init__()
         self.title = "AE33 Status"
 
-        transmittance = self.SevenWavelength(None, "Transmittance ({wavelength} nm)",
+        transmittance = self.SevenWavelength(None, '.7f', "Transmittance ({wavelength} nm)",
                                              f'{mode}-aethalometer', 'Ir{index}')
         transmittance.title = "Transmittance"
         self.graphs.append(transmittance)
 
-        ebc = self.SevenWavelength("μg/m³", "X ({wavelength} nm)", f'{mode}-aethalometer', 'X{index}')
+        ebc = self.SevenWavelength("μg/m³", '.3f', "X ({wavelength} nm)", f'{mode}-aethalometer', 'X{index}')
         ebc.title = "Equivalent Black Carbon"
         self.graphs.append(ebc)
 
-        factor = self.SevenWavelength(None, "FACTOR ({wavelength} nm)", f'{mode}-aethalometer', 'CF{index}')
+        factor = self.SevenWavelength(None, '.6f', "FACTOR ({wavelength} nm)", f'{mode}-aethalometer', 'CF{index}')
         factor.title = "Loading Correction Factor"
         self.graphs.append(factor)
 

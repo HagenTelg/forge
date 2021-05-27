@@ -13,6 +13,7 @@ class Flow(TimeSeries):
         lpm = TimeSeries.Axis()
         lpm.title = "Analyzer Flow (lpm)"
         lpm.range = [0, 50]
+        lpm.format_code = '.2f'
         system_flow.axes.append(lpm)
 
         sample_flow = TimeSeries.Trace(lpm)
@@ -23,7 +24,7 @@ class Flow(TimeSeries):
 
         stack_lpm = TimeSeries.Axis()
         stack_lpm.title = "Stack Flow (lpm) - NOT CONVERTED YET"
-        stack_lpm.range = [0, 50]
+        stack_lpm.format_code = '.1f'
         system_flow.axes.append(stack_lpm)
 
         stack_flow = TimeSeries.Trace(stack_lpm)

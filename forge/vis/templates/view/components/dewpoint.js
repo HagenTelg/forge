@@ -160,14 +160,6 @@ var Dewpoint = {};
                 return fieldData;
             }
 
-            function applyPrecision(value, precision) {
-                if (!isFinite(value)) {
-                    return undefined;
-                }
-                const scale = Math.pow(10, precision);
-                return Math.round(value * scale) / scale;
-            }
-
             parameters.forEach((parameterData, parameterName) => {
                 const T = getParameter(parameterData, parameterName, 'T');
                 const TD = getParameter(parameterData, parameterName, 'TD');
@@ -179,11 +171,11 @@ var Dewpoint = {};
                     const Uvalue = U[timeIndex];
 
                     if (!isFinite(TDvalue)) {
-                        TD[timeIndex] = applyPrecision(Dewpoint.TD(Tvalue, Uvalue, this.forceWater), 1);
+                        TD[timeIndex] = Dewpoint.TD(Tvalue, Uvalue, this.forceWater);
                     } else if (!isFinite(Uvalue)) {
-                        U[timeIndex] = applyPrecision(Dewpoint.RH(Tvalue, TDvalue, this.forceWater), 1);
+                        U[timeIndex] = Dewpoint.RH(Tvalue, TDvalue, this.forceWater);
                     } else if (!isFinite(Tvalue)) {
-                        T[timeIndex] = applyPrecision(Dewpoint.T(Uvalue, TDvalue, this.forceWater), 1);
+                        T[timeIndex] = Dewpoint.T(Uvalue, TDvalue, this.forceWater);
                     }
                 }
             });

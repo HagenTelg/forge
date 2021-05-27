@@ -61,6 +61,7 @@ return new Intensive.CalculateDispatch(dataName, outputNames,
         self.graphs.append(albedo)
 
         no_unit = TimeSeries.Axis()
+        no_unit.format_code = '.3f'
         albedo.axes.append(no_unit)
 
         G0 = TimeSeries.Trace(no_unit)
@@ -83,6 +84,7 @@ return new Intensive.CalculateDispatch(dataName, outputNames,
         self.graphs.append(bfr)
 
         no_unit = TimeSeries.Axis()
+        no_unit.format_code = '.3f'
         bfr.axes.append(no_unit)
 
         G0 = TimeSeries.Trace(no_unit)
@@ -105,6 +107,7 @@ return new Intensive.CalculateDispatch(dataName, outputNames,
         self.graphs.append(angstrom)
 
         no_unit = TimeSeries.Axis()
+        no_unit.format_code = '.3f'
         angstrom.axes.append(no_unit)
 
         G0 = TimeSeries.Trace(no_unit)

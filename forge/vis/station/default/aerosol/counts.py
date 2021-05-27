@@ -13,6 +13,7 @@ class ParticleConcentration(TimeSeries):
         cm_3 = TimeSeries.Axis()
         cm_3.title = "cm⁻³"
         cm_3.range = 0
+        cm_3.format_code = '.1f'
         cnc.axes.append(cm_3)
 
         n_cnc = TimeSeries.Trace(cm_3)

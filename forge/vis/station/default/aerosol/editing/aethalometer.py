@@ -10,12 +10,12 @@ class EditingAethalometer(TimeSeries):
         super().__init__()
         self.title = "Absorption Coefficient"
 
-        raw = self.SevenWavelength("Mm⁻¹", "Raw ({wavelength} nm)",
+        raw = self.SevenWavelength("Mm⁻¹", '.2f', "Raw ({wavelength} nm)",
                                    f'{profile}-raw-aethalometer', 'Ba{index}')
         raw.title = "Raw"
         self.graphs.append(raw)
 
-        edited = self.SevenWavelength("Mm⁻¹", "Edited ({wavelength} nm)",
+        edited = self.SevenWavelength("Mm⁻¹", '.2f', "Edited ({wavelength} nm)",
                                       f'{profile}-editing-aethalometer', 'Ba{index}')
         edited.title = "Edited"
         self.graphs.append(edited)

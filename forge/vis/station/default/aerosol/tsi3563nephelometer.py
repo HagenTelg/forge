@@ -13,6 +13,7 @@ class NephelometerZero(TimeSeries):
 
             Mm_1 = TimeSeries.Axis()
             Mm_1.title = "Mm⁻¹"
+            Mm_1.format_code = '.2f'
             self.axes.append(Mm_1)
 
             B = TimeSeries.Trace(Mm_1)
@@ -60,6 +61,7 @@ class NephelometerStatus(TimeSeries):
 
         Hz = TimeSeries.Axis()
         Hz.title = "Hz"
+        Hz.format_code = '.0f'
         reference.axes.append(Hz)
 
         CfG = TimeSeries.Trace(Hz)
@@ -75,10 +77,12 @@ class NephelometerStatus(TimeSeries):
 
         A = TimeSeries.Axis()
         A.title = "A"
+        A.format_code = '.1f'
         lamp.axes.append(A)
 
         V = TimeSeries.Axis()
         V.title = "V"
+        V.format_code = '.1f'
         lamp.axes.append(V)
 
         lamp_current = TimeSeries.Trace(A)

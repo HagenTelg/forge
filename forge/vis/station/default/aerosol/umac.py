@@ -14,6 +14,7 @@ class UMACStatus(TimeSeries):
 
         degrees = TimeSeries.Axis()
         degrees.title = "°C"
+        degrees.format_code = '.1f'
         temperatures.axes.append(degrees)
 
         internal = TimeSeries.Trace(degrees)
@@ -29,6 +30,7 @@ class UMACStatus(TimeSeries):
 
         V = TimeSeries.Axis()
         V.title = "V"
+        V.format_code = '.3f'
         voltage.axes.append(V)
 
         supply = TimeSeries.Trace(V)

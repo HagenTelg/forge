@@ -18,6 +18,7 @@ class Wind(TimeSeries):
         mps = TimeSeries.Axis()
         mps.title = "m/s"
         mps.range = 0
+        mps.format_code = '.1f'
         speed.axes.append(mps)
 
         direction = TimeSeries.Graph()
@@ -25,6 +26,7 @@ class Wind(TimeSeries):
         degrees = TimeSeries.Axis()
         degrees.title = "degrees"
         degrees.range = [0, 360]
+        degrees.format_code = '.0f'
         direction.axes.append(degrees)
 
         for field, legend in measurements.items():

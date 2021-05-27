@@ -247,16 +247,13 @@ var WavelengthAdjust = {};
             this._outputWavelengths = [];
             this._outputFieldNames = [];
             this._outputFieldData = [];
-            this._outputPrecision = [];
             outputFields.forEach((fieldData, fieldName) => {
                 this._outputFieldNames.push(fieldName);
                 this._outputFieldData.push(undefined);
                 if (typeof fieldData === 'number') {
                     this._outputWavelengths.push(fieldData);
-                    this._outputPrecision.push(undefined);
                 } else {
                     this._outputWavelengths.push(fieldData.wavelength);
-                    this._outputPrecision.push(fieldData.precision);
                 }
             });
 
@@ -305,13 +302,7 @@ var WavelengthAdjust = {};
                     this._angstromExponents, this._outputValues);
 
                 this._outputFieldData.forEach((fieldData, fieldIndex) => {
-                    let resultValue = this._outputValues[fieldIndex];
-                    const precision = this._outputPrecision[fieldIndex];
-                    if (precision !== undefined) {
-                        const scale = Math.pow(10, precision);
-                        resultValue = Math.round(resultValue * scale) / scale;
-                    }
-                    fieldData[timeIndex] = resultValue;
+                    fieldData[timeIndex] = this._outputValues[fieldIndex];
                 });
             }
         }

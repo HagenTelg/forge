@@ -28,6 +28,7 @@ class Temperature(TimeSeries):
         self.graphs.append(rh)
         rh_percent = TimeSeries.Axis()
         rh_percent.title = "%"
+        rh_percent.format_code = '.1f'
         rh.axes.append(rh_percent)
 
         temperature = TimeSeries.Graph()
@@ -35,6 +36,7 @@ class Temperature(TimeSeries):
         self.graphs.append(temperature)
         T_C = TimeSeries.Axis()
         T_C.title = "°C"
+        T_C.format_code = '.1f'
         temperature.axes.append(T_C)
 
         dewpoint = TimeSeries.Graph()
@@ -42,6 +44,7 @@ class Temperature(TimeSeries):
         self.graphs.append(dewpoint)
         TD_C = TimeSeries.Axis()
         TD_C.title = "°C"
+        TD_C.format_code = '.1f'
         dewpoint.axes.append(TD_C)
 
         for field, legend in measurements.items():

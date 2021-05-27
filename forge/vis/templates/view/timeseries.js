@@ -49,6 +49,10 @@ let layout = {
         title: "{{ axis.title }}",
         //{% endif %}
 
+        //{% if axis.hover_format %}
+        hoverformat: "{{ axis.hover_format }}",
+        //{% endif %}
+
         type: '{% if axis.logarithmic %}log{% else %}linear{% endif %}',
         //{% if axis.range == 0 %}
         rangemode: 'tozero',
@@ -69,6 +73,7 @@ let data = [
         mode: 'lines',
         yaxis: '{{ view.axis_code(trace.axis) }}',
         name: "{{ trace.legend }}",
+        hovertemplate: "{{ trace.hover_template() }}",
         line: {
             width: 1,
             //{% if trace.color %}

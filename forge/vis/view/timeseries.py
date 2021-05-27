@@ -11,6 +11,7 @@ class TimeSeries(View):
             self.title: typing.Optional[str] = None
             self.range: typing.Optional[typing.Union[int, typing.Tuple[float, float]]] = None
             self.logarithmic = False
+            self.format_code: typing.Optional[str] = None
 
     class Trace:
         def __init__(self, axis: "TimeSeries.Axis"):
@@ -18,6 +19,16 @@ class TimeSeries(View):
             self.legend = ""
             self.data_record: typing.Optional[str] = None
             self.data_field: typing.Optional[str] = None
+            self.format_code: typing.Optional[str] = None
+
+        def hover_template(self):
+            fmt = self.format_code
+            if not fmt:
+                fmt = self.axis.format_code
+            if not fmt:
+                return '%{y}'
+            else:
+                return '%{y:' + fmt + '}'
 
     class Graph:
         def __init__(self):

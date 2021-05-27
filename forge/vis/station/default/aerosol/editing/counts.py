@@ -14,6 +14,7 @@ class EditingParticleConcentration(TimeSeries):
         cm_3 = TimeSeries.Axis()
         cm_3.title = "cm⁻³"
         cm_3.range = 0
+        cm_3.format_code = '.1f'
         raw.axes.append(cm_3)
 
         n_cnc = TimeSeries.Trace(cm_3)
@@ -30,6 +31,7 @@ class EditingParticleConcentration(TimeSeries):
         cm_3 = TimeSeries.Axis()
         cm_3.title = "cm⁻³"
         cm_3.range = 0
+        cm_3.format_code = '.1f'
         edited.axes.append(cm_3)
 
         n_cnc = TimeSeries.Trace(cm_3)

@@ -13,10 +13,12 @@ class CLAPStatus(TimeSeries):
 
         transmittance = TimeSeries.Axis()
         transmittance.title = "Transmittance"
+        transmittance.format_code = '.7f'
         flow_transmittance.axes.append(transmittance)
 
         flow = TimeSeries.Axis()
         flow.title = "lpm"
+        flow.format_code = '.7f'
         flow_transmittance.axes.append(flow)
 
         IrG = TimeSeries.Trace(transmittance)
@@ -38,6 +40,7 @@ class CLAPStatus(TimeSeries):
 
         intensity = TimeSeries.Axis()
         intensity.title = "Intensity"
+        intensity.format_code = '.2f'
         intensities.axes.append(intensity)
 
         spot_number = TimeSeries.Axis()
@@ -70,6 +73,7 @@ class CLAPStatus(TimeSeries):
 
         degrees = TimeSeries.Axis()
         degrees.title = "°C"
+        degrees.format_code = '.3f'
         temperatures.axes.append(degrees)
 
         sample = TimeSeries.Trace(degrees)
