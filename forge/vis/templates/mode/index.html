@@ -14,7 +14,7 @@
         window.location.replace("{{ request.url_for('mode', station=station, mode_name=default_mode.mode_name) }}");
         return;
     }
-    window.location.replace("{{ request.url_for('default_mode', station=station }}" + lastMode);
+    window.location.replace("{{ request.url_for('default_mode', station=station) }}/" + lastMode);
 })();
 </script>
 
