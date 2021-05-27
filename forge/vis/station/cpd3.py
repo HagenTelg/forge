@@ -844,7 +844,7 @@ aerosol_data = {
             )
         ),
 
-        'intesive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'intensive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms,  end_epoch_ms, {
                 Name(station, 'raw', 'BsB_S11', {'pm10'}): 'BsB',
                 Name(station, 'raw', 'BsG_S11', {'pm10'}): 'BsG',
@@ -870,7 +870,7 @@ aerosol_data = {
                 'BaB': 2, 'BaG': 2, 'BaR': 2,
             }
         ),
-        'intesive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'intensive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms,  end_epoch_ms, {
                 Name(station, 'raw', 'BsB_S11', {'pm1'}): 'BsB',
                 Name(station, 'raw', 'BsG_S11', {'pm1'}): 'BsG',
@@ -1150,7 +1150,7 @@ aerosol_data = {
             )
         ),
 
-        'intesive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'intensive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'BsB_S11', {'pm10'}): 'BsB',
                 Name(station, 'clean', 'BsG_S11', {'pm10'}): 'BsG',
@@ -1176,7 +1176,7 @@ aerosol_data = {
                 'BaB': 2, 'BaG': 2, 'BaR': 2,
             }
         ),
-        'intesive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'intensive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'BsB_S11', {'pm1'}): 'BsB',
                 Name(station, 'clean', 'BsG_S11', {'pm1'}): 'BsG',
@@ -1301,7 +1301,7 @@ aerosol_data = {
             )
         ),
 
-        'intesive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+        'intensive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'aerosol', {
                 Name(station, 'clean', 'BsB_S11', {'pm10'}): 'BsB',
                 Name(station, 'clean', 'BsG_S11', {'pm10'}): 'BsG',
@@ -1327,7 +1327,7 @@ aerosol_data = {
                 'BaB': 2, 'BaG': 2, 'BaR': 2,
             }
         ),
-        'intesive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+        'intensive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'aerosol', {
                 Name(station, 'clean', 'BsB_S11', {'pm1'}): 'BsB',
                 Name(station, 'clean', 'BsG_S11', {'pm1'}): 'BsG',
