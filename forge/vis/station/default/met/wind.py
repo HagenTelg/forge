@@ -40,4 +40,15 @@ class Wind(TimeSeries):
             wd.legend = legend.format(type='Direction')
             wd.data_record = record
             wd.data_field = f'{field}-wd'
+            wd.script_incoming_data = r"""(function() {
+const plotIncomingData = incomingData;
+const wrapper = new Winds.DirectionWrapper();
+incomingData = (plotTime, values) => {
+    const r = wrapper.apply(values, plotTime);
+    plotIncomingData(r.times, r.direction);
+};
+})();"""
             direction.traces.append(wd)
+
+    def required_components(self) -> typing.List[str]:
+        return super().required_components() + ['winds']

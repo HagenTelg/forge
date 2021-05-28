@@ -153,10 +153,14 @@ DataSocket.resetLoadedRecords();
 //  {% for trace in graph.traces %}
 //      {% if trace.data_record and trace.data_field %}
 (function(traceIndex) {
-    DataSocket.addLoadedRecordField('{{ trace.data_record }}', '{{ trace.data_field }}',
-    (plotTime, values) => {
+    let incomingData = (plotTime, values) => {
         extendData(traceIndex, plotTime, values);
-    }, RecordProcessing.get('{{ trace.data_record }}'));
+    };
+
+    // {% if trace.script_incoming_data %}{{ '\n' }}{{ trace.script_incoming_data | safe }}{% endif %}
+
+    DataSocket.addLoadedRecordField('{{ trace.data_record }}', '{{ trace.data_field }}',
+        incomingData, RecordProcessing.get('{{ trace.data_record }}'));
 })('{{ trace_loop.index }}' * 1);
 //      {% endif %}
 //      {% set trace_loop.index = trace_loop.index + 1 %}
