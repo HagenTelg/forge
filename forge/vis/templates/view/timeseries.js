@@ -59,6 +59,14 @@ let layout = {
         //{% elif axis.range %}
         range: ['{{ axis.range[0] }}' * 1, '{{ axis.range[1] }}' * 1],
         //{% endif %}
+
+        //{% if axis.ticks %}
+        tickvals: [
+            // {% for tick in axis.ticks %}
+            '{{ tick }}' * 1,
+            // {% endfor %}
+        ],
+        //{% endif %}
     },
     //  {% endfor %}
     //{% endfor %}

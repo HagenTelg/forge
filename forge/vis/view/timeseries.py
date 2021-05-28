@@ -12,6 +12,7 @@ class TimeSeries(View):
             self.range: typing.Optional[typing.Union[int, typing.Tuple[float, float]]] = None
             self.logarithmic = False
             self.format_code: typing.Optional[str] = None
+            self.ticks: typing.Optional[typing.List[float]] = None
 
     class Trace:
         def __init__(self, axis: "TimeSeries.Axis"):

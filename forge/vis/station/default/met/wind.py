@@ -26,6 +26,7 @@ class Wind(TimeSeries):
         degrees = TimeSeries.Axis()
         degrees.title = "degrees"
         degrees.range = [0, 360]
+        degrees.ticks = [0, 90, 180, 270, 360]
         degrees.format_code = '.0f'
         direction.axes.append(degrees)
 
