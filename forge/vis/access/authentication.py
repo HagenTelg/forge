@@ -8,11 +8,15 @@ from . import BaseAccessController, Request
 
 async def _status(request: Request) -> Response:
     if not request.user.is_authenticated:
-        return JSONResponse({'authenticated': False})
+        return JSONResponse({
+            'authenticated': False,
+            'host': request.client.host,
+        })
     return JSONResponse({
         'authenticated': True,
         'name': request.user.display_name,
         'id': request.user.display_id,
+        'host': request.client.host,
     })
 
 
