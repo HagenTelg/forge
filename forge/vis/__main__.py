@@ -52,7 +52,7 @@ def main():
                     uds=args.bind_unix, log_level=log_level, log_config=log_config)
     elif args.bind_address is not None:
         uvicorn.run('forge.vis.server:app', workers=args.workers, access_log=args.debug,
-                    host=args.bind_address, port=args.args.port, log_level=log_level, log_config=log_config)
+                    host=args.bind_address, port=args.port, log_level=log_level, log_config=log_config)
     else:
         uvicorn.run('forge.vis.server:app', workers=args.workers, access_log=args.debug,
                     port=args.port, log_level=log_level, log_config=log_config)
