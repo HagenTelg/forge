@@ -10,9 +10,7 @@ $('#show_edit_directives').click(function(event) {
             'EditDirectives',
             'width=1200,height=750,menubar=0,toolbar=0,location=0,status=0,resizable=1,scrollbars=1');
 
-        directives.onbeforeunload = function() {
-            TimeSelect.highlight('EditDirective');
-        }
+        directives.onunload = function() { TimeSelect.highlight('EditDirective'); }
 
         TimeSelect.onZoom('EditDirective', () => {
             if (!TimeSelect.zoom_start_ms || !TimeSelect.zoom_end_ms) {
