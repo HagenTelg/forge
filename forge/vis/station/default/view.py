@@ -8,6 +8,7 @@ from .aerosol.aethalometer import AethalometerOptical, AE33, AE33Status, AE33Opt
 from .aerosol.intensive import Intensive
 from .aerosol.extensive import Extensive
 from .aerosol.flow import Flow
+from .aerosol.wind import Wind
 from .aerosol.temperature import Temperature
 from .aerosol.pressure import Pressure
 from .aerosol.tsi3563nephelometer import NephelometerZero, NephelometerStatus
@@ -18,8 +19,6 @@ from .aerosol.editing.counts import EditingParticleConcentration
 from .aerosol.editing.optical import EditingScattering, EditingBackScattering, EditingAbsorption
 from .aerosol.editing.aethalometer import EditingAethalometer
 
-from .met.wind import Wind
-
 
 aerosol_views: typing.Dict[str, View] = {
     'aerosol-raw-counts': ParticleConcentration('aerosol-raw'),
@@ -27,7 +26,7 @@ aerosol_views: typing.Dict[str, View] = {
     'aerosol-raw-green': Green('aerosol-raw'),
     'aerosol-raw-aethalometer': AE33('aerosol-raw'),
     'aerosol-raw-intensive': Intensive('aerosol-raw'),
-    'aerosol-raw-wind': Wind('aerosol-raw-wind'),
+    'aerosol-raw-wind': Wind('aerosol-raw'),
     'aerosol-raw-flow': Flow('aerosol-raw'),
     'aerosol-raw-temperature': Temperature('aerosol-raw'),
     'aerosol-raw-pressure': Pressure('aerosol-raw'),
@@ -44,7 +43,7 @@ aerosol_views: typing.Dict[str, View] = {
     'aerosol-editing-absorption': EditingAbsorption(),
     'aerosol-editing-aethalometer': EditingAethalometer(),
     'aerosol-editing-aethalometerstatus': AE33OpticalStatus('aerosol-editing'),
-    'aerosol-editing-wind': Wind('aerosol-editing-wind'),
+    'aerosol-editing-wind': Wind('aerosol-editing'),
     'aerosol-editing-intensive': Intensive('aerosol-editing'),
     'aerosol-editing-extensive': Extensive('aerosol-editing'),
 
@@ -54,7 +53,7 @@ aerosol_views: typing.Dict[str, View] = {
     'aerosol-clean-aethalometer': AethalometerOptical('aerosol-clean'),
     'aerosol-clean-intensive': Intensive('aerosol-clean'),
     'aerosol-clean-extensive': Extensive('aerosol-clean'),
-    'aerosol-clean-wind': Wind('aerosol-clean-wind'),
+    'aerosol-clean-wind': Wind('aerosol-clean'),
 }
 ozone_views: typing.Dict[str, View] = {
 }

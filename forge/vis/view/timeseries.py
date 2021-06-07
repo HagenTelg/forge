@@ -37,6 +37,7 @@ class TimeSeries(View):
             self.title: typing.Optional[str] = None
             self.axes: typing.List[TimeSeries.Axis] = []
             self.traces: typing.List[TimeSeries.Trace] = []
+            self.contamination: typing.Optional[str] = None
 
     class Processing:
         def __init__(self):
@@ -81,6 +82,10 @@ class TimeSeries(View):
 
     def required_components(self) -> typing.List[str]:
         components = OrderedDict()
+        for graph in self.graphs:
+            if graph.contamination:
+                components['contamination'] = True
+                break
         for processing in self.processing.values():
             for name in processing.components:
                 components[name] = True

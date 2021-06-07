@@ -27,10 +27,12 @@ class AethalometerOptical(TimeSeries):
 
         absorption = self.SevenWavelength("Mm⁻¹", '.2f', "Absorption ({wavelength} nm)", f'{mode}-aethalometer', 'Ba{index}')
         absorption.title = "Absorption Coefficient"
+        absorption.contamination = f'{mode}-contamination'
         self.graphs.append(absorption)
 
         ebc = self.SevenWavelength("μg/m³", '.3f', "EBC ({wavelength} nm)", f'{mode}-aethalometer', 'X{index}')
         ebc.title = "Equivalent Black Carbon"
+        ebc.contamination = f'{mode}-contamination'
         self.graphs.append(ebc)
 
 
@@ -43,10 +45,12 @@ class AE33(TimeSeries):
 
         absorption = self.SevenWavelength("Mm⁻¹", '.2f', "Ba ({wavelength} nm)", f'{mode}-aethalometer', 'Ba{index}')
         absorption.title = "Absorption Coefficient"
+        absorption.contamination = f'{mode}-contamination'
         self.graphs.append(absorption)
 
         ebc = self.SevenWavelength("μg/m³", '.2f', "X ({wavelength} nm)", f'{mode}-aethalometer', 'X{index}')
         ebc.title = "Equivalent Black Carbon"
+        ebc.contamination = f'{mode}-contamination'
         self.graphs.append(ebc)
 
         factor = self.SevenWavelength(None, '.6f', "Correction ({wavelength} nm)", f'{mode}-aethalometer', 'CF{index}')
@@ -105,13 +109,16 @@ class AE33OpticalStatus(TimeSeries):
         transmittance = self.SevenWavelength(None, '.7f', "Transmittance ({wavelength} nm)",
                                              f'{mode}-aethalometer', 'Ir{index}')
         transmittance.title = "Transmittance"
+        transmittance.contamination = f'{mode}-contamination'
         self.graphs.append(transmittance)
 
         ebc = self.SevenWavelength("μg/m³", '.3f', "X ({wavelength} nm)", f'{mode}-aethalometer', 'X{index}')
         ebc.title = "Equivalent Black Carbon"
+        ebc.contamination = f'{mode}-contamination'
         self.graphs.append(ebc)
 
         factor = self.SevenWavelength(None, '.6f', "FACTOR ({wavelength} nm)", f'{mode}-aethalometer', 'CF{index}')
         factor.title = "Loading Correction Factor"
+        factor.contamination = f'{mode}-contamination'
         self.graphs.append(factor)
 

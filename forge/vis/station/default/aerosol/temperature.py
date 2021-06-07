@@ -19,5 +19,7 @@ class Temperature(BaseTemperature):
             omit_traces = {'TDnephinlet'}
         super().__init__(f'{mode}-temperature', measurements, omit_traces)
         self.title = "System Conditions"
+        for graph in self.graphs:
+            graph.contamination = f'{mode}-contamination'
 
 

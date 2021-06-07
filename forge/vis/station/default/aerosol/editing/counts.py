@@ -9,6 +9,7 @@ class EditingParticleConcentration(TimeSeries):
 
         raw = TimeSeries.Graph()
         raw.title = "Raw"
+        raw.contamination = f'{profile}-raw-contamination'
         self.graphs.append(raw)
 
         cm_3 = TimeSeries.Axis()
@@ -26,6 +27,7 @@ class EditingParticleConcentration(TimeSeries):
 
         edited = TimeSeries.Graph()
         edited.title = "Edited"
+        edited.contamination = f'{profile}-editing-contamination'
         self.graphs.append(edited)
 
         cm_3 = TimeSeries.Axis()

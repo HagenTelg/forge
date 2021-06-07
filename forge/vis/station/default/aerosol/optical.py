@@ -63,12 +63,15 @@ class Optical(TimeSeries):
 
         total_scattering = self.ThreeWavelength(f'{mode}-scattering', 'Bs')
         total_scattering.title = "Total Light Scattering"
+        total_scattering.contamination = f'{mode}-contamination'
         self.graphs.append(total_scattering)
 
         back_scattering = self.ThreeWavelength(f'{mode}-scattering', 'Bbs')
         back_scattering.title = "Backwards-hemispheric Light Scattering"
+        back_scattering.contamination = f'{mode}-contamination'
         self.graphs.append(back_scattering)
 
         absorption = self.ThreeWavelength(f'{mode}-absorption', 'Ba')
         absorption.title = "Light Absorption"
+        absorption.contamination = f'{mode}-contamination'
         self.graphs.append(absorption)

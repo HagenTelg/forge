@@ -109,11 +109,23 @@ if (localStorage.getItem('forge-settings-plot-scroll')) {
 
 Plotly.newPlot(div, data, layout, config);
 
+const shapeGenerators = [];
+function updateShapes() {
+    const shapes = [];
+    shapeGenerators.forEach((gen) => {
+        Array.prototype.push.apply(shapes, gen());
+    });
+    Plotly.relayout(div, {
+        'shapes': shapes,
+    });
+}
+
+const highlightShapes = [];
+shapeGenerators.push(() => { return highlightShapes; });
 TimeSelect.onHighlight( (start_ms, end_ms) => {
+    highlightShapes.length = 0;
     if (start_ms === undefined && end_ms === undefined) {
-        Plotly.relayout(div, {
-            'shapes': []
-        });
+        updateShapes();
         return;
     }
     if (!start_ms) {
@@ -123,22 +135,21 @@ TimeSelect.onHighlight( (start_ms, end_ms) => {
         end_ms = TimeSelect.end_ms;
     }
 
-    Plotly.relayout(div, {
-        'shapes': [{
-            type: 'rect',
-            xref: 'x',
-            yref: 'paper',
-            x0: DataSocket.toPlotTime(start_ms),
-            y0: 0,
-            x1: DataSocket.toPlotTime(end_ms),
-            y1: 1,
-            fillcolor: '#d3d3d3',
-            opacity: 0.2,
-            line: {
-                width: 0
-            }
-        }]
+    highlightShapes.push({
+        type: 'rect',
+        xref: 'x',
+        yref: 'paper',
+        x0: DataSocket.toPlotTime(start_ms),
+        y0: 0,
+        x1: DataSocket.toPlotTime(end_ms),
+        y1: 1,
+        fillcolor: '#d3d3d3',
+        opacity: 0.2,
+        line: {
+            width: 0
+        }
     });
+    updateShapes();
 });
 
 function extendData(traceIndex, times, values) {
@@ -154,10 +165,52 @@ function updateTimeBounds() {
     })
 }
 
+const contaminationShapes = new Map();
+
 DataSocket.resetLoadedRecords();
 
 //{% set trace_loop = namespace(index=0) %}
 //{% for graph in view.graphs %}
+
+//{% if graph.contamination %}
+(function(graphIndex) {
+    DataSocket.addLoadedRecord('{{ graph.contamination }}',
+        (dataName) => { return new Contamination.DataStream(dataName); },
+        (start_ms, end_ms, flags) => {
+            let target = contaminationShapes.get(graphIndex);
+            if (target === undefined) {
+                target = [];
+                contaminationShapes.set(graphIndex, target);
+            }
+            target.push({
+                type: 'line',
+                layer: 'below',
+                xref: 'x',
+                yref: 'y{% if loop.index > 1 %}{{ loop.index }}{% endif %} domain',
+                x0: DataSocket.toPlotTime(start_ms),
+                x1: DataSocket.toPlotTime(end_ms),
+                y0: 0.05,
+                y1: 0.05,
+                fillcolor: '#000000',
+                opacity: 0.9,
+                line: {
+                    width: 5,
+                },
+            });
+
+            updateShapes();
+        });
+    const emptyShapes = [];
+    shapeGenerators.push(() => {
+        const shapes = contaminationShapes.get(graphIndex);
+        if (shapes === undefined) {
+            return emptyShapes;
+        }
+        return shapes;
+    });
+})('{{ loop.index0 }}' * 1);
+//{% endif %}
+
 //  {% for trace in graph.traces %}
 //      {% if trace.data_record and trace.data_field %}
 (function(traceIndex) {
@@ -180,11 +233,14 @@ DataSocket.onRecordReload = function() {
         trace.x.length = 0;
         trace.y.length = 0;
     });
+    contaminationShapes.clear();
 
     updateTimeBounds();
+    updateShapes();
 };
 
 updateTimeBounds();
+updateShapes();
 
 DataSocket.startLoadingRecords();
 

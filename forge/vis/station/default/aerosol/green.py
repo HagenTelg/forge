@@ -27,6 +27,7 @@ return new WavelengthAdjust.AdjustedDispatch(dataName, inputFields, outputFields
 
         scattering = TimeSeries.Graph()
         scattering.title = "Light Scattering"
+        scattering.contamination = f'{mode}-contamination'
         self.graphs.append(scattering)
 
         Mm_1 = TimeSeries.Axis()
@@ -57,6 +58,7 @@ return new WavelengthAdjust.AdjustedDispatch(dataName, inputFields, outputFields
 
         absorption = TimeSeries.Graph()
         absorption.title = "Light Absorption"
+        absorption.contamination = f'{mode}-contamination'
         self.graphs.append(absorption)
 
         Mm_1 = TimeSeries.Axis()

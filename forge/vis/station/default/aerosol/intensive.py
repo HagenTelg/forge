@@ -58,6 +58,7 @@ return new Intensive.CalculateDispatch(dataName, outputNames,
 
         albedo = TimeSeries.Graph()
         albedo.title = "Single Scattering Albedo"
+        albedo.contamination = f'{mode}-contamination'
         self.graphs.append(albedo)
 
         no_unit = TimeSeries.Axis()
@@ -81,6 +82,7 @@ return new Intensive.CalculateDispatch(dataName, outputNames,
 
         bfr = TimeSeries.Graph()
         bfr.title = "Backscatter Fraction"
+        bfr.contamination = f'{mode}-contamination'
         self.graphs.append(bfr)
 
         no_unit = TimeSeries.Axis()
@@ -104,6 +106,7 @@ return new Intensive.CalculateDispatch(dataName, outputNames,
 
         angstrom = TimeSeries.Graph()
         angstrom.title = "Ångström Exponent"
+        angstrom.contamination = f'{mode}-contamination'
         self.graphs.append(angstrom)
 
         no_unit = TimeSeries.Axis()

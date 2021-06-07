@@ -560,12 +560,10 @@ class DataReader(RecordStream):
             buffer: typing.List[typing.Tuple[int, typing.Dict[Name, typing.Any]]] = list()
             converter = self.Input(self, buffer)
 
-            n = 0
             while True:
                 data = await reader.stdout.read(65536)
                 if not data:
                     break
-                n += len(data)
                 converter.incoming_raw(data)
                 for r in buffer:
                     await self._convert(r[0], r[1])
@@ -695,6 +693,146 @@ class EditAvailable(DataStream):
             raise
 
 
+class ContaminationReader(DataStream):
+    class _State:
+        def __init__(self):
+            self.active_contamination: typing.Set[str] = set()
+            self.active_start: typing.Optional[int] = None
+            self.buffer: typing.List[typing.Dict[str, typing.Any]] = list()
+
+        def complete(self, end_ms: int) -> None:
+            if not self.active_start:
+                return
+            self.buffer.append({
+                'start_epoch_ms': self.active_start,
+                'end_epoch_ms': end_ms,
+                #'flags': list(self.active_contamination),
+            })
+            self.active_start = None
+            self.active_contamination.clear()
+
+        async def flush(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> None:
+            for segment in self.buffer:
+                await send(segment)
+            self.buffer.clear()
+
+        def convert(self, start_ms: int, record: typing.Dict[Name, typing.Any]) -> None:
+            contamination_flags: typing.Set[str] = set()
+            for value in record.values():
+                if not isinstance(value, set):
+                    continue
+                for flag in value:
+                    if flag.startswith('contam') or flag.startswith('Contam'):
+                        contamination_flags.add(flag)
+            if contamination_flags == self.active_contamination:
+                return
+            self.complete(start_ms)
+            if len(contamination_flags) == 0:
+                return
+            self.active_contamination = contamination_flags
+            self.active_start = start_ms
+
+        def record_break(self, start_ms: int) -> None:
+            self.complete(start_ms)
+
+    class Input(RecordInput):
+        def __init__(self, reader: "ContaminationReader", state: "ContaminationReader._State"):
+            super().__init__()
+            self.reader = reader
+            self.state = state
+
+        def record_ready(self, start: typing.Optional[float], end: typing.Optional[float],
+                         record: typing.Dict[Name, typing.Any]) -> None:
+            if not start:
+                return
+            start = round(start * 1000)
+            if start < self.reader.clip_start_ms:
+                start = self.reader.clip_start_ms
+            self.state.convert(start, record)
+
+        def record_break(self, start: float, end: float) -> None:
+            start = round(start * 1000)
+            if start < self.reader.clip_start_ms:
+                start = self.reader.clip_start_ms
+            self.state.record_break(start)
+
+    def __init__(self, start_epoch_ms: int, end_epoch_ms: int,
+                 data: typing.Set[Name],
+                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
+        super().__init__(send)
+        self.clip_start_ms = start_epoch_ms
+        self.clip_end_ms = end_epoch_ms
+        self.start_epoch = int(floor(start_epoch_ms / 1000.0))
+        self.end_epoch = int(ceil(end_epoch_ms / 1000.0))
+        self.data = data
+
+    async def create_reader(self) -> asyncio.subprocess.Process:
+        selections = list()
+        for sel in self.data:
+            selections.append(f'{sel.station}:{sel.archive}:{sel.variable}:-cover:-stats')
+        _LOGGER.debug(f"Starting contamination read for {self.start_epoch},{self.end_epoch} with {len(selections)} selections")
+        return await asyncio.create_subprocess_exec(_interface, 'archive_read',
+                                                    str(self.start_epoch), str(self.end_epoch),
+                                                    *selections,
+                                                    stdout=asyncio.subprocess.PIPE,
+                                                    stdin=asyncio.subprocess.DEVNULL)
+
+    async def run(self) -> None:
+        reader = await self.create_reader()
+
+        try:
+            await reader.stdout.readexactly(3)
+
+            state = self._State()
+            converter = self.Input(self, state)
+
+            while True:
+                data = await reader.stdout.read(65536)
+                if not data:
+                    break
+                converter.incoming_raw(data)
+                await state.flush(self.send)
+
+            converter.flush()
+            state.complete(self.clip_end_ms)
+            await state.flush(self.send)
+            await reader.wait()
+        except asyncio.CancelledError:
+            reader.send_signal(SIGTERM)
+            raise
+
+
+class EditedContaminationReader(ContaminationReader):
+    class Input(ContaminationReader.Input):
+        def value_ready(self, identity: Identity, value: typing.Any) -> None:
+            if 'cover' in identity.flavors or 'stats' in identity.flavors:
+                return
+            check = Name(station=identity.station, archive=identity.archive, variable=identity.variable)
+            if check not in self.reader.data:
+                return
+            super().value_ready(identity, value)
+
+    def __init__(self, start_epoch_ms: int, end_epoch_ms: int, station: str, profile: str,
+                 data: typing.Set[Name],
+                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
+        # Limit data request amount, so we don't bog down the system
+        if end_epoch_ms - start_epoch_ms > 32 * 24 * 60 * 60 * 1000:
+            end_epoch_ms = start_epoch_ms + 32 * 24 * 60 * 60 * 1000
+
+        super().__init__(start_epoch_ms=start_epoch_ms, end_epoch_ms=end_epoch_ms, data=data, send=send)
+        self.station = station
+        self.profile = profile
+
+    async def create_reader(self) -> asyncio.subprocess.Process:
+        _LOGGER.debug(f"Starting edited contamination read for {self.station}-{self.profile} {self.start_epoch},{self.end_epoch}")
+
+        return await asyncio.create_subprocess_exec(_interface, 'edited_read',
+                                                    str(self.start_epoch), str(self.end_epoch),
+                                                    self.station, self.profile,
+                                                    stdout=asyncio.subprocess.PIPE,
+                                                    stdin=asyncio.subprocess.DEVNULL)
+
+
 def editing_get(station: str, mode_name: str, start_epoch_ms: int, end_epoch_ms: int,
                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
     profile = mode_name.split('-', 1)[0]
@@ -757,6 +895,15 @@ def data_get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: in
 
 aerosol_data = {
     'raw': {
+        'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: ContaminationReader(
+            start_epoch_ms,  end_epoch_ms, {
+                Name(station, 'raw', 'F1_N71'),
+                Name(station, 'raw', 'F1_N61'),
+                Name(station, 'raw', 'F1_S11'),
+                Name(station, 'raw', 'F1_A11'),
+            }, send
+        ),
+
         'cnc': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms,  end_epoch_ms, {
                 Name(station, 'raw', 'N_N71'): 'cnc',
@@ -1063,6 +1210,15 @@ aerosol_data = {
     },
     
     'clean': {
+        'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: ContaminationReader(
+            start_epoch_ms,  end_epoch_ms, {
+                Name(station, 'clean', 'F1_N71'),
+                Name(station, 'clean', 'F1_N61'),
+                Name(station, 'clean', 'F1_S11'),
+                Name(station, 'clean', 'F1_A11'),
+            }, send
+        ),
+
         'cnc': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'N_N71'): 'cnc',
@@ -1214,6 +1370,15 @@ aerosol_data = {
     },
 
     'editing': {
+        'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: EditedContaminationReader(
+            start_epoch_ms, end_epoch_ms, station, 'aerosol', {
+                Name(station, 'clean', 'F1_N71'),
+                Name(station, 'clean', 'F1_N61'),
+                Name(station, 'clean', 'F1_S11'),
+                Name(station, 'clean', 'F1_A11'),
+            }, send
+        ),
+
         'cnc': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'aerosol', {
                 Name(station, 'clean', 'N_N71'): 'cnc',

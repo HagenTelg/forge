@@ -11,6 +11,7 @@ class Extensive(TimeSeries):
         self.title = "Extensive Parameters"
 
         cnc = TimeSeries.Graph()
+        cnc.contamination = f'{mode}-contamination'
         self.graphs.append(cnc)
 
         cm_3 = TimeSeries.Axis()
@@ -27,8 +28,10 @@ class Extensive(TimeSeries):
 
         absorption = self.ThreeWavelength(f'{mode}-absorption', 'Ba')
         absorption.title = "Light Absorption"
+        absorption.contamination = f'{mode}-contamination'
         self.graphs.append(absorption)
 
         total_scattering = self.ThreeWavelength(f'{mode}-scattering', 'Bs')
         total_scattering.title = "Total Light Scattering"
+        total_scattering.contamination = f'{mode}-contamination'
         self.graphs.append(total_scattering)

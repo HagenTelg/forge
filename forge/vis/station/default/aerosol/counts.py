@@ -8,6 +8,7 @@ class ParticleConcentration(TimeSeries):
         self.title = "Particle Concentration"
 
         cnc = TimeSeries.Graph()
+        cnc.contamination = f'{mode}-contamination'
         self.graphs.append(cnc)
 
         cm_3 = TimeSeries.Axis()

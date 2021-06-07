@@ -195,7 +195,7 @@ let DataSocket = {};
             });
         }
 
-        addFieldCallback(field, callback) {
+        attach(field, callback) {
             let cbs = this.fieldToCallbacks.get(field);
             if (cbs === undefined) {
                 cbs = [];
@@ -214,18 +214,20 @@ let DataSocket = {};
         loadingRecords.clear();
         DataSocket.onRecordReload = () => {};
     };
-    DataSocket.addLoadedRecordField = function(dataName, field, callback, loader) {
+    DataSocket.addLoadedRecord = function(dataName, loader, ...args) {
         let dispatch = loadingRecords.get(dataName);
         if (dispatch === undefined) {
-            if (loader === undefined) {
-                dispatch = new DataSocket.RecordDispatch(dataName);
-            } else {
-                dispatch = loader(dataName);
-            }
+            dispatch = loader(dataName);
             loadingRecords.set(dataName, dispatch);
         }
-        dispatch.addFieldCallback(field, callback);
+        dispatch.attach(...args);
         return dispatch;
+    };
+    DataSocket.addLoadedRecordField = function(dataName, field, callback, loader) {
+        if (loader === undefined) {
+            loader = (dataName) => { return new DataSocket.RecordDispatch(dataName); };
+        }
+        return DataSocket.addLoadedRecord(dataName, loader, field, callback);
     }
     DataSocket.startLoadingRecords = function() {
         loadingRecords.forEach((dispatch) => {
