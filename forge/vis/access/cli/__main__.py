@@ -165,6 +165,7 @@ def main():
         formatter = logging.Formatter('%(name)-31s %(message)s')
         handler.setFormatter(formatter)
         root_logger.setLevel(logging.DEBUG)
+        root_logger.addHandler(handler)
 
     database_uri = args.database_uri
     if database_uri is None:
