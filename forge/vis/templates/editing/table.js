@@ -253,6 +253,7 @@ $(document).ready(function() {
         showLoading();
         $.post("{{ request.url_for('edit_save', station=station, mode_name=mode_name) }}", JSON.stringify(directive), function(saved) {
             hideLoading();
+            PlotInteraction.notifyDirectivesChanged();
             updateRow(tr, saved);
             if (saved.deleted && !showDeletedDirectives.checked) {
                 clearDirectiveSelection();
@@ -268,6 +269,7 @@ $(document).ready(function() {
         showLoading();
         $.post("{{ request.url_for('edit_save', station=station, mode_name=mode_name) }}", JSON.stringify(directive), function(saved) {
             hideLoading();
+            PlotInteraction.notifyDirectivesChanged();
             const tr = addEditDirectiveToTable(saved);
             rowSelected(tr);
         }).fail(function() {

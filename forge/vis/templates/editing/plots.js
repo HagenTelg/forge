@@ -19,6 +19,15 @@ const PlotInteraction = (function() {
                 directive: directive,
             }, ROOT_URL);
         },
+
+        notifyDirectivesChanged: function() {
+            if (!window.opener) {
+                return;
+            }
+            window.opener.postMessage({
+                type: "EditDirectivesChanged",
+            }, ROOT_URL);
+        },
     };
 
     $(document).ready(function() {

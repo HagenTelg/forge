@@ -235,12 +235,13 @@ let DataSocket = {};
         });
     };
 
-    TimeSelect.onChanged(DataSocket, () => {
+    DataSocket.reloadData = function() {
         loadingRecords.forEach((dispatch) => {
             dispatch.stopStream();
             DataSocket.onRecordReload();
             dispatch.beginStream();
         });
-    });
+    };
+    TimeSelect.onChanged(DataSocket, DataSocket.reloadData);
 })();
 

@@ -48,5 +48,7 @@ window.addEventListener("message", (event) => {
             selectedDirective.start_epoch_ms,
             selectedDirective.end_epoch_ms,
             1);
+    } else if (data.type === "EditDirectivesChanged") {
+        DataSocket.reloadData();
     }
 });
