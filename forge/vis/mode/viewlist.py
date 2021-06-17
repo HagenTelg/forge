@@ -1,5 +1,6 @@
 import typing
 import logging
+from copy import deepcopy
 from starlette.responses import HTMLResponse
 from forge.vis.util import package_template
 from . import Mode, Request, Response
@@ -14,12 +15,17 @@ class ViewList(Mode):
             self.view_name = view_name
             self.display_name = display_name
 
+        def __deepcopy__(self, memo):
+            y = type(self)(self.view_name, self.display_name)
+            memo[id(self)] = y
+            return y
+
     def __init__(self, mode_name: str, display_name: str, views: typing.Optional[typing.List["ViewList.Entry"]] = None):
         super().__init__(mode_name, display_name)
         self.views: typing.List[ViewList.Entry] = views if views else list()
 
-    def insert(self, view_name: str, entry: typing.Optional["ViewList.Entry"]=None, after=True):
-        if not entry:
+    def insert(self, entry: typing.Optional["ViewList.Entry"], view_name: str = None, after=True):
+        if not view_name:
             if after:
                 self.views.append(entry)
             else:
@@ -40,6 +46,11 @@ class ViewList(Mode):
             if self.views[i].view_name == view_name:
                 del self.views[i]
                 return
+
+    def __deepcopy__(self, memo):
+        y = type(self)(self.mode_name, self.display_name, deepcopy(self.views, memo))
+        memo[id(self)] = y
+        return y
 
     async def __call__(self, request: Request, **kwargs) -> Response:
         return HTMLResponse(await package_template('mode', 'viewlist.html').render_async(

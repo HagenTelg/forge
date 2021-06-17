@@ -1,4 +1,5 @@
 import typing
+from copy import deepcopy
 from forge.vis.mode import Mode, ModeGroup, VisibleModes
 from forge.vis.mode.viewlist import ViewList, Editing
 from forge.vis.station.lookup import station_data
@@ -49,11 +50,68 @@ aerosol_modes: typing.Dict[str, Mode] = _construct_modes([
         ViewList.Entry('aerosol-clean-extensive', "Extensive"),
         ViewList.Entry('aerosol-clean-wind', "Wind"),
     ]),
+    ViewList('aerosol-avgh', "Hourly Average", [
+        ViewList.Entry('aerosol-avgh-counts', "Counts"),
+        ViewList.Entry('aerosol-avgh-optical', "Optical"),
+        ViewList.Entry('aerosol-avgh-green', "Green Adjusted"),
+        ViewList.Entry('aerosol-avgh-aethalometer', "Aethalometer"),
+        ViewList.Entry('aerosol-avgh-intensive', "Intensive"),
+        ViewList.Entry('aerosol-avgh-extensive', "Extensive"),
+        ViewList.Entry('aerosol-avgh-wind', "Wind"),
+    ]),
 ])
 ozone_modes: typing.Dict[str, Mode] = _construct_modes([
+    ViewList('ozone-raw', "Raw", [
+        ViewList.Entry('ozone-raw-concentration', "Ozone"),
+        ViewList.Entry('ozone-raw-status', "Status"),
+        ViewList.Entry('ozone-raw-cells', "Cells"),
+        ViewList.Entry('ozone-raw-wind', "Wind"),
+    ]),
+    ViewList('ozone-editing', "Editing", [
+        ViewList.Entry('ozone-editing-concentration', "Ozone"),
+        ViewList.Entry('ozone-editing-wind', "Wind"),
+    ]),
+    ViewList('ozone-clean', "Clean", [
+        ViewList.Entry('ozone-clean-concentration', "Ozone"),
+        ViewList.Entry('ozone-clean-wind', "Wind"),
+    ]),
+    ViewList('ozone-avgh', "Hourly Average", [
+        ViewList.Entry('ozone-avgh-concentration', "Ozone"),
+        ViewList.Entry('ozone-avgh-wind', "Wind"),
+    ]),
 ])
 met_modes: typing.Dict[str, Mode] = _construct_modes([
+    ViewList('met-raw', "Raw", [
+        ViewList.Entry('met-raw-wind', "Wind"),
+        ViewList.Entry('met-raw-temperature', "Temperature and RH"),
+        ViewList.Entry('met-raw-pressure', "Pressure"),
+    ]),
+    ViewList('met-editing', "Editing", [
+        ViewList.Entry('met-editing-windspeed', "Wind Speed"),
+        ViewList.Entry('met-editing-winddirection', "Wind Direction"),
+        ViewList.Entry('met-editing-temperature', "Temperature"),
+        ViewList.Entry('met-editing-dewpoint', "Dewpoint"),
+        ViewList.Entry('met-editing-rh', "Relative Humidity"),
+        ViewList.Entry('met-editing-pressure', "Pressure"),
+    ]),
+    ViewList('met-clean', "Clean", [
+        ViewList.Entry('met-clean-wind', "Wind"),
+        ViewList.Entry('met-clean-temperature', "Temperature and RH"),
+        ViewList.Entry('met-clean-pressure', "Pressure"),
+    ]),
+    ViewList('met-avgh', "Hourly Average", [
+        ViewList.Entry('met-avgh-wind', "Wind"),
+        ViewList.Entry('met-avgh-temperature', "Temperature and RH"),
+        ViewList.Entry('met-avgh-pressure', "Pressure"),
+    ]),
 ])
+
+
+def detach(*modes: typing.Dict[str, Mode]) -> typing.Dict[str, Mode]:
+    result: typing.Dict[str, Mode] = dict()
+    for add in modes:
+        result.update(deepcopy(add))
+    return result
 
 
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:

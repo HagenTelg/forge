@@ -14,13 +14,13 @@ class Temperature(TimeSeries):
     def __init__(self, record: str, measurements: typing.Optional[typing.Dict[str, str]] = None,
                  omit_traces: typing.Optional[typing.Set[str]] = None):
         super().__init__()
-        self.title = "System Conditions"
+        self.title = "Ambient Conditions"
 
         self.processing[record] = self.CalculateMissing()
 
         if measurements is None:
             measurements = OrderedDict([
-                ('{code}2m', '2m'),
+                ('{code}ambient', '{type}'),
             ])
 
         rh = TimeSeries.Graph()

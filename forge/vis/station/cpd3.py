@@ -6,6 +6,7 @@ import struct
 import logging
 from signal import SIGTERM
 from math import floor, ceil
+from copy import deepcopy
 from forge.const import __version__
 from forge.vis import CONFIGURATION
 from forge.vis.access import BaseAccessUser
@@ -893,10 +894,17 @@ def data_get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: in
     return result(station, start_epoch_ms, end_epoch_ms, send)
 
 
-aerosol_data = {
+def detach(*profiles: typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]]) -> typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]]:
+    result: typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]] = dict()
+    for profile in profiles:
+        result.update(deepcopy(profile))
+    return result
+
+
+aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]] = {
     'raw': {
         'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: ContaminationReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'F1_N71'),
                 Name(station, 'raw', 'F1_N61'),
                 Name(station, 'raw', 'F1_S11'),
@@ -905,7 +913,7 @@ aerosol_data = {
         ),
 
         'cnc': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'N_N71'): 'cnc',
                 Name(station, 'raw', 'N_N61'): 'cnc',
             }, send, precision={
@@ -914,7 +922,7 @@ aerosol_data = {
         ),
         
         'scattering-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'BsB_S11', {'pm10'}): 'BsB',
                 Name(station, 'raw', 'BsG_S11', {'pm10'}): 'BsG',
                 Name(station, 'raw', 'BsR_S11', {'pm10'}): 'BsR',
@@ -933,7 +941,7 @@ aerosol_data = {
             }
         ),
         'scattering-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'BsB_S11', {'pm1'}): 'BsB',
                 Name(station, 'raw', 'BsG_S11', {'pm1'}): 'BsG',
                 Name(station, 'raw', 'BsR_S11', {'pm1'}): 'BsR',
@@ -953,7 +961,7 @@ aerosol_data = {
         ),
         
         'absorption-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'BaB_A11', {'pm10'}): 'BaB',
                 Name(station, 'raw', 'BaG_A11', {'pm10'}): 'BaG',
                 Name(station, 'raw', 'BaR_A11', {'pm10'}): 'BaR',
@@ -965,7 +973,7 @@ aerosol_data = {
             }
         ),
         'absorption-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'BaB_A11', {'pm1'}): 'BaB',
                 Name(station, 'raw', 'BaG_A11', {'pm1'}): 'BaG',
                 Name(station, 'raw', 'BaR_A11', {'pm1'}): 'BaR',
@@ -978,7 +986,7 @@ aerosol_data = {
         ),
 
         'aethalometer': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, dict(
+            start_epoch_ms, end_epoch_ms, dict(
                 [(Name(station, 'raw', f'Ba{i+1}_A81'), f'Ba{i+1}') for i in range(7)] +
                 [(Name(station, 'raw', f'X{i+1}_A81'), f'X{i+1}') for i in range(7)] +
                 [(Name(station, 'raw', f'ZFACTOR{i+1}_A81'), f'CF{i+1}') for i in range(7)] +
@@ -992,7 +1000,7 @@ aerosol_data = {
         ),
 
         'intensive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'BsB_S11', {'pm10'}): 'BsB',
                 Name(station, 'raw', 'BsG_S11', {'pm10'}): 'BsG',
                 Name(station, 'raw', 'BsR_S11', {'pm10'}): 'BsR',
@@ -1018,7 +1026,7 @@ aerosol_data = {
             }
         ),
         'intensive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'BsB_S11', {'pm1'}): 'BsB',
                 Name(station, 'raw', 'BsG_S11', {'pm1'}): 'BsG',
                 Name(station, 'raw', 'BsR_S11', {'pm1'}): 'BsR',
@@ -1045,15 +1053,15 @@ aerosol_data = {
         ),
 
         'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
-                Name(station, 'raw', 'WS1_XM1'): '10m-ws',
-                Name(station, 'raw', 'WD1_XM1'): '10m-wd',
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'WS1_XM1'): 'WS',
+                Name(station, 'raw', 'WD1_XM1'): 'WD',
             }, send, precision={
-                '10m-ws': 1, '10m-wd': 1,
+                'WS': 1, 'WD': 1,
             }
         ),
         'flow': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'Q_Q11'): 'sample',
                 Name(station, 'raw', 'Q_Q11', {'pm10'}): 'sample',
                 Name(station, 'raw', 'Q_Q11', {'pm1'}): 'sample',
@@ -1064,7 +1072,7 @@ aerosol_data = {
             }
         ),
         'temperature': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'T_V51'): 'Tinlet', Name(station, 'raw', 'U_V51'): 'Uinlet',
                 Name(station, 'raw', 'T_V01'): 'Taux', Name(station, 'raw', 'U_V01'): 'Uaux',
                 Name(station, 'raw', 'T1_XM1'): 'Tambient',
@@ -1095,7 +1103,7 @@ aerosol_data = {
             }
         ),
         'pressure': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'P_XM1'): 'ambient',
                 Name(station, 'raw', 'Pd_P01'): 'pitot',
                 Name(station, 'raw', 'Pd_P12'): 'vacuum',
@@ -1115,7 +1123,7 @@ aerosol_data = {
         ),
 
         'nephzero': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'BswB_S11'): 'BswB',
                 Name(station, 'raw', 'BswG_S11'): 'BswG',
                 Name(station, 'raw', 'BswR_S11'): 'BswR',
@@ -1128,7 +1136,7 @@ aerosol_data = {
             }
         ),
         'nephstatus': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'CfG_S11'): 'CfG',
                 Name(station, 'raw', 'CfG_S11', {'pm10'}): 'CfG',
                 Name(station, 'raw', 'CfG_S11', {'pm1'}): 'CfG',
@@ -1147,7 +1155,7 @@ aerosol_data = {
         ),
         
         'clapstatus': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'IrG_A11'): 'IrG',
                 Name(station, 'raw', 'IrG_A11', {'pm10'}): 'IrG',
                 Name(station, 'raw', 'IrG_A11', {'pm1'}): 'IrG',
@@ -1179,7 +1187,7 @@ aerosol_data = {
         ),
 
         'aethalometerstatus': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'T1_A81'): 'Tcontroller',
                 Name(station, 'raw', 'T2_A81'): 'Tsupply',
                 Name(station, 'raw', 'T3_A81'): 'Tled',
@@ -1189,7 +1197,7 @@ aerosol_data = {
         ),
 
         'cpcstatus': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'Q_Q71'): 'Qsample',
                 Name(station, 'raw', 'Q_Q61'): 'Qsample',
                 Name(station, 'raw', 'Q_Q72'): 'Qdrier',
@@ -1200,7 +1208,7 @@ aerosol_data = {
         ),
 
         'umacstatus': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'T_X1'): 'T',
                 Name(station, 'raw', 'V_X1'): 'V',
             }, send, precision={
@@ -1211,7 +1219,7 @@ aerosol_data = {
     
     'clean': {
         'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: ContaminationReader(
-            start_epoch_ms,  end_epoch_ms, {
+            start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'F1_N71'),
                 Name(station, 'clean', 'F1_N61'),
                 Name(station, 'clean', 'F1_S11'),
@@ -1361,10 +1369,170 @@ aerosol_data = {
 
         'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
-                Name(station, 'clean', 'WS1_XM1'): '10m-ws',
-                Name(station, 'clean', 'WD1_XM1'): '10m-wd',
+                Name(station, 'clean', 'WS1_XM1'): 'WS',
+                Name(station, 'clean', 'WD1_XM1'): 'WD',
             }, send, precision={
-                '10m-ws': 1, '10m-wd': 1,
+                'WS': 1, 'WD': 1,
+            }
+        ),
+    },
+    
+    'avgh': {
+        'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: ContaminationReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'F1_N71'),
+                Name(station, 'avgh', 'F1_N61'),
+                Name(station, 'avgh', 'F1_S11'),
+                Name(station, 'avgh', 'F1_A11'),
+            }, send
+        ),
+
+        'cnc': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'N_N71'): 'cnc',
+                Name(station, 'avgh', 'N_N61'): 'cnc',
+            }, send, precision={
+                'cnc': 1,
+            }
+        ),
+
+        'scattering-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'BsB_S11', {'pm10'}): 'BsB',
+                Name(station, 'avgh', 'BsG_S11', {'pm10'}): 'BsG',
+                Name(station, 'avgh', 'BsR_S11', {'pm10'}): 'BsR',
+                Name(station, 'avgh', 'BbsB_S11', {'pm10'}): 'BbsB',
+                Name(station, 'avgh', 'BbsG_S11', {'pm10'}): 'BbsG',
+                Name(station, 'avgh', 'BbsR_S11', {'pm10'}): 'BbsR',
+                Name(station, 'avgh', 'BsB_S11'): 'BsB',
+                Name(station, 'avgh', 'BsG_S11'): 'BsG',
+                Name(station, 'avgh', 'BsR_S11'): 'BsR',
+                Name(station, 'avgh', 'BbsB_S11'): 'BbsB',
+                Name(station, 'avgh', 'BbsG_S11'): 'BbsG',
+                Name(station, 'avgh', 'BbsR_S11'): 'BbsR',
+            }, send, precision={
+                'BsB': 2, 'BsG': 2, 'BsR': 2,
+                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
+            }
+        ),
+        'scattering-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'BsB_S11', {'pm1'}): 'BsB',
+                Name(station, 'avgh', 'BsG_S11', {'pm1'}): 'BsG',
+                Name(station, 'avgh', 'BsR_S11', {'pm1'}): 'BsR',
+                Name(station, 'avgh', 'BbsB_S11', {'pm1'}): 'BbsB',
+                Name(station, 'avgh', 'BbsG_S11', {'pm1'}): 'BbsG',
+                Name(station, 'avgh', 'BbsR_S11', {'pm1'}): 'BbsR',
+                Name(station, 'avgh', 'BsB_S11', {'pm25'}): 'BsB',
+                Name(station, 'avgh', 'BsG_S11', {'pm25'}): 'BsG',
+                Name(station, 'avgh', 'BsR_S11', {'pm25'}): 'BsR',
+                Name(station, 'avgh', 'BbsB_S11', {'pm25'}): 'BbsB',
+                Name(station, 'avgh', 'BbsG_S11', {'pm25'}): 'BbsG',
+                Name(station, 'avgh', 'BbsR_S11', {'pm25'}): 'BbsR',
+            }, send, precision={
+                'BsB': 2, 'BsG': 2, 'BsR': 2,
+                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
+            }
+        ),
+
+        'absorption-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'BaB_A11', {'pm10'}): 'BaB',
+                Name(station, 'avgh', 'BaG_A11', {'pm10'}): 'BaG',
+                Name(station, 'avgh', 'BaR_A11', {'pm10'}): 'BaR',
+                Name(station, 'avgh', 'BaB_A11'): 'BaB',
+                Name(station, 'avgh', 'BaG_A11'): 'BaG',
+                Name(station, 'avgh', 'BaR_A11'): 'BaR',
+            }, send, precision={
+                'BaB': 2, 'BaG': 2, 'BaR': 2,
+            }
+        ),
+        'absorption-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'BaB_A11', {'pm1'}): 'BaB',
+                Name(station, 'avgh', 'BaG_A11', {'pm1'}): 'BaG',
+                Name(station, 'avgh', 'BaR_A11', {'pm1'}): 'BaR',
+                Name(station, 'avgh', 'BaB_A11', {'pm25'}): 'BaB',
+                Name(station, 'avgh', 'BaG_A11', {'pm25'}): 'BaG',
+                Name(station, 'avgh', 'BaR_A11', {'pm25'}): 'BaR',
+            }, send, precision={
+                'BaB': 2, 'BaG': 2, 'BaR': 2,
+            }
+        ),
+
+        'aethalometer': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, dict(
+                [(Name(station, 'avgh', f'Ba{i + 1}_A81'), f'Ba{i + 1}') for i in range(7)] +
+                [(Name(station, 'avgh', f'X{i + 1}_A81'), f'X{i + 1}') for i in range(7)] +
+                [(Name(station, 'avgh', f'ZFACTOR{i + 1}_A81'), f'CF{i + 1}') for i in range(7)] +
+                [(Name(station, 'avgh', f'Ir{i + 1}_A81'), f'Ir{i + 1}') for i in range(7)]
+            ), send, precision=dict(
+                [(f'Ba{i + 1}', 2) for i in range(7)] +
+                [(f'X{i + 1}', 3) for i in range(7)] +
+                [(f'ZFACTOR{i + 1}', 6) for i in range(7)] +
+                [(f'Ir{i + 1}', 7) for i in range(7)]
+            )
+        ),
+
+        'intensive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'BsB_S11', {'pm10'}): 'BsB',
+                Name(station, 'avgh', 'BsG_S11', {'pm10'}): 'BsG',
+                Name(station, 'avgh', 'BsR_S11', {'pm10'}): 'BsR',
+                Name(station, 'avgh', 'BbsB_S11', {'pm10'}): 'BbsB',
+                Name(station, 'avgh', 'BbsG_S11', {'pm10'}): 'BbsG',
+                Name(station, 'avgh', 'BbsR_S11', {'pm10'}): 'BbsR',
+                Name(station, 'avgh', 'BsB_S11'): 'BsB',
+                Name(station, 'avgh', 'BsG_S11'): 'BsG',
+                Name(station, 'avgh', 'BsR_S11'): 'BsR',
+                Name(station, 'avgh', 'BbsB_S11'): 'BbsB',
+                Name(station, 'avgh', 'BbsG_S11'): 'BbsG',
+                Name(station, 'avgh', 'BbsR_S11'): 'BbsR',
+                Name(station, 'avgh', 'BaB_A11', {'pm10'}): 'BaB',
+                Name(station, 'avgh', 'BaG_A11', {'pm10'}): 'BaG',
+                Name(station, 'avgh', 'BaR_A11', {'pm10'}): 'BaR',
+                Name(station, 'avgh', 'BaB_A11'): 'BaB',
+                Name(station, 'avgh', 'BaG_A11'): 'BaG',
+                Name(station, 'avgh', 'BaR_A11'): 'BaR',
+            }, send, precision={
+                'BsB': 2, 'BsG': 2, 'BsR': 2,
+                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
+                'BaB': 2, 'BaG': 2, 'BaR': 2,
+            }
+        ),
+        'intensive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'BsB_S11', {'pm1'}): 'BsB',
+                Name(station, 'avgh', 'BsG_S11', {'pm1'}): 'BsG',
+                Name(station, 'avgh', 'BsR_S11', {'pm1'}): 'BsR',
+                Name(station, 'avgh', 'BbsB_S11', {'pm1'}): 'BbsB',
+                Name(station, 'avgh', 'BbsG_S11', {'pm1'}): 'BbsG',
+                Name(station, 'avgh', 'BbsR_S11', {'pm1'}): 'BbsR',
+                Name(station, 'avgh', 'BsB_S11', {'pm25'}): 'BsB',
+                Name(station, 'avgh', 'BsG_S11', {'pm25'}): 'BsG',
+                Name(station, 'avgh', 'BsR_S11', {'pm25'}): 'BsR',
+                Name(station, 'avgh', 'BbsB_S11', {'pm25'}): 'BbsB',
+                Name(station, 'avgh', 'BbsG_S11', {'pm25'}): 'BbsG',
+                Name(station, 'avgh', 'BbsR_S11', {'pm25'}): 'BbsR',
+                Name(station, 'avgh', 'BaB_A11', {'pm1'}): 'BaB',
+                Name(station, 'avgh', 'BaG_A11', {'pm1'}): 'BaG',
+                Name(station, 'avgh', 'BaR_A11', {'pm1'}): 'BaR',
+                Name(station, 'avgh', 'BaB_A11', {'pm25'}): 'BaB',
+                Name(station, 'avgh', 'BaG_A11', {'pm25'}): 'BaG',
+                Name(station, 'avgh', 'BaR_A11', {'pm25'}): 'BaR',
+            }, send, precision={
+                'BsB': 2, 'BsG': 2, 'BsR': 2,
+                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
+                'BaB': 2, 'BaG': 2, 'BaR': 2,
+            }
+        ),
+
+        'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'WS1_XM1'): 'WS',
+                Name(station, 'avgh', 'WD1_XM1'): 'WD',
+            }, send, precision={
+                'WS': 1, 'WD': 1,
             }
         ),
     },
@@ -1521,16 +1689,363 @@ aerosol_data = {
 
         'wind': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'met', {
-                Name(station, 'clean', 'WS1_XM1'): '10m-ws',
-                Name(station, 'clean', 'WD1_XM1'): '10m-wd',
+                Name(station, 'clean', 'WS1_XM1'): 'WS',
+                Name(station, 'clean', 'WD1_XM1'): 'WD',
             }, send, precision={
-                '10m-ws': 1, '10m-wd': 1,
+                'WS': 1, 'WD': 1,
             }
         ),
     },
 }
 
-profile_data = {
+ozone_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]] = {
+    'raw': {
+        'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: ContaminationReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'F1_G81'),
+            }, send
+        ),
+
+        'ozone': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'X_G81'): 'ozone',
+            }, send, precision={
+                'ozone': 2,
+            }
+        ),
+
+        'status': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'T1_G81'): 'Tsample',
+                Name(station, 'raw', 'T2_G81'): 'Tlamp',
+                Name(station, 'raw', 'P_G81'): 'Psample',
+                Name(station, 'raw', 'P1_G81'): 'Psample',
+            }, send, precision={
+                'Tsample': 1, 'Tlamp': 1, 'Psample': 1,
+            }
+        ),
+
+        'cells': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'Q1_G81'): 'Qa',
+                Name(station, 'raw', 'Q2_G81'): 'Qb',
+                Name(station, 'raw', 'C1_G81'): 'Ca',
+                Name(station, 'raw', 'C2_G81'): 'Cb',
+            }, send, precision={
+                'Qa': 3, 'Qb': 3,
+                'Ca': 0, 'Cb': 0,
+            }
+        ),
+
+        'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'WS1_XM1'): 'WS',
+                Name(station, 'raw', 'WD1_XM1'): 'WD',
+            }, send, precision={
+                'WS': 1, 'WD': 1,
+            }
+        ),
+    },
+    
+    'clean': {
+        'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: ContaminationReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'clean', 'F1_G81'),
+            }, send
+        ),
+
+        'ozone': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'clean', 'X_G81'): 'ozone',
+            }, send, precision={
+                'ozone': 2,
+            }
+        ),
+
+        'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'clean', 'WS1_XM1'): 'WS',
+                Name(station, 'clean', 'WD1_XM1'): 'WD',
+            }, send, precision={
+                'WS': 1, 'WD': 1,
+            }
+        ),
+    },
+    
+    'avgh': {
+        'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: ContaminationReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'F1_G81'),
+            }, send
+        ),
+
+        'ozone': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'X_G81'): 'ozone',
+            }, send, precision={
+                'ozone': 2,
+            }
+        ),
+
+        'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'WS1_XM1'): 'WS',
+                Name(station, 'avgh', 'WD1_XM1'): 'WD',
+            }, send, precision={
+                'WS': 1, 'WD': 1,
+            }
+        ),
+    },
+
+    'editing': {
+        'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: EditedContaminationReader(
+            start_epoch_ms, end_epoch_ms, station, 'ozone', {
+                Name(station, 'clean', 'F1_G81'),
+            }, send
+        ),
+
+        'ozone': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'ozone', {
+                Name(station, 'clean', 'X_G81'): 'ozone',
+            }, send, precision={
+                'ozone': 2,
+            }
+        ),
+
+        'wind': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'met', {
+                Name(station, 'clean', 'WS1_XM1'): 'WS',
+                Name(station, 'clean', 'WD1_XM1'): 'WD',
+            }, send, precision={
+                'WS': 1, 'WD': 1,
+            }
+        ),
+    },
+}
+
+met_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]] = {
+    'raw': {
+        'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'WS1_XM1'): '{WSamb}ient', Name(station, 'raw', 'WD1_XM1'): 'WDambient',
+                Name(station, 'raw', 'WS2_XM1'): 'WS2', Name(station, 'raw', 'WD2_XM1'): 'WD2',
+                Name(station, 'raw', 'WS3_XM1'): 'WS3', Name(station, 'raw', 'WD3_XM1'): 'WD3',
+            }, send, precision={
+                'WSambient': 1, 'WDambient': 1,
+                'WS2': 1, 'WD2': 1,
+                'WS3': 1, 'WD3': 1,
+            }
+        ),
+
+        'temperature': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'U1_XM1'): 'Uambient',
+                Name(station, 'raw', 'T1_XM1'): 'Tambient',
+                Name(station, 'raw', 'TD1_XM1'): 'TDambient',
+
+                Name(station, 'raw', 'U2_XM1'): 'U2',
+                Name(station, 'raw', 'T2_XM1'): 'T2',
+                Name(station, 'raw', 'TD2_XM1'): 'TD2',
+
+                Name(station, 'raw', 'U3_XM1'): 'U3',
+                Name(station, 'raw', 'T3_XM1'): 'T3',
+                Name(station, 'raw', 'TD3_XM1'): 'TD3',
+            }, send, precision={
+                'Uambient': 1, 'Tambient': 1, 'TDambient': 1,
+                'U2': 1, 'T2': 1, 'TD2': 1,
+                'U3': 1, 'T3': 1, 'TD3': 1,
+            }
+        ),
+
+        'pressure': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'P_XM1'): 'ambient',
+            }, send, precision={
+                'ambient': 1,
+            }
+        ),
+
+        'precipitation': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'WI_XM1'): 'precipitation',
+            }, send, precision={
+                'precipitation': 2,
+            }
+        ),
+
+        'tower': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'T2_XM1'): 'Tmiddle',
+                Name(station, 'raw', 'T3_XM1'): 'Ttop',
+            }, send, precision={
+                'Tmiddle': 1, 'Ttop': 1,
+            }
+        ),
+    },
+    
+    'clean': {
+        'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'clean', 'WS1_XM1'): 'WSambient', Name(station, 'clean', 'WD1_XM1'): 'WDambient',
+                Name(station, 'clean', 'WS2_XM1'): 'WS2', Name(station, 'clean', 'WD2_XM1'): 'WD2',
+                Name(station, 'clean', 'WS3_XM1'): 'WS3', Name(station, 'clean', 'WD3_XM1'): 'WD3',
+            }, send, precision={
+                'WSambient': 1, 'WDambient': 1,
+                'WS2': 1, 'WD2': 1,
+                'WS3': 1, 'WD3': 1,
+            }
+        ),
+
+        'temperature': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'clean', 'U1_XM1'): 'Uambient',
+                Name(station, 'clean', 'T1_XM1'): 'Tambient',
+                Name(station, 'clean', 'TD1_XM1'): 'TDambient',
+
+                Name(station, 'clean', 'U2_XM1'): 'U2',
+                Name(station, 'clean', 'T2_XM1'): 'T2',
+                Name(station, 'clean', 'TD2_XM1'): 'TD2',
+
+                Name(station, 'clean', 'U3_XM1'): 'U3',
+                Name(station, 'clean', 'T3_XM1'): 'T3',
+                Name(station, 'clean', 'TD3_XM1'): 'TD3',
+            }, send, precision={
+                'Uambient': 1, 'Tambient': 1, 'TDambient': 1,
+                'U2': 1, 'T2': 1, 'TD2': 1,
+                'U3': 1, 'T3': 1, 'TD3': 1,
+            }
+        ),
+
+        'pressure': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'clean', 'P_XM1'): 'ambient',
+            }, send, precision={
+                'ambient': 1,
+            }
+        ),
+
+        'precipitation': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'clean', 'WI_XM1'): 'precipitation',
+            }, send, precision={
+                'precipitation': 2,
+            }
+        ),
+    },
+    
+    'avgh': {
+        'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'WS1_XM1'): 'WSambient', Name(station, 'avgh', 'WD1_XM1'): 'WDambient',
+                Name(station, 'avgh', 'WS2_XM1'): 'WS2', Name(station, 'avgh', 'WD2_XM1'): 'WD2',
+                Name(station, 'avgh', 'WS3_XM1'): 'WS3', Name(station, 'avgh', 'WD3_XM1'): 'WD3',
+            }, send, precision={
+                'WSambient': 1, 'WDambient': 1,
+                'WS2': 1, 'WD2': 1,
+                'WS3': 1, 'WD3': 1,
+            }
+        ),
+
+        'temperature': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'U1_XM1'): 'Uambient',
+                Name(station, 'avgh', 'T1_XM1'): 'Tambient',
+                Name(station, 'avgh', 'TD1_XM1'): 'TDambient',
+
+                Name(station, 'avgh', 'U2_XM1'): 'U2',
+                Name(station, 'avgh', 'T2_XM1'): 'T2',
+                Name(station, 'avgh', 'TD2_XM1'): 'TD2',
+
+                Name(station, 'avgh', 'U3_XM1'): 'U3',
+                Name(station, 'avgh', 'T3_XM1'): 'T3',
+                Name(station, 'avgh', 'TD3_XM1'): 'TD3',
+            }, send, precision={
+                'Uambient': 1, 'Tambient': 1, 'TDambient': 1,
+                'U2': 1, 'T2': 1, 'TD2': 1,
+                'U3': 1, 'T3': 1, 'TD3': 1,
+            }
+        ),
+
+        'pressure': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'P_XM1'): 'ambient',
+            }, send, precision={
+                'ambient': 1,
+            }
+        ),
+
+        'precipitation': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'avgh', 'WI_XM1'): 'precipitation',
+            }, send, precision={
+                'precipitation': 2,
+            }
+        ),
+    },
+    
+    'editing': {
+        'wind': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'met', {
+                Name(station, 'clean', 'WS1_XM1'): 'WSambient', Name(station, 'clean', 'WD1_XM1'): 'WDambient',
+                Name(station, 'clean', 'WS2_XM1'): 'WS2', Name(station, 'clean', 'WD2_XM1'): 'WD2',
+                Name(station, 'clean', 'WS3_XM1'): 'WS3', Name(station, 'clean', 'WD3_XM1'): 'WD3',
+            }, send, precision={
+                'WSambient': 1, 'WDambient': 1,
+                'WS2': 1, 'WD2': 1,
+                'WS3': 1, 'WD3': 1,
+            }
+        ),
+
+        'temperature': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'met', {
+                Name(station, 'clean', 'U1_XM1'): 'Uambient',
+                Name(station, 'clean', 'T1_XM1'): 'Tambient',
+                Name(station, 'clean', 'TD1_XM1'): 'TDambient',
+
+                Name(station, 'clean', 'U2_XM1'): 'U2',
+                Name(station, 'clean', 'T2_XM1'): 'T2',
+                Name(station, 'clean', 'TD2_XM1'): 'TD2',
+
+                Name(station, 'clean', 'U3_XM1'): 'U3',
+                Name(station, 'clean', 'T3_XM1'): 'T3',
+                Name(station, 'clean', 'TD3_XM1'): 'TD3',
+            }, send, precision={
+                'Uambient': 1, 'Tambient': 1, 'TDambient': 1,
+                'U2': 1, 'T2': 1, 'TD2': 1,
+                'U3': 1, 'T3': 1, 'TD3': 1,
+            }
+        ),
+
+        'pressure': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'met', {
+                Name(station, 'clean', 'P_XM1'): 'ambient',
+            }, send, precision={
+                'ambient': 1,
+            }
+        ),
+
+        'precipitation': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'met', {
+                Name(station, 'clean', 'WI_XM1'): 'precipitation',
+            }, send, precision={
+                'precipitation': 2,
+            }
+        ),
+
+        'tower': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'met', {
+                Name(station, 'clean', 'T2_XM1'): 'Tmiddle',
+                Name(station, 'clean', 'T3_XM1'): 'Ttop',
+            }, send, precision={
+                'Tmiddle': 1, 'Ttop': 1,
+            }
+        ),
+    },
+}
+
+profile_data: typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]] = {
     'aerosol': aerosol_data,
+    'ozone': ozone_data,
+    'met': met_data,
 }
 

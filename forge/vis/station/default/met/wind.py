@@ -10,7 +10,7 @@ class Wind(TimeSeries):
 
         if measurements is None:
             measurements = OrderedDict([
-                ('10m', '{type} at 10 meters'),
+                ('{code}ambient', '{type}'),
             ])
 
         speed = TimeSeries.Graph()
@@ -32,15 +32,15 @@ class Wind(TimeSeries):
 
         for field, legend in measurements.items():
             ws = TimeSeries.Trace(mps)
-            ws.legend = legend.format(type='Speed')
+            ws.legend = legend.format(type='Speed', code='TD')
             ws.data_record = record
-            ws.data_field = f'{field}-ws'
+            ws.data_field = field.format(code='WS')
             speed.traces.append(ws)
 
             wd = TimeSeries.Trace(degrees)
             wd.legend = legend.format(type='Direction')
             wd.data_record = record
-            wd.data_field = f'{field}-wd'
+            wd.data_field = field.format(code='WD')
             wd.script_incoming_data = r"""(function() {
 const plotIncomingData = incomingData;
 const wrapper = new Winds.DirectionWrapper();

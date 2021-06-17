@@ -19,6 +19,21 @@ from .aerosol.editing.counts import EditingParticleConcentration
 from .aerosol.editing.optical import EditingScattering, EditingBackScattering, EditingAbsorption
 from .aerosol.editing.aethalometer import EditingAethalometer
 
+from .met.wind import Wind as MetWind
+from .met.temperature import Temperature as MetTemperature
+from .met.pressure import Pressure as MetPressure
+from .met.editing.wind import EditingWindSpeed as MetEditingWindSpeed
+from .met.editing.wind import EditingWindDirection as MetEditingWindDirection
+from .met.editing.temperature import EditingTemperature as MetEditingTemperature
+from .met.editing.temperature import EditingDewpoint as MetEditingDewpoint
+from .met.editing.temperature import EditingRH as MetEditingRH
+from .met.editing.pressure import EditingPressure as MetEditingPressure
+
+from .ozone.concentration import OzoneConcentration
+from .ozone.thermo49 import Thermo49Status, Thermo49Cells
+from .ozone.wind import Wind as OzoneWind
+from .ozone.editing.concentration import EditingOzoneConcentration
+
 
 aerosol_views: typing.Dict[str, View] = {
     'aerosol-raw-counts': ParticleConcentration('aerosol-raw'),
@@ -54,11 +69,57 @@ aerosol_views: typing.Dict[str, View] = {
     'aerosol-clean-intensive': Intensive('aerosol-clean'),
     'aerosol-clean-extensive': Extensive('aerosol-clean'),
     'aerosol-clean-wind': Wind('aerosol-clean'),
+
+    'aerosol-avgh-counts': ParticleConcentration('aerosol-avgh'),
+    'aerosol-avgh-optical': Optical('aerosol-avgh'),
+    'aerosol-avgh-green': Green('aerosol-avgh'),
+    'aerosol-avgh-aethalometer': AethalometerOptical('aerosol-avgh'),
+    'aerosol-avgh-intensive': Intensive('aerosol-avgh'),
+    'aerosol-avgh-extensive': Extensive('aerosol-avgh'),
+    'aerosol-avgh-wind': Wind('aerosol-avgh'),
 }
 ozone_views: typing.Dict[str, View] = {
+    'ozone-raw-concentration': OzoneConcentration('ozone-raw'),
+    'ozone-raw-status': Thermo49Status('ozone-raw'),
+    'ozone-raw-cells': Thermo49Cells('ozone-raw'),
+    'ozone-raw-wind': OzoneWind('ozone-raw'),
+
+    'ozone-editing-concentration': EditingOzoneConcentration(),
+    'ozone-editing-wind': OzoneWind('ozone-editing'),
+    
+    'ozone-clean-concentration': OzoneConcentration('ozone-clean'),
+    'ozone-clean-wind': OzoneWind('ozone-clean'),
+    
+    'ozone-avgh-concentration': OzoneConcentration('ozone-avgh'),
+    'ozone-avgh-wind': OzoneWind('ozone-avgh'),
 }
 met_views: typing.Dict[str, View] = {
+    'met-raw-wind': MetWind('met-raw-wind'),
+    'met-raw-temperature': MetTemperature('met-raw-temperature'),
+    'met-raw-pressure': MetPressure('met-raw'),
+
+    'met-editing-windspeed': MetEditingWindSpeed(),
+    'met-editing-windirection': MetEditingWindDirection(),
+    'met-editing-temperature': MetEditingTemperature(),
+    'met-editing-dewpoint': MetEditingDewpoint(),
+    'met-editing-rh': MetEditingRH(),
+    'met-editing-pressure': MetEditingPressure(),
+
+    'met-clean-wind': MetWind('met-clean-wind'),
+    'met-clean-temperature': MetTemperature('met-clean-temperature'),
+    'met-clean-pressure': MetPressure('met-clean'),
+
+    'met-avgh-wind': MetWind('met-avgh-wind'),
+    'met-avgh-temperature': MetTemperature('met-avgh-temperature'),
+    'met-avgh-pressure': MetPressure('met-avgh'),
 }
+
+
+def detach(*views: typing.Dict[str, View]) -> typing.Dict[str, View]:
+    result: typing.Dict[str, View] = dict()
+    for add in views:
+        result.update(add)
+    return result
 
 
 def get(station: str, view_name: str) -> typing.Optional[View]:
