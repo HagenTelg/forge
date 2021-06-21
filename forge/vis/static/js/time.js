@@ -190,6 +190,8 @@ let TimeParse = {};
     TimeSelect.change = function(start_ms, end_ms) {
         TimeSelect.start_ms = start_ms;
         TimeSelect.end_ms = end_ms;
+        TimeSelect.zoom_start_ms = undefined;
+        TimeSelect.zoom_end_ms = undefined;
     
         localStorage.setItem('forge-last-start', TimeSelect.start_ms.toString());
         localStorage.setItem('forge-last-end', TimeSelect.end_ms.toString());
