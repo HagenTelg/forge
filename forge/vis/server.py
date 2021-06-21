@@ -110,7 +110,7 @@ if ratelimit_url is not None:
     }
     middleware.append(Middleware(RateLimitMiddleware, backend=backend, authenticate=client_ip, config=config))
 
-middleware.append(Middleware(SessionMiddleware,
+middleware.append(Middleware(SessionMiddleware, session_cookie="forge_session",
                              secret_key=Secret(CONFIGURATION.get('SESSION.SECRET', token_urlsafe(32)))))
 middleware.append(Middleware(AuthenticationMiddleware, backend=forge.vis.access.authentication.AuthBackend()))
 
