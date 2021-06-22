@@ -872,6 +872,12 @@ def editing_save(user: BaseAccessUser, station: str, mode_name: str,
 
 def data_get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
              send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
+    return data_profile_get(station, data_name, start_epoch_ms, end_epoch_ms, send, profile_data)
+
+
+def data_profile_get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
+                     send: typing.Callable[[typing.Dict], typing.Awaitable[None]],
+                     lookup: typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]]) -> typing.Optional[DataStream]:
     components = data_name.split('-', 2)
     if len(components) != 3:
         return None
@@ -879,7 +885,7 @@ def data_get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: in
     archive = components[1]
     record = components[2]
 
-    result = profile_data.get(profile)
+    result = lookup.get(profile)
     if not result:
         _LOGGER.debug(f"No information for profile in {data_name}")
         return None
@@ -1068,7 +1074,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'Q_Q11', {'pm25'}): 'sample',
                 Name(station, 'raw', 'Pd_P01'): 'pitot',
             }, send, precision={
-                'sample': 2, 'pitot': 3,
+                'sample': 2, 'pitot': 4,
             }
         ),
         'temperature': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1107,6 +1113,9 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'P_XM1'): 'ambient',
                 Name(station, 'raw', 'Pd_P01'): 'pitot',
                 Name(station, 'raw', 'Pd_P12'): 'vacuum',
+                Name(station, 'raw', 'Pd_P12', {'pm10'}): 'vacuum',
+                Name(station, 'raw', 'Pd_P12', {'pm1'}): 'vacuum',
+                Name(station, 'raw', 'Pd_P12', {'pm25'}): 'vacuum',
                 Name(station, 'raw', 'P_S11', {'pm10'}): 'neph-pm10',
                 Name(station, 'raw', 'P_S11'): 'neph-pm10',
                 Name(station, 'raw', 'P_S11', {'pm1'}): 'neph-pm1',
@@ -1116,7 +1125,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'Pd_P11', {'pm1'}): 'impactor-pm1',
                 Name(station, 'raw', 'Pd_P11', {'pm25'}): 'impactor-pm1',
             }, send, precision={
-                'ambient': 1, 'pitot': 3, 'vacuum': 2,
+                'ambient': 1, 'pitot': 4, 'vacuum': 2,
                 'neph-pm10': 1, 'neph-pm1': 1,
                 'impactor-pm10': 3, 'impactor-pm1': 3,
             }
