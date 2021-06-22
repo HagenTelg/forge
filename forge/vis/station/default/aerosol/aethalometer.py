@@ -93,7 +93,7 @@ class AE33Status(TimeSeries):
         temperatures.traces.append(supply)
 
         led = TimeSeries.Trace(degrees)
-        led.legend = "Supply"
+        led.legend = "LED"
         led.data_record = f'{mode}-aethalometerstatus'
         led.data_field = 'Tled'
         temperatures.traces.append(led)
