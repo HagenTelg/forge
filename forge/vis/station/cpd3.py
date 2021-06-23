@@ -1695,7 +1695,7 @@ met_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typi
     'raw': {
         'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
-                Name(station, 'raw', 'WS1_XM1'): '{WSamb}ient', Name(station, 'raw', 'WD1_XM1'): 'WDambient',
+                Name(station, 'raw', 'WS1_XM1'): 'WSambient', Name(station, 'raw', 'WD1_XM1'): 'WDambient',
                 Name(station, 'raw', 'WS2_XM1'): 'WS2', Name(station, 'raw', 'WD2_XM1'): 'WD2',
                 Name(station, 'raw', 'WS3_XM1'): 'WS3', Name(station, 'raw', 'WD3_XM1'): 'WD3',
             }, send
