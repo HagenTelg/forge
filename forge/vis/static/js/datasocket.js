@@ -101,12 +101,35 @@ let DataSocket = {};
         }
     
         incomingDataContent(content) {
-            let epoch = content.time.offset;
-            let delta = content.time.delta;
-            let plotTime = [];
+            function toDataView(str) {
+                return new DataView(Uint8Array.from(atob(str), c => c.charCodeAt(0)).buffer);
+            }
+            function unpackArray(view, elementSize, unpacker) {
+                const total = view.byteLength / elementSize;
+                let result = [];
+                for (let i=0; i<total; i++) {
+                    const offset = i * elementSize;
+                    result.push(unpacker(view, offset));
+                }
+                return result;
+            }
+
             const epochOrigin = content.time.origin;
+            const timeCount = content.time.count;
+            const timeOffset = toDataView(content.time.offset);
+            let epoch;
+            if (timeOffset.byteLength <= timeCount * 4) {
+                epoch = unpackArray(timeOffset, 4, (view, offset) => {
+                    return view.getInt32(offset, true);
+                });
+            } else {
+                epoch = unpackArray(timeOffset, 8, (view, offset) => {
+                    return Number(view.getBigInt64(offset, true));
+                });
+            }
+            let plotTime = [];
             epoch.forEach(function(_, index, target) {
-                target[index] += epochOrigin + index * delta;
+                target[index] += epochOrigin;
                 plotTime.push(DataSocket.toPlotTime(target[index]));
             });
     
@@ -117,28 +140,35 @@ let DataSocket = {};
                 if (Array.isArray(fieldRaw)) {
                     fieldRaw.forEach(function(_, index, target) {
                         const value = target[index];
-                        if (value === undefined || value === null || !isFinite(value)) {
+                        if (value === undefined || value === null) {
+                            target[index] = Number.NaN;
+                        } else if (typeof value === 'number' && !isFinite(value)) {
                             target[index] = Number.NaN;
                         }
                     });
                     fieldOutput.set(fieldName, fieldRaw);
                     continue;
                 }
-    
-                let fieldValues = fieldRaw.offset;
-                const fieldOrigin = fieldRaw.origin;
-                fieldValues.forEach(function(_, index, target) {
-                    let value = target[index];
-    
-                    if (value === undefined || value === null || !isFinite(value)) {
-                        target[index] = Number.NaN;
-                        return;
+
+                if (typeof fieldRaw === 'string') {
+                    fieldOutput.set(fieldName, unpackArray(toDataView(fieldRaw), 4, (view, offset) => {
+                        return view.getFloat32(offset, true);
+                    }));
+                    continue;
+                }
+
+                if (fieldRaw.type === 'array') {
+                    let values = [];
+                    for (let timeIndex=0; timeIndex<fieldRaw.values.length; timeIndex++) {
+                        values.push(unpackArray(toDataView(fieldRaw.values[timeIndex]), 4, (view, offset) => {
+                            return view.getFloat32(offset, true);
+                        }));
                     }
-    
-                    value += fieldOrigin;
-                    target[index] = value;
-                });
-                fieldOutput.set(fieldName, fieldValues);
+                    fieldOutput.set(fieldName, values);
+                    continue;
+                }
+
+                fieldOutput.set(fieldName, undefined);
             }
 
             this.processRecord(fieldOutput, epoch, plotTime);

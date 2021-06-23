@@ -25,14 +25,7 @@ station_profile_data['aerosol']['raw']['temperature'] = lambda station, start_ep
         Name(station, 'raw', 'T_S11', {'pm10'}): 'Tneph', Name(station, 'raw', 'U_S11', {'pm10'}): 'Uneph',
         Name(station, 'raw', 'T_S11', {'pm1'}): 'Tneph', Name(station, 'raw', 'U_S11', {'pm1'}): 'Uneph',
         Name(station, 'raw', 'T_S11', {'pm25'}): 'Tneph', Name(station, 'raw', 'U_S11', {'pm25'}): 'Uneph',
-    }, send, precision={
-        'Tinlet': 1, 'Uinlet': 1,
-        'Tsample': 1, 'Usample': 1,
-        'Tnephinlet': 1, 'Unephinlet': 1,
-        'Tneph': 1, 'Uneph': 1,
-        'Taux': 1, 'Uaux': 1,
-        'Tambient': 1, 'Uambient': 1, 'TDambient': 1,
-    }
+    }, send
 )
 
 

@@ -1,7 +1,8 @@
 import typing
+import struct
 from abc import ABC, abstractmethod
-from math import isfinite
-from statistics import mode
+from math import isfinite, nan
+from base64 import b64encode
 
 
 class DataStream(ABC):
@@ -17,87 +18,92 @@ class DataStream(ABC):
 class RecordStream(DataStream):
     BUFFER_RECORDS = 256
 
-    def __init__(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]], fields: typing.List[str],
-                 precision: typing.Optional[typing.Dict[str, int]] = None):
+    _MVC_FLOAT = struct.pack('<f', nan)
+
+    def __init__(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]], fields: typing.List[str]):
         super().__init__(send)
         self.fields = fields
         self.epoch_ms: typing.List[int] = list()
         self.values: typing.Dict[str, typing.List[typing.Any]] = dict()
         for field in self.fields:
             self.values[field] = list()
-        if precision is None:
-            precision = dict()
-        self.precision: typing.Dict[str, int] = precision
-
-    def _calculate_epoch_delta(self) -> int:
-        return mode(self.epoch_ms)
 
     async def flush(self) -> None:
         if len(self.epoch_ms) == 0:
             return
 
-        delta_epoch_ms = self._calculate_epoch_delta()
         origin_epoch_ms = self.epoch_ms[0]
+        maximum_delta = 0
         for i in range(len(self.epoch_ms)):
-            point_origin = i * delta_epoch_ms
-            self.epoch_ms[i] = self.epoch_ms[i] - point_origin - origin_epoch_ms
+            delta = int(self.epoch_ms[i] - origin_epoch_ms)
+            maximum_delta = max(maximum_delta, abs(delta))
+            self.epoch_ms[i] = delta
+        if maximum_delta < (1 << 31):
+            raw = struct.pack(f'<{len(self.epoch_ms)}i', *self.epoch_ms)
+        else:
+            raw = struct.pack(f'<{len(self.epoch_ms)}q', *self.epoch_ms)
 
         content = {
             'time': {
                 'origin': origin_epoch_ms,
-                'delta': delta_epoch_ms,
-                'offset': self.epoch_ms,
+                'count': len(self.epoch_ms),
+                'offset': b64encode(raw).decode('ascii'),
             },
             'data': {}
         }
 
-        for field, values in self.values.items():
-            origin = None
-            is_all_float = False
-            for check in values:
-                if check is None:
+        def is_all_float(check: typing.List) -> bool:
+            if len(check) == 0:
+                return False
+            for v in check:
+                if v is None:
                     continue
-                if not isinstance(check, float):
-                    is_all_float = False
-                    break
-                is_all_float = True
-                if origin is None and isfinite(check):
-                    origin = check
+                if isinstance(v, float):
+                    continue
+                return False
+            return True
 
-            if not is_all_float:
-                content['data'][field] = [
-                    (value if value is None or not isinstance(value, float) or isfinite(value) else None)
-                    for value in values
-                ]
+        def is_all_float_array(check: typing.List) -> bool:
+            if len(check) == 0:
+                return False
+            for v in check:
+                if not isinstance(v, list):
+                    return False
+                if is_all_float(v):
+                    continue
+                return False
+            return True
+
+        for field, values in self.values.items():
+            if is_all_float(values):
+                raw = bytearray()
+                for v in values:
+                    if v is None or not isfinite(v):
+                        raw += self._MVC_FLOAT
+                        continue
+                    raw += struct.pack('<f', v)
+                content['data'][field] = b64encode(raw).decode('ascii')
                 continue
 
-            precision = self.precision.get(field)
-
-            if origin is None:
-                if precision == 0:
-                    values = [(round(value) if value is not None and isfinite(value) else None)
-                              for value in values]
-                elif precision is not None:
-                    values = [(round(value, precision) if value is not None and isfinite(value) else None)
-                              for value in values]
-                content['data'][field] = values
+            if is_all_float_array(values):
+                content['data'][field] = {
+                    'type': 'array',
+                    'values': [],
+                }
+                for i in range(len(values)):
+                    raw = bytearray()
+                    for v in values[i]:
+                        if v is None or not isfinite(v):
+                            raw += self._MVC_FLOAT
+                            continue
+                        raw += struct.pack('<f', v)
+                    content['data'][field]['values'].append(b64encode(raw).decode('ascii'))
                 continue
 
-            if precision == 0:
-                origin = round(origin)
-                values = [(round(value - origin) if value is not None and isfinite(value) else None)
-                          for value in values]
-            elif precision is not None:
-                origin = round(origin, precision)
-                values = [(round(value - origin, precision) if value is not None and isfinite(value) else None)
-                          for value in values]
-            else:
-                values = [((value - origin) if value is not None and isfinite(value) else None)
-                          for value in values]
-            content['data'][field] = {
-                'origin': origin,
-                'offset': values,
-            }
+            content['data'][field] = [
+                (value if value is None or not isinstance(value, float) or isfinite(value) else None)
+                for value in values
+            ]
 
         await self.send(content)
         self.epoch_ms.clear()

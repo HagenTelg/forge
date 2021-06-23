@@ -515,9 +515,8 @@ class DataReader(RecordStream):
 
     def __init__(self, start_epoch_ms: int, end_epoch_ms: int,
                  data: typing.Dict[Name, str],
-                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]],
-                 precision: typing.Optional[typing.Dict[str, int]] = None):
-        super().__init__(send, list(data.values()), precision=precision)
+                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
+        super().__init__(send, list(data.values()))
         self.clip_start_ms = start_epoch_ms
         self.start_epoch = int(floor(start_epoch_ms / 1000.0))
         self.end_epoch = int(ceil(end_epoch_ms / 1000.0))
@@ -525,13 +524,30 @@ class DataReader(RecordStream):
 
     async def _convert(self, epoch_ms: int, record: typing.Dict[Name, typing.Any]):
         fields: typing.Dict[str, typing.Optional[float]] = dict()
+
+        def convert_value(value):
+            if value is None:
+                return None
+            if isinstance(value, float):
+                return value
+            if isinstance(value, int):
+                return value
+            if isinstance(value, list):
+                is_all_float = False
+                for check in value:
+                    if check is not None and not isinstance(check, float):
+                        is_all_float = False
+                        break
+                    is_all_float = True
+                if is_all_float:
+                    return value
+            return float(value)
+
         for name, value in record.items():
             target = self.data.get(name)
             if target is None:
                 continue
-            if value is not None and not isinstance(value, float) and not isinstance(value, int):
-                value = float(value)
-            fields[target] = value
+            fields[target] = convert_value(value)
         await self.send_record(epoch_ms, fields)
 
     async def create_reader(self) -> asyncio.subprocess.Process:
@@ -589,14 +605,12 @@ class EditedReader(DataReader):
 
     def __init__(self, start_epoch_ms: int, end_epoch_ms: int, station: str, profile: str,
                  data: typing.Dict[Name, str],
-                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]],
-                 precision: typing.Optional[typing.Dict[str, int]] = None):
+                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
         # Limit data request amount, so we don't bog down the system
         if end_epoch_ms - start_epoch_ms > 32 * 24 * 60 * 60 * 1000:
             end_epoch_ms = start_epoch_ms + 32 * 24 * 60 * 60 * 1000
 
-        super().__init__(start_epoch_ms=start_epoch_ms, end_epoch_ms=end_epoch_ms, data=data,
-                         send=send, precision=precision)
+        super().__init__(start_epoch_ms=start_epoch_ms, end_epoch_ms=end_epoch_ms, data=data, send=send)
         self.station = station
         self.profile = profile
 
@@ -922,9 +936,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'N_N71'): 'cnc',
                 Name(station, 'raw', 'N_N61'): 'cnc',
-            }, send, precision={
-                'cnc': 1,
-            }
+            }, send
         ),
         
         'scattering-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -941,10 +953,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'BbsB_S11'): 'BbsB',
                 Name(station, 'raw', 'BbsG_S11'): 'BbsG',
                 Name(station, 'raw', 'BbsR_S11'): 'BbsR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-            }
+            }, send
         ),
         'scattering-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -960,10 +969,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'BbsB_S11', {'pm25'}): 'BbsB',
                 Name(station, 'raw', 'BbsG_S11', {'pm25'}): 'BbsG',
                 Name(station, 'raw', 'BbsR_S11', {'pm25'}): 'BbsR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-            }
+            }, send
         ),
         
         'absorption-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -974,9 +980,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'BaB_A11'): 'BaB',
                 Name(station, 'raw', 'BaG_A11'): 'BaG',
                 Name(station, 'raw', 'BaR_A11'): 'BaR',
-            }, send, precision={
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
         'absorption-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -986,9 +990,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'BaB_A11', {'pm25'}): 'BaB',
                 Name(station, 'raw', 'BaG_A11', {'pm25'}): 'BaG',
                 Name(station, 'raw', 'BaR_A11', {'pm25'}): 'BaR',
-            }, send, precision={
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
 
         'aethalometer': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -997,12 +999,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 [(Name(station, 'raw', f'X{i+1}_A81'), f'X{i+1}') for i in range(7)] +
                 [(Name(station, 'raw', f'ZFACTOR{i+1}_A81'), f'CF{i+1}') for i in range(7)] +
                 [(Name(station, 'raw', f'Ir{i+1}_A81'), f'Ir{i+1}') for i in range(7)]
-            ), send, precision=dict(
-                [(f'Ba{i+1}', 2) for i in range(7)] +
-                [(f'X{i+1}', 3) for i in range(7)] +
-                [(f'ZFACTOR{i+1}', 6) for i in range(7)] +
-                [(f'Ir{i+1}', 7) for i in range(7)]
-            )
+            ), send
         ),
 
         'intensive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1025,11 +1022,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'BaB_A11'): 'BaB',
                 Name(station, 'raw', 'BaG_A11'): 'BaG',
                 Name(station, 'raw', 'BaR_A11'): 'BaR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
         'intensive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -1051,20 +1044,14 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'BaB_A11', {'pm25'}): 'BaB',
                 Name(station, 'raw', 'BaG_A11', {'pm25'}): 'BaG',
                 Name(station, 'raw', 'BaR_A11', {'pm25'}): 'BaR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
 
         'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'WS1_XM1'): 'WS',
                 Name(station, 'raw', 'WD1_XM1'): 'WD',
-            }, send, precision={
-                'WS': 1, 'WD': 1,
-            }
+            }, send
         ),
         'flow': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -1073,9 +1060,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'Q_Q11', {'pm1'}): 'sample',
                 Name(station, 'raw', 'Q_Q11', {'pm25'}): 'sample',
                 Name(station, 'raw', 'Pd_P01'): 'pitot',
-            }, send, precision={
-                'sample': 2, 'pitot': 4,
-            }
+            }, send
         ),
         'temperature': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -1099,14 +1084,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'T_S11', {'pm10'}): 'Tneph', Name(station, 'raw', 'U_S11', {'pm10'}): 'Uneph',
                 Name(station, 'raw', 'T_S11', {'pm1'}): 'Tneph', Name(station, 'raw', 'U_S11', {'pm1'}): 'Uneph',
                 Name(station, 'raw', 'T_S11', {'pm25'}): 'Tneph', Name(station, 'raw', 'U_S11', {'pm25'}): 'Uneph',
-            }, send, precision={
-                'Tinlet': 1, 'Uinlet': 1,
-                'Tsample': 1, 'Usample': 1,
-                'Tnephinlet': 1, 'Unephinlet': 1,
-                'Tneph': 1, 'Uneph': 1,
-                'Taux': 1, 'Uaux': 1,
-                'Tambient': 1, 'Uambient': 1, 'TDambient': 1,
-            }
+            }, send
         ),
         'pressure': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -1124,11 +1102,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'Pd_P11'): 'impactor-pm10',
                 Name(station, 'raw', 'Pd_P11', {'pm1'}): 'impactor-pm1',
                 Name(station, 'raw', 'Pd_P11', {'pm25'}): 'impactor-pm1',
-            }, send, precision={
-                'ambient': 1, 'pitot': 4, 'vacuum': 2,
-                'neph-pm10': 1, 'neph-pm1': 1,
-                'impactor-pm10': 3, 'impactor-pm1': 3,
-            }
+            }, send
         ),
 
         'nephzero': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1139,10 +1113,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'BbswB_S11'): 'BbswB',
                 Name(station, 'raw', 'BbswG_S11'): 'BbswG',
                 Name(station, 'raw', 'BbswR_S11'): 'BbswR',
-            }, send, precision={
-                'BswB': 2, 'BswG': 2, 'BswR': 2,
-                'BbswB': 2, 'BbswG': 2, 'BbswR': 2,
-            }
+            }, send
         ),
         'nephstatus': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -1158,9 +1129,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'Al_S11', {'pm10'}): 'Al',
                 Name(station, 'raw', 'Al_S11', {'pm1'}): 'Al',
                 Name(station, 'raw', 'Al_S11', {'pm25'}): 'Al',
-            }, send, precision={
-                'CfG': 0, 'Vl': 1, 'Al': 1,
-            }
+            }, send
         ),
         
         'clapstatus': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1190,9 +1159,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'T2_A11', {'pm1'}): 'Tcase',
                 Name(station, 'raw', 'T2_A11', {'pm25'}): 'Tcase',
                 Name(station, 'raw', 'Fn_A11'): 'spot',
-            }, send, precision={
-                'IrG': 7, 'IfG': 2, 'IpG': 2, 'Q': 3, 'Tsample': 3, 'Tcase': 3,
-            }
+            }, send
         ),
 
         'aethalometerstatus': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1200,9 +1167,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'T1_A81'): 'Tcontroller',
                 Name(station, 'raw', 'T2_A81'): 'Tsupply',
                 Name(station, 'raw', 'T3_A81'): 'Tled',
-            }, send, precision={
-                'Tcontroller': 0, 'Tsupply': 0, 'Tled': 0,
-            }
+            }, send
         ),
 
         'cpcstatus': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1211,18 +1176,14 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'Q_Q61'): 'Qsample',
                 Name(station, 'raw', 'Q_Q72'): 'Qdrier',
                 Name(station, 'raw', 'Q_Q62'): 'Qdrier',
-            }, send, precision={
-                'Qsample': 3, 'Qdrier': 3,
-            }
+            }, send
         ),
 
         'umacstatus': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'T_X1'): 'T',
                 Name(station, 'raw', 'V_X1'): 'V',
-            }, send, precision={
-                'T': 1, 'V': 3,
-            }
+            }, send
         ),
     },
     
@@ -1240,9 +1201,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'N_N71'): 'cnc',
                 Name(station, 'clean', 'N_N61'): 'cnc',
-            }, send, precision={
-                'cnc': 1,
-            }
+            }, send
         ),
 
         'scattering-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1259,10 +1218,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BbsB_S11'): 'BbsB',
                 Name(station, 'clean', 'BbsG_S11'): 'BbsG',
                 Name(station, 'clean', 'BbsR_S11'): 'BbsR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-            }
+            }, send
         ),
         'scattering-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -1278,10 +1234,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BbsB_S11', {'pm25'}): 'BbsB',
                 Name(station, 'clean', 'BbsG_S11', {'pm25'}): 'BbsG',
                 Name(station, 'clean', 'BbsR_S11', {'pm25'}): 'BbsR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-            }
+            }, send
         ),
 
         'absorption-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1292,9 +1245,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BaB_A11'): 'BaB',
                 Name(station, 'clean', 'BaG_A11'): 'BaG',
                 Name(station, 'clean', 'BaR_A11'): 'BaR',
-            }, send, precision={
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
         'absorption-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -1304,9 +1255,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BaB_A11', {'pm25'}): 'BaB',
                 Name(station, 'clean', 'BaG_A11', {'pm25'}): 'BaG',
                 Name(station, 'clean', 'BaR_A11', {'pm25'}): 'BaR',
-            }, send, precision={
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
 
         'aethalometer': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1315,12 +1264,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 [(Name(station, 'clean', f'X{i + 1}_A81'), f'X{i + 1}') for i in range(7)] +
                 [(Name(station, 'clean', f'ZFACTOR{i + 1}_A81'), f'CF{i + 1}') for i in range(7)] +
                 [(Name(station, 'clean', f'Ir{i + 1}_A81'), f'Ir{i + 1}') for i in range(7)]
-            ), send, precision=dict(
-                [(f'Ba{i + 1}', 2) for i in range(7)] +
-                [(f'X{i + 1}', 3) for i in range(7)] +
-                [(f'ZFACTOR{i + 1}', 6) for i in range(7)] +
-                [(f'Ir{i + 1}', 7) for i in range(7)]
-            )
+            ), send
         ),
 
         'intensive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1343,11 +1287,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BaB_A11'): 'BaB',
                 Name(station, 'clean', 'BaG_A11'): 'BaG',
                 Name(station, 'clean', 'BaR_A11'): 'BaR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
         'intensive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -1369,20 +1309,14 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BaB_A11', {'pm25'}): 'BaB',
                 Name(station, 'clean', 'BaG_A11', {'pm25'}): 'BaG',
                 Name(station, 'clean', 'BaR_A11', {'pm25'}): 'BaR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
 
         'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'WS1_XM1'): 'WS',
                 Name(station, 'clean', 'WD1_XM1'): 'WD',
-            }, send, precision={
-                'WS': 1, 'WD': 1,
-            }
+            }, send
         ),
     },
     
@@ -1400,9 +1334,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'avgh', 'N_N71'): 'cnc',
                 Name(station, 'avgh', 'N_N61'): 'cnc',
-            }, send, precision={
-                'cnc': 1,
-            }
+            }, send
         ),
 
         'scattering-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1419,10 +1351,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'avgh', 'BbsB_S11'): 'BbsB',
                 Name(station, 'avgh', 'BbsG_S11'): 'BbsG',
                 Name(station, 'avgh', 'BbsR_S11'): 'BbsR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-            }
+            }, send
         ),
         'scattering-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -1438,10 +1367,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'avgh', 'BbsB_S11', {'pm25'}): 'BbsB',
                 Name(station, 'avgh', 'BbsG_S11', {'pm25'}): 'BbsG',
                 Name(station, 'avgh', 'BbsR_S11', {'pm25'}): 'BbsR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-            }
+            }, send
         ),
 
         'absorption-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1452,9 +1378,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'avgh', 'BaB_A11'): 'BaB',
                 Name(station, 'avgh', 'BaG_A11'): 'BaG',
                 Name(station, 'avgh', 'BaR_A11'): 'BaR',
-            }, send, precision={
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
         'absorption-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -1464,9 +1388,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'avgh', 'BaB_A11', {'pm25'}): 'BaB',
                 Name(station, 'avgh', 'BaG_A11', {'pm25'}): 'BaG',
                 Name(station, 'avgh', 'BaR_A11', {'pm25'}): 'BaR',
-            }, send, precision={
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
 
         'aethalometer': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1475,12 +1397,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 [(Name(station, 'avgh', f'X{i + 1}_A81'), f'X{i + 1}') for i in range(7)] +
                 [(Name(station, 'avgh', f'ZFACTOR{i + 1}_A81'), f'CF{i + 1}') for i in range(7)] +
                 [(Name(station, 'avgh', f'Ir{i + 1}_A81'), f'Ir{i + 1}') for i in range(7)]
-            ), send, precision=dict(
-                [(f'Ba{i + 1}', 2) for i in range(7)] +
-                [(f'X{i + 1}', 3) for i in range(7)] +
-                [(f'ZFACTOR{i + 1}', 6) for i in range(7)] +
-                [(f'Ir{i + 1}', 7) for i in range(7)]
-            )
+            ), send
         ),
 
         'intensive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1503,11 +1420,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'avgh', 'BaB_A11'): 'BaB',
                 Name(station, 'avgh', 'BaG_A11'): 'BaG',
                 Name(station, 'avgh', 'BaR_A11'): 'BaR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
         'intensive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -1529,20 +1442,14 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'avgh', 'BaB_A11', {'pm25'}): 'BaB',
                 Name(station, 'avgh', 'BaG_A11', {'pm25'}): 'BaG',
                 Name(station, 'avgh', 'BaR_A11', {'pm25'}): 'BaR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
 
         'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'avgh', 'WS1_XM1'): 'WS',
                 Name(station, 'avgh', 'WD1_XM1'): 'WD',
-            }, send, precision={
-                'WS': 1, 'WD': 1,
-            }
+            }, send
         ),
     },
 
@@ -1560,9 +1467,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             start_epoch_ms, end_epoch_ms, station, 'aerosol', {
                 Name(station, 'clean', 'N_N71'): 'cnc',
                 Name(station, 'clean', 'N_N61'): 'cnc',
-            }, send, precision={
-                'cnc': 1,
-            }
+            }, send
         ),
 
         'scattering-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
@@ -1579,10 +1484,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BbsB_S11'): 'BbsB',
                 Name(station, 'clean', 'BbsG_S11'): 'BbsG',
                 Name(station, 'clean', 'BbsR_S11'): 'BbsR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-            }
+            }, send
         ),
         'scattering-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'aerosol', {
@@ -1598,10 +1500,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BbsB_S11', {'pm25'}): 'BbsB',
                 Name(station, 'clean', 'BbsG_S11', {'pm25'}): 'BbsG',
                 Name(station, 'clean', 'BbsR_S11', {'pm25'}): 'BbsR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-            }
+            }, send
         ),
 
         'absorption-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
@@ -1612,9 +1511,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BaB_A11'): 'BaB',
                 Name(station, 'clean', 'BaG_A11'): 'BaG',
                 Name(station, 'clean', 'BaR_A11'): 'BaR',
-            }, send, precision={
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
         'absorption-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'aerosol', {
@@ -1624,9 +1521,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BaB_A11', {'pm25'}): 'BaB',
                 Name(station, 'clean', 'BaG_A11', {'pm25'}): 'BaG',
                 Name(station, 'clean', 'BaR_A11', {'pm25'}): 'BaR',
-            }, send, precision={
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
 
         'aethalometer': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
@@ -1635,12 +1530,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 [(Name(station, 'clean', f'X{i + 1}_A81'), f'X{i + 1}') for i in range(7)] +
                 [(Name(station, 'clean', f'ZFACTOR{i + 1}_A81'), f'CF{i + 1}') for i in range(7)] +
                 [(Name(station, 'clean', f'Ir{i + 1}_A81'), f'Ir{i + 1}') for i in range(7)]
-            ), send, precision=dict(
-                [(f'Ba{i + 1}', 2) for i in range(7)] +
-                [(f'X{i + 1}', 3) for i in range(7)] +
-                [(f'ZFACTOR{i + 1}', 6) for i in range(7)] +
-                [(f'Ir{i + 1}', 7) for i in range(7)]
-            )
+            ), send
         ),
 
         'intensive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
@@ -1663,11 +1553,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BaB_A11'): 'BaB',
                 Name(station, 'clean', 'BaG_A11'): 'BaG',
                 Name(station, 'clean', 'BaR_A11'): 'BaR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
         'intensive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'aerosol', {
@@ -1689,20 +1575,14 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BaB_A11', {'pm25'}): 'BaB',
                 Name(station, 'clean', 'BaG_A11', {'pm25'}): 'BaG',
                 Name(station, 'clean', 'BaR_A11', {'pm25'}): 'BaR',
-            }, send, precision={
-                'BsB': 2, 'BsG': 2, 'BsR': 2,
-                'BbsB': 2, 'BbsG': 2, 'BbsR': 2,
-                'BaB': 2, 'BaG': 2, 'BaR': 2,
-            }
+            }, send
         ),
 
         'wind': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'met', {
                 Name(station, 'clean', 'WS1_XM1'): 'WS',
                 Name(station, 'clean', 'WD1_XM1'): 'WD',
-            }, send, precision={
-                'WS': 1, 'WD': 1,
-            }
+            }, send
         ),
     },
 }
@@ -1718,9 +1598,7 @@ ozone_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, ty
         'ozone': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'X_G81'): 'ozone',
-            }, send, precision={
-                'ozone': 2,
-            }
+            }, send
         ),
 
         'status': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1729,9 +1607,7 @@ ozone_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, ty
                 Name(station, 'raw', 'T2_G81'): 'Tlamp',
                 Name(station, 'raw', 'P_G81'): 'Psample',
                 Name(station, 'raw', 'P1_G81'): 'Psample',
-            }, send, precision={
-                'Tsample': 1, 'Tlamp': 1, 'Psample': 1,
-            }
+            }, send
         ),
 
         'cells': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1740,19 +1616,14 @@ ozone_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, ty
                 Name(station, 'raw', 'Q2_G81'): 'Qb',
                 Name(station, 'raw', 'C1_G81'): 'Ca',
                 Name(station, 'raw', 'C2_G81'): 'Cb',
-            }, send, precision={
-                'Qa': 3, 'Qb': 3,
-                'Ca': 0, 'Cb': 0,
-            }
+            }, send
         ),
 
         'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'WS1_XM1'): 'WS',
                 Name(station, 'raw', 'WD1_XM1'): 'WD',
-            }, send, precision={
-                'WS': 1, 'WD': 1,
-            }
+            }, send
         ),
     },
     
@@ -1766,18 +1637,14 @@ ozone_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, ty
         'ozone': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'X_G81'): 'ozone',
-            }, send, precision={
-                'ozone': 2,
-            }
+            }, send
         ),
 
         'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'WS1_XM1'): 'WS',
                 Name(station, 'clean', 'WD1_XM1'): 'WD',
-            }, send, precision={
-                'WS': 1, 'WD': 1,
-            }
+            }, send
         ),
     },
     
@@ -1791,18 +1658,14 @@ ozone_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, ty
         'ozone': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'avgh', 'X_G81'): 'ozone',
-            }, send, precision={
-                'ozone': 2,
-            }
+            }, send
         ),
 
         'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'avgh', 'WS1_XM1'): 'WS',
                 Name(station, 'avgh', 'WD1_XM1'): 'WD',
-            }, send, precision={
-                'WS': 1, 'WD': 1,
-            }
+            }, send
         ),
     },
 
@@ -1816,18 +1679,14 @@ ozone_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, ty
         'ozone': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'ozone', {
                 Name(station, 'clean', 'X_G81'): 'ozone',
-            }, send, precision={
-                'ozone': 2,
-            }
+            }, send
         ),
 
         'wind': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'met', {
                 Name(station, 'clean', 'WS1_XM1'): 'WS',
                 Name(station, 'clean', 'WD1_XM1'): 'WD',
-            }, send, precision={
-                'WS': 1, 'WD': 1,
-            }
+            }, send
         ),
     },
 }
@@ -1839,11 +1698,7 @@ met_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typi
                 Name(station, 'raw', 'WS1_XM1'): '{WSamb}ient', Name(station, 'raw', 'WD1_XM1'): 'WDambient',
                 Name(station, 'raw', 'WS2_XM1'): 'WS2', Name(station, 'raw', 'WD2_XM1'): 'WD2',
                 Name(station, 'raw', 'WS3_XM1'): 'WS3', Name(station, 'raw', 'WD3_XM1'): 'WD3',
-            }, send, precision={
-                'WSambient': 1, 'WDambient': 1,
-                'WS2': 1, 'WD2': 1,
-                'WS3': 1, 'WD3': 1,
-            }
+            }, send
         ),
 
         'temperature': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1859,36 +1714,26 @@ met_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typi
                 Name(station, 'raw', 'U3_XM1'): 'U3',
                 Name(station, 'raw', 'T3_XM1'): 'T3',
                 Name(station, 'raw', 'TD3_XM1'): 'TD3',
-            }, send, precision={
-                'Uambient': 1, 'Tambient': 1, 'TDambient': 1,
-                'U2': 1, 'T2': 1, 'TD2': 1,
-                'U3': 1, 'T3': 1, 'TD3': 1,
-            }
+            }, send
         ),
 
         'pressure': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'P_XM1'): 'ambient',
-            }, send, precision={
-                'ambient': 1,
-            }
+            }, send
         ),
 
         'precipitation': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'WI_XM1'): 'precipitation',
-            }, send, precision={
-                'precipitation': 2,
-            }
+            }, send
         ),
 
         'tower': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'T2_XM1'): 'Tmiddle',
                 Name(station, 'raw', 'T3_XM1'): 'Ttop',
-            }, send, precision={
-                'Tmiddle': 1, 'Ttop': 1,
-            }
+            }, send
         ),
     },
     
@@ -1898,11 +1743,7 @@ met_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typi
                 Name(station, 'clean', 'WS1_XM1'): 'WSambient', Name(station, 'clean', 'WD1_XM1'): 'WDambient',
                 Name(station, 'clean', 'WS2_XM1'): 'WS2', Name(station, 'clean', 'WD2_XM1'): 'WD2',
                 Name(station, 'clean', 'WS3_XM1'): 'WS3', Name(station, 'clean', 'WD3_XM1'): 'WD3',
-            }, send, precision={
-                'WSambient': 1, 'WDambient': 1,
-                'WS2': 1, 'WD2': 1,
-                'WS3': 1, 'WD3': 1,
-            }
+            }, send
         ),
 
         'temperature': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1918,27 +1759,19 @@ met_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typi
                 Name(station, 'clean', 'U3_XM1'): 'U3',
                 Name(station, 'clean', 'T3_XM1'): 'T3',
                 Name(station, 'clean', 'TD3_XM1'): 'TD3',
-            }, send, precision={
-                'Uambient': 1, 'Tambient': 1, 'TDambient': 1,
-                'U2': 1, 'T2': 1, 'TD2': 1,
-                'U3': 1, 'T3': 1, 'TD3': 1,
-            }
+            }, send
         ),
 
         'pressure': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'P_XM1'): 'ambient',
-            }, send, precision={
-                'ambient': 1,
-            }
+            }, send
         ),
 
         'precipitation': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'WI_XM1'): 'precipitation',
-            }, send, precision={
-                'precipitation': 2,
-            }
+            }, send
         ),
     },
     
@@ -1948,11 +1781,7 @@ met_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typi
                 Name(station, 'avgh', 'WS1_XM1'): 'WSambient', Name(station, 'avgh', 'WD1_XM1'): 'WDambient',
                 Name(station, 'avgh', 'WS2_XM1'): 'WS2', Name(station, 'avgh', 'WD2_XM1'): 'WD2',
                 Name(station, 'avgh', 'WS3_XM1'): 'WS3', Name(station, 'avgh', 'WD3_XM1'): 'WD3',
-            }, send, precision={
-                'WSambient': 1, 'WDambient': 1,
-                'WS2': 1, 'WD2': 1,
-                'WS3': 1, 'WD3': 1,
-            }
+            }, send
         ),
 
         'temperature': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -1968,27 +1797,19 @@ met_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typi
                 Name(station, 'avgh', 'U3_XM1'): 'U3',
                 Name(station, 'avgh', 'T3_XM1'): 'T3',
                 Name(station, 'avgh', 'TD3_XM1'): 'TD3',
-            }, send, precision={
-                'Uambient': 1, 'Tambient': 1, 'TDambient': 1,
-                'U2': 1, 'T2': 1, 'TD2': 1,
-                'U3': 1, 'T3': 1, 'TD3': 1,
-            }
+            }, send
         ),
 
         'pressure': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'avgh', 'P_XM1'): 'ambient',
-            }, send, precision={
-                'ambient': 1,
-            }
+            }, send
         ),
 
         'precipitation': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'avgh', 'WI_XM1'): 'precipitation',
-            }, send, precision={
-                'precipitation': 2,
-            }
+            }, send
         ),
     },
     
@@ -1998,11 +1819,7 @@ met_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typi
                 Name(station, 'clean', 'WS1_XM1'): 'WSambient', Name(station, 'clean', 'WD1_XM1'): 'WDambient',
                 Name(station, 'clean', 'WS2_XM1'): 'WS2', Name(station, 'clean', 'WD2_XM1'): 'WD2',
                 Name(station, 'clean', 'WS3_XM1'): 'WS3', Name(station, 'clean', 'WD3_XM1'): 'WD3',
-            }, send, precision={
-                'WSambient': 1, 'WDambient': 1,
-                'WS2': 1, 'WD2': 1,
-                'WS3': 1, 'WD3': 1,
-            }
+            }, send
         ),
 
         'temperature': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
@@ -2018,36 +1835,26 @@ met_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typi
                 Name(station, 'clean', 'U3_XM1'): 'U3',
                 Name(station, 'clean', 'T3_XM1'): 'T3',
                 Name(station, 'clean', 'TD3_XM1'): 'TD3',
-            }, send, precision={
-                'Uambient': 1, 'Tambient': 1, 'TDambient': 1,
-                'U2': 1, 'T2': 1, 'TD2': 1,
-                'U3': 1, 'T3': 1, 'TD3': 1,
-            }
+            }, send
         ),
 
         'pressure': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'met', {
                 Name(station, 'clean', 'P_XM1'): 'ambient',
-            }, send, precision={
-                'ambient': 1,
-            }
+            }, send
         ),
 
         'precipitation': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'met', {
                 Name(station, 'clean', 'WI_XM1'): 'precipitation',
-            }, send, precision={
-                'precipitation': 2,
-            }
+            }, send
         ),
 
         'tower': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'met', {
                 Name(station, 'clean', 'T2_XM1'): 'Tmiddle',
                 Name(station, 'clean', 'T3_XM1'): 'Ttop',
-            }, send, precision={
-                'Tmiddle': 1, 'Ttop': 1,
-            }
+            }, send
         ),
     },
 }
