@@ -21,7 +21,7 @@ from authlib.integrations.starlette_client import OAuth
 from forge.email import is_valid_email, send_email, EmailMessage
 from forge.vis.util import package_template, name_to_initials
 from forge.vis import CONFIGURATION
-from forge.const import STATIONS
+from forge.const import DISPLAY_STATIONS
 from . import BaseAccessUser, BaseAccessController, Request
 
 
@@ -994,8 +994,8 @@ class AccessUser(BaseAccessUser):
         result: typing.Set[str] = set()
         for access in self._access.result():
             if access.station == '*':
-                return list(STATIONS)
-            if str(access.station) not in STATIONS:
+                return list(DISPLAY_STATIONS)
+            if str(access.station) not in DISPLAY_STATIONS:
                 continue
             result.add(str(access.station))
         return sorted(result)

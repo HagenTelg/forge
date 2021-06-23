@@ -3,7 +3,7 @@ import logging
 import ipaddress
 from . import BaseAccessUser, BaseAccessController, Request
 from forge.vis.util import name_to_initials
-from forge.const import STATIONS
+from forge.const import DISPLAY_STATIONS
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ class AccessUser(BaseAccessUser):
     @property
     def visible_stations(self) -> typing.List[str]:
         if self.controller.station == "*":
-            return sorted(STATIONS)
+            return sorted(DISPLAY_STATIONS)
         return [self.controller.station]
 
     def allow_station(self, station: str) -> bool:
