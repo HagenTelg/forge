@@ -24,7 +24,7 @@ class ViewList(Mode):
         super().__init__(mode_name, display_name)
         self.views: typing.List[ViewList.Entry] = views if views else list()
 
-    def insert(self, entry: typing.Optional["ViewList.Entry"], view_name: str = None, after=True):
+    def insert(self, entry: "ViewList.Entry", view_name: typing.Optional[str] = None, after=True):
         if not view_name:
             if after:
                 self.views.append(entry)
