@@ -10,7 +10,12 @@ $('a.view-select').click(function(event) {
 });
 
 $(document).ready(function(event) {
-    const selectView = localStorage.getItem('forge-last-view');
+    const queryParameters = new URLSearchParams(window.location.search);
+    let selectView = queryParameters.get('view');
+    if (selectView === null) {
+        selectView = localStorage.getItem('forge-last-view');
+    }
+
     if (selectView !== null) {
         $("a.view-select[name='" + selectView +"']").click();
     }
