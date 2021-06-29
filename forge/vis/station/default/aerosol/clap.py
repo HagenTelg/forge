@@ -18,7 +18,7 @@ class CLAPStatus(TimeSeries):
 
         flow = TimeSeries.Axis()
         flow.title = "lpm"
-        flow.format_code = '.7f'
+        flow.format_code = '.3f'
         flow_transmittance.axes.append(flow)
 
         IrG = TimeSeries.Trace(transmittance)

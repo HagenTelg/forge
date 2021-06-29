@@ -46,13 +46,13 @@ class Pressure(TimeSeries):
         pressure.traces.append(pitot)
 
         impactor_coarse = TimeSeries.Trace(hpa_delta)
-        impactor_coarse.legend = "impactor (Coarse)"
+        impactor_coarse.legend = "Impactor (Coarse)"
         impactor_coarse.data_record = f'{mode}-pressure'
         impactor_coarse.data_field = 'impactor-coarse'
         pressure.traces.append(impactor_coarse)
 
         impactor_fine = TimeSeries.Trace(hpa_delta)
-        impactor_fine.legend = "impactor (Fine)"
+        impactor_fine.legend = "Impactor (Fine)"
         impactor_fine.data_record = f'{mode}-pressure'
         impactor_fine.data_field = 'impactor-fine'
         pressure.traces.append(impactor_fine)
