@@ -6,9 +6,9 @@ class TowerTemperatureDifference(TimeSeries):
     class CalculateTowerDifference(TimeSeries.Processing):
         def __init__(self):
             super().__init__()
-            self.components.append('met_tower')
+            self.components.append('generic_operations')
             self.script = r"""(function(dataName) {
-    return new MetTower.CalculateDifference(dataName, 'Tmiddle', 'Ttop', 'dT');
+    return new GenericOperations.SingleOutput(dataName, GenericOperations.difference, 'dT', 'Tmiddle', 'Ttop');
 })"""
 
     def __init__(self, mode: str):
