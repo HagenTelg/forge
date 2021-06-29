@@ -90,8 +90,8 @@ class SelectionShortcut {
     constructor(display, patterns) {
         this.display = display;
         this.patterns = [];
-        for (let i=0; i<patterns.length; i++) {
-            this.patterns.push(new RegExp(patterns[i]));
+        for (const pattern of patterns) {
+            this.patterns.push(new RegExp(pattern));
         }
     }
 
@@ -173,8 +173,8 @@ class InstrumentSelectionShortcut {
     constructor(display, patterns) {
         this.display = display;
         this.patterns = [];
-        for (let i=0; i<patterns.length; i++) {
-            this.patterns.push(new RegExp(patterns[i]));
+        for (const pattern of patterns) {
+            this.patterns.push(new RegExp(patterns));
         }
         this.instrument = undefined;
         this.require = undefined;
