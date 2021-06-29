@@ -16,43 +16,43 @@ class Optical(TimeSeries):
             self.axes.append(Mm_1)
 
             B0 = TimeSeries.Trace(Mm_1)
-            B0.legend = name.format(code='B', size='PM10')
-            B0.data_record = f'{record}-pm10'
+            B0.legend = name.format(code='B', size='Coarse')
+            B0.data_record = f'{record}-coarse'
             B0.data_field = f'{field}B'
             B0.color = '#00f'
             self.traces.append(B0)
 
             G0 = TimeSeries.Trace(Mm_1)
-            G0.legend = name.format(code='G', size='PM10')
-            G0.data_record = f'{record}-pm10'
+            G0.legend = name.format(code='G', size='Coarse')
+            G0.data_record = f'{record}-coarse'
             G0.data_field = f'{field}G'
             G0.color = '#0f0'
             self.traces.append(G0)
 
             R0 = TimeSeries.Trace(Mm_1)
-            R0.legend = name.format(code='R', size='PM10')
-            R0.data_record = f'{record}-pm10'
+            R0.legend = name.format(code='R', size='Coarse')
+            R0.data_record = f'{record}-coarse'
             R0.data_field = f'{field}R'
             R0.color = '#f00'
             self.traces.append(R0)
 
             B1 = TimeSeries.Trace(Mm_1)
-            B1.legend = name.format(code='B', size='PM1')
-            B1.data_record = f'{record}-pm1'
+            B1.legend = name.format(code='B', size='Fine')
+            B1.data_record = f'{record}-fine'
             B1.data_field = f'{field}B'
             B1.color = '#007'
             self.traces.append(B1)
 
             G1 = TimeSeries.Trace(Mm_1)
-            G1.legend = name.format(code='G', size='PM1')
-            G1.data_record = f'{record}-pm1'
+            G1.legend = name.format(code='G', size='Fine')
+            G1.data_record = f'{record}-fine'
             G1.data_field = f'{field}G'
             G1.color = '#070'
             self.traces.append(G1)
 
             R1 = TimeSeries.Trace(Mm_1)
-            R1.legend = name.format(code='R', size='PM1')
-            R1.data_record = f'{record}-pm1'
+            R1.legend = name.format(code='R', size='Fine')
+            R1.data_record = f'{record}-fine'
             R1.data_field = f'{field}R'
             R1.color = '#700'
             self.traces.append(R1)

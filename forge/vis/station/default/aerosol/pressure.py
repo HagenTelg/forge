@@ -27,17 +27,17 @@ class Pressure(TimeSeries):
         ambient.data_field = 'ambient'
         pressure.traces.append(ambient)
 
-        nephelometer_pm10 = TimeSeries.Trace(hpa_ambient)
-        nephelometer_pm10.legend = "Nephelometer (PM10)"
-        nephelometer_pm10.data_record = f'{mode}-pressure'
-        nephelometer_pm10.data_field = 'neph-pm10'
-        pressure.traces.append(nephelometer_pm10)
+        nephelometer_coarse = TimeSeries.Trace(hpa_ambient)
+        nephelometer_coarse.legend = "Nephelometer (Coarse)"
+        nephelometer_coarse.data_record = f'{mode}-pressure'
+        nephelometer_coarse.data_field = 'neph-coarse'
+        pressure.traces.append(nephelometer_coarse)
 
-        nephelometer_pm1 = TimeSeries.Trace(hpa_ambient)
-        nephelometer_pm1.legend = "Nephelometer (PM1)"
-        nephelometer_pm1.data_record = f'{mode}-pressure'
-        nephelometer_pm1.data_field = 'neph-pm1'
-        pressure.traces.append(nephelometer_pm1)
+        nephelometer_fine = TimeSeries.Trace(hpa_ambient)
+        nephelometer_fine.legend = "Nephelometer (Fine)"
+        nephelometer_fine.data_record = f'{mode}-pressure'
+        nephelometer_fine.data_field = 'neph-fine'
+        pressure.traces.append(nephelometer_fine)
 
         pitot = TimeSeries.Trace(hpa_delta)
         pitot.legend = "Pitot"
@@ -45,17 +45,17 @@ class Pressure(TimeSeries):
         pitot.data_field = 'pitot'
         pressure.traces.append(pitot)
 
-        impactor_pm10 = TimeSeries.Trace(hpa_delta)
-        impactor_pm10.legend = "impactor (PM10)"
-        impactor_pm10.data_record = f'{mode}-pressure'
-        impactor_pm10.data_field = 'impactor-pm10'
-        pressure.traces.append(impactor_pm10)
+        impactor_coarse = TimeSeries.Trace(hpa_delta)
+        impactor_coarse.legend = "impactor (Coarse)"
+        impactor_coarse.data_record = f'{mode}-pressure'
+        impactor_coarse.data_field = 'impactor-coarse'
+        pressure.traces.append(impactor_coarse)
 
-        impactor_pm1 = TimeSeries.Trace(hpa_delta)
-        impactor_pm1.legend = "impactor (PM1)"
-        impactor_pm1.data_record = f'{mode}-pressure'
-        impactor_pm1.data_field = 'impactor-pm1'
-        pressure.traces.append(impactor_pm1)
+        impactor_fine = TimeSeries.Trace(hpa_delta)
+        impactor_fine.legend = "impactor (Fine)"
+        impactor_fine.data_record = f'{mode}-pressure'
+        impactor_fine.data_field = 'impactor-fine'
+        pressure.traces.append(impactor_fine)
 
 
         system_vacuum = TimeSeries.Graph()

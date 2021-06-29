@@ -36,8 +36,8 @@ return new WavelengthAdjust.AdjustedDispatch(dataName, inputFields, outputFields
         scattering.axes.append(Mm_1)
 
         G0 = TimeSeries.Trace(Mm_1)
-        G0.legend = "Scattering (PM10)"
-        G0.data_record = f'{mode}-scattering-pm10'
+        G0.legend = "Scattering (Coarse)"
+        G0.data_record = f'{mode}-scattering-coarse'
         G0.data_field = 'G'
         G0.color = '#0f0'
         scattering.traces.append(G0)
@@ -46,8 +46,8 @@ return new WavelengthAdjust.AdjustedDispatch(dataName, inputFields, outputFields
         ]))
 
         G1 = TimeSeries.Trace(Mm_1)
-        G1.legend = "Scattering (PM1)"
-        G1.data_record = f'{mode}-scattering-pm1'
+        G1.legend = "Scattering (Fine)"
+        G1.data_record = f'{mode}-scattering-fine'
         G1.data_field = 'G'
         G1.color = '#070'
         scattering.traces.append(G1)
@@ -67,8 +67,8 @@ return new WavelengthAdjust.AdjustedDispatch(dataName, inputFields, outputFields
         absorption.axes.append(Mm_1)
 
         G0 = TimeSeries.Trace(Mm_1)
-        G0.legend = "Absorption (PM10)"
-        G0.data_record = f'{mode}-absorption-pm10'
+        G0.legend = "Absorption (Coarse)"
+        G0.data_record = f'{mode}-absorption-coarse'
         G0.data_field = 'G'
         G0.color = '#0f0'
         absorption.traces.append(G0)
@@ -77,8 +77,8 @@ return new WavelengthAdjust.AdjustedDispatch(dataName, inputFields, outputFields
         ]))
 
         G1 = TimeSeries.Trace(Mm_1)
-        G1.legend = "Absorption (PM1)"
-        G1.data_record = f'{mode}-absorption-pm1'
+        G1.legend = "Absorption (Fine)"
+        G1.data_record = f'{mode}-absorption-fine'
         G1.data_field = 'G'
         G1.color = '#070'
         absorption.traces.append(G1)

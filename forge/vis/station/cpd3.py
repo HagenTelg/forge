@@ -939,7 +939,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             }, send
         ),
         
-        'scattering-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'scattering-coarse': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'BsB_S11', {'pm10'}): 'BsB',
                 Name(station, 'raw', 'BsG_S11', {'pm10'}): 'BsG',
@@ -955,7 +955,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'BbsR_S11'): 'BbsR',
             }, send
         ),
-        'scattering-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'scattering-fine': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'BsB_S11', {'pm1'}): 'BsB',
                 Name(station, 'raw', 'BsG_S11', {'pm1'}): 'BsG',
@@ -972,7 +972,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             }, send
         ),
         
-        'absorption-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'absorption-coarse': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'BaB_A11', {'pm10'}): 'BaB',
                 Name(station, 'raw', 'BaG_A11', {'pm10'}): 'BaG',
@@ -982,7 +982,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'BaR_A11'): 'BaR',
             }, send
         ),
-        'absorption-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'absorption-fine': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'BaB_A11', {'pm1'}): 'BaB',
                 Name(station, 'raw', 'BaG_A11', {'pm1'}): 'BaG',
@@ -1002,7 +1002,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             ), send
         ),
 
-        'intensive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'intensive-coarse': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'BsB_S11', {'pm10'}): 'BsB',
                 Name(station, 'raw', 'BsG_S11', {'pm10'}): 'BsG',
@@ -1024,7 +1024,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'BaR_A11'): 'BaR',
             }, send
         ),
-        'intensive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'intensive-fine': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'BsB_S11', {'pm1'}): 'BsB',
                 Name(station, 'raw', 'BsG_S11', {'pm1'}): 'BsG',
@@ -1094,14 +1094,14 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'raw', 'Pd_P12', {'pm10'}): 'vacuum',
                 Name(station, 'raw', 'Pd_P12', {'pm1'}): 'vacuum',
                 Name(station, 'raw', 'Pd_P12', {'pm25'}): 'vacuum',
-                Name(station, 'raw', 'P_S11', {'pm10'}): 'neph-pm10',
-                Name(station, 'raw', 'P_S11'): 'neph-pm10',
-                Name(station, 'raw', 'P_S11', {'pm1'}): 'neph-pm1',
-                Name(station, 'raw', 'P_S11', {'pm25'}): 'neph-pm1',
-                Name(station, 'raw', 'Pd_P11', {'pm10'}): 'impactor-pm10',
-                Name(station, 'raw', 'Pd_P11'): 'impactor-pm10',
-                Name(station, 'raw', 'Pd_P11', {'pm1'}): 'impactor-pm1',
-                Name(station, 'raw', 'Pd_P11', {'pm25'}): 'impactor-pm1',
+                Name(station, 'raw', 'P_S11', {'pm10'}): 'neph-coarse',
+                Name(station, 'raw', 'P_S11'): 'neph-coarse',
+                Name(station, 'raw', 'P_S11', {'pm1'}): 'neph-fine',
+                Name(station, 'raw', 'P_S11', {'pm25'}): 'neph-fine',
+                Name(station, 'raw', 'Pd_P11', {'pm10'}): 'impactor-coarse',
+                Name(station, 'raw', 'Pd_P11'): 'impactor-coarse',
+                Name(station, 'raw', 'Pd_P11', {'pm1'}): 'impactor-fine',
+                Name(station, 'raw', 'Pd_P11', {'pm25'}): 'impactor-fine',
             }, send
         ),
 
@@ -1204,7 +1204,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             }, send
         ),
 
-        'scattering-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'scattering-coarse': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'BsB_S11', {'pm10'}): 'BsB',
                 Name(station, 'clean', 'BsG_S11', {'pm10'}): 'BsG',
@@ -1220,7 +1220,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BbsR_S11'): 'BbsR',
             }, send
         ),
-        'scattering-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'scattering-fine': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'BsB_S11', {'pm1'}): 'BsB',
                 Name(station, 'clean', 'BsG_S11', {'pm1'}): 'BsG',
@@ -1237,7 +1237,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             }, send
         ),
 
-        'absorption-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'absorption-coarse': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'BaB_A11', {'pm10'}): 'BaB',
                 Name(station, 'clean', 'BaG_A11', {'pm10'}): 'BaG',
@@ -1247,7 +1247,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BaR_A11'): 'BaR',
             }, send
         ),
-        'absorption-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'absorption-fine': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'BaB_A11', {'pm1'}): 'BaB',
                 Name(station, 'clean', 'BaG_A11', {'pm1'}): 'BaG',
@@ -1267,7 +1267,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             ), send
         ),
 
-        'intensive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'intensive-coarse': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'BsB_S11', {'pm10'}): 'BsB',
                 Name(station, 'clean', 'BsG_S11', {'pm10'}): 'BsG',
@@ -1289,7 +1289,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BaR_A11'): 'BaR',
             }, send
         ),
-        'intensive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'intensive-fine': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'BsB_S11', {'pm1'}): 'BsB',
                 Name(station, 'clean', 'BsG_S11', {'pm1'}): 'BsG',
@@ -1337,7 +1337,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             }, send
         ),
 
-        'scattering-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'scattering-coarse': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'avgh', 'BsB_S11', {'pm10'}): 'BsB',
                 Name(station, 'avgh', 'BsG_S11', {'pm10'}): 'BsG',
@@ -1353,7 +1353,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'avgh', 'BbsR_S11'): 'BbsR',
             }, send
         ),
-        'scattering-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'scattering-fine': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'avgh', 'BsB_S11', {'pm1'}): 'BsB',
                 Name(station, 'avgh', 'BsG_S11', {'pm1'}): 'BsG',
@@ -1370,7 +1370,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             }, send
         ),
 
-        'absorption-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'absorption-coarse': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'avgh', 'BaB_A11', {'pm10'}): 'BaB',
                 Name(station, 'avgh', 'BaG_A11', {'pm10'}): 'BaG',
@@ -1380,7 +1380,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'avgh', 'BaR_A11'): 'BaR',
             }, send
         ),
-        'absorption-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'absorption-fine': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'avgh', 'BaB_A11', {'pm1'}): 'BaB',
                 Name(station, 'avgh', 'BaG_A11', {'pm1'}): 'BaG',
@@ -1400,7 +1400,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             ), send
         ),
 
-        'intensive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'intensive-coarse': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'avgh', 'BsB_S11', {'pm10'}): 'BsB',
                 Name(station, 'avgh', 'BsG_S11', {'pm10'}): 'BsG',
@@ -1422,7 +1422,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'avgh', 'BaR_A11'): 'BaR',
             }, send
         ),
-        'intensive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'intensive-fine': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'avgh', 'BsB_S11', {'pm1'}): 'BsB',
                 Name(station, 'avgh', 'BsG_S11', {'pm1'}): 'BsG',
@@ -1470,7 +1470,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             }, send
         ),
 
-        'scattering-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+        'scattering-coarse': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'aerosol', {
                 Name(station, 'clean', 'BsB_S11', {'pm10'}): 'BsB',
                 Name(station, 'clean', 'BsG_S11', {'pm10'}): 'BsG',
@@ -1486,7 +1486,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BbsR_S11'): 'BbsR',
             }, send
         ),
-        'scattering-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+        'scattering-fine': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'aerosol', {
                 Name(station, 'clean', 'BsB_S11', {'pm1'}): 'BsB',
                 Name(station, 'clean', 'BsG_S11', {'pm1'}): 'BsG',
@@ -1503,7 +1503,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             }, send
         ),
 
-        'absorption-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+        'absorption-coarse': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'aerosol', {
                 Name(station, 'clean', 'BaB_A11', {'pm10'}): 'BaB',
                 Name(station, 'clean', 'BaG_A11', {'pm10'}): 'BaG',
@@ -1513,7 +1513,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BaR_A11'): 'BaR',
             }, send
         ),
-        'absorption-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+        'absorption-fine': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'aerosol', {
                 Name(station, 'clean', 'BaB_A11', {'pm1'}): 'BaB',
                 Name(station, 'clean', 'BaG_A11', {'pm1'}): 'BaG',
@@ -1533,7 +1533,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             ), send
         ),
 
-        'intensive-pm10': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+        'intensive-coarse': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'aerosol', {
                 Name(station, 'clean', 'BsB_S11', {'pm10'}): 'BsB',
                 Name(station, 'clean', 'BsG_S11', {'pm10'}): 'BsG',
@@ -1555,7 +1555,7 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
                 Name(station, 'clean', 'BaR_A11'): 'BaR',
             }, send
         ),
-        'intensive-pm1': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+        'intensive-fine': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'aerosol', {
                 Name(station, 'clean', 'BsB_S11', {'pm1'}): 'BsB',
                 Name(station, 'clean', 'BsG_S11', {'pm1'}): 'BsG',
