@@ -4,11 +4,11 @@ div.view {
 }
 
 div.scroll {
-  height: {{ (view.graphs|length)*300 }}px;
+  height: 900px;
 }
 </style>
 
-<div class="view{% if (view.graphs|length) > 3 %} scroll{% endif %}" id="view_timeseries"></div>
+<div class="view" id="view_sizecounts"></div>
 
 <script>
 (function() {
@@ -18,12 +18,13 @@ div.scroll {
 
 {% include 'view/common/timeseries.js' %}
 {% include 'view/common/shapes.js' %}
+{% include 'view/common/sizebins.js' %}
 
 const RecordProcessing = new Map();
 // {% for record, processing in view.processing.items() %}
 RecordProcessing.set('{{ record }}', {{ processing.script | safe }});
 // {% endfor %}
 
-{% include 'view/timeseries.js' %}
+{% include 'view/sizecounts.js' %}
 })();
 </script>

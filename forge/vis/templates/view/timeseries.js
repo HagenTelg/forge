@@ -5,13 +5,7 @@ let layout = {
 
     autosize : true,
 
-    xaxis: {
-        title: "UTC",
-        type: 'date',
-        zeroline: false,
-        autorange: false,
-        range: [DataSocket.toPlotTime(TimeSelect.start_ms), DataSocket.toPlotTime(TimeSelect.end_ms)],
-    },
+    xaxis: TimeSeriesCommon.getXAxis(),
 
     grid: {
         columns: 1,
@@ -97,11 +91,6 @@ let config = {
     responsive: true,
 };
 
-if (localStorage.getItem('forge-settings-time-format') === 'doy') {
-    layout.xaxis.hoverformat = "%Y:%-j %H:%M";
-    layout.xaxis.tickformat = "%-j\n %Y";
-}
-
 const div = document.getElementById('view_timeseries');
 if (localStorage.getItem('forge-settings-plot-scroll')) {
     div.classList.add('scroll');
@@ -109,63 +98,10 @@ if (localStorage.getItem('forge-settings-plot-scroll')) {
 
 Plotly.newPlot(div, data, layout, config);
 
-const shapeGenerators = [];
-function updateShapes() {
-    const shapes = [];
-    shapeGenerators.forEach((gen) => {
-        Array.prototype.push.apply(shapes, gen());
-    });
-    Plotly.relayout(div, {
-        'shapes': shapes,
-    });
-}
+const shapeHandler = new ShapeHandler(div);
+const traces = new TimeSeriesCommon.Traces(div);
+shapeHandler.generators.push(TimeSeriesCommon.getTimeHighlights);
 
-const highlightShapes = [];
-shapeGenerators.push(() => { return highlightShapes; });
-TimeSelect.onHighlight( (start_ms, end_ms) => {
-    highlightShapes.length = 0;
-    if (start_ms === undefined && end_ms === undefined) {
-        updateShapes();
-        return;
-    }
-    if (!start_ms) {
-        start_ms = TimeSelect.start_ms;
-    }
-    if (!end_ms) {
-        end_ms = TimeSelect.end_ms;
-    }
-
-    highlightShapes.push({
-        type: 'rect',
-        xref: 'x',
-        yref: 'paper',
-        x0: DataSocket.toPlotTime(start_ms),
-        y0: 0,
-        x1: DataSocket.toPlotTime(end_ms),
-        y1: 1,
-        fillcolor: '#d3d3d3',
-        opacity: 0.2,
-        line: {
-            width: 0
-        }
-    });
-    updateShapes();
-});
-
-function extendData(traceIndex, times, values) {
-    Plotly.extendTraces(div, {
-        x: [times],
-        y: [values]
-    }, [traceIndex]);
-}
-function updateTimeBounds() {
-    Plotly.relayout(div, {
-        'xaxis.range': [DataSocket.toPlotTime(TimeSelect.start_ms), DataSocket.toPlotTime(TimeSelect.end_ms)],
-        'xaxis.autorange': false,
-    })
-}
-
-const contaminationShapes = new Map();
 
 DataSocket.resetLoadedRecords();
 
@@ -173,49 +109,15 @@ DataSocket.resetLoadedRecords();
 //{% for graph in view.graphs %}
 
 //{% if graph.contamination %}
-(function(graphIndex) {
-    DataSocket.addLoadedRecord('{{ graph.contamination }}',
-        (dataName) => { return new Contamination.DataStream(dataName); },
-        (start_ms, end_ms, flags) => {
-            let target = contaminationShapes.get(graphIndex);
-            if (target === undefined) {
-                target = [];
-                contaminationShapes.set(graphIndex, target);
-            }
-            target.push({
-                type: 'line',
-                layer: 'below',
-                xref: 'x',
-                yref: 'y{% if loop.index > 1 %}{{ loop.index }}{% endif %} domain',
-                x0: DataSocket.toPlotTime(start_ms),
-                x1: DataSocket.toPlotTime(end_ms),
-                y0: 0.05,
-                y1: 0.05,
-                fillcolor: '#000000',
-                opacity: 0.9,
-                line: {
-                    width: 5,
-                },
-            });
-
-            updateShapes();
-        });
-    const emptyShapes = [];
-    shapeGenerators.push(() => {
-        const shapes = contaminationShapes.get(graphIndex);
-        if (shapes === undefined) {
-            return emptyShapes;
-        }
-        return shapes;
-    });
-})('{{ loop.index0 }}' * 1);
+shapeHandler.generators.push(TimeSeriesCommon.installContamination('{{ loop.index0 }}' * 1,
+    '{{ graph.contamination }}', 'y{% if loop.index > 1 %}{{ loop.index }}{% endif %}'));
 //{% endif %}
 
 //  {% for trace in graph.traces %}
 //      {% if trace.data_record and trace.data_field %}
 (function(traceIndex) {
     let incomingData = (plotTime, values) => {
-        extendData(traceIndex, plotTime, values);
+        traces.extendData(traceIndex, plotTime, values);
     };
 
     // {% if trace.script_incoming_data %}{{ '\n' }}{{ trace.script_incoming_data | safe }}{% endif %}
@@ -233,30 +135,15 @@ DataSocket.onRecordReload = function() {
         trace.x.length = 0;
         trace.y.length = 0;
     });
-    contaminationShapes.clear();
+    TimeSeriesCommon.clearContamination();
 
-    updateTimeBounds();
-    updateShapes();
+    traces.updateTimeBounds();
+    shapeHandler.update();
 };
 
-updateTimeBounds();
-updateShapes();
+traces.updateTimeBounds();
+    shapeHandler.update();
 
 DataSocket.startLoadingRecords();
 
-div.on('plotly_relayout', function(data) {
-    const start_time = data['xaxis.range[0]'];
-    const end_time = data['xaxis.range[1]'];
-    if (!start_time || !end_time) {
-        return;
-    }
-
-    const start_ms = DataSocket.fromPlotTime(start_time);
-    const end_ms = DataSocket.fromPlotTime(end_time);
-    if (start_ms === TimeSelect.start_ms && end_ms === TimeSelect.end_ms) {
-        TimeSelect.zoom(undefined, undefined);
-        return;
-    }
-
-    TimeSelect.zoom(start_ms, end_ms);
-});
+TimeSeriesCommon.installZoomHandler(div);

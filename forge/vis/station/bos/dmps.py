@@ -1,5 +1,6 @@
 import typing
 from forge.vis.view.timeseries import TimeSeries
+from forge.vis.view.sizedistribution import SizeDistribution, SizeCounts
 
 
 class DMPSStatus(TimeSeries):
@@ -78,4 +79,52 @@ class DMPSStatus(TimeSeries):
         flow.traces.append(sheath)
 
 
+class DMPSDistribution(SizeDistribution):
+    def __init__(self, mode: str):
+        super().__init__()
+        self.title = "DMPS Size Distribution"
 
+        self.contamination = f'{mode}-contamination'
+        self.size_record = f'{mode}-dmps'
+        self.measured_record = f'{mode}-scattering-fine'
+
+
+class DMPSCounts(SizeCounts):
+    def __init__(self, mode: str):
+        super().__init__()
+        self.title = "Particle Concentration"
+
+        self.contamination = f'{mode}-contamination'
+        self.size_record = f'{mode}-dmps'
+        self.processing[self.size_record] = self.IntegrateSizeDistribution('N', 'Nabove', 0.014)
+
+        n_cnc = SizeCounts.Trace()
+        n_cnc.legend = "CNC"
+        n_cnc.data_record = f'{mode}-cnc'
+        n_cnc.data_field = 'cnc'
+        self.traces.append(n_cnc)
+
+        n_dmps = SizeCounts.Trace()
+        n_dmps.legend = "DMPS"
+        n_dmps.data_record = f'{mode}-dmps'
+        n_dmps.data_field = 'N'
+        self.traces.append(n_dmps)
+
+        n_dmps_cpc = SizeCounts.Trace()
+        n_dmps_cpc.legend = "DMPS (above 14nm)"
+        n_dmps_cpc.data_record = f'{mode}-dmps'
+        n_dmps_cpc.data_field = 'Nabove'
+        self.traces.append(n_dmps_cpc)
+
+        n_dmps_raw = SizeCounts.Trace()
+        n_dmps_raw.legend = "DMPS (raw)"
+        n_dmps_raw.data_record = f'{mode}-dmps'
+        n_dmps_raw.data_field = 'Nraw'
+        self.traces.append(n_dmps_raw)
+
+        n_pops = SizeCounts.Trace()
+        n_pops.legend = "POPS"
+        n_pops.data_record = f'{mode}-pops'
+        n_pops.data_field = 'N'
+        self.traces.append(n_pops)
+        self.processing[n_pops.data_record] = self.IntegrateSizeDistribution('N')

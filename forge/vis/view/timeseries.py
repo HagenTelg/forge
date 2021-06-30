@@ -18,9 +18,10 @@ class TimeSeries(View):
         def __init__(self, axis: "TimeSeries.Axis"):
             self.axis: TimeSeries.Axis = axis
             self.legend = ""
+            self.color: typing.Optional[str] = None
+            self.format_code: typing.Optional[str] = None
             self.data_record: typing.Optional[str] = None
             self.data_field: typing.Optional[str] = None
-            self.format_code: typing.Optional[str] = None
             self.script_incoming_data: typing.Optional[str] = None
 
         def hover_template(self):

@@ -1,5 +1,6 @@
 import typing
 from forge.vis.view.timeseries import TimeSeries
+from forge.vis.view.sizedistribution import SizeDistribution, SizeCounts
 
 
 class POPSStatus(TimeSeries):
@@ -65,3 +66,35 @@ class POPSStatus(TimeSeries):
         aerosol.data_record = f'{mode}-popsstatus'
         aerosol.data_field = 'Pboard'
         pressure.traces.append(aerosol)
+
+
+class POPSDistribution(SizeDistribution):
+    def __init__(self, mode: str):
+        super().__init__()
+        self.title = "POPS Size Distribution"
+
+        self.contamination = f'{mode}-contamination'
+        self.size_record = f'{mode}-pops'
+        self.measured_record = f'{mode}-scattering-coarse'
+
+
+class POPSCounts(SizeCounts):
+    def __init__(self, mode: str):
+        super().__init__()
+        self.title = "Particle Concentration"
+
+        self.contamination = f'{mode}-contamination'
+        self.size_record = f'{mode}-pops'
+        self.processing[self.size_record] = self.IntegrateSizeDistribution('N')
+
+        n_cnc = SizeCounts.Trace()
+        n_cnc.legend = "CNC"
+        n_cnc.data_record = f'{mode}-cnc'
+        n_cnc.data_field = 'cnc'
+        self.traces.append(n_cnc)
+
+        n_pops = SizeCounts.Trace()
+        n_pops.legend = "POPS"
+        n_pops.data_record = f'{mode}-pops'
+        n_pops.data_field = 'N'
+        self.traces.append(n_pops)

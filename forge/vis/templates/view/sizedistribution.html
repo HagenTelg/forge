@@ -1,0 +1,25 @@
+<style>
+div.view {
+  flex-grow: 1;
+}
+
+div.scroll {
+  height: 900px;
+}
+</style>
+
+<div class="view" id="view_sizedistribution"></div>
+
+<script>
+(function() {
+{% if view.contamination %}{% include 'view/components/contamination.js' %}{% endif %}
+{% include 'view/components/size_distribution.js' %}
+{% include 'view/components/mie_code.js' %}
+
+{% include 'view/common/timeseries.js' %}
+{% include 'view/common/shapes.js' %}
+{% include 'view/common/sizebins.js' %}
+
+{% include 'view/sizedistribution.js' %}
+})();
+</script>
