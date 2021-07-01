@@ -533,15 +533,19 @@ class DataReader(RecordStream):
             if isinstance(value, int):
                 return value
             if isinstance(value, list):
-                is_all_float = False
-                for check in value:
-                    if check is not None and not isinstance(check, float):
-                        is_all_float = False
-                        break
-                    is_all_float = True
-                if is_all_float:
-                    return value
-            return float(value)
+                for i in range(len(value)):
+                    check = value[i]
+                    if i is None:
+                        continue
+                    try:
+                        value[i] = float(check)
+                    except (ValueError, TypeError):
+                        value[i] = None
+                return value
+            try:
+                return float(value)
+            except (ValueError, TypeError):
+                return None
 
         for name, value in record.items():
             target = self.data.get(name)
