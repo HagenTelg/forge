@@ -1,14 +1,85 @@
 let TimeSelect = {};
 let TimeParse = {};
 (function() {
+    function dayOfWeek(year, month, day) {
+        let date = new Date();
+        if (year) { date.setUTCFullYear(year); }
+        if (month) { date.setUTCMonth(month - 1); }
+        else { date.setUTCMonth(0); }
+        if (day) { date.setUTCDate(day); }
+        else { date.setUTCDate(1); }
+        date.setUTCMilliseconds(0);
+        date.setUTCSeconds(0);
+        date.setUTCMinutes(0);
+        date.setUTCHours(0);
+        return date.getUTCDay();
+    }
+
+    function julianDay(year, month, day) {
+        if (!month) { month = 1; }
+        if (!day) { day = 1; }
+        if (month > 2) {
+            month -= 3;
+        } else {
+            year--;
+            month += 9;
+        }
+        const c = year / 100;
+        const ya = year - 100 * c;
+        return ((146097 * c) / 4 + (1461 * ya) / 4 + (153 * month + 2) / 5 + day + 1721119);
+    }
+
+    function startOfYear(year) {
+        let date = new Date();
+        date.setUTCFullYear(year);
+        date.setUTCMilliseconds(0);
+        date.setUTCSeconds(0);
+        date.setUTCMinutes(0);
+        date.setUTCHours(0);
+        date.setUTCDate(1);
+        date.setUTCMonth(0);
+        return date.getTime();
+    }
+
+    function selectedYear(reference) {
+        if (reference) {
+            return (new Date(Math.round(reference))).getUTCFullYear();
+        } else {
+            return (new Date.now()).getUTCFullYear();
+        }
+    }
+
+    const weekOffset = [0, -1, -2, -3, 3, 2, 1];
+    function weekStart(year, week) {
+        const dow = (dayOfWeek(year) + 6) % 7;
+        const baseJD = julianDay(year);
+        let jd = baseJD + weekOffset[dow] + (week - 1) * 7;
+        if (jd - baseJD < 0) year--;
+        let count = 0;
+        while ((jd - julianDay(year + (++count))) > 0) { }
+        year += count - 1;
+        return startOfYear(year) + (jd - julianDay(year)) * 86400.0 * 1000.0;
+    }
+
+    const quarterStartDOY = [1, 91, 182, 274];
+    function quarterStart(year, quarter) {
+        return startOfYear(year) + (quarterStartDOY[quarter-1] - 1) * 86400.0 * 1000.0;
+    }
+    function quarterEnd(year, quarter) {
+        if (quarter === 4) {
+            return startOfYear(year+1);
+        }
+        return startOfYear(year) + (quarterStartDOY[quarter] - 1) * 86400.0 * 1000.0;
+    }
+
     TimeParse.parseTime = function(input, reference, direction) {
         if (input === undefined || input === null) {
             return undefined;
         }
-        if (input.match(/^\s*(undef|inf|none|∞)/, 'i')) {
+        if (input.match(/^\s*(undef|inf|none|∞)/i)) {
             return null;
         }
-        if (input.match(/^\s*now\s*$/, 'i')) {
+        if (input.match(/^\s*now\s*$/i)) {
             return Date.now();
         }
         if (input.match(/^\s*\d{8,}\s*$/)) {
@@ -17,7 +88,73 @@ let TimeParse = {};
                 return ms;
             }
         }
-        const parts = input.trim().split(/[\s:TZtz-]/);
+        try {
+            if (input.match(/^\s*(w|week)\s*$/i)) {
+                return reference + 7 * 86400 * 1000 * direction;
+            }
+        } catch (e) {
+        }
+
+        const weekMatch = input.match(/^\s*(\d{4})?w(\d{1,2})\s*$/i);
+        if (weekMatch) {
+            try {
+                let year = weekMatch[1];
+                if (!year) {
+                    year = selectedYear(reference);
+                } else {
+                    year = parseInt(year);
+                }
+                const week = parseInt(weekMatch[2]);
+                if (isFinite(year) && year >= 1970 && year < 2999 &&
+                        isFinite(week) && week >= 1 && week <= 53) {
+                    const start = weekStart(year, week);
+                    if (direction && direction > 0) {
+                        return start + 7 * 86400 * 1000;
+                    } else {
+                        return start;
+                    }
+                }
+            } catch (e) {
+            }
+        }
+
+        const quarterMatch = input.match(/^\s*(\d{4})?Q([1234])\s*$/i);
+        if (quarterMatch) {
+            try {
+                let year = quarterMatch[1];
+                if (!year) {
+                    year = selectedYear(reference);
+                } else {
+                    year = parseInt(year);
+                }
+                if (isFinite(year) && year >= 1970 && year < 2999) {
+                    const quarter = parseInt(quarterMatch[2]);
+                    if (direction && direction > 0) {
+                        return quarterEnd(year, quarter);
+                    } else {
+                        return quarterStart(year, quarter);
+                    }
+                }
+            } catch (e) {
+            }
+        }
+
+        const fractionalYear = input.match(/^\s*(\d{4})\.(\d+)\s*$/i);
+        if (fractionalYear) {
+            try {
+                const year = parseInt(fractionalYear[1]);
+                const fraction = parseFloat('0.' + fractionalYear[2]);
+                if (isFinite(year) && year >= 1970 && year < 2999 &&
+                        isFinite(fraction) && fraction >= 0.0 && fraction <= 1.0) {
+                    const start = startOfYear(year);
+                    const end = startOfYear(year + 1);
+                    return start + (end - start) * fraction;
+                }
+            } catch (e) {
+            }
+        }
+
+        const parts = input.trim().split(/\s+|[:TZ-]/i);
         if (parts.length <= 0) {
             return undefined;
         }
@@ -43,6 +180,11 @@ let TimeParse = {};
                     const offset = parseInt(first.slice(0, -1));
                     if (isFinite(offset) && isFinite(reference) && isFinite(direction)) {
                         return reference + offset * 86400 * 1000 * direction;
+                    }
+                } else if (first.endsWith("w")) {
+                    const offset = parseInt(first.slice(0, -1));
+                    if (isFinite(offset) && isFinite(reference) && isFinite(direction)) {
+                        return reference + offset * 7 * 86400 * 1000 * direction;
                     }
                 }
             } catch (e) {
@@ -70,15 +212,7 @@ let TimeParse = {};
                 const doy = parseFloat(second);
                 if (isFinite(year) && year >= 1970.0 && year < 2999.0 &&
                         isFinite(doy) && doy >= 1.0 && doy <= 366.0) {
-                    let date = new Date();
-                    date.setUTCFullYear(year);
-                    date.setUTCMilliseconds(0);
-                    date.setUTCSeconds(0);
-                    date.setUTCMinutes(0);
-                    date.setUTCHours(0);
-                    date.setUTCDate(1);
-                    date.setUTCMonth(0);
-                    return date.getTime() + Math.round((doy - 1) * 1440.0) * 60.0 * 1000.0;
+                    return startOfYear(year) + Math.round((doy - 1) * 1440.0) * 60.0 * 1000.0;
                 }
             } catch (e) {
             }
@@ -140,6 +274,81 @@ let TimeParse = {};
         }
 
         return date.getTime();
+    }
+    TimeParse.getImpliedOffset = function(input, time_ms) {
+        if (input === undefined || input === null) {
+            return undefined;
+        }
+
+        const weekMatch = input.match(/^\s*(\d{4})?w(\d{1,2})\s*$/i);
+        if (weekMatch) {
+            try {
+                let year = weekMatch[1];
+                if (!year) {
+                    year = selectedYear(time_ms);
+                } else {
+                    year = parseInt(year);
+                }
+                const week = parseInt(weekMatch[2]);
+                if (isFinite(year) && year >= 1970 && year < 2999 &&
+                        isFinite(week) && week >= 1 && week <= 53) {
+                    return '1w';
+                }
+            } catch (e) {
+            }
+        }
+
+        const quarterMatch = input.match(/^\s*(\d{4})?Q([1234])\s*$/i);
+        if (quarterMatch) {
+            try {
+                let year = quarterMatch[1];
+                if (!year) {
+                    year = selectedYear(time_ms);
+                } else {
+                    year = parseInt(year);
+                }
+                if (isFinite(year) && year >= 1970 && year < 2999) {
+                    const quarter = parseInt(quarterMatch[2]);
+                    return year.toString().padStart(4, '0') + 'Q' + quarter.toString();
+                }
+            } catch (e) {
+            }
+        }
+
+        const doyMatch = input.match(/^\s*(?:(\d{4})(?:\s+|:))?(\d{1,3})\s*$/i);
+        if (doyMatch) {
+            try {
+                let year = parseInt(doyMatch[1]);
+                if (!year) {
+                    year = selectedYear(time_ms);
+                } else {
+                    year = parseInt(year);
+                }
+                const doy = parseFloat(doyMatch[2]);
+                if (isFinite(year) && year >= 1970 && year < 2999 &&
+                        isFinite(doy) && doy >= 1.0 && doy <= 366.0) {
+                    return "1d";
+                }
+            } catch (e) {
+            }
+        }
+
+        const dateMatch = input.match(/^\s*(\d{4})(?:\s+|-)(\d{2})(?:\s+|-)(\d{2})\s*$/i);
+        if (dateMatch) {
+            try {
+                const year = parseInt(dateMatch[1]);
+                const month = parseInt(dateMatch[2]);
+                const day = parseInt(dateMatch[3]);
+                if (isFinite(year) && year >= 1970 && year < 2999 &&
+                        isFinite(month) && month >= 1 && month <= 12 &&
+                        isFinite(day) && day >= 1 && day <= 31) {
+                    return "1d";
+                }
+            } catch (e) {
+            }
+        }
+
+        return undefined;
     }
 
     TimeParse.toDisplayTime = function(epoch_ms, padding, separator) {
@@ -221,6 +430,16 @@ let TimeParse = {};
     const queryParameters = new URLSearchParams(window.location.search);
     TimeSelect.start_ms = TimeParse.parseTime(queryParameters.get('start'));
     TimeSelect.end_ms = TimeParse.parseTime(queryParameters.get('end'));
+    if (isFinite(TimeSelect.start_ms) && !isFinite(TimeSelect.end_ms)) {
+        TimeSelect.end_ms = TimeParse.parseTime(
+            TimeParse.getImpliedOffset(queryParameters.get('start'), TimeSelect.start_ms),
+            TimeSelect.start_ms, 1);
+    } else if (!isFinite(TimeSelect.start_ms) && isFinite(TimeSelect.end_ms)) {
+        TimeSelect.start_ms = TimeParse.parseTime(
+            TimeParse.getImpliedOffset(queryParameters.get('end'), TimeSelect.end_ms),
+            TimeSelect.end_ms, -1);
+    }
+
     if (!isFinite(TimeSelect.start_ms) || !isFinite(TimeSelect.end_ms))  {
         TimeSelect.start_ms = parseInt(localStorage.getItem('forge-last-start'));
         TimeSelect.end_ms = parseInt(localStorage.getItem('forge-last-end'));
