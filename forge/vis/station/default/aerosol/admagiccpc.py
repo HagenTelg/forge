@@ -8,7 +8,7 @@ class ADMagicCPC200Status(TimeSeries):
         self.title = "CPC Status"
 
         temperatures = TimeSeries.Graph()
-        temperatures.title = "Internal Temperature"
+        temperatures.title = "Temperature"
         self.graphs.append(temperatures)
 
         degrees = TimeSeries.Axis()
@@ -71,6 +71,7 @@ class ADMagicCPC200Status(TimeSeries):
         temperatures.traces.append(cabinet)
 
         cpc_flow = TimeSeries.Graph()
+        cpc_flow.title = "Flow"
         self.graphs.append(cpc_flow)
 
         lpm = TimeSeries.Axis()

@@ -3,6 +3,7 @@ from collections import OrderedDict
 from starlette.responses import HTMLResponse
 from forge.vis.util import package_template
 from . import View, Request, Response
+from .timeseries import TimeSeries
 
 
 class SizeDistribution(View):
@@ -57,10 +58,7 @@ class SizeCounts(View):
             self.data_field: typing.Optional[str] = None
             self.script_incoming_data: typing.Optional[str] = None
 
-    class Processing:
-        def __init__(self):
-            self.components: typing.List[str] = []
-            self.script = str()
+    Processing = TimeSeries.Processing
 
     class IntegrateSizeDistribution(Processing):
         def __init__(self, total_concentration: typing.Optional[str] = None,

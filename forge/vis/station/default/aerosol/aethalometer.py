@@ -122,3 +122,67 @@ class AE33OpticalStatus(TimeSeries):
         factor.contamination = f'{mode}-contamination'
         self.graphs.append(factor)
 
+
+class AE31(TimeSeries):
+    SevenWavelength = AethalometerOptical.SevenWavelength
+
+    def __init__(self, mode: str):
+        super().__init__()
+        self.title = "AE31"
+
+        absorption = self.SevenWavelength("Mm⁻¹", '.2f', "Ba ({wavelength} nm)", f'{mode}-aethalometer', 'Ba{index}')
+        absorption.title = "Absorption Coefficient"
+        absorption.contamination = f'{mode}-contamination'
+        self.graphs.append(absorption)
+
+        ebc = self.SevenWavelength("μg/m³", '.2f', "X ({wavelength} nm)", f'{mode}-aethalometer', 'X{index}')
+        ebc.title = "Equivalent Black Carbon"
+        ebc.contamination = f'{mode}-contamination'
+        self.graphs.append(ebc)
+
+
+class AE31Status(TimeSeries):
+    SevenWavelength = AethalometerOptical.SevenWavelength
+
+    def __init__(self, mode: str):
+        super().__init__()
+        self.title = "AE31 Status"
+
+        transmittance = self.SevenWavelength(None, '.7f', "Transmittance ({wavelength} nm)",
+                                             f'{mode}-aethalometer', 'Ir{index}')
+        transmittance.title = "Transmittance"
+        self.graphs.append(transmittance)
+
+        flow = TimeSeries.Graph()
+        flow.title = "Flow"
+        self.graphs.append(flow)
+
+        lpm = TimeSeries.Axis()
+        lpm.title = "lpm"
+        lpm.format_code = '.3f'
+        flow.axes.append(lpm)
+
+        Q = TimeSeries.Trace(lpm)
+        Q.legend = "Flow"
+        Q.data_record = f'{mode}-aethalometerstatus'
+        Q.data_field = 'Q'
+        flow.traces.append(Q)
+
+
+class AE31OpticalStatus(TimeSeries):
+    SevenWavelength = AethalometerOptical.SevenWavelength
+
+    def __init__(self, mode: str):
+        super().__init__()
+        self.title = "AE31 Status"
+
+        transmittance = self.SevenWavelength(None, '.7f', "Transmittance ({wavelength} nm)",
+                                             f'{mode}-aethalometer', 'Ir{index}')
+        transmittance.title = "Transmittance"
+        transmittance.contamination = f'{mode}-contamination'
+        self.graphs.append(transmittance)
+
+        ebc = self.SevenWavelength("μg/m³", '.3f', "X ({wavelength} nm)", f'{mode}-aethalometer', 'X{index}')
+        ebc.title = "Equivalent Black Carbon"
+        ebc.contamination = f'{mode}-contamination'
+        self.graphs.append(ebc)
