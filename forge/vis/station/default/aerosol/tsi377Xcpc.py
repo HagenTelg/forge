@@ -2,7 +2,7 @@ import typing
 from forge.vis.view.timeseries import TimeSeries
 
 
-class TSI377XCPCStatus(TimeSeries):
+class TSI3772CPCStatus(TimeSeries):
     def __init__(self, mode: str):
         super().__init__()
         self.title = "CPC Status"
@@ -40,6 +40,7 @@ class TSI377XCPCStatus(TimeSeries):
         cabinet.data_field = 'Tcabinet'
         temperatures.traces.append(cabinet)
 
+
         cpc_flow = TimeSeries.Graph()
         cpc_flow.title = "Flow"
         self.graphs.append(cpc_flow)
@@ -60,3 +61,66 @@ class TSI377XCPCStatus(TimeSeries):
         inlet.data_record = f'{mode}-cpcstatus'
         inlet.data_field = 'Qinlet'
         cpc_flow.traces.append(inlet)
+
+
+class TSI3775CPCStatus(TSI3772CPCStatus):
+    def __init__(self, mode: str):
+        super().__init__(mode)
+
+        pressure = TimeSeries.Graph()
+        pressure.title = "Absolute Pressure"
+        self.graphs.append(pressure)
+
+        hPa = TimeSeries.Axis()
+        hPa.title = "hPa"
+        hPa.format_code = '.1f'
+        pressure.axes.append(hPa)
+
+        sample = TimeSeries.Trace(hPa)
+        sample.legend = "Sample Pressure"
+        sample.data_record = f'{mode}-cpcstatus'
+        sample.data_field = 'Psample'
+        pressure.traces.append(sample)
+
+
+        pressure_drop = TimeSeries.Graph()
+        pressure_drop.title = "Pressure Drop"
+        self.graphs.append(pressure_drop)
+
+        hPa_nozzle = TimeSeries.Axis()
+        hPa_nozzle.title = "Nozzle (hPa)"
+        hPa_nozzle.format_code = '.3f'
+        pressure_drop.axes.append(hPa_nozzle)
+
+        hPa_orifice = TimeSeries.Axis()
+        hPa_orifice.title = "Orifice (hPa)"
+        hPa_orifice.format_code = '.1f'
+        pressure_drop.axes.append(hPa_orifice)
+
+        nozzle = TimeSeries.Trace(hPa_nozzle)
+        nozzle.legend = "Nozzle Pressure Drop"
+        nozzle.data_record = f'{mode}-cpcstatus'
+        nozzle.data_field = 'PDnozzle'
+        pressure_drop.traces.append(nozzle)
+
+        orifice = TimeSeries.Trace(hPa_orifice)
+        orifice.legend = "Orifice Pressure Drop"
+        orifice.data_record = f'{mode}-cpcstatus'
+        orifice.data_field = 'ODorifice'
+        pressure_drop.traces.append(orifice)
+
+
+        laser = TimeSeries.Graph()
+        laser.title = "Laser"
+        self.graphs.append(laser)
+
+        mA = TimeSeries.Axis()
+        mA.title = "mA"
+        mA.format_code = '.0f'
+        laser.axes.append(mA)
+
+        sample = TimeSeries.Trace(mA)
+        sample.legend = "Laser Current"
+        sample.data_record = f'{mode}-cpcstatus'
+        sample.data_field = 'Alaser'
+        laser.traces.append(sample)

@@ -72,3 +72,35 @@ class Pressure(TimeSeries):
         vacuum.data_record = f'{mode}-pressure'
         vacuum.data_field = 'vacuum'
         system_vacuum.traces.append(vacuum)
+
+
+class BasicPressure(TimeSeries):
+    def __init__(self, mode: str):
+        super().__init__()
+
+        pressure = TimeSeries.Graph()
+        pressure.title = "Pressure"
+        self.graphs.append(pressure)
+
+        hPa = TimeSeries.Axis()
+        hPa.title = "hPa"
+        hPa.format_code = '.1f'
+        pressure.axes.append(hPa)
+
+        ambient = TimeSeries.Trace(hPa)
+        ambient.legend = "Ambient"
+        ambient.data_record = f'{mode}-pressure'
+        ambient.data_field = 'ambient'
+        pressure.traces.append(ambient)
+
+        nephelometer_coarse = TimeSeries.Trace(hPa)
+        nephelometer_coarse.legend = "Nephelometer (Coarse)"
+        nephelometer_coarse.data_record = f'{mode}-pressure'
+        nephelometer_coarse.data_field = 'neph-coarse'
+        pressure.traces.append(nephelometer_coarse)
+
+        nephelometer_fine = TimeSeries.Trace(hPa)
+        nephelometer_fine.legend = "Nephelometer (Fine)"
+        nephelometer_fine.data_record = f'{mode}-pressure'
+        nephelometer_fine.data_field = 'neph-fine'
+        pressure.traces.append(nephelometer_fine)

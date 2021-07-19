@@ -1,7 +1,8 @@
 import typing
 from ..default.view import detach, View, aerosol_views
+from ..default.aerosol.pressure import BasicPressure
 from ..default.aerosol.psap import PSAPStatus
-from .counts import EditingParticleConcentration, TSI377XCPCStatus, TSI377XCPCStatusSecondary
+from .counts import EditingParticleConcentration, TSI3772CPCStatus, TSI3772CPCStatusSecondary
 from .clap import CLAPStatusSecondary
 from .aethalometer import AE31Optical, AE31, AE31Status, AE31OpticalStatus, EditingAE31
 from .aethalometer import AE33Optical, AE33, AE33Status, AE33OpticalStatus, EditingAE33
@@ -17,8 +18,10 @@ station_views['aerosol-raw-counts'] = SMPSCounts('aerosol-raw')
 station_views['aerosol-editing-counts'] = EditingParticleConcentration()
 station_views['aerosol-clean-counts'] = SMPSCounts('aerosol-clean')
 station_views['aerosol-avgh-counts'] = SMPSCounts('aerosol-avgh')
-station_views['aerosol-raw-cpcstatus'] = TSI377XCPCStatus('aerosol-raw')
-station_views['aerosol-raw-cpcstatus2'] = TSI377XCPCStatusSecondary('aerosol-raw')
+station_views['aerosol-raw-cpcstatus'] = TSI3772CPCStatus('aerosol-raw')
+station_views['aerosol-raw-cpcstatus2'] = TSI3772CPCStatusSecondary('aerosol-raw')
+
+station_views['aerosol-raw-pressure'] = BasicPressure('aerosol-raw')
 
 station_views['aerosol-raw-opticalclap2'] = OpticalCLAPSecondary('aerosol-raw')
 station_views['aerosol-editing-clap2'] = EditingCLAPSecondary()

@@ -1,6 +1,5 @@
 import typing
 from forge.vis.view.timeseries import TimeSeries
-from ..default.aerosol.tsi377Xcpc import TSI3772CPCStatus
 from .smps import SMPSCounts
 
 
@@ -24,12 +23,6 @@ class EditingParticleConcentration(TimeSeries):
         n_cnc.legend = "Raw CNC"
         n_cnc.data_record = f'{profile}-raw-cnc'
         n_cnc.data_field = 'cnc'
-        raw.traces.append(n_cnc)
-
-        n_cnc = TimeSeries.Trace(cm_3)
-        n_cnc.legend = "Raw CNC2"
-        n_cnc.data_record = f'{profile}-raw-cnc'
-        n_cnc.data_field = 'cnc2'
         raw.traces.append(n_cnc)
 
         n_smps = TimeSeries.Trace(cm_3)
@@ -64,12 +57,6 @@ class EditingParticleConcentration(TimeSeries):
         n_cnc.data_field = 'cnc'
         edited.traces.append(n_cnc)
 
-        n_cnc = TimeSeries.Trace(cm_3)
-        n_cnc.legend = "Edited CNC2"
-        n_cnc.data_record = f'{profile}-editing-cnc'
-        n_cnc.data_field = 'cnc2'
-        edited.traces.append(n_cnc)
-
         n_smps = TimeSeries.Trace(cm_3)
         n_smps.legend = "Edited SMPS"
         n_smps.data_record = f'{profile}-editing-smps'
@@ -83,13 +70,3 @@ class EditingParticleConcentration(TimeSeries):
         n_grimm.data_field = 'N'
         edited.traces.append(n_grimm)
         self.processing[n_grimm.data_record] = SMPSCounts.IntegrateSizeDistribution('N')
-
-
-class TSI3772CPCStatusSecondary(TSI3772CPCStatus):
-    def __init__(self, mode: str):
-        super().__init__(mode)
-        self.title = "Secondary CPC Status"
-
-        for g in self.graphs:
-            for t in g.traces:
-                t.data_record += '2'
