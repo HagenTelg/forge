@@ -31,6 +31,7 @@ STATIONS = frozenset({
     'nil',
     'nwr',
     'pde',
+    'pon',
     'rpb',
     'sfa',
     'sfb',
@@ -55,6 +56,7 @@ STATIONS = frozenset({
 DISPLAY_STATIONS = frozenset(STATIONS - {
     'lab',
     'nil',
+    'pon',
     'sfa',
     'sfb',
     'sfc',
