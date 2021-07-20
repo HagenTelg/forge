@@ -7,6 +7,7 @@ station_profile_data['aerosol']['raw']['cpcstatus'] = lambda station, start_epoc
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'Tu_N71'): 'Tinlet',
         Name(station, 'raw', 'TDu_N71'): 'TDinlet',
+        Name(station, 'raw', 'Uu_N71'): 'Uinlet',
         Name(station, 'raw', 'T1_N71'): 'Tconditioner',
         Name(station, 'raw', 'T2_N71'): 'Tinitiator',
         Name(station, 'raw', 'T3_N71'): 'Tmoderator',
@@ -15,6 +16,8 @@ station_profile_data['aerosol']['raw']['cpcstatus'] = lambda station, start_epoc
         Name(station, 'raw', 'T6_N71'): 'Tpcb',
         Name(station, 'raw', 'T7_N71'): 'Tcabinet',
         Name(station, 'raw', 'Q_N71'): 'Qsample',
+        Name(station, 'raw', 'P_N71'): 'Psample',
+        Name(station, 'raw', 'Pd_N71'): 'PDorifice',
     }, send
 )
 

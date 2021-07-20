@@ -3,9 +3,18 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class ADMagicCPC200Status(TimeSeries):
+    class CalculateMissing(TimeSeries.Processing):
+        def __init__(self):
+            super().__init__()
+            self.components.append('numeric_solve')
+            self.components.append('dewpoint')
+            self.script = r"""(function(dataName) { return new Dewpoint.CalculateDispatch(dataName); })"""
+
     def __init__(self, mode: str):
         super().__init__()
         self.title = "CPC Status"
+
+        self.processing[f'{mode}-cpcstatus'] = self.CalculateMissing()
 
         temperatures = TimeSeries.Graph()
         temperatures.title = "Temperature"
@@ -21,12 +30,6 @@ class ADMagicCPC200Status(TimeSeries):
         inlet.data_record = f'{mode}-cpcstatus'
         inlet.data_field = 'Tinlet'
         temperatures.traces.append(inlet)
-
-        td_inlet = TimeSeries.Trace(degrees)
-        td_inlet.legend = "Inlet Dewpoint"
-        td_inlet.data_record = f'{mode}-cpcstatus'
-        td_inlet.data_field = 'TDinlet'
-        temperatures.traces.append(td_inlet)
 
         conditioner = TimeSeries.Trace(degrees)
         conditioner.legend = "Conditioner"
@@ -70,6 +73,39 @@ class ADMagicCPC200Status(TimeSeries):
         cabinet.data_field = 'Tcabinet'
         temperatures.traces.append(cabinet)
 
+
+        dewpoint = TimeSeries.Graph()
+        dewpoint.title = "Dewpoint"
+        self.graphs.append(dewpoint)
+
+        degrees = TimeSeries.Axis()
+        degrees.title = "°C"
+        degrees.format_code = '.1f'
+        dewpoint.axes.append(degrees)
+
+        inlet = TimeSeries.Trace(degrees)
+        inlet.legend = "Inlet Dewpoint"
+        inlet.data_record = f'{mode}-cpcstatus'
+        inlet.data_field = 'TDinlet'
+        dewpoint.traces.append(inlet)
+
+
+        rh = TimeSeries.Graph()
+        rh.title = "Relative Humidity"
+        self.graphs.append(rh)
+
+        rh_percent = TimeSeries.Axis()
+        rh_percent.title = "%"
+        rh_percent.format_code = '.1f'
+        rh.axes.append(rh_percent)
+
+        inlet = TimeSeries.Trace(rh_percent)
+        inlet.legend = "Inlet Humidity"
+        inlet.data_record = f'{mode}-cpcstatus'
+        inlet.data_field = 'Uinlet'
+        rh.traces.append(inlet)
+
+
         cpc_flow = TimeSeries.Graph()
         cpc_flow.title = "Flow"
         self.graphs.append(cpc_flow)
@@ -84,3 +120,30 @@ class ADMagicCPC200Status(TimeSeries):
         sample.data_record = f'{mode}-cpcstatus'
         sample.data_field = 'Qsample'
         cpc_flow.traces.append(sample)
+
+
+        pressure = TimeSeries.Graph()
+        pressure.title = "Pressure"
+        self.graphs.append(pressure)
+
+        absolute = TimeSeries.Axis()
+        absolute.title = "Absolute (hPa)"
+        absolute.format_code = '.1f'
+        pressure.axes.append(absolute)
+
+        delta = TimeSeries.Axis()
+        delta.title = "Delta (hPa)"
+        delta.format_code = '.1f'
+        pressure.axes.append(delta)
+
+        sample = TimeSeries.Trace(absolute)
+        sample.legend = "Sample Pressure"
+        sample.data_record = f'{mode}-cpcstatus'
+        sample.data_field = 'Psample'
+        pressure.traces.append(sample)
+
+        orifice = TimeSeries.Trace(delta)
+        orifice.legend = "Orifice Pressure Drop"
+        orifice.data_record = f'{mode}-cpcstatus'
+        orifice.data_field = 'PDorifice'
+        pressure.traces.append(orifice)
