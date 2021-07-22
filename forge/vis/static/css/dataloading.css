@@ -1,0 +1,41 @@
+.data-loading {
+  display: none;
+  position: fixed;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  padding: 18px 8px 8px;
+  background-color: #333;
+  color: white;
+}
+
+.data-loading-hide {
+  position: absolute;
+  right: 2px;
+  top: 0;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.data-loading-hide:hover,
+.data-loading-hide:focus {
+  color: red;
+  cursor: pointer;
+}
+
+
+.data-loading-stall {
+  padding: 4px 0;
+  display: none;
+}
+#data-loading-unstall {
+  border: none;
+  outline: none;
+  color: #08f;
+  padding: 2px;
+  background-color: inherit;
+  cursor: pointer;
+  font-size: 16px;
+  box-sizing: border-box;
+}

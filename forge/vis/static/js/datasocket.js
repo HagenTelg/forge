@@ -94,10 +94,23 @@ let DataSocket = {};
         date.setUTCMilliseconds(parseInt(parts[6]));
         return date.getTime();
     }
+
+    let activeRecordStreams = 0;
+    let activeRecordStalled = undefined;
     
     DataSocket.RecordStream = class extends DataSocket.Stream {
         constructor(dataName) {
             super(dataName);
+        }
+
+        startOfData() {
+            activeRecordStreams += 1;
+            DataSocket.onActiveRecordUpdate(activeRecordStreams, activeRecordStalled);
+        }
+
+        endOfData() {
+            activeRecordStreams -= 1;
+            DataSocket.onActiveRecordUpdate(activeRecordStreams, activeRecordStalled);
         }
     
         incomingDataContent(content) {
@@ -206,8 +219,27 @@ let DataSocket = {};
                 return;
             }
             target.incomingDataContent(reply.content);
+        } else if (reply.type === "stalled") {
+            if (!reply.stalled) {
+                activeRecordStalled = undefined;
+            } else {
+                activeRecordStalled = reply.reason;
+                if (!activeRecordStalled) {
+                    activeRecordStalled = "Waiting for data";
+                }
+            }
+            DataSocket.onActiveRecordUpdate(activeRecordStreams, activeRecordStalled);
         }
     });
+
+    DataSocket.unstall = function() {
+        if (serverSocket.readyState !== 1) {
+            return;
+        }
+        serverSocket.send(JSON.stringify({
+            action: 'unstall',
+        }));
+    }
 
     DataSocket.RecordDispatch = class extends DataSocket.RecordStream {
         constructor(dataName) {
@@ -242,6 +274,9 @@ let DataSocket = {};
             dispatch.stopStream();
         });
         loadingRecords.clear();
+        activeRecordStreams = 0;
+        activeRecordStalled = undefined;
+        DataSocket.onActiveRecordUpdate(0);
         DataSocket.onRecordReload = () => {};
     };
     DataSocket.addLoadedRecord = function(dataName, loader, ...args) {
@@ -264,6 +299,7 @@ let DataSocket = {};
             dispatch.beginStream();
         });
     };
+    DataSocket.onActiveRecordUpdate = (count, stalled) => {};
 
     DataSocket.reloadData = function() {
         loadingRecords.forEach((dispatch) => {

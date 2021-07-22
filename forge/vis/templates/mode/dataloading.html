@@ -1,0 +1,44 @@
+<link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/dataloading.css') }}"/>
+
+<div id="data-loading-container" class="data-loading">
+  <div id="data-loading-stall" class="data-loading-stall">
+    <label id="data-loading-stall-reason" for="data-loading-unstall">Waiting for data</label>
+    <button onclick="skipDataLoadingStall();" id="data-loading-unstall">(skip)</button>
+  </div>
+
+  <span id="data-loading-count">Loading... (0 records(s) remaining)</span>
+
+  <span onclick="hideLoading();" class="data-loading-hide" title="Hide Loading Indicator">&times;</span>
+</div>
+
+<script>
+function hideLoading() {
+    document.getElementById('data-loading-container').style.display = 'none';
+}
+
+function skipDataLoadingStall() {
+    DataSocket.unstall();
+}
+
+$(document).ready(function(event) {
+    DataSocket.onActiveRecordUpdate = (count, stalled) => {
+        if (count === 0) {
+            hideLoading();
+            return;
+        }
+
+        document.getElementById('data-loading-container').style.display = 'block';
+        document.getElementById('data-loading-count').textContent =
+                "Loading… (" + count.toString() + " record(s) remaining)";
+
+        const stallDisplay = document.getElementById('data-loading-stall');
+        if (!stalled) {
+            stallDisplay.style.display = 'none';
+            return;
+        }
+
+        stallDisplay.style.display = 'block';
+        document.getElementById('data-loading-stall-reason').textContent = stalled;
+    }
+});
+</script>
