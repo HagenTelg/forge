@@ -9,6 +9,7 @@ from starlette.endpoints import WebSocketEndpoint
 from starlette.exceptions import HTTPException
 from starlette.websockets import WebSocket
 from forge.const import STATIONS
+from .stream import DataStream
 from .assemble import begin_stream
 
 
@@ -18,10 +19,20 @@ _LOGGER = logging.getLogger(__name__)
 class _DataSocket(WebSocketEndpoint):
     encoding = 'json'
 
+    class _ActiveStream:
+        def __init__(self, stream: DataStream):
+            self.stream = stream
+            self.stopped = False
+            self.task: asyncio.Task = None
+            self.stall: typing.Optional[DataStream.Stall] = None
+            self.stall_task: typing.Optional[asyncio.Task] = None
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.station: str = None
-        self.active_data_streams: typing.Dict[int, asyncio.Task] = dict()
+        self.active_data_streams: typing.Dict[int, _DataSocket._ActiveStream] = dict()
+        self.was_data_stalled = False
+        self.prior_stall_reason: typing.Optional[str] = None
 
     @requires('authenticated')
     async def on_connect(self, websocket: WebSocket):
@@ -46,6 +57,31 @@ class _DataSocket(WebSocketEndpoint):
             'stream': stream_id,
         })
 
+    async def _update_stall_state(self, websocket: WebSocket):
+        is_stalled = False
+        stall_reason: typing.Optional[str] = None
+        for stream in self.active_data_streams.values():
+            if not stream.stall:
+                continue
+            is_stalled = True
+            if not stall_reason:
+                stall_reason = stream.stall.reason
+        if is_stalled and (not self.was_data_stalled or self.prior_stall_reason != stall_reason):
+            self.was_data_stalled = True
+            self.prior_stall_reason = stall_reason
+            await websocket.send_json({
+                'type': 'stalled',
+                'stalled': True,
+                'reason': stall_reason,
+            })
+        elif not is_stalled and self.was_data_stalled:
+            self.was_data_stalled = False
+            self.prior_stall_reason = None
+            await websocket.send_json({
+                'type': 'stalled',
+                'stalled': False,
+            })
+
     @requires('authenticated')
     async def on_receive(self, websocket: WebSocket, data: typing.Dict[str, typing.Any]):
         action = data['action']
@@ -62,7 +98,7 @@ class _DataSocket(WebSocketEndpoint):
                     'content': send_data,
                 })
 
-            stream = await begin_stream(websocket.user, self.station, data_name, start_epoch_ms, end_epoch_ms, send)
+            stream = begin_stream(websocket.user, self.station, data_name, start_epoch_ms, end_epoch_ms, send)
             if stream is None:
                 _LOGGER.debug(f"No data stream available for {data_name} to {websocket.client.host}")
                 await self._end_data_stream(websocket, stream_id)
@@ -70,15 +106,46 @@ class _DataSocket(WebSocketEndpoint):
 
             if stream_id in self.active_data_streams:
                 try:
-                    self.active_data_streams[stream_id].cancel()
+                    self.active_data_streams[stream_id].task.cancel()
                 except:
                     pass
 
+            active_stream = self._ActiveStream(stream)
+            self.active_data_streams[stream_id] = active_stream
+
             async def run_stream():
                 try:
+                    stall = await stream.stall()
+                    if stall:
+                        active_stream.stall = stall
+
+                        async def wait_stall():
+                            await stall.block()
+
+                        stall_task = asyncio.create_task(wait_stall())
+                        active_stream.stall_task = stall_task
+
+                        _LOGGER.debug(f"Stalling stream {stream_id} to {websocket.client.host}")
+                        await self._update_stall_state(websocket)
+
+                        try:
+                            await stall_task
+                        except asyncio.CancelledError:
+                            pass
+
+                        active_stream.stall_task = None
+                        active_stream.stall = None
+                        await self._update_stall_state(websocket)
+                        _LOGGER.debug(f"Stall completed for {stream_id} to {websocket.client.host}")
+
+                    if active_stream.stopped:
+                        return
                     await stream.run()
                 except asyncio.CancelledError:
                     return
+                if active_stream.stopped:
+                    return
+
                 _LOGGER.debug(f"Completed data stream {stream_id} to {websocket.client.host}")
                 await self._end_data_stream(websocket, stream_id)
                 try:
@@ -88,7 +155,17 @@ class _DataSocket(WebSocketEndpoint):
 
             _LOGGER.debug(f"Starting data stream {stream_id} for {data_name} to {websocket.client.host}")
 
-            self.active_data_streams[stream_id] = asyncio.create_task(run_stream())
+            active_stream.task = asyncio.create_task(run_stream())
+
+        elif action == 'unstall':
+            for stream in self.active_data_streams.values():
+                if not stream.stall_task:
+                    continue
+                try:
+                    stream.stall_task.cancel()
+                except:
+                    pass
+            await self._update_stall_state(websocket)
 
         elif action == 'stop':
             stream_id = int(data['stream'])
@@ -96,12 +173,21 @@ class _DataSocket(WebSocketEndpoint):
             if stream_id is None:
                 return
             del self.active_data_streams[stream_id]
+            stream.stopped = True
 
-            stream.cancel()
+            if stream.stall_task:
+                try:
+                    stream.stall_task.cancel()
+                except:
+                    pass
+
+            stream.task.cancel()
             try:
-                await stream
+                await stream.task
             except asyncio.CancelledError:
                 await self._end_data_stream(websocket, stream_id)
+
+            await self._update_stall_state(websocket)
 
             _LOGGER.debug(f"Aborted data stream {stream_id} to {websocket.client.host}")
 
@@ -109,9 +195,10 @@ class _DataSocket(WebSocketEndpoint):
             await websocket.send_json({'type': 'error', 'error': "Invalid request"})
 
     async def on_disconnect(self, websocket, close_code):
-        for task in list(self.active_data_streams.values()):
+        for stream in list(self.active_data_streams.values()):
+            stream.stopped = True
             try:
-                task.cancel()
+                stream.task.cancel()
             except:
                 pass
 

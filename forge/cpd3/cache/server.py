@@ -241,12 +241,12 @@ async def _empty_cache() -> None:
 async def _connection(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
     _LOGGER.debug("Accepted connection")
     try:
-        n_args = struct.unpack("<I", await reader.readexactly(4))[0]
+        n_args = struct.unpack('<I', await reader.readexactly(4))[0]
         args: typing.List[str] = list()
         for i in range(n_args):
-            arg_len = struct.unpack("<I", await reader.readexactly(4))[0]
+            arg_len = struct.unpack('<I', await reader.readexactly(4))[0]
             args.append((await reader.readexactly(arg_len)).decode('utf-8'))
-    except OSError:
+    except (OSError, UnicodeDecodeError, EOFError):
         try:
             writer.close()
         except OSError:
@@ -263,7 +263,7 @@ async def _connection(reader: asyncio.StreamReader, writer: asyncio.StreamWriter
     if operation == "archive_read" or operation == "edited_read":
         await _cached_read(writer, args)
         return
-    elif operation == "directive_create" or operation == "directive_rmw":
+    elif operation == "directive_create" or operation == "directive_rmw" or operation == "update_passed":
         await _empty_cache()
     try:
         writer.close()

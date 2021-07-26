@@ -52,3 +52,8 @@ window.addEventListener("message", (event) => {
         DataSocket.reloadData();
     }
 });
+
+$('#show_pass_data').click(function(event) {
+    event.preventDefault();
+    showModal('{{ request.url_for("pass_modal", station=station, mode_name=mode.mode_name) }}');
+});

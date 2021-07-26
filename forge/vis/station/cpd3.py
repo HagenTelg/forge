@@ -439,7 +439,7 @@ async def _write_directive(user: BaseAccessUser, station: str, profile: str,
 
         target.stdin.write(identity.serialize())
         try:
-            n = struct.unpack("<I", await target.stdout.readexactly(4))[0]
+            n = struct.unpack('<I', await target.stdout.readexactly(4))[0]
             existing = await target.stdout.readexactly(n)
             if len(existing) != n:
                 _LOGGER.debug(f"Error reading directive {identity} for {user.display_id} on {station}:{profile}")
@@ -490,7 +490,23 @@ async def _write_directive(user: BaseAccessUser, station: str, profile: str,
     return _convert_directive(profile, identity, existing)
 
 
+async def _queue_pass(station: str, profile: str, start_epoch: int, end_epoch: int, comment: str):
+    reader, writer = await asyncio.open_unix_connection(
+        CONFIGURATION.get('CPD3.PASS.SOCKET', '/run/forge-cpd3-pass.socket'))
+    header = struct.pack('<BQQ', 0, start_epoch, end_epoch)
+    for a in (station, profile, comment):
+        raw = a.encode('utf-8')
+        header += struct.pack('<I', len(raw))
+        header += raw
+    writer.write(header)
+    await writer.drain()
+    await reader.read(1)
+    writer.close()
+
+
 class DataReader(RecordStream):
+    _PASS_STALL_ARCHIVES = frozenset({"clean", "avgh"})
+
     class Input(RecordInput):
         def __init__(self, reader: "DataReader",
                      record_buffer: typing.List[typing.Tuple[int, typing.Dict[Name, typing.Any]]]):
@@ -572,6 +588,57 @@ class DataReader(RecordStream):
                                                     stdout=asyncio.subprocess.PIPE,
                                                     stdin=asyncio.subprocess.DEVNULL)
 
+    class _CleanReadyStall(RecordStream.Stall):
+        def __init__(self, readers: typing.List[asyncio.StreamReader], writers: typing.List[asyncio.StreamWriter]):
+            super().__init__("Passed data update in progress")
+            self.readers = readers
+            self.writers = writers
+
+        async def block(self):
+            for r in self.readers:
+                try:
+                    await r.read(1)
+                except (OSError, EOFError):
+                    pass
+            for w in self.writers:
+                try:
+                    w.close()
+                except OSError:
+                    pass
+
+    async def stall(self) -> typing.Optional["DataReader._CleanReadyStall"]:
+        blocking_stations = set()
+        for check in self.data.keys():
+            if check.archive in self._PASS_STALL_ARCHIVES:
+                blocking_stations.add(check.station)
+
+        if len(blocking_stations) == 0:
+            return None
+
+        readers: typing.List[asyncio.StreamReader] = list()
+        writers: typing.List[asyncio.StreamWriter] = list()
+
+        for station in blocking_stations:
+            try:
+                reader, writer = await asyncio.open_unix_connection(
+                    CONFIGURATION.get('CPD3.PASS.SOCKET', '/run/forge-cpd3-pass.socket'))
+                enc = station.encode('utf-8')
+                writer.write(struct.pack('<BI', 1, len(enc)))
+                writer.write(enc)
+                await writer.drain()
+                response = await reader.read(1)
+                if not response:
+                    writer.close()
+                    continue
+            except (OSError, EOFError):
+                continue
+            readers.append(reader)
+            writers.append(writer)
+
+        if len(readers) == 0:
+            return None
+        return self._CleanReadyStall(readers, writers)
+
     async def run(self) -> None:
         reader = await self.create_reader()
 
@@ -626,6 +693,9 @@ class EditedReader(DataReader):
                                                     self.station, self.profile,
                                                     stdout=asyncio.subprocess.PIPE,
                                                     stdin=asyncio.subprocess.DEVNULL)
+
+    async def stall(self) -> typing.Optional["DataStream.Stall"]:
+        return None
 
 
 class EditReader(DataStream):
@@ -851,6 +921,9 @@ class EditedContaminationReader(ContaminationReader):
                                                     stdout=asyncio.subprocess.PIPE,
                                                     stdin=asyncio.subprocess.DEVNULL)
 
+    async def stall(self) -> typing.Optional["DataStream.Stall"]:
+        return None
+
 
 def editing_get(station: str, mode_name: str, start_epoch_ms: int, end_epoch_ms: int,
                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
@@ -886,6 +959,16 @@ def editing_save(user: BaseAccessUser, station: str, mode_name: str,
                  directive: typing.Dict[str, typing.Any]) -> typing.Awaitable[typing.Optional[dict]]:
     profile = mode_name.split('-', 1)[0]
     return _write_directive(user, station, profile, directive)
+
+
+def editing_pass(station: str, mode_name: str, start_epoch_ms: int, end_epoch_ms: int,
+                 comment: typing.Optional[str] = None) -> typing.Awaitable[None]:
+    profile = mode_name.split('-', 1)[0]
+    start_epoch = int(floor(start_epoch_ms / 1000.0))
+    end_epoch = int(ceil(end_epoch_ms / 1000.0))
+    if not comment:
+        comment = ''
+    return _queue_pass(station, profile, start_epoch, end_epoch, comment)
 
 
 def data_get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,

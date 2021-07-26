@@ -1,0 +1,234 @@
+<style>
+.pass-footer {
+  padding: 2px 16px;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+}
+
+.pass-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 16px;
+  background-color: inherit;
+  font-family: inherit;
+  font-weight: bold;
+  float: right;
+}
+.pass-footer button[disabled] {
+  background-color: #004099;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.pass-footer button:hover,
+.pass-footer button:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pass-entry table {
+  padding: 40px 40px 16px 16px;
+  border: none;
+  width: 100%;
+}
+
+.pass-entry td:first-child,
+.pass-entry td:last-child {
+  white-space: nowrap;
+}
+
+.pass-entry td:first-child {
+  width: 100px;
+}
+
+.pass-entry td:first-child label {
+  right: 0;
+  padding: 16px 16px 0 16px;
+  font-weight: bold;
+}
+
+.pass-entry td:last-child {
+  width: 300px;
+}
+
+.pass-entry td:last-child label {
+  padding: 16px 32px 0 32px;
+}
+
+.pass-entry td:not(:last-child) td:not(:last-child) {
+  width: 100%;
+}
+
+.pass-entry input {
+  border: none;
+  border-bottom: 2px solid black;
+  padding: 12px 20px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.pass-entry input.invalid {
+  border-bottom: 2px solid red;
+}
+
+.pass-entry label.invalid {
+  color: red;
+}
+
+#pass-comment {
+  padding: 12px 20px;
+  margin: 8px 0;
+  border: 1px solid #ccc;
+  height: 60px;
+  width: calc(100% - 16px);
+  resize: none;
+  flex-grow: 1;
+}
+</style>
+
+<form class="pass-entry" action="{{ request.url_for('pass_data', station=station, mode_name=mode_name) }}">
+  <table>
+    <tr>
+      <td><label for="input-start-time">Start</label></td>
+      <td><input type="text" id="input-start-time" name="start"></td>
+      <td><label id="parsed-start-time"></label></td>
+    </tr>
+    <tr>
+      <td><label for="input-end-time">End</label></td>
+      <td><input type="text" id="input-end-time" name="end"></td>
+      <td><label id="parsed-end-time"></label></td>
+    </tr>
+    <tr>
+      <td colspan="3"><textarea id="pass-comment" placeholder="Enter any comments about the data or why it is being (re-)passed (optional)."></textarea></td>
+    </tr>
+  </table>
+
+  <div class="pass-footer">
+    <button id="pass-data">Ok</button>
+    <button id="pass-cancel">Cancel</button>
+  </div>
+</form>
+
+<script>
+(function() {
+    const startTimeEntry = document.getElementById("input-start-time");
+    const startTimeDisplay = document.getElementById("parsed-start-time");
+    const endTimeEntry = document.getElementById("input-end-time");
+    const endTimeDisplay = document.getElementById("parsed-end-time");
+    const passComment = document.getElementById("pass-comment");
+    const passButton = document.getElementById("pass-data");
+
+    $(passButton).click(function(event) {
+        event.preventDefault();
+        passButton.disabled = true;
+
+        let parsedStart = TimeParse.parseTime(startTimeEntry.value, TimeSelect.end_ms, -1);
+        const parsedEnd = TimeParse.parseTime(endTimeEntry.value, parsedStart, 1);
+        parsedStart = TimeParse.parseTime(startTimeEntry.value, parsedEnd, -1);
+
+        if (!parsedStart || !parsedEnd) {
+            hideModal();
+            return;
+        }
+
+        $.post("{{ request.url_for('pass_data', station=station, mode_name=mode_name) }}", JSON.stringify({
+            start: parsedStart,
+            end: parsedEnd,
+            comment: passComment.value,
+        }), function(response) {
+            if (response.status !== 'ok') {
+                window.alert("Error passing data");
+            }
+        }).fail(function() {
+            window.alert("Error passing data");
+        }).always(hideModal);
+    });
+    $('#pass-cancel').click(function(event) {
+        event.preventDefault();
+        hideModal();
+    });
+
+    let haveEditedStart = false;
+    let haveEditedEnd = false;
+
+    function startTimeEdited() {
+        haveEditedStart = true;
+
+        const parsedEnd = TimeParse.parseTime(endTimeEntry.value, TimeSelect.start_ms, 1);
+        const parsedStart = TimeParse.parseTime(startTimeEntry.value, parsedEnd, -1);
+
+        if (!parsedStart) {
+            startTimeEntry.classList.add('invalid');
+            startTimeDisplay.classList.add('invalid');
+
+            startTimeDisplay.textContent = "ERROR";
+            passButton.disabled = true;
+            return;
+        }
+        if (parsedEnd) {
+            passButton.disabled = false;
+        }
+
+        startTimeEntry.classList.remove('invalid');
+        startTimeDisplay.classList.remove('invalid');
+        startTimeDisplay.textContent = TimeParse.toDisplayTime(parsedStart);
+
+        if (!haveEditedEnd) {
+            const offset = TimeParse.getImpliedOffset(startTimeEntry.value, parsedStart);
+            const setTime = TimeParse.parseTime(offset, parsedStart, 1);
+            if (setTime) {
+                endTimeEntry.classList.remove('invalid');
+                endTimeDisplay.classList.remove('invalid');
+                endTimeEntry.value = offset;
+                endTimeDisplay.textContent = TimeParse.toDisplayTime(setTime);
+            }
+        }
+    }
+    $('#input-start-time').change(startTimeEdited);
+    $('#input-start-time').on('input', startTimeEdited);
+    startTimeEntry.value = startTimeDisplay.textContent = TimeParse.toDisplayTime(TimeSelect.start_ms);
+
+    function endTimeEdited() {
+        haveEditedEnd = true;
+
+        const parsedStart = TimeParse.parseTime(startTimeEntry.value, TimeSelect.end_ms, -1);
+        const parsedEnd = TimeParse.parseTime(endTimeEntry.value, parsedStart, 1);
+
+        if (!parsedEnd) {
+            endTimeEntry.classList.add('invalid');
+            endTimeDisplay.classList.add('invalid');
+
+            endTimeDisplay.textContent = "ERROR";
+            passButton.disabled = true;
+            return;
+        }
+        if (parsedStart) {
+            passButton.disabled = false;
+        }
+
+        endTimeEntry.classList.remove('invalid');
+        endTimeDisplay.classList.remove('invalid');
+        endTimeDisplay.textContent = TimeParse.toDisplayTime(parsedEnd);
+
+        if (!haveEditedStart) {
+            const offset = TimeParse.getImpliedOffset(endTimeEntry.value, parsedEnd);
+            const setTime = TimeParse.parseTime(offset, parsedEnd, -1);
+            if (setTime) {
+                startTimeEntry.classList.remove('invalid');
+                startTimeDisplay.classList.remove('invalid');
+                startTimeEntry.value = offset;
+                startTimeDisplay.textContent = TimeParse.toDisplayTime(setTime);
+            }
+        }
+    }
+    $('#input-end-time').change(endTimeEdited);
+    $('#input-end-time').on('input', endTimeEdited);
+    endTimeEntry.value = endTimeDisplay.textContent = TimeParse.toDisplayTime(TimeSelect.end_ms);
+
+    passButton.disabled = false;
+})();
+</script>

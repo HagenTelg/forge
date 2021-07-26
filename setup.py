@@ -32,6 +32,7 @@ setup(
         "forge-vis-access = forge.vis.access.cli.__main__:main",
         "forge-cpd3-cache-client = forge.cpd3.cache.client:main",
         "forge-cpd3-cache-server = forge.cpd3.cache.server:main",
+        "forge-cpd3-pass-server = forge.cpd3.pass.server:main",
     ]},
     packages=find_packages(exclude=["tests"]),
     package_data={"": [

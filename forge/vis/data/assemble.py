@@ -1,3 +1,4 @@
+import asyncio
 import typing
 from forge.vis.access import BaseAccessUser
 from forge.vis.station.lookup import station_data
@@ -5,8 +6,8 @@ from .stream import DataStream
 from .permissions import is_available
 
 
-async def begin_stream(user: BaseAccessUser, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
-                       send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
+def begin_stream(user: BaseAccessUser, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
+                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
     if not is_available(user, station, data_name):
         return None
 

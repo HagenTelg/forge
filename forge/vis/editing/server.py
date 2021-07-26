@@ -12,6 +12,7 @@ from .permissions import is_available, is_writable
 from .export import export_csv, export_json
 from .save import save_edit
 from .actions import action_codes, action_editor
+from .datapass import pass_modal, pass_data
 
 
 @requires('authenticated')
@@ -52,6 +53,8 @@ async def _details(request: Request) -> Response:
 routes: typing.List[Route] = [
     Route('/details/{station}', endpoint=_details, name='edit_details'),
     Route('/action/{station}/{action}', endpoint=action_editor, name='edit_action'),
+    Route('/pass/{station}/{mode_name}/modal', endpoint=pass_modal, name='pass_modal'),
+    Route('/pass/{station}/{mode_name}', endpoint=pass_data, methods=['POST'], name='pass_data'),
     Route('/{station}/{mode_name}/csv', endpoint=export_csv, name='edits_csv'),
     Route('/{station}/{mode_name}/json', endpoint=export_json, name='edits_json'),
     Route('/{station}/{mode_name}/save', endpoint=save_edit, methods=['POST'], name='edit_save'),

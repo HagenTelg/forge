@@ -6,8 +6,19 @@ from base64 import b64encode
 
 
 class DataStream(ABC):
+    class Stall(ABC):
+        def __init__(self, reason: typing.Optional[str] = None):
+            self.reason = reason
+
+        @abstractmethod
+        async def block(self):
+            pass
+
     def __init__(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
         self.send = send
+
+    async def stall(self) -> typing.Optional["DataStream.Stall"]:
+        return None
 
     @abstractmethod
     async def run(self) -> None:

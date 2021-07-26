@@ -24,3 +24,9 @@ def save(user: BaseAccessUser, station: str, mode_name: str,
          directive: typing.Dict[str, typing.Any]) -> typing.Optional[typing.Awaitable[typing.Optional[typing.Dict[str, typing.Any]]]]:
     from forge.vis.station.cpd3 import editing_save
     return editing_save(user, station, mode_name, directive)
+
+
+def pass_data(station: str, mode_name: str, start_epoch_ms: int,
+              end_epoch_ms: int, comment: typing.Optional[str] = None) -> typing.Optional[typing.Awaitable[None]]:
+    from forge.vis.station.cpd3 import editing_pass
+    return editing_pass(station, mode_name, start_epoch_ms, end_epoch_ms, comment)
