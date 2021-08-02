@@ -17,11 +17,16 @@
   float: right;
 }
 
-.timeselect-footer button:hover,
-.timeselect-footer button:focus {
+.timeselect-footer button:hover:not(:disabled),
+.timeselect-footer button:focus:not(:disabled) {
   color: #000;
   text-decoration: none;
   cursor: pointer;
+}
+.timeselect-footer button:disabled {
+  color: #777;
+  text-decoration: none;
+  cursor: not-allowed;
 }
 
 .timeselect-entry table {
@@ -90,19 +95,20 @@
   </table>
 
   <div class="timeselect-footer">
-    <button id="timeselect-apply">Apply</button>
-    <button id="timeselect-reset">Reset</button>
-    <button id="timeselect-default">Default</button>
-    <button id="timeselect-unzoom">Un-zoom</button>
+    <button id="timeselect-apply" title="Times and replot">Apply</button>
+    <button id="timeselect-reset" title="Reset times to their initial values and replot">Reset</button>
+    <button id="timeselect-default" title="Reset times to their default values and replot">Default</button>
+    <button id="timeselect-unzoom" title="Set times to their values before zooming">Un-zoom</button>
+    <button id="timeselect-unpassed" title="Set times to the latest data that hasn't been passed yet">Un-passed</button>
   </div>
 </form>
 
 <script>
 (function() {
-    const startTimeEntry = document.getElementById("input-start-time");
-    const startTimeDisplay = document.getElementById("parsed-start-time");
-    const endTimeEntry = document.getElementById("input-end-time");
-    const endTimeDisplay = document.getElementById("parsed-end-time");
+    const startTimeEntry = document.getElementById('input-start-time');
+    const startTimeDisplay = document.getElementById('parsed-start-time');
+    const endTimeEntry = document.getElementById('input-end-time');
+    const endTimeDisplay = document.getElementById('parsed-end-time');
 
     $('#timeselect-apply').click(function(event) {
         event.preventDefault();
@@ -198,7 +204,7 @@
     $('#input-end-time').on('input', endTimeEdited);
     endTimeEntry.value = endTimeDisplay.textContent = TimeParse.toDisplayTime(TimeSelect.end_ms);
 
-    const unzoomButton = document.getElementById("timeselect-unzoom");
+    const unzoomButton = document.getElementById('timeselect-unzoom');
     function updateZoom() {
         if (!TimeSelect.zoom_start_ms || !TimeSelect.zoom_end_ms) {
             unzoomButton.style.display = 'none';
@@ -221,7 +227,7 @@
     TimeSelect.onZoom('TimeSelectModal', updateZoom);
     updateZoom();
 
-    $('#timeselect-unzoom').click(function(event) {
+    $(unzoomButton).click(function(event) {
         event.preventDefault();
 
         startTimeEntry.value = startTimeDisplay.textContent = TimeParse.toDisplayTime(TimeSelect.start_ms);
@@ -233,5 +239,48 @@
 
         unzoomButton.style.display = 'none';
     });
+
+    const unpassedButton = document.getElementById('timeselect-unpassed');
+    if (TimeSelect.fetchLatestPassed) {
+        $(unpassedButton).click(function(event) {
+          event.preventDefault();
+          unpassedButton.disabled = true;
+
+          TimeSelect.fetchLatestPassed().done(function(response) {
+              const startUnpassed = response.latest_epoch_ms;
+              if (!startUnpassed) {
+                  return;
+              }
+
+              startTimeEntry.classList.remove('invalid');
+              startTimeDisplay.classList.remove('invalid');
+              endTimeEntry.classList.remove('invalid');
+              endTimeDisplay.classList.remove('invalid');
+
+              if (TimeParse.isOffset(endTimeEntry.value)) {
+                  const checkTime = TimeParse.parseTime(endTimeEntry.value, startUnpassed, 1);
+                  if (checkTime) {
+                      startTimeEntry.value = startTimeDisplay.textContent = TimeParse.toDisplayTime(checkTime);
+                      return;
+                  }
+              }
+              if (TimeParse.isOffset(startTimeEntry.value)) {
+                  const checkTime = TimeParse.parseTime(startTimeEntry.value, startUnpassed, -1);
+                  if (checkTime) {
+                      endTimeEntry.value = endTimeDisplay.textContent = TimeParse.toDisplayTime(checkTime);
+                      return;
+                  }
+              }
+
+              startTimeEntry.value = startTimeDisplay.textContent = TimeParse.toDisplayTime(startUnpassed);
+              endTimeEntry.value = "1w";
+              endTimeDisplay.textContent = TimeParse.toDisplayTime(startUnpassed + 7 * 86400 * 1000);
+          }).always(function() {
+              unpassedButton.style.display = 'none';
+          });
+      });
+    } else {
+        unpassedButton.style.display = 'none';
+    }
 })();
 </script>

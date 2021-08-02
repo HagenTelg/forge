@@ -490,7 +490,7 @@ async def _write_directive(user: BaseAccessUser, station: str, profile: str,
     return _convert_directive(profile, identity, existing)
 
 
-async def _queue_pass(station: str, profile: str, start_epoch: int, end_epoch: int, comment: str):
+async def _queue_pass(station: str, profile: str, start_epoch: int, end_epoch: int, comment: str) -> None:
     reader, writer = await asyncio.open_unix_connection(
         CONFIGURATION.get('CPD3.PASS.SOCKET', '/run/forge-cpd3-pass.socket'))
     header = struct.pack('<BQQ', 0, start_epoch, end_epoch)
@@ -502,6 +502,48 @@ async def _queue_pass(station: str, profile: str, start_epoch: int, end_epoch: i
     await writer.drain()
     await reader.read(1)
     writer.close()
+
+
+async def _get_latest_passed(station: str, profile: str) -> typing.Optional[int]:
+    class Input(StandardDataInput):
+        def __init__(self):
+            super().__init__()
+            self.latest_passed: typing.Optional[int] = None
+
+        def value_ready(self, identity: Identity, value: typing.Any) -> None:
+            if not identity.end:
+                return
+            if not self.latest_passed or self.latest_passed < identity.end:
+                self.latest_passed = int(ceil(identity.end))
+
+    async def read_passed(start_epoch: int, end_epoch: int) -> typing.Optional[int]:
+        _LOGGER.debug(f"Starting latest passed read for {station} {profile} {start_epoch},{end_epoch}")
+        reader = await asyncio.create_subprocess_exec(_interface, 'archive_read',
+                                                      str(start_epoch), str(end_epoch),
+                                                      f'{station}:passed:{profile}:=',
+                                                      stdout=asyncio.subprocess.PIPE,
+                                                      stdin=asyncio.subprocess.DEVNULL)
+        await reader.stdout.readexactly(3)
+
+        status = Input()
+        while True:
+            data = await reader.stdout.read(65536)
+            if not data:
+                break
+            status.incoming_raw(data)
+        await reader.wait()
+        return status.latest_passed
+
+    current_end = int(time.time())
+    current_start = current_end - 366 * 24 * 60 * 60
+    last_possible_start = current_start - 10 * 366 * 24 * 60 * 60
+    while current_start > last_possible_start:
+        latest = await read_passed(current_start, current_end)
+        if latest:
+            return latest * 1000
+        current_end = current_start
+        current_start = current_end - 366 * 24 * 60 * 60
+    return None
 
 
 class DataReader(RecordStream):
@@ -974,6 +1016,11 @@ def editing_pass(station: str, mode_name: str, start_epoch_ms: int, end_epoch_ms
 def data_get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
              send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
     return data_profile_get(station, data_name, start_epoch_ms, end_epoch_ms, send, profile_data)
+
+
+def latest_passed(station: str, mode_name: str) -> typing.Awaitable[typing.Optional[int]]:
+    profile = mode_name.split('-', 1)[0]
+    return _get_latest_passed(station, profile)
 
 
 def data_profile_get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,

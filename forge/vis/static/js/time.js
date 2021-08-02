@@ -350,6 +350,12 @@ let TimeParse = {};
 
         return undefined;
     }
+    TimeParse.isOffset = function(input) {
+        if (input.match(/^\s*\d+[smhdw]\s*$/i)) {
+            return true;
+        }
+        return false;
+    }
 
     TimeParse.toDisplayTime = function(epoch_ms, padding, separator) {
         if (!epoch_ms || !isFinite(epoch_ms)) {
@@ -426,6 +432,8 @@ let TimeParse = {};
         const start_ms = end_ms - showDays * 86400 * 1000;
         TimeSelect.change(start_ms, end_ms);
     };
+
+    TimeSelect.fetchLatestPassed = undefined;
 
     const queryParameters = new URLSearchParams(window.location.search);
     TimeSelect.start_ms = TimeParse.parseTime(queryParameters.get('start'));

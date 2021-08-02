@@ -24,6 +24,13 @@ $(document).ready(function(event) {
     }
 });
 
+
+$(document).ready(function(event) {
+    TimeSelect.fetchLatestPassed = function() {
+        return $.get("{{ request.url_for('latest_passed', station=station, mode_name=mode.mode_name) }}");
+    }
+});
+
 function isModalActive() {
     const modal = document.getElementById('modal-container');
     return modal.style.display === 'block';
