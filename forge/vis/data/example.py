@@ -6,13 +6,7 @@ from forge.vis.util import package_data
 
 class ExampleTimeSeries(RecordStream):
     def __init__(self, start_epoch_ms: int, send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
-        super().__init__(send, ['BsG', 'BaG', 'Tsample', 'Psample', 'Tambient'], {
-            'BsG': 2,
-            'BaG': 2,
-            'Tsample': 1,
-            'Tambient': 1,
-            'Psample': 1,
-        })
+        super().__init__(send, ['BsG', 'BaG', 'Tsample', 'Psample', 'Tambient'])
         self.filename = package_data('static', 'example', 'timeseries.csv')
         self.start_epoch_ms = start_epoch_ms
 
