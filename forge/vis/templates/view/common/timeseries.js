@@ -10,8 +10,8 @@ var TimeSeriesCommon = {};
         };
 
         if (localStorage.getItem('forge-settings-time-format') === 'doy') {
-            result.hoverformat = "%Y:%-j %H:%M";
-            result.tickformat = "%-j\n %Y";
+            result.hoverformat = "%Y:%-j.%k";
+            result.tickformat = "%-j.%k\n %Y";
         }
 
         return result;
@@ -107,6 +107,24 @@ var TimeSeriesCommon = {};
             }
 
             TimeSelect.zoom(start_ms, end_ms);
+        });
+    }
+
+    TimeSeriesCommon.installSpikeToggleHandler = function(div) {
+        div.on('plotly_relayout', function(data) {
+            const showspikes = data['xaxis.showspikes'];
+            if (showspikes === undefined) {
+                return;
+            }
+            if (showspikes) {
+                Plotly.relayout(div, {
+                    hovermode: 'closest',
+                });
+            } else {
+                Plotly.relayout(div, {
+                    hovermode: 'x',
+                });
+            }
         });
     }
 

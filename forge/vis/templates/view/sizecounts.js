@@ -5,6 +5,11 @@ let layout = {
 
     autosize : true,
 
+    modebar: {
+        add: 'togglespikelines',
+    },
+    hovermode: 'x',
+
     grid: {
         columns: 1,
         rows: 2,
@@ -170,3 +175,4 @@ shapeHandler.update();
 DataSocket.startLoadingRecords();
 
 TimeSeriesCommon.installZoomHandler(div);
+TimeSeriesCommon.installSpikeToggleHandler(div);
