@@ -44,6 +44,9 @@ async def pass_data(request: Request) -> Response:
     if not is_writable(request, station, mode_name):
         raise HTTPException(starlette.status.HTTP_403_FORBIDDEN, detail="Modification not permitted")
 
+    if mode_name.startswith("example-"):
+        return JSONResponse({'status': 'ok'})
+
     try:
         data = await request.json()
     except:
