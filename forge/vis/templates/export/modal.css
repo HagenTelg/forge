@@ -1,0 +1,94 @@
+.export-footer {
+  padding: 2px 16px;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+}
+
+.export-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 16px;
+  background-color: inherit;
+  font-family: inherit;
+  font-weight: bold;
+  float: right;
+}
+.export-footer button[disabled] {
+  background-color: #004099;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.export-footer button:hover,
+.export-footer button:focus {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.export-entry table {
+  padding: 40px 40px 16px 16px;
+  border: none;
+  width: 100%;
+}
+
+.export-entry td:first-child,
+.export-entry td:last-child {
+  white-space: nowrap;
+}
+
+.export-entry td:first-child {
+  width: 100px;
+}
+
+.export-entry td:first-child label {
+  right: 0;
+  padding: 16px 16px 0 16px;
+  font-weight: bold;
+}
+
+.export-entry td:last-child {
+  width: 300px;
+}
+
+.export-entry td:last-child label {
+  padding: 16px 32px 0 32px;
+}
+
+.export-entry td:not(:last-child) td:not(:last-child) {
+  width: 100%;
+}
+
+.export-entry input {
+  border: none;
+  border-bottom: 2px solid black;
+  padding: 12px 20px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.export-entry input.invalid {
+  border-bottom: 2px solid red;
+}
+
+.export-entry label.invalid {
+  color: red;
+}
+
+select.export-select {
+  padding: 12px 20px;
+  display: block;
+  border: none;
+  box-sizing: border-box;
+  min-width: 150px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #0080ff;
+  color: white;
+  cursor: pointer;
+  flex-shrink: 0;
+  text-align: left;
+}

@@ -7,10 +7,12 @@ import logging
 from signal import SIGTERM
 from math import floor, ceil
 from copy import deepcopy
+from starlette.responses import StreamingResponse
 from forge.const import __version__
 from forge.vis import CONFIGURATION
 from forge.vis.access import BaseAccessUser
 from forge.vis.data.stream import DataStream, RecordStream
+from forge.vis.export import Export, ExportList
 from forge.cpd3.identity import Name, Identity
 from forge.cpd3.variant import serialize as variant_serialize
 from forge.cpd3.variant import deserialize as variant_deserialize
@@ -1048,11 +1050,420 @@ def data_profile_get(station: str, data_name: str, start_epoch_ms: int, end_epoc
     return result(station, start_epoch_ms, end_epoch_ms, send)
 
 
-def detach(*profiles: typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]]) -> typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]]:
-    result: typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]] = dict()
+class DataExport(Export):
+    def __init__(self, start_epoch_ms: int, end_epoch_ms: int, export_mode: str, data: typing.Set[Name],
+                 limit_flavors: bool = False, filename: str = 'export.csv', media_type: str = 'text/csv'):
+        self.start_epoch = int(floor(start_epoch_ms / 1000.0))
+        self.end_epoch = int(ceil(end_epoch_ms / 1000.0))
+        self.export_mode = export_mode
+        self.data = data
+        self.limit_flavors = limit_flavors
+        self.filename = filename
+        self.media_type = media_type
+
+    async def create_reader(self) -> asyncio.subprocess.Process:
+        selections = list()
+        for sel in self.data:
+            arg = ''
+            if len(sel.flavors) == 0:
+                if self.limit_flavors:
+                    arg = ':='
+            else:
+                for f in sel.flavors:
+                    arg += f':={f}'
+            arg = f'{sel.station}:{sel.archive}:{sel.variable}' + arg
+            selections.append(arg)
+        _LOGGER.debug(f"Starting data export for {self.start_epoch},{self.end_epoch} with {len(selections)} selections")
+        return await asyncio.create_subprocess_exec(_interface, 'export', self.export_mode,
+                                                    str(self.start_epoch), str(self.end_epoch),
+                                                    *selections,
+                                                    stdout=asyncio.subprocess.PIPE,
+                                                    stdin=asyncio.subprocess.DEVNULL)
+
+    async def __call__(self) -> StreamingResponse:
+        reader = await self.create_reader()
+
+        async def run():
+            while True:
+                chunk = await reader.stdout.read(4096)
+                if not chunk:
+                    break
+                yield chunk
+            try:
+                reader.terminate()
+            except:
+                pass
+            await reader.wait()
+
+        return StreamingResponse(run(), media_type=self.media_type, headers={
+            'Content-Disposition': f'attachment; filename="{self.filename}"',
+        })
+
+
+class DataExportList(ExportList):
+    class Entry(ExportList.Entry):
+        def __init__(self, key: str, display: str, data: typing.Callable[[str, int, int], Export],
+                     time_limit_days: typing.Optional[int] = 366):
+            super().__init__(key, display)
+            self.data = data
+            if time_limit_days:
+                self.time_limit_ms: typing.Optional[int] = time_limit_days * 86400 * 1000
+            else:
+                self.time_limit_ms: typing.Optional[int] = None
+
+        def __deepcopy__(self, memo):
+            y = type(self)(self.key, self.display, self.data)
+            y.time_limit_ms = self.time_limit_ms
+            memo[id(self)] = y
+            return y
+
+    def __init__(self, exports: typing.Optional[typing.List["DataExportList.Entry"]] = None):
+        super().__init__(exports)
+
+    def create_export(self, station: str, export_key: str,
+                      start_epoch_ms: int, end_epoch_ms: int) -> typing.Optional[Export]:
+        for export in self.exports:
+            if export.key == export_key:
+                if export.time_limit_ms and (end_epoch_ms - start_epoch_ms) > export.time_limit_ms:
+                    return None
+                return export.data(station, start_epoch_ms, end_epoch_ms)
+        return None
+
+
+def export_profile_lookup(station: str, mode_name: str, lookup) -> typing.Optional[DataExportList]:
+    components = mode_name.split('-', 2)
+    if len(components) != 2:
+        return None
+    profile = components[0]
+    archive = components[1]
+
+    return lookup.get(profile, {}).get(archive)
+
+
+def export_get(station: str, mode_name: str, export_key: str,
+               start_epoch_ms: int, end_epoch_ms: int) -> typing.Optional[Export]:
+    return export_profile_get(station, mode_name, export_key, start_epoch_ms, end_epoch_ms, profile_export)
+
+
+def export_available(station: str, mode_name: str) -> typing.Optional[ExportList]:
+    return export_profile_lookup(station, mode_name, profile_export)
+
+
+def export_profile_get(station: str, mode_name: str, export_key: str, start_epoch_ms: int, end_epoch_ms: int,
+                       lookup: typing.Dict[str, typing.Dict[str, DataExportList]]) -> typing.Optional[DataExportList]:
+    components = mode_name.split('-', 2)
+    if len(components) != 2:
+        return None
+    profile = components[0]
+    archive = components[1]
+
+    result = lookup.get(profile)
+    if not result:
+        _LOGGER.debug(f"No information for profile in {mode_name}")
+        return None
+    result = result.get(archive)
+    if not result:
+        _LOGGER.debug(f"No information for archive in {mode_name}")
+        return None
+    return result.create_export(station, export_key, start_epoch_ms, end_epoch_ms)
+
+
+def detach(*profiles: typing.Union[
+        typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]],
+        typing.Dict[str, typing.Dict[str, DataExportList]]]) -> typing.Union[
+        typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]],
+        typing.Dict[str, typing.Dict[str, DataExportList]]]:
+    result: typing.Union[
+        typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]],
+        typing.Dict[str, typing.Dict[str, DataExportList]]] = dict()
     for profile in profiles:
         result.update(deepcopy(profile))
     return result
+
+
+aerosol_export: typing.Dict[str, DataExportList] = {
+    'raw': DataExportList([
+        DataExportList.Entry('extensive', "Extensive", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'basic', {
+                Name(station, 'raw', 'T_S11'),
+                Name(station, 'raw', 'P_S11'),
+                Name(station, 'raw', 'U_S11'),
+                Name(station, 'raw', 'BsB_S11'),
+                Name(station, 'raw', 'BsG_S11'),
+                Name(station, 'raw', 'BsR_S11'),
+                Name(station, 'raw', 'BbsB_S11'),
+                Name(station, 'raw', 'BbsG_S11'),
+                Name(station, 'raw', 'BbsR_S11'),
+                Name(station, 'raw', 'BaB_A11'),
+                Name(station, 'raw', 'BaG_A11'),
+                Name(station, 'raw', 'BaR_A11'),
+                Name(station, 'raw', 'N_N71'),
+                Name(station, 'raw', 'N_N61'),
+            },
+        )),
+        DataExportList.Entry('scattering', "Scattering", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'basic', {
+                Name(station, 'raw', 'T_S11'),
+                Name(station, 'raw', 'P_S11'),
+                Name(station, 'raw', 'U_S11'),
+                Name(station, 'raw', 'BsB_S11'),
+                Name(station, 'raw', 'BsG_S11'),
+                Name(station, 'raw', 'BsR_S11'),
+                Name(station, 'raw', 'BbsB_S11'),
+                Name(station, 'raw', 'BbsG_S11'),
+                Name(station, 'raw', 'BbsR_S11'),
+            },
+        )),
+        DataExportList.Entry('absorption', "Absorption", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'basic', {
+                Name(station, 'raw', 'Q_A11'),
+                Name(station, 'raw', 'L_A11'),
+                Name(station, 'raw', 'Fn_A11'),
+                Name(station, 'raw', 'BaB_A11'),
+                Name(station, 'raw', 'BaG_A11'),
+                Name(station, 'raw', 'BaR_A11'),
+                Name(station, 'raw', 'IrB_A11'),
+                Name(station, 'raw', 'IrG_A11'),
+                Name(station, 'raw', 'IrR_A11'),
+            },
+        )),
+        DataExportList.Entry('counts', "Counts", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'unsplit', {
+                Name(station, 'raw', 'N_N71'),
+                Name(station, 'raw', 'N_N61'),
+            },
+        )),
+        DataExportList.Entry('aethalometer', "Aethalometer", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'unsplit', set(
+                [Name(station, 'raw', f'Ba{i + 1}_A81') for i in range(7)] +
+                [Name(station, 'raw', f'X{i + 1}_A81') for i in range(7)] +
+                [Name(station, 'raw', f'ZFACTOR{i + 1}_A81') for i in range(7)] +
+                [Name(station, 'raw', f'Ir{i + 1}_A81') for i in range(7)]
+            ),
+        )),
+    ]),
+    'clean': DataExportList([
+        DataExportList.Entry('intensive', "Intensive", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'basic', {
+                Name(station, 'clean', 'N_XI'),
+                Name(station, 'clean', 'BsB_XI'),
+                Name(station, 'clean', 'BsG_XI'),
+                Name(station, 'clean', 'BsR_XI'),
+                Name(station, 'clean', 'BaB_XI'),
+                Name(station, 'clean', 'BaG_XI'),
+                Name(station, 'clean', 'BaR_XI'),
+                Name(station, 'clean', 'ZSSAG_XI'),
+                Name(station, 'clean', 'ZBfrG_XI'),
+                Name(station, 'clean', 'ZAngBsG_XI'),
+                Name(station, 'clean', 'ZRFEG_XI'),
+                Name(station, 'clean', 'ZGG_XI'),
+            },
+        )),
+        DataExportList.Entry('scattering', "Scattering", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'basic', {
+                Name(station, 'clean', 'T_S11'),
+                Name(station, 'clean', 'P_S11'),
+                Name(station, 'clean', 'U_S11'),
+                Name(station, 'clean', 'BsB_S11'),
+                Name(station, 'clean', 'BsG_S11'),
+                Name(station, 'clean', 'BsR_S11'),
+                Name(station, 'clean', 'BbsB_S11'),
+                Name(station, 'clean', 'BbsG_S11'),
+                Name(station, 'clean', 'BbsR_S11'),
+            },
+        )),
+        DataExportList.Entry('absorption', "Absorption", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'basic', {
+                Name(station, 'clean', 'Q_A11'),
+                Name(station, 'clean', 'L_A11'),
+                Name(station, 'clean', 'Fn_A11'),
+                Name(station, 'clean', 'BaB_A11'),
+                Name(station, 'clean', 'BaG_A11'),
+                Name(station, 'clean', 'BaR_A11'),
+                Name(station, 'clean', 'IrB_A11'),
+                Name(station, 'clean', 'IrG_A11'),
+                Name(station, 'clean', 'IrR_A11'),
+            },
+        )),
+        DataExportList.Entry('counts', "Counts", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'unsplit', {
+                Name(station, 'clean', 'N_N71'),
+                Name(station, 'clean', 'N_N61'),
+            },
+        )),
+        DataExportList.Entry('aethalometer', "Aethalometer", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'unsplit', set(
+                [Name(station, 'clean', f'Ba{i + 1}_A81') for i in range(7)] +
+                [Name(station, 'clean', f'X{i + 1}_A81') for i in range(7)] +
+                [Name(station, 'clean', f'ZFACTOR{i + 1}_A81') for i in range(7)] +
+                [Name(station, 'clean', f'Ir{i + 1}_A81') for i in range(7)]
+            ),
+        )),
+    ]),
+    'avgh': DataExportList([
+        DataExportList.Entry('intensive', "Intensive", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'average', {
+                Name(station, 'avgh', 'N_XI'),
+                Name(station, 'avgh', 'BsB_XI'),
+                Name(station, 'avgh', 'BsG_XI'),
+                Name(station, 'avgh', 'BsR_XI'),
+                Name(station, 'avgh', 'BaB_XI'),
+                Name(station, 'avgh', 'BaG_XI'),
+                Name(station, 'avgh', 'BaR_XI'),
+                Name(station, 'avgh', 'ZSSAG_XI'),
+                Name(station, 'avgh', 'ZBfrG_XI'),
+                Name(station, 'avgh', 'ZAngBsG_XI'),
+                Name(station, 'avgh', 'ZRFEG_XI'),
+                Name(station, 'avgh', 'ZGG_XI'),
+            },
+        ), time_limit_days=None),
+        DataExportList.Entry('scattering', "Scattering", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'average', {
+                Name(station, 'avgh', 'T_S11'),
+                Name(station, 'avgh', 'P_S11'),
+                Name(station, 'avgh', 'U_S11'),
+                Name(station, 'avgh', 'BsB_S11'),
+                Name(station, 'avgh', 'BsG_S11'),
+                Name(station, 'avgh', 'BsR_S11'),
+                Name(station, 'avgh', 'BbsB_S11'),
+                Name(station, 'avgh', 'BbsG_S11'),
+                Name(station, 'avgh', 'BbsR_S11'),
+            },
+        ), time_limit_days=None),
+        DataExportList.Entry('absorption', "Absorption", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'average', {
+                Name(station, 'avgh', 'Q_A11'),
+                Name(station, 'avgh', 'L_A11'),
+                Name(station, 'avgh', 'Fn_A11'),
+                Name(station, 'avgh', 'BaB_A11'),
+                Name(station, 'avgh', 'BaG_A11'),
+                Name(station, 'avgh', 'BaR_A11'),
+                Name(station, 'avgh', 'IrB_A11'),
+                Name(station, 'avgh', 'IrG_A11'),
+                Name(station, 'avgh', 'IrR_A11'),
+            },
+        ), time_limit_days=None),
+        DataExportList.Entry('counts', "Counts", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'average', {
+                Name(station, 'avgh', 'N_N71'),
+                Name(station, 'avgh', 'N_N61'),
+            },
+        ), time_limit_days=None),
+        DataExportList.Entry('aethalometer', "Aethalometer", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'average', set(
+                [Name(station, 'avgh', f'Ba{i + 1}_A81') for i in range(7)] +
+                [Name(station, 'avgh', f'X{i + 1}_A81') for i in range(7)] +
+                [Name(station, 'avgh', f'ZFACTOR{i + 1}_A81') for i in range(7)] +
+                [Name(station, 'avgh', f'Ir{i + 1}_A81') for i in range(7)]
+            ),
+        ), time_limit_days=None),
+    ]),
+}
+
+ozone_export: typing.Dict[str, DataExportList] = {
+    'raw': DataExportList([
+        DataExportList.Entry('basic', "Basic", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'unsplit', {
+                Name(station, 'raw', 'X_G81'),
+                Name(station, 'raw', 'T1_G81'),
+                Name(station, 'raw', 'T2_G81'),
+                Name(station, 'raw', 'P_G81'),
+                Name(station, 'raw', 'P1_G81'),                
+                Name(station, 'raw', 'Q1_G81'),
+                Name(station, 'raw', 'Q2_G81'),
+                Name(station, 'raw', 'C1_G81'),
+                Name(station, 'raw', 'C2_G81'),
+                Name(station, 'raw', 'WS1_XM1'),
+                Name(station, 'raw', 'WD1_XM1'),
+            },
+        )),
+    ]),
+    'clean': DataExportList([
+        DataExportList.Entry('basic', "Basic", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'unsplit', {
+                Name(station, 'clean', 'X_G81'),
+                Name(station, 'clean', 'T1_G81'),
+                Name(station, 'clean', 'T2_G81'),
+                Name(station, 'clean', 'P_G81'),
+                Name(station, 'clean', 'P1_G81'),                
+                Name(station, 'clean', 'Q1_G81'),
+                Name(station, 'clean', 'Q2_G81'),
+                Name(station, 'clean', 'C1_G81'),
+                Name(station, 'clean', 'C2_G81'),
+                Name(station, 'clean', 'WS1_XM1'),
+                Name(station, 'clean', 'WD1_XM1'),
+            },
+        )),
+    ]),
+    'avgh': DataExportList([
+        DataExportList.Entry('basic', "Basic", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'unsplit', {
+                Name(station, 'avgh', 'X_G81'),
+                Name(station, 'avgh', 'T1_G81'),
+                Name(station, 'avgh', 'T2_G81'),
+                Name(station, 'avgh', 'P_G81'),
+                Name(station, 'avgh', 'P1_G81'),                
+                Name(station, 'avgh', 'Q1_G81'),
+                Name(station, 'avgh', 'Q2_G81'),
+                Name(station, 'avgh', 'C1_G81'),
+                Name(station, 'avgh', 'C2_G81'),
+                Name(station, 'avgh', 'WS1_XM1'),
+                Name(station, 'avgh', 'WD1_XM1'),
+            },
+        )),
+    ]),
+}
+
+met_export: typing.Dict[str, DataExportList] = {
+    'raw': DataExportList([
+        DataExportList.Entry('ambient', "Ambient", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'unsplt', {
+                Name(station, 'raw', 'WS1_XM1'), Name(station, 'raw', 'WD1_XM1'),
+                Name(station, 'raw', 'WS2_XM1'), Name(station, 'raw', 'WD2_XM1'),
+                Name(station, 'raw', 'WS3_XM1'), Name(station, 'raw', 'WD3_XM1'),
+                Name(station, 'raw', 'T1_XM1'), Name(station, 'raw', 'U1_XM1'), Name(station, 'raw', 'TD1_XM1'),
+                Name(station, 'raw', 'T2_XM1'), Name(station, 'raw', 'U2_XM1'), Name(station, 'raw', 'TD2_XM1'),
+                Name(station, 'raw', 'T3_XM1'), Name(station, 'raw', 'U3_XM1'), Name(station, 'raw', 'TD3_XM1'),
+                Name(station, 'raw', 'P_XM1'),
+                Name(station, 'raw', 'WI_XM1'),
+            },
+        )),
+    ]),
+    'clean': DataExportList([
+        DataExportList.Entry('ambient', "Ambient", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'unsplt', {
+                Name(station, 'clean', 'WS1_XM1'), Name(station, 'clean', 'WD1_XM1'),
+                Name(station, 'clean', 'WS2_XM1'), Name(station, 'clean', 'WD2_XM1'),
+                Name(station, 'clean', 'WS3_XM1'), Name(station, 'clean', 'WD3_XM1'),
+                Name(station, 'clean', 'T1_XM1'), Name(station, 'clean', 'U1_XM1'), Name(station, 'clean', 'TD1_XM1'),
+                Name(station, 'clean', 'T2_XM1'), Name(station, 'clean', 'U2_XM1'), Name(station, 'clean', 'TD2_XM1'),
+                Name(station, 'clean', 'T3_XM1'), Name(station, 'clean', 'U3_XM1'), Name(station, 'clean', 'TD3_XM1'),
+                Name(station, 'clean', 'P_XM1'),
+                Name(station, 'clean', 'WI_XM1'),
+            },
+        )),
+    ]),
+    'avgh': DataExportList([
+        DataExportList.Entry('ambient', "Ambient", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
+            start_epoch_ms, end_epoch_ms, 'unsplt', {
+                Name(station, 'avgh', 'WS1_XM1'), Name(station, 'avgh', 'WD1_XM1'),
+                Name(station, 'avgh', 'WS2_XM1'), Name(station, 'avgh', 'WD2_XM1'),
+                Name(station, 'avgh', 'WS3_XM1'), Name(station, 'avgh', 'WD3_XM1'),
+                Name(station, 'avgh', 'T1_XM1'), Name(station, 'avgh', 'U1_XM1'), Name(station, 'avgh', 'TD1_XM1'),
+                Name(station, 'avgh', 'T2_XM1'), Name(station, 'avgh', 'U2_XM1'), Name(station, 'avgh', 'TD2_XM1'),
+                Name(station, 'avgh', 'T3_XM1'), Name(station, 'avgh', 'U3_XM1'), Name(station, 'avgh', 'TD3_XM1'),
+                Name(station, 'avgh', 'P_XM1'),
+                Name(station, 'avgh', 'WI_XM1'),
+            },
+        )),
+    ]),
+}
+
+profile_export: typing.Dict[str, typing.Dict[str, DataExportList]] = {
+    'aerosol': aerosol_export,
+    'ozone': ozone_export,
+    'met': met_export,    
+}
 
 
 aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]] = {

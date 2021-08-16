@@ -1,0 +1,41 @@
+<form class="export-entry" action="{{ request.url_for('export_data', station=station, mode_name=mode_name) }}">
+  <table>
+    <tr>
+      <td><label for="input-start-time">Start</label></td>
+      <td><input type="text" id="input-start-time" name="start"></td>
+      <td><label id="parsed-start-time"></label></td>
+    </tr>
+    <tr>
+      <td><label for="input-end-time">End</label></td>
+      <td><input type="text" id="input-end-time" name="end"></td>
+      <td><label id="parsed-end-time"></label></td>
+    </tr>
+    <tr>
+      <td><label for="export-type">Data</label></td>
+      <td colspan="2">
+        <select id="export-type" class="export-select" name="key">
+        {% for export_type in available.exports %}
+          <option value="{{ export_type.key }}">{{ export_type.display }}</option>
+        {% endfor %}
+        </select>
+      </td>
+    </tr>
+
+
+  </table>
+
+  <div class="export-footer">
+    <button id="export-data">Ok</button>
+    <button id="export-cancel">Cancel</button>
+  </div>
+</form>
+
+<script>
+(function() {
+{% include 'export/modal.js' %}
+})();
+</script>
+
+<style>
+{% include 'export/modal.css' %}
+</style>

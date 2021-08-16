@@ -37,6 +37,8 @@
     <li class="topbar-right">
       <button class="topbar-button dropdown-button mdi mdi-menu"></button>
       <ul class="dropdown-content main-menu-list">
+        <li><a id="show_export_data" class="main-menu-item" href="{{ request.url_for('export_modal', station=station, mode_name=mode.mode_name) }}" title="Show the export data dialog">Export data</a></li>
+
         {% include 'mode/topbar/menuitems.html' %}
       </ul>
     </li>
@@ -49,6 +51,9 @@
 <script>
 (function() {
 {% include 'mode/viewlist.js' %}
+})();
+(function() {
+{% include 'mode/export.js' %}
 })();
 </script>
 </body>
