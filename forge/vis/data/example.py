@@ -100,3 +100,26 @@ class ExampleEditAvailable(DataStream):
                 'type': 'variable',
                 'variable': f'N{index+1}_N11',
             })
+
+
+class ExampleEventLog(DataStream):
+    def __init__(self, start_epoch_ms: int, send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
+        super().__init__(send)
+        self.start_epoch_ms = start_epoch_ms
+
+    async def run(self) -> None:
+        for i in range(5):
+            await self.send({
+                'epoch_ms': self.start_epoch_ms + 3600000 * i,
+                'type': "User",
+                'author': "DCH",
+                'message': 'Example Event ' + str(i+1),
+            })
+        await self.send({
+            'epoch_ms': self.start_epoch_ms,
+            'type': "Acquisition",
+            'author': "S11",
+            'message': "Example Communications Loss",
+            'acquisition': True,
+        })
+

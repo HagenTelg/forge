@@ -1,0 +1,26 @@
+<link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/topbar.css') }}"/>
+
+<nav class="topbar">
+  <ul>
+    <li class="topbar-center"></li>
+
+    <li class="topbar-right">
+      <button class="topbar-button dropdown-button mdi mdi-menu" title="Additional options"></button>
+      <ul class="dropdown-content main-menu-list">
+        <li class="toggle-menu-item">
+          <label for="acquisition_events_switch">Show acquisition events</label>
+          <label id="acquisition_events_switch" class="switch">
+            <input id="show_acquisition_events" title="Show acquisition system events" type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </li>
+        <li class="action-menu-item">
+          <a id="export_csv" base="{{ request.url_for('eventlog_csv', station=station, mode_name=mode_name) }}" href="{{ request.url_for('eventlog_csv', station=station, mode_name=mode_name) }}">Export CSV</a>
+        </li>
+        <li class="action-menu-item">
+          <a id="export_json" base="{{ request.url_for('eventlog_json', station=station, mode_name=mode_name) }}" href="{{ request.url_for('eventlog_json', station=station, mode_name=mode_name) }}">Export JSON</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>

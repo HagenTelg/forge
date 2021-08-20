@@ -20,6 +20,7 @@ import forge.vis.view.server
 import forge.vis.mode.server
 import forge.vis.data.server
 import forge.vis.editing.server
+import forge.vis.eventlog.server
 import forge.vis.status.server
 import forge.vis.export.server
 
@@ -74,6 +75,7 @@ routes = [
     Mount('/auth', routes=forge.vis.access.authentication.routes),
     Mount('/view', routes=forge.vis.view.server.routes),
     Mount('/editing', routes=forge.vis.editing.server.routes),
+    Mount('/eventlog', routes=forge.vis.eventlog.server.routes),
     Mount('/status', routes=forge.vis.status.server.routes),
     Mount('/export', routes=forge.vis.export.server.routes),
     Mount('/station', routes=forge.vis.mode.server.routes),

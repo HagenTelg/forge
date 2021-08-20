@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ station|upper }} - Event Log</title>
+{% include 'global/header.html' %}
+{% include 'eventlog/header.html' %}
+</head>
+<body>
+
+<script>
+{% include 'eventlog/plots.js' %}
+</script>
+
+{% include 'eventlog/table.html' %}
+{% include 'eventlog/controlbar.html' %}
+
+<span id="loading">
+  <span class="mdi mdi-loading mdi-spin"></span>
+</span>
+
+</body>
+</html>

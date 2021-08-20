@@ -969,6 +969,73 @@ class EditedContaminationReader(ContaminationReader):
         return None
 
 
+class EventLogReader(DataStream):
+    class _Input(StandardDataInput):
+        def __init__(self, result: typing.List[typing.Dict]):
+            super().__init__()
+            self.result = result
+
+        @staticmethod
+        def _convert_event(identity: Identity, value: typing.Any) -> typing.Dict[str, typing.Any]:
+            result: typing.Dict[str, typing.Any] = {
+                'epoch_ms': floor(identity.start * 1000) if identity.start else None,
+                'message': value.get('Text', ""),
+            }
+
+            if identity.variable == 'acquisition':
+                if value.get('Source') == 'EXTERNAL':
+                    result['type'] = "User"
+                    result['author'] = value.get('Author', "")
+                else:
+                    result['type'] = "Instrument"
+                    result['author'] = value.get('Source', "")
+                    result['acquisition'] = True
+
+            return result
+
+        def value_ready(self, identity: Identity, value: typing.Any) -> None:
+            if not isinstance(value, dict):
+                return
+            if not _display_directive(value):
+                return
+            self.result.append(self._convert_event(identity, value))
+
+    def __init__(self, station: str, start_epoch_ms: int, end_epoch_ms: int,
+                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
+        super().__init__(send)
+        self.station = station
+        self.start_epoch = int(floor(start_epoch_ms / 1000.0))
+        self.end_epoch = int(ceil(end_epoch_ms / 1000.0))
+
+    async def run(self) -> None:
+        reader = await asyncio.create_subprocess_exec(_interface, 'archive_read',
+                                                      str(self.start_epoch), str(self.end_epoch),
+                                                      f'{self.station}:events:acquisition:=',
+                                                      stdout=asyncio.subprocess.PIPE,
+                                                      stdin=asyncio.subprocess.DEVNULL)
+        try:
+            await reader.stdout.readexactly(3)
+
+            buffer: typing.List[typing.Dict] = list()
+            converter = self._Input(buffer)
+
+            while True:
+                data = await reader.stdout.read(65536)
+                if not data:
+                    break
+                converter.incoming_raw(data)
+                for r in buffer:
+                    await self.send(r)
+                buffer.clear()
+
+            for r in buffer:
+                await self.send(r)
+            await reader.wait()
+        except asyncio.CancelledError:
+            reader.send_signal(SIGTERM)
+            raise
+
+
 def editing_get(station: str, mode_name: str, start_epoch_ms: int, end_epoch_ms: int,
                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
     profile = mode_name.split('-', 1)[0]
@@ -1013,6 +1080,11 @@ def editing_pass(station: str, mode_name: str, start_epoch_ms: int, end_epoch_ms
     if not comment:
         comment = ''
     return _queue_pass(station, profile, start_epoch, end_epoch, comment)
+
+
+def eventlog_get(station: str, mode_name: str, start_epoch_ms: int, end_epoch_ms: int,
+                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
+    return EventLogReader(station, start_epoch_ms, end_epoch_ms, send)
 
 
 def data_get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,

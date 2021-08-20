@@ -1,3 +1,5 @@
+const ROOT_URL = "{{ request.url_for('root') }}";
+
 localStorage.setItem('forge-last-station', '{{ station }}');
 localStorage.setItem('forge-last-mode', '{{ mode.mode_name }}');
 
@@ -21,6 +23,43 @@ $(document).ready(function(event) {
     }
     if ($('a.view-select.active').length === 0) {
         $('a.view-select').first().click();
+    }
+});
+
+
+let eventLog = null;
+$('#show_event_log').click(function(event) {
+    event.preventDefault();
+
+    if (!eventLog || eventLog.closed) {
+        const eventsURL = '{{ request.url_for("eventlog", station=station, mode_name=mode.mode_name) }}';
+        eventLog = window.open(eventsURL,
+            'EventLog',
+            'width=900,height=500,menubar=0,toolbar=0,location=0,status=0,resizable=1,scrollbars=1');
+
+        eventLog.onunload = function() { TimeSelect.highlight('EventLog'); }
+    } else {
+        eventLog.focus();
+    }
+});
+
+window.addEventListener("message", (event) => {
+    if (event.source !== eventLog || !ROOT_URL.startsWith(event.origin) ||
+            !event.source.location.href.startsWith(ROOT_URL)) {
+        return;
+    }
+    const data = event.data;
+    if (data.type === "EventLogSelected") {
+        const selectedEvent = data.event;
+        if (!selectedEvent) {
+            TimeSelect.highlight('EventLog');
+            return;
+        }
+
+        TimeSelect.highlight('EventLog',
+            selectedEvent.epoch_ms,
+            selectedEvent.epoch_ms,
+            2);
     }
 });
 

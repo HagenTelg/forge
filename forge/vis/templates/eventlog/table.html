@@ -1,0 +1,19 @@
+<link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/event_table.css') }}"/>
+
+<table class="events">
+  <thead>
+    <tr class="event-header">
+      <th scope="col">Time <div sort="0" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></div><div sort="0" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></div></th>
+      <th scope="col">Type <div sort="1" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></div><div sort="1" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></div></th>
+      <th scope="col">Author <div sort="2" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></div><div sort="2" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></div></th>
+      <th scope="col">Event <div sort="3" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></div><div sort="3" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></div></th>
+    </tr>
+  </thead>
+  <tbody id="event_log">
+
+  </tbody>
+</table>
+
+<script>
+{% include 'eventlog/table.js' %}
+</script>

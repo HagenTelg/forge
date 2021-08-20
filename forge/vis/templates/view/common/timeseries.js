@@ -19,10 +19,12 @@ var TimeSeriesCommon = {};
 
     const emptyShapes = [];
 
+    TimeSeriesCommon.updateShapes = function() { }
+
     const selectedTimeHighlights = [];
     TimeSeriesCommon.getTimeHighlights = function() { return selectedTimeHighlights; }
     TimeSelect.onHighlight( (start_ms, end_ms) => {
-        highlightShapes.length = 0;
+        selectedTimeHighlights.length = 0;
         if (start_ms === undefined && end_ms === undefined) {
             TimeSeriesCommon.updateShapes();
             return;
@@ -34,20 +36,38 @@ var TimeSeriesCommon = {};
             end_ms = TimeSelect.end_ms;
         }
 
-        selectedTimeHighlights.push({
-            type: 'rect',
-            xref: 'x',
-            yref: 'paper',
-            x0: DataSocket.toPlotTime(start_ms),
-            y0: 0,
-            x1: DataSocket.toPlotTime(end_ms),
-            y1: 1,
-            fillcolor: '#d3d3d3',
-            opacity: 0.2,
-            line: {
-                width: 0
-            }
-        });
+        if (start_ms === end_ms) {
+            selectedTimeHighlights.push({
+                type: 'line',
+                xref: 'x',
+                yref: 'paper',
+                x0: DataSocket.toPlotTime(start_ms),
+                y0: 0,
+                x1: DataSocket.toPlotTime(end_ms),
+                y1: 1,
+                opacity: 0.6,
+                line: {
+                    width: 1,
+                    color: '#000000',
+                }
+            });
+        } else {
+            selectedTimeHighlights.push({
+                type: 'rect',
+                xref: 'x',
+                yref: 'paper',
+                x0: DataSocket.toPlotTime(start_ms),
+                y0: 0,
+                x1: DataSocket.toPlotTime(end_ms),
+                y1: 1,
+                fillcolor: '#d3d3d3',
+                opacity: 0.2,
+                line: {
+                    width: 0
+                }
+            });
+        }
+
         TimeSeriesCommon.updateShapes();
     });
 

@@ -21,6 +21,9 @@ def begin_stream(user: BaseAccessUser, station: str, data_name: str, start_epoch
         elif data_name.startswith("example-editing-available"):
             from .example import ExampleEditAvailable
             return ExampleEditAvailable(send)
+        elif data_name.endswith("-events"):
+            from .example import ExampleEventLog
+            return ExampleEventLog(start_epoch_ms, send)
         return None
 
     if data_name.endswith('-editing-directives'):
@@ -33,5 +36,10 @@ def begin_stream(user: BaseAccessUser, station: str, data_name: str, start_epoch
         if len(components) == 3 and components[2] == 'available':
             return station_data(station, 'editing', 'available')(station, '-'.join(components[:2]),
                                                                  start_epoch_ms, end_epoch_ms, send)
+    elif data_name.endswith('-events'):
+        components = data_name.split('-', 2)
+        if len(components) == 3 and components[2] == 'events':
+            return station_data(station, 'eventlog', 'get')(station, '-'.join(components[:2]),
+                                                            start_epoch_ms, end_epoch_ms, send)
 
     return station_data(station, 'data', 'get')(station, data_name, start_epoch_ms, end_epoch_ms, send)

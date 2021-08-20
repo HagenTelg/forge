@@ -106,6 +106,7 @@ Plotly.newPlot(div, data, layout, config);
 const shapeHandler = new ShapeHandler(div);
 const traces = new TimeSeriesCommon.Traces(div);
 shapeHandler.generators.push(TimeSeriesCommon.getTimeHighlights);
+TimeSeriesCommon.updateShapes = function() { shapeHandler.update(); }
 
 
 DataSocket.resetLoadedRecords();
@@ -147,7 +148,7 @@ DataSocket.onRecordReload = function() {
 };
 
 traces.updateTimeBounds();
-    shapeHandler.update();
+shapeHandler.update();
 
 DataSocket.startLoadingRecords();
 
