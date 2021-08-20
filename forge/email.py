@@ -80,8 +80,8 @@ def send_email(message: EmailMessage, relay: typing.Optional[typing.Union[dict, 
                     return
                 unique_hosts.add(addr.lower())
 
-        add_hosts(message.get_all('to'))
-        add_hosts(message.get_all('cc'))
+        add_hosts(message.get_all('to') or [])
+        add_hosts(message.get_all('cc') or [])
 
         for host in unique_hosts:
             s = SMTP()
@@ -103,9 +103,12 @@ def send_email(message: EmailMessage, relay: typing.Optional[typing.Union[dict, 
                 _LOGGER.warning(f"Error sending email on {host}", exc_info=True)
 
     def send_command():
+        if 'From' not in message:
+            message['From'] = "Forge Data System <forge@" + getfqdn() + ">"
+
         unique_recipients = set()
-        unique_recipients.update(message.get_all('to'))
-        unique_recipients.update(message.get_all('cc'))
+        unique_recipients.update(message.get_all('to') or [])
+        unique_recipients.update(message.get_all('cc') or [])
 
         args = list()
         if isinstance(sendmail_command, str):
@@ -115,9 +118,13 @@ def send_email(message: EmailMessage, relay: typing.Optional[typing.Union[dict, 
         args.extend(unique_recipients)
 
         try:
-            subprocess.check_call(args, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        except Exception:
+            p = subprocess.run(args, stdout=subprocess.DEVNULL, encoding='utf-8',
+                               input=message.as_string(unixfrom=True))
+        except:
             _LOGGER.warning(f"Error running sendmail command", exc_info=True)
+            return
+        if p.returncode != 0:
+            _LOGGER.warning(f"Sendmail command exited with status {p.returncode}")
 
     if relay_host is not None:
         return _executor.submit(send_relay)
