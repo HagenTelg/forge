@@ -679,6 +679,7 @@ class AccessController(BaseAccessController):
         message['Subject'] = "Forge Visualization Tool Access Request"
         for addr in CONFIGURATION.get('AUTHENTICATION.REQUEST.EMAIL', ["root@localhost"]):
             message['To'] = addr
+            message['Reply-To'] = addr
         message.set_content(await package_template(
             'access', 'request_email.txt').render_async(template_context))
         message.add_alternative(await package_template(
@@ -859,6 +860,7 @@ class ControlInterface:
                     message['To'] = user.email
                     for addr in CONFIGURATION.get('AUTHENTICATION.REQUEST.EMAIL', []):
                         message['CC'] = addr
+                        message['Reply-To'] = addr
                     message.set_content(package_template(
                         'access', 'request_challenge_email.txt').render(template_context))
                     message.add_alternative(package_template(
