@@ -47,7 +47,10 @@ def main():
         log_level = 'debug'
 
     if args.bind_unix is not None:
-        os.unlink(args.bind_unix)
+        try:
+            os.unlink(args.bind_unix)
+        except OSError:
+            pass
         uvicorn.run('forge.vis.server:app', workers=args.workers, access_log=args.debug,
                     uds=args.bind_unix, log_level=log_level, log_config=log_config)
     elif args.bind_address is not None:
