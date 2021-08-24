@@ -158,17 +158,17 @@ class _CacheEntry:
                     pass
 
             for t in self._queued_targets:
-                asyncio.create_task(send_to_target(t))
+                asyncio.ensure_future(send_to_target(t))
             self._queued_targets.clear()
 
-        asyncio.create_task(run())
+        asyncio.ensure_future(run())
 
     async def attach(self, writer: asyncio.StreamWriter) -> None:
         if not self._file:
             async def send():
                 await self._read_process(writer)
                 writer.close()
-            asyncio.create_task(send())
+            asyncio.ensure_future(send())
             return
         if not self.reader_in_progress:
             self._direct_targets.append(writer)
@@ -177,7 +177,7 @@ class _CacheEntry:
             async def send():
                 await self._read_file(writer)
                 writer.close()
-            asyncio.create_task(send())
+            asyncio.ensure_future(send())
             return
         self._queued_targets.append(writer)
 

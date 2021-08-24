@@ -104,7 +104,7 @@ async def export_csv(request: Request) -> Response:
         await queue.put(None)
 
     async def result(stream: DataStream):
-        task = asyncio.create_task(run(stream))
+        task = asyncio.ensure_future(run(stream))
 
         fields = [
             "StartUTC",
@@ -163,7 +163,7 @@ async def export_json(request: Request) -> Response:
         await queue.put(None)
 
     async def result(stream: DataStream):
-        task = asyncio.create_task(run(stream))
+        task = asyncio.ensure_future(run(stream))
         yield '['
         first = True
         while True:

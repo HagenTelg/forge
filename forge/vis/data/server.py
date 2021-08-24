@@ -122,7 +122,7 @@ class _DataSocket(WebSocketEndpoint):
                         async def wait_stall():
                             await stall.block()
 
-                        stall_task = asyncio.create_task(wait_stall())
+                        stall_task = asyncio.ensure_future(wait_stall())
                         active_stream.stall_task = stall_task
 
                         _LOGGER.debug(f"Stalling stream {stream_id} to {websocket.client.host}")
@@ -155,7 +155,7 @@ class _DataSocket(WebSocketEndpoint):
 
             _LOGGER.debug(f"Starting data stream {stream_id} for {data_name} to {websocket.client.host}")
 
-            active_stream.task = asyncio.create_task(run_stream())
+            active_stream.task = asyncio.ensure_future(run_stream())
 
         elif action == 'unstall':
             for stream in self.active_data_streams.values():
