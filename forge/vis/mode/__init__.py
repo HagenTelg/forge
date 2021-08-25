@@ -23,9 +23,11 @@ class ModeGroup:
         self.display_name = display_name
         self.modes: typing.List[Mode] = modes if modes else list()
 
-    def default_mode(self) -> typing.Optional[Mode]:
-        if len(self.modes) > 0:
-            return self.modes[0]
+    def default_mode(self, request: Request, station: str) -> typing.Optional[Mode]:
+        for mode in self.modes:
+            if not request.user.allow_mode(station, mode.mode_name):
+                continue
+            return mode
         return None
 
     def contains_mode(self, mode_name: str) -> bool:
@@ -45,9 +47,9 @@ class VisibleModes:
     def __init__(self, groups: typing.Optional[typing.List[ModeGroup]] = None):
         self.groups: typing.List[ModeGroup] = groups if groups else list()
 
-    def default_mode(self) -> typing.Optional[Mode]:
+    def default_mode(self, request: Request, station: str) -> typing.Optional[Mode]:
         for group in self.groups:
-            mode = group.default_mode()
+            mode = group.default_mode(request, station)
             if mode is not None:
                 return mode
         return None

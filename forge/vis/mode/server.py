@@ -53,7 +53,7 @@ async def _default_mode(request: Request) -> Response:
         mode = lookup_mode(request, station, mode_name)
         if mode is not None:
             return RedirectResponse(request.url_for('mode', station=station, mode_name=mode.mode_name))
-    mode = visible_modes(request, station).default_mode()
+    mode = default_mode(request, station, mode_name=mode_name)
     if mode is None:
         if not request.user.can_request_access:
             try:

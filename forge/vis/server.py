@@ -55,7 +55,7 @@ async def _root(request: Request) -> Response:
         default_station = default_station.lower()
         if default_station not in visible_stations:
             default_station = None
-    if default_station:
+    if not default_station:
         default_station = visible_stations[0]
     return HTMLResponse(await package_template('index.html').render_async(
         request=request,

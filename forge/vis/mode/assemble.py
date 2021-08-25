@@ -40,4 +40,4 @@ def visible_modes(request: Request, station: str, mode_name: typing.Optional[str
 
 
 def default_mode(request: Request, station: str, mode_name: typing.Optional[str] = None) -> typing.Optional[Mode]:
-    return visible_modes(request, station, mode_name).default_mode()
+    return visible_modes(request, station, mode_name).default_mode(request, station)
