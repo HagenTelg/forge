@@ -96,39 +96,47 @@
   </form>
 </div>
 
-<div class="centered external-account">
+<div class="centered external-account"><div>
 {% if enable_google %}
-  <a href="{{ request.url_for('login_google') }}">
-    <div class="google-button">
-      <div class="google-icon-wrapper">
-        <img class="google-icon" src="{{ request.url_for('static', path='/images/Google_Logo.svg') }}"/>
+  <span class="external-account-button">
+    <a href="{{ request.url_for('login_google') }}">
+      <div class="google-button">
+        <div class="google-icon-wrapper">
+          <img class="google-icon" src="{{ request.url_for('static', path='/images/Google_Logo.svg') }}"/>
+        </div>
+        <p class="google-button-text"><b>Sign in with Google</b></p>
       </div>
-      <p class="google-button-text"><b>Sign in with Google</b></p>
-    </div>
-  </a><br>
+    </a>
+  </span>
 {% endif %}
 {% if enable_microsoft %}
-  <a href="{{ request.url_for('login_microsoft') }}">
-    <div class="microsoft-button">
-      <img class="microsoft-signin" src="{{ request.url_for('static', path='/images/Microsoft_Signin.svg') }}"/>
-    </div>
-  </a><br>
+  <span class="external-account-button">
+    <a href="{{ request.url_for('login_microsoft') }}">
+      <div class="microsoft-button">
+        <img class="microsoft-signin" src="{{ request.url_for('static', path='/images/Microsoft_Signin.svg') }}"/>
+      </div>
+    </a>
+  </span>
 {% endif %}
 {% if enable_apple %}
-  <a href="{{ request.url_for('login_yahoo') }}">
-    <div class="apple-button">
-      <span class="apple-button-text"><span class="mdi mdi-apple apple-icon"></span><b>Sign in with Apple</b></span>
-    </div>
-  </a><br>
+  <span class="external-account-button">
+    <a href="{{ request.url_for('login_apple') }}">
+      <div class="apple-button">
+        <span class="apple-button-text"><span class="mdi mdi-apple apple-icon"></span><b>Sign in with Apple</b></span>
+      </div>
+    </a>
+  </span>
 {% endif %}
 {% if enable_yahoo %}
-  <a href="{{ request.url_for('login_yahoo') }}">
-    <div class="yahoo-button">
-      <p class="yahoo-button-text"><b>Sign in with Yahoo</b></p>
-    </div>
-  </a><br>
+  <span class="external-account-button">
+    <a href="{{ request.url_for('login_yahoo') }}">
+      <div class="yahoo-button">
+        <p class="yahoo-button-text"><b>Sign in with Yahoo</b></p>
+      </div>
+    </a>
+  </span>
 {% endif %}
-</div>
+</div></div>
 
 <script>
 

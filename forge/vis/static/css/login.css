@@ -94,8 +94,16 @@ span.create-account {
 }
 
 
-.external-account {
+div.external-account {
   padding-top: 20px;
+  font-size: 0;
+}
+span.external-account-button {
+  display: block;
+  padding-bottom: 12px;
+}
+.external-account-button a {
+  text-decoration: none;
 }
 
 img.microsoft-signin {
@@ -111,6 +119,8 @@ img.microsoft-signin {
 }
 
 .yahoo-button .yahoo-button-text {
+  margin: 0;
+  padding: 0;
   width: 100%;
   line-height: 42px;
   white-space: nowrap;
