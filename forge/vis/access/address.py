@@ -21,6 +21,7 @@ class AccessController(BaseAccessController):
         self.station = config.get("station", "").lower()
         self.mode = config.get("mode", "*").lower()
         self.write = config.get("write", False)
+        self.authenticated = config.get("authenticated", True)
         self.name = config.get("name", "")
         self.initials = config.get("initials", name_to_initials(self.name))
 
@@ -50,7 +51,7 @@ class AccessUser(BaseAccessUser):
 
     @property
     def is_authenticated(self) -> bool:
-        return True
+        return self.controller.authenticated
 
     @property
     def display_name(self) -> str:
