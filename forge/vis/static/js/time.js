@@ -315,10 +315,10 @@ let TimeParse = {};
             }
         }
 
-        const doyMatch = input.match(/^\s*(?:(\d{4})(?:\s+|:))?(\d{1,3})\s*$/i);
+        const doyMatch = input.match(/^\s*(\d{4})(?:\s+|:)(\d{1,3})\s*$/i);
         if (doyMatch) {
             try {
-                let year = parseInt(doyMatch[1]);
+                let year = doyMatch[1];
                 if (!year) {
                     year = selectedYear(time_ms);
                 } else {
