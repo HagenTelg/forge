@@ -209,7 +209,9 @@ def main():
             args.set_password = get_password(args.set_password)
             await interface.modify_user(**vars(args))
 
-    asyncio.run(run())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run())
+    loop.close()
 
 
 if __name__ == '__main__':

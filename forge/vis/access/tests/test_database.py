@@ -170,7 +170,8 @@ def test_external_interface():
     interface = ControlInterface("sqlite+pysqlite:///:memory:")
     interface.db = controller.db
 
-    asyncio.run(interface.add_user('test@example.com', 'testtesttest'))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(interface.add_user('test@example.com', 'testtesttest'))
 
     client.post('/auth/password/login', data={
         'email': 'test@example.com',
@@ -181,7 +182,7 @@ def test_external_interface():
 
     client.get('/auth/logout')
 
-    asyncio.run(interface.modify_user(set_email='test@example2.com', set_password='testtesttest2', email='test@example.com'))
+    loop.run_until_complete(interface.modify_user(set_email='test@example2.com', set_password='testtesttest2', email='test@example.com'))
 
     client.post('/auth/password/login', data={
         'email': 'test@example2.com',
@@ -189,3 +190,5 @@ def test_external_interface():
     })
     response = client.get('/required_auth')
     assert response.json() == {'ok': True}
+
+    loop.close()

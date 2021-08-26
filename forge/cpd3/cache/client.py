@@ -46,7 +46,9 @@ def main():
             os.execvp(CONFIGURATION.get('CPD3.CACHE.INTERFACE', 'cpd3_forge_interface'), args)
             exit(1)
 
-    asyncio.run(run())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run())
+    loop.close()
 
 
 if __name__ == '__main__':
