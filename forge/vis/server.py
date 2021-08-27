@@ -30,7 +30,7 @@ async def _favicon(request: Request) -> Response:
 
 
 async def _root(request: Request) -> Response:
-    if not request.user or not request.user.is_authenticated:
+    if not request.user.is_authenticated:
         try:
             return RedirectResponse(request.url_for('login'))
         except NoMatchFound:
