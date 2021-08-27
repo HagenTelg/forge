@@ -206,11 +206,12 @@ class AccessController(BaseAccessController):
 
         self.enable_microsoft = False
         if CONFIGURATION.exists('AUTHENTICATION.MICROSOFT'):
+            tenant = CONFIGURATION.get('CONFIGURATION.AUTHENTICATION.MICROSOFT.TENANT', 'consumers')
             self.oauth.register(
                 'microsoft',
                 client_id=CONFIGURATION.AUTHENTICATION.MICROSOFT.CLIENT_ID,
                 client_secret=CONFIGURATION.AUTHENTICATION.MICROSOFT.CLIENT_SECRET,
-                server_metadata_url='https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration',
+                server_metadata_url=f'https://login.microsoftonline.com/{tenant}/v2.0/.well-known/openid-configuration',
                 client_kwargs={'scope': 'openid profile email'}
             )
             self.routes.append(Route('/microsoft/login', endpoint=self.microsoft_login, methods=['GET'], 
@@ -972,6 +973,7 @@ class AccessUser(BaseAccessUser):
     def is_authenticated(self) -> bool:
         return True
 
+    @property
     def can_request_access(self) -> bool:
         return True
 

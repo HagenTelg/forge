@@ -14,4 +14,4 @@ python-multipart>=0.0.5
 aiofile>=3.5.0
 asgi-ratelimit>=0.4.0
 aredis>=1.1.8
-httpx>=0.18.1
+httpx==0.18.1
