@@ -709,7 +709,7 @@ class AccessController(BaseAccessController):
             with Session(engine) as orm_session:
                 orm_session.query(_AccessChallenge).filter(_AccessChallenge.valid_until < now).delete()
                 for challenge in orm_session.query(_AccessChallenge).filter_by(token=confirm_token,
-                                                                               user=request.user.auth_user).filter(
+                                                                               user=request.user.auth_user.id).filter(
                         _AccessChallenge.valid_until >= now):
                     orm_session.delete(challenge)
                     orm_session.add(_Access(user=challenge.user, station=challenge.station, mode=challenge.mode,
@@ -857,7 +857,7 @@ class ControlInterface:
                     }
 
                     message = EmailMessage()
-                    message['Subject'] = f"{','.join(stations)} - Access Grant"
+                    message['Subject'] = f"{','.join(stations).upper()} - Access Grant"
                     message['To'] = user.email
                     for addr in CONFIGURATION.get('AUTHENTICATION.REQUEST.EMAIL', []):
                         message['CC'] = addr
