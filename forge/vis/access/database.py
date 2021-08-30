@@ -813,7 +813,7 @@ class ControlInterface:
             if not url_root.endswith('/auth/confirm'):
                 url_root += '/auth/confirm'
 
-        email_futures: typing.List[Future] = list()
+        email_templates: typing.List[typing.Tuple[EmailMessage, typing.Dict]] = list()
 
         def execute(engine: Engine):
             with Session(engine) as orm_session:
@@ -862,15 +862,20 @@ class ControlInterface:
                     for addr in CONFIGURATION.get('AUTHENTICATION.REQUEST.EMAIL', []):
                         message['CC'] = addr
                         message['Reply-To'] = addr
-                    message.set_content(package_template(
-                        'access', 'request_challenge_email.txt').render(template_context))
-                    message.add_alternative(package_template(
-                        'access', 'request_challenge_email.html').render(template_context), subtype='html')
-                    email_futures.append(send_email(message, CONFIGURATION.get('EMAIL')))
+                    email_templates.append((message, template_context))
 
                 orm_session.commit()
 
         await self.db.execute(execute)
+
+        email_futures: typing.List[Future] = list()
+        for message in email_templates:
+            message[0].set_content(await package_template(
+                'access', 'request_challenge_email.txt').render_async(message[1]))
+            message[0].add_alternative(await package_template(
+                'access', 'request_challenge_email.html').render_async(message[1]), subtype='html')
+            email_futures.append(send_email(message[0], CONFIGURATION.get('EMAIL')))
+
         if len(email_futures) > 0:
             await asyncio.wait([asyncio.wrap_future(f) for f in email_futures])
 

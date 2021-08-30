@@ -8,14 +8,16 @@ An access request has been submitted for <a href="mailto:{{ user.email|e }}">{{ 
 {% if comment %}
 <p>
 The comment with the request was:
-<q>{{ comment|e }}</q>
 </p>
+<blockquote>{{ comment|e }}</blockquote>
 {% endif %}
 
 <p>
 To approve access for this user and station run:
-  <code>
-    forge-vis-access grant --user={{ user.id }} {{ station }}
-  </code>
+</p>
+<pre><code>
+  forge-vis-access grant --user={{ user.id }} {{ station }}
+</code></pre>
+<p>
 To grant more restricted access (e.g. to meteorological data only) refer to the command help.
 </p>
