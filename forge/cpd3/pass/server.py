@@ -50,11 +50,14 @@ class _PassOperation:
                                                        stdout=asyncio.subprocess.DEVNULL,
                                                        stdin=asyncio.subprocess.PIPE)
         comment = self.comment.encode('utf-8')
-        process.stdin.write(struct.pack('<I', len(comment)))
-        process.stdin.write(comment)
-        await process.stdin.drain()
-        process.stdin.close()
-        await process.wait()
+        try:
+            process.stdin.write(struct.pack('<I', len(comment)))
+            process.stdin.write(comment)
+            await process.stdin.drain()
+            process.stdin.close()
+            await process.wait()
+        except OSError:
+            pass
         if process.returncode != 0:
             _LOGGER.warning(f"Error passing data for {self.station} {self.profile} {self.start_epoch} {self.end_epoch}, return code {process.returncode}")
             return
@@ -195,7 +198,7 @@ def main():
 
         for fd in systemd.daemon.listen_fds():
             _LOGGER.info(f"Binding to systemd socket {fd}")
-            sock = socket.socket(fileno=fd, type=socket.SOCK_STREAM, family=socket.AF_UNSPEC)
+            sock = socket.socket(fileno=fd, type=socket.SOCK_STREAM, family=socket.AF_UNIX, proto=0)
             loop.create_task(loop.create_server(factory, sock=sock))
 
         async def heartbeat():

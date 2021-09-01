@@ -82,8 +82,11 @@ class _CacheEntry:
                     pass
 
         async for chunk in reader():
-            writer.write(chunk)
-            await writer.drain()
+            try:
+                writer.write(chunk)
+                await writer.drain()
+            except OSError:
+                pass
 
         _LOGGER.debug(f"Completed file read for {self.args}")
 
@@ -308,7 +311,7 @@ def main():
 
         for fd in systemd.daemon.listen_fds():
             _LOGGER.info(f"Binding to systemd socket {fd}")
-            sock = socket.socket(fileno=fd, type=socket.SOCK_STREAM, family=socket.AF_UNSPEC)
+            sock = socket.socket(fileno=fd, type=socket.SOCK_STREAM, family=socket.AF_UNIX, proto=0)
             loop.create_task(loop.create_server(factory, sock=sock))
 
         async def heartbeat():
