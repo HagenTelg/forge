@@ -43,7 +43,8 @@ def main():
                 sys.stdout.buffer.write(data)
             sys.stdout.close()
         else:
-            os.execvp(CONFIGURATION.get('CPD3.CACHE.INTERFACE', 'cpd3_forge_interface'), args)
+            interface = CONFIGURATION.get('CPD3.CACHE.INTERFACE', 'cpd3_forge_interface')
+            os.execvp(interface, [interface] + args)
             exit(1)
 
     loop = asyncio.get_event_loop()
