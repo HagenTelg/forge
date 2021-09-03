@@ -445,22 +445,28 @@ async def _write_directive(user: BaseAccessUser, station: str, profile: str,
             existing = await target.stdout.readexactly(n)
             if len(existing) != n:
                 _LOGGER.debug(f"Error reading directive {identity} for {user.display_id} on {station}:{profile}")
-                target.send_signal(SIGTERM)
+                target.terminate()
                 await target.wait()
                 return None
         except:
             _LOGGER.debug(f"Error reading directive {identity} for {user.display_id} on {station}:{profile}",
                           exc_info=True)
-            target.send_signal(SIGTERM)
-            target.stdin.close()
-            await target.wait()
+            try:
+                target.terminate()
+                target.stdin.close()
+                await target.wait()
+            except OSError:
+                pass
             return None
 
         existing = variant_deserialize(existing)
         if not isinstance(existing, dict):
             _LOGGER.debug(f"Error deserializing directive {identity}")
-            target.send_signal(SIGTERM)
-            await target.wait()
+            try:
+                target.terminate()
+                await target.wait()
+            except OSError:
+                pass
             return None
 
         modified_identity = Identity(station=station, archive='edits', variable=identity.variable,
@@ -469,9 +475,12 @@ async def _write_directive(user: BaseAccessUser, station: str, profile: str,
             _modify_directive(user, station, profile, existing, modified_identity, directive)
         except:
             _LOGGER.debug(f"Error modifying directive for {user.display_id} on {station}:{profile}", exc_info=True)
-            target.send_signal(SIGTERM)
-            target.stdin.close()
-            await target.wait()
+            try:
+                target.terminate()
+                target.stdin.close()
+                await target.wait()
+            except OSError:
+                pass
             return None
 
         target.stdin.write(modified_identity.serialize())
@@ -707,7 +716,10 @@ class DataReader(RecordStream):
             await self.flush()
             await reader.wait()
         except asyncio.CancelledError:
-            reader.send_signal(SIGTERM)
+            try:
+                reader.terminate()
+            except:
+                pass
             raise
 
 
@@ -788,7 +800,10 @@ class EditReader(DataStream):
                 await self.send(r)
             await reader.wait()
         except asyncio.CancelledError:
-            reader.send_signal(SIGTERM)
+            try:
+                reader.terminate()
+            except OSError:
+                pass
             raise
 
 
@@ -822,7 +837,10 @@ class EditAvailable(DataStream):
 
             await reader.wait()
         except asyncio.CancelledError:
-            reader.send_signal(SIGTERM)
+            try:
+                reader.terminate()
+            except:
+                pass
             raise
 
 
@@ -931,7 +949,10 @@ class ContaminationReader(DataStream):
             await state.flush(self.send)
             await reader.wait()
         except asyncio.CancelledError:
-            reader.send_signal(SIGTERM)
+            try:
+                reader.terminate()
+            except:
+                pass
             raise
 
 
@@ -1032,7 +1053,10 @@ class EventLogReader(DataStream):
                 await self.send(r)
             await reader.wait()
         except asyncio.CancelledError:
-            reader.send_signal(SIGTERM)
+            try:
+                reader.terminate()
+            except:
+                pass
             raise
 
 
@@ -1165,7 +1189,10 @@ class DataExport(Export):
                 reader.terminate()
             except:
                 pass
-            await reader.wait()
+            try:
+                await reader.wait()
+            except OSError:
+                pass
 
         return StreamingResponse(run(), media_type=self.media_type, headers={
             'Content-Disposition': f'attachment; filename="{self.filename}"',
