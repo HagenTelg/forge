@@ -51,6 +51,9 @@ STATIONS = frozenset({
     'ugr',
     'var',
     'whi',
+    'wpa',
+    'wpb',
+    'wpc',
     'zep',
     'zsf',
 })
@@ -65,4 +68,6 @@ DISPLAY_STATIONS = frozenset(STATIONS - {
     'sfd',
     'sfe',
     'sff',
+    'wpa',
+    'wpc',
 })
