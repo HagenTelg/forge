@@ -10,7 +10,7 @@
 <script>
 (function() {
     const lastMode = localStorage.getItem('forge-last-mode');
-    if (lastMode === null || lastMode.length === 0) {
+    if (lastMode === null || lastMode.length === 0 || lastMode.startsWith('example-')) {
         window.location.replace("{{ request.url_for('mode', station=station, mode_name=default_mode.mode_name) }}");
         return;
     }
