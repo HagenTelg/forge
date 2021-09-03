@@ -8,6 +8,7 @@ from dns.exception import DNSException
 from dns.resolver import resolve
 from email.message import EmailMessage
 from email.utils import parseaddr
+from email.headerregistry import AddressHeader
 from socket import getfqdn
 from dynaconf import Dynaconf
 
@@ -46,6 +47,17 @@ def send_email(message: EmailMessage, relay: typing.Optional[typing.Union[dict, 
                 if default_from is not None:
                     message['From'] = default_from
 
+    def recipients_from_header(header: typing.Optional[AddressHeader], hosts=False) -> typing.Iterable[str]:
+        if not header:
+            return []
+        result = []
+        for addr in header.addresses:
+            if hosts:
+                result.append(addr.domain)
+            else:
+                result.append(f'{addr.username}@{addr.domain}')
+        return result
+
     def send_relay():
         if 'From' not in message:
             message['From'] = "Forge Data System <forge@" + getfqdn() + ">"
@@ -69,19 +81,8 @@ def send_email(message: EmailMessage, relay: typing.Optional[typing.Union[dict, 
         if 'From' not in message:
             message['From'] = "Forge Data System <forge@" + getfqdn() + ">"
 
-        unique_hosts = set()
-
-        def add_hosts(recipients):
-            if recipients is None:
-                return
-            for recipient in recipients:
-                _, addr = parseaddr(recipient)
-                if len(addr) == 0:
-                    return
-                unique_hosts.add(addr.lower())
-
-        add_hosts(message.get_all('to') or [])
-        add_hosts(message.get_all('cc') or [])
+        unique_hosts = set(recipients_from_header(message['To'], hosts=True))
+        unique_hosts = unique_hosts.union(recipients_from_header(message['CC'], hosts=True))
 
         for host in unique_hosts:
             s = SMTP()
@@ -106,9 +107,8 @@ def send_email(message: EmailMessage, relay: typing.Optional[typing.Union[dict, 
         if 'From' not in message:
             message['From'] = "Forge Data System <forge@" + getfqdn() + ">"
 
-        unique_recipients = set()
-        unique_recipients.update(message.get_all('to') or [])
-        unique_recipients.update(message.get_all('cc') or [])
+        unique_recipients = set(recipients_from_header(message['To']))
+        unique_recipients = unique_recipients.union(recipients_from_header(message['CC']))
 
         args = list()
         if isinstance(sendmail_command, str):
