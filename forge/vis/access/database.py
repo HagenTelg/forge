@@ -1004,7 +1004,7 @@ class AccessUser(BaseAccessUser):
         result: typing.Set[str] = set()
         for access in self._access.result():
             if access.station == '*':
-                return list(DISPLAY_STATIONS)
+                return sorted(DISPLAY_STATIONS)
             if str(access.station) not in DISPLAY_STATIONS:
                 continue
             result.add(str(access.station))
