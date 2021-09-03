@@ -678,9 +678,9 @@ class AccessController(BaseAccessController):
 
         message = EmailMessage()
         message['Subject'] = "Forge Visualization Tool Access Request"
-        for addr in CONFIGURATION.get('AUTHENTICATION.REQUEST.EMAIL', ["root@localhost"]):
-            message['To'] = addr
-            message['Reply-To'] = addr
+        addrs = ', '.join(CONFIGURATION.get('AUTHENTICATION.REQUEST.EMAIL', ["root@localhost"]))
+        message['To'] = addrs
+        message['Reply-To'] = addrs
         message.set_content(await package_template(
             'access', 'request_email.txt').render_async(template_context))
         message.add_alternative(await package_template(
@@ -859,9 +859,10 @@ class ControlInterface:
                     message = EmailMessage()
                     message['Subject'] = f"{','.join(stations).upper()} - Access Grant"
                     message['To'] = user.email
-                    for addr in CONFIGURATION.get('AUTHENTICATION.REQUEST.EMAIL', []):
-                        message['CC'] = addr
-                        message['Reply-To'] = addr
+                    addrs = ', '.join(CONFIGURATION.get('AUTHENTICATION.REQUEST.EMAIL', []))
+                    if len(addrs) > 0:
+                        message['CC'] = addrs
+                        message['Reply-To'] = addrs
                     email_templates.append((message, template_context))
 
                 orm_session.commit()
