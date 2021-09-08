@@ -149,15 +149,42 @@ var TimeSeriesCommon = {};
     }
 
     TimeSeriesCommon.Traces = class {
-        constructor(div) {
+        constructor(div, data, layout, config) {
             this.div = div;
+            this.data = data;
+            this.layout = layout;
+            this.config = config;
+            this._queuedDisplayUpdate = undefined;
+        }
+
+        updateDisplay(immediate) {
+            if (this._queuedDisplayUpdate) {
+                if (!immediate) {
+                    return;
+                }
+                clearTimeout(this._queuedDisplayUpdate);
+                this._queuedDisplayUpdate = undefined;
+            }
+
+            let delay = 500;
+            if (immediate) {
+                delay = 0;
+            }
+
+            this._queuedDisplayUpdate = setTimeout(() => {
+                this._queuedDisplayUpdate = undefined;
+                this.layout.datarevision++;
+                Plotly.react(this.div, this.data, this.layout, this.config);
+            }, delay);
         }
 
         extendData(traceIndex, times, values) {
-            Plotly.extendTraces(this.div, {
-                x: [times],
-                y: [values]
-            }, [traceIndex]);
+            const data = this.data[traceIndex];
+            for (let i=0; i<times.length; i++) {
+                data.x.push(times[i]);
+                data.y.push(values[i]);
+            }
+            this.updateDisplay();
         }
         updateTimeBounds() {
             Plotly.relayout(this.div, {

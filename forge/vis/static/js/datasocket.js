@@ -245,6 +245,7 @@ let DataSocket = {};
         constructor(dataName) {
             super(dataName);
             this.fieldToCallbacks = new Map();
+            this.callOnFinished = [];
         }
 
         incomingData(fieldName, plotTime, values, epoch) {
@@ -257,13 +258,23 @@ let DataSocket = {};
             });
         }
 
-        attach(field, callback) {
+        endOfData() {
+            super.endOfData();
+            this.callOnFinished.forEach((cb) => {
+                cb();
+            });
+        }
+
+        attach(field, callback, finished) {
             let cbs = this.fieldToCallbacks.get(field);
             if (cbs === undefined) {
                 cbs = [];
                 this.fieldToCallbacks.set(field, cbs);
             }
             cbs.push(callback);
+            if (finished) {
+                this.callOnFinished.push(finished);
+            }
         }
     };
     
@@ -288,11 +299,11 @@ let DataSocket = {};
         dispatch.attach(...args);
         return dispatch;
     };
-    DataSocket.addLoadedRecordField = function(dataName, field, callback, loader) {
+    DataSocket.addLoadedRecordField = function(dataName, field, callback, loader, finished) {
         if (loader === undefined) {
             loader = (dataName) => { return new DataSocket.RecordDispatch(dataName); };
         }
-        return DataSocket.addLoadedRecord(dataName, loader, field, callback);
+        return DataSocket.addLoadedRecord(dataName, loader, field, callback, finished);
     }
     DataSocket.startLoadingRecords = function() {
         loadingRecords.forEach((dispatch) => {

@@ -104,7 +104,7 @@ if (localStorage.getItem('forge-settings-plot-scroll')) {
 Plotly.newPlot(div, data, layout, config);
 
 const shapeHandler = new ShapeHandler(div);
-const traces = new TimeSeriesCommon.Traces(div);
+const traces = new TimeSeriesCommon.Traces(div, data, layout, config);
 shapeHandler.generators.push(TimeSeriesCommon.getTimeHighlights);
 TimeSeriesCommon.updateShapes = function() { shapeHandler.update(); }
 
@@ -129,7 +129,8 @@ shapeHandler.generators.push(TimeSeriesCommon.installContamination('{{ loop.inde
     // {% if trace.script_incoming_data %}{{ '\n' }}{{ trace.script_incoming_data | safe }}{% endif %}
 
     DataSocket.addLoadedRecordField('{{ trace.data_record }}', '{{ trace.data_field }}',
-        incomingData, RecordProcessing.get('{{ trace.data_record }}'));
+        incomingData, RecordProcessing.get('{{ trace.data_record }}'),
+        () => { traces.updateDisplay(true); });
 })('{{ trace_loop.index }}' * 1);
 //      {% endif %}
 //      {% set trace_loop.index = trace_loop.index + 1 %}

@@ -77,7 +77,7 @@ if (localStorage.getItem('forge-settings-plot-scroll')) {
 Plotly.newPlot(div, data, layout, config);
 
 const shapeHandler = new ShapeHandler(div);
-const traces = new TimeSeriesCommon.Traces(div);
+const traces = new TimeSeriesCommon.Traces(div, data, layout, config);
 shapeHandler.generators.push(TimeSeriesCommon.getTimeHighlights);
 TimeSeriesCommon.updateShapes = function() { shapeHandler.update(); }
 
@@ -112,11 +112,11 @@ function incomingDp(plotTime, values) {
     if (!changed) {
         return;
     }
-    layout.datarevision++;
-    Plotly.react(div, data, layout, config);
+    traces.updateDisplay();
 }
 DataSocket.addLoadedRecordField('{{ view.size_record }}', 'Dp', incomingDp,
-    RecordProcessing.get('{{ view.size_record }}'));
+    RecordProcessing.get('{{ view.size_record }}'),
+    () => { traces.updateDisplay(true); });
 
 function incomingdN(plotTime, values) {
     if (plotTime.length === 0) {
@@ -133,11 +133,11 @@ function incomingdN(plotTime, values) {
         }
     }
 
-    layout.datarevision++;
-    Plotly.react(div, data, layout, config);
+    traces.updateDisplay();
 }
 DataSocket.addLoadedRecordField('{{ view.size_record }}', 'dN', incomingdN,
-    RecordProcessing.get('{{ view.size_record }}'));
+    RecordProcessing.get('{{ view.size_record }}'),
+    () => { traces.updateDisplay(true); });
 
 // {% for trace in view.traces %}
 //  {% if trace.data_record and trace.data_field %}
@@ -149,7 +149,8 @@ DataSocket.addLoadedRecordField('{{ view.size_record }}', 'dN', incomingdN,
     // {% if trace.script_incoming_data %}{{ '\n' }}{{ trace.script_incoming_data | safe }}{% endif %}
 
     DataSocket.addLoadedRecordField('{{ trace.data_record }}', '{{ trace.data_field }}',
-        incomingData, RecordProcessing.get('{{ trace.data_record }}'));
+        incomingData, RecordProcessing.get('{{ trace.data_record }}'),
+        () => { traces.updateDisplay(true); });
 })('{{ loop.index0 }}' * 1);
 //  {% endif %}
 // {% endfor %}

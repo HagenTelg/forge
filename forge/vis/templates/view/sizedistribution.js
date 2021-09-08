@@ -131,7 +131,7 @@ if (localStorage.getItem('forge-settings-plot-scroll')) {
 Plotly.newPlot(div, data, layout, config);
 
 const shapeHandler = new ShapeHandler(div);
-const traces = new TimeSeriesCommon.Traces(div);
+const traces = new TimeSeriesCommon.Traces(div, data, layout, config);
 shapeHandler.generators.push(TimeSeriesCommon.getTimeHighlights);
 TimeSeriesCommon.updateShapes = function() { shapeHandler.update(); }
 
@@ -198,10 +198,11 @@ function incomingDp(plotTime, values) {
     if (!changed) {
         return;
     }
-    layout.datarevision++;
-    Plotly.react(div, data, layout, config);
+    traces.updateDisplay();
 }
-DataSocket.addLoadedRecordField('{{ view.size_record }}', 'Dp', incomingDp, sizeDistributionProcessing);
+DataSocket.addLoadedRecordField('{{ view.size_record }}', 'Dp',
+    incomingDp, sizeDistributionProcessing,
+    () => { traces.updateDisplay(true); });
 
 function incomingdNdlogDp(plotTime, values) {
     if (plotTime.length === 0) {
@@ -231,22 +232,23 @@ function incomingdNdlogDp(plotTime, values) {
         }
     }
 
-    layout.datarevision++;
-    Plotly.react(div, data, layout, config);
+    traces.updateDisplay();
 }
-DataSocket.addLoadedRecordField('{{ view.size_record }}', 'dNdlogDp', incomingdNdlogDp, sizeDistributionProcessing);
+DataSocket.addLoadedRecordField('{{ view.size_record }}', 'dNdlogDp',
+    incomingdNdlogDp, sizeDistributionProcessing,
+    () => { traces.updateDisplay(true); });
 
 //{% for wl in view.scattering_wavelengths %}
 (function(traceIndex) {
     DataSocket.addLoadedRecordField('{{ view.measured_record }}', '{{ wl.measured_field }}', (plotTime, values) => {
         traces.extendData(traceIndex, plotTime, values);
-    });
+    }, undefined, () => { traces.updateDisplay(true); });
 })('{{ loop.index0 }}' * 1 + measuredScatteringIndex);
 
 (function(traceIndex) {
     DataSocket.addLoadedRecordField('{{ view.size_record }}', '{{ wl.calculated_field }}', (plotTime, values) => {
         traces.extendData(traceIndex, plotTime, values);
-    }, sizeDistributionProcessing);
+    }, sizeDistributionProcessing, () => { traces.updateDisplay(true); });
 })('{{ loop.index0 }}' * 1 + calculatedScatteringIndex);
 //{% endfor %}
 
