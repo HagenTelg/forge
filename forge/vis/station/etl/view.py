@@ -1,6 +1,6 @@
 import typing
 from ..default.view import detach, View, aerosol_views
-from ..default.aerosol.aethalometer import AethalometerOptical, AE31, AE31Status, AE31OpticalStatus
+from ..default.aerosol.aethalometer import AE31, AE31Status, AE31OpticalStatus
 from ..default.aerosol.pressure import BasicPressure
 from ..default.aerosol.tsi377Xcpc import TSI3775CPCStatus
 from .counts import EditingParticleConcentration

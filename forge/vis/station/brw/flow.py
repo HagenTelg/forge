@@ -1,16 +1,9 @@
 import typing
 from forge.vis.view.timeseries import TimeSeries
+from ..default.aerosol.flow import Flow as BaseFlow
 
 
 class Flow(TimeSeries):
-    class CalculatePitotFlow(TimeSeries.Processing):
-        def __init__(self):
-            super().__init__()
-            self.components.append('pitot_flow')
-            self.script = r"""(function(dataName) {
-    return new PitotFlow.CalculateDispatch(dataName, 'pitot');
-})"""
-
     def __init__(self, mode: str):
         super().__init__()
         self.title = "System Flow"
@@ -46,4 +39,4 @@ class Flow(TimeSeries):
         stack_flow.data_record = f'{mode}-flow'
         stack_flow.data_field = 'pitot'
         system_flow.traces.append(stack_flow)
-        self.processing[stack_flow.data_record] = self.CalculatePitotFlow()
+        self.processing[stack_flow.data_record] = BaseFlow.CalculatePitotFlow()
