@@ -72,6 +72,25 @@ var TimeSeriesCommon = {};
     });
 
     const contaminationShapes = new Map();
+    let queuedContaminationUpdate = undefined;
+    function updateContaminationDisplay(immediate) {
+        if (!queuedContaminationUpdate) {
+            if (!immediate) {
+                return;
+            }
+            clearTimeout(queuedContaminationUpdate);
+            queuedContaminationUpdate = undefined;
+        }
+
+        let delay = 500;
+        if (immediate) {
+            delay = 0;
+        }
+
+        queuedContaminationUpdate = setTimeout(() => {
+            TimeSeriesCommon.updateShapes();
+        }, delay);
+    }
     TimeSeriesCommon.clearContamination = function() {
         contaminationShapes.clear();
     }
@@ -99,7 +118,9 @@ var TimeSeriesCommon = {};
                     },
                 });
 
-                TimeSeriesCommon.updateShapes();
+                updateContaminationDisplay();
+            }, () => {
+                updateContaminationDisplay(true);
             });
 
         return (() => {

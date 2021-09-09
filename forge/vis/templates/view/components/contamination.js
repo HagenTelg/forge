@@ -4,6 +4,7 @@ var Contamination = {};
         constructor(dataName) {
             super(dataName);
             this.callbacks = [];
+            this.finished = [];
         }
 
         incomingDataContent(content) {
@@ -16,8 +17,17 @@ var Contamination = {};
             });
         }
 
-        attach(callback) {
+        endOfData() {
+            this.finished.forEach((cb) => {
+                cb();
+            });
+        }
+
+        attach(callback, finished) {
             this.callbacks.push(callback);
+            if (finished) {
+                this.finished.push(finished);
+            }
         }
     };
 })();
