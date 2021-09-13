@@ -4,6 +4,8 @@ var TimeSeriesCommon = {};
         const result = {
             title: "UTC",
             type: 'date',
+            hoverformat: '%Y-%m-%d %H:%M:%S',
+            tickformat: '%H:%M\n %Y-%m-%d',
             zeroline: false,
             autorange: false,
             range: [DataSocket.toPlotTime(TimeSelect.start_ms), DataSocket.toPlotTime(TimeSelect.end_ms)],
