@@ -8,7 +8,7 @@ class Hurricane(TimeSeries):
             super().__init__()
             self.components.append('purpleair')
             self.script = r"""(function(dataName) {
-        return new CalculateDispatch.CalculateDispatch(dataName, 'IBsa', 'IBsb', 'Bs');
+        return new PurpleAir.CalculateDispatch(dataName, 'IBsa', 'IBsb', 'Bs');
     })"""
 
     def __init__(self, mode: str):
