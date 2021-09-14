@@ -49,7 +49,7 @@ class Clouds(TimeSeries):
         self.graphs.append(radiation)
 
         w_m2 = TimeSeries.Axis()
-        w_m2.title = "w/m²"
+        w_m2.title = "W/m²"
         w_m2.format_code = '.1f'
         radiation.axes.append(w_m2)
 
