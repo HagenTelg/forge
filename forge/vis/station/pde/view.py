@@ -36,9 +36,6 @@ station_views['aerosol-clean-clouds'] = Clouds('aerosol-clean')
 station_views['aerosol-avgh-clouds'] = Clouds('aerosol-avgh')
 
 station_views['aerosol-raw-hurricane'] = Hurricane('aerosol-raw')
-station_views['aerosol-editing-hurricane'] = Hurricane('aerosol-editing')
-station_views['aerosol-clean-hurricane'] = Hurricane('aerosol-clean')
-station_views['aerosol-avgh-hurricane'] = Hurricane('aerosol-avgh')
 
 station_views['aerosol-raw-nephelometerstatus'] = NephelometerStatus('aerosol-raw')
 

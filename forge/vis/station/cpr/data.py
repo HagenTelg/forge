@@ -119,6 +119,17 @@ station_profile_data['aerosol']['avgh']['clouds'] = lambda station, start_epoch_
     }, send
 )
 
+station_profile_data['aerosol']['raw']['hurricane'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'WI_XM3'): 'precipitation',
+        Name(station, 'raw', 'WS_XM3'): 'WS',
+        Name(station, 'raw', 'P_XM3'): 'pressure',
+        Name(station, 'raw', 'Ipa_S81'): 'IBsa',
+        Name(station, 'raw', 'Ipb_S81'): 'IBsb',
+        Name(station, 'raw', 'Bs_S81'): 'Bs',
+    }, send
+)
+
 
 def get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
         send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:

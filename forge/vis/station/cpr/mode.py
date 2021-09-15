@@ -17,6 +17,9 @@ station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-clean-clouds', "Clo
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-cpcstatus2', "Second CPC Status"),
                                     'aerosol-raw-cpcstatus')
 
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-hurricane', "Hurricane Hardened"),
+                                    'aerosol-raw-umacstatus')
+
 
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:
     return station_modes.get(mode_name)
