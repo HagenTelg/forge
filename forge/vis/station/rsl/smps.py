@@ -9,7 +9,7 @@ class SMPSDistribution(SizeDistribution):
 
         self.contamination = f'{mode}-contamination'
         self.size_record = f'{mode}-smps'
-        self.measured_record = f'{mode}-scattering-fine'
+        self.measured_record = f'{mode}-scattering-pm1'
 
 
 class SMPSCounts(SizeCounts):

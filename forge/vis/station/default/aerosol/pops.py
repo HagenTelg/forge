@@ -75,7 +75,7 @@ class POPSDistribution(SizeDistribution):
 
         self.contamination = f'{mode}-contamination'
         self.size_record = f'{mode}-pops'
-        self.measured_record = f'{mode}-scattering-coarse'
+        self.measured_record = f'{mode}-scattering-pm10'
 
 
 class POPSCounts(SizeCounts):

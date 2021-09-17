@@ -5,84 +5,116 @@ from ..cpd3 import DataStream, DataReader, EditedReader, Name, data_profile_get,
 station_profile_data = detach(profile_data)
 
 
-station_profile_data['aerosol']['raw']['clap2-coarse'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['raw']['clap2-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
-        Name(station, 'raw', 'BaB_A12', {'pm10'}): 'BaB',
-        Name(station, 'raw', 'BaG_A12', {'pm10'}): 'BaG',
-        Name(station, 'raw', 'BaR_A12', {'pm10'}): 'BaR',
         Name(station, 'raw', 'BaB_A12'): 'BaB',
         Name(station, 'raw', 'BaG_A12'): 'BaG',
         Name(station, 'raw', 'BaR_A12'): 'BaR',
     }, send
 )
-station_profile_data['aerosol']['raw']['clap2-fine'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['raw']['clap2-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
-        Name(station, 'raw', 'BaB_A12', {'pm1'}): 'BaB',
-        Name(station, 'raw', 'BaG_A12', {'pm1'}): 'BaG',
-        Name(station, 'raw', 'BaR_A12', {'pm1'}): 'BaR',
+        Name(station, 'raw', 'BaB_A12', {'pm10'}): 'BaB',
+        Name(station, 'raw', 'BaG_A12', {'pm10'}): 'BaG',
+        Name(station, 'raw', 'BaR_A12', {'pm10'}): 'BaR',
+    }, send
+)
+station_profile_data['aerosol']['raw']['clap2-pm25'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'BaB_A12', {'pm25'}): 'BaB',
         Name(station, 'raw', 'BaG_A12', {'pm25'}): 'BaG',
         Name(station, 'raw', 'BaR_A12', {'pm25'}): 'BaR',
     }, send
 )
-station_profile_data['aerosol']['editing']['clap2-coarse'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+station_profile_data['aerosol']['raw']['clap2-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'BaB_A12', {'pm1'}): 'BaB',
+        Name(station, 'raw', 'BaG_A12', {'pm1'}): 'BaG',
+        Name(station, 'raw', 'BaR_A12', {'pm1'}): 'BaR',
+    }, send
+)
+station_profile_data['aerosol']['editing']['clap2-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
     start_epoch_ms, end_epoch_ms, station, 'aerosol', {
-        Name(station, 'clean', 'BaB_A12', {'pm10'}): 'BaB',
-        Name(station, 'clean', 'BaG_A12', {'pm10'}): 'BaG',
-        Name(station, 'clean', 'BaR_A12', {'pm10'}): 'BaR',
         Name(station, 'clean', 'BaB_A12'): 'BaB',
         Name(station, 'clean', 'BaG_A12'): 'BaG',
         Name(station, 'clean', 'BaR_A12'): 'BaR',
     }, send
 )
-station_profile_data['aerosol']['editing']['clap2-fine'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+station_profile_data['aerosol']['editing']['clap2-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
     start_epoch_ms, end_epoch_ms, station, 'aerosol', {
-        Name(station, 'clean', 'BaB_A12', {'pm1'}): 'BaB',
-        Name(station, 'clean', 'BaG_A12', {'pm1'}): 'BaG',
-        Name(station, 'clean', 'BaR_A12', {'pm1'}): 'BaR',
+        Name(station, 'clean', 'BaB_A12', {'pm10'}): 'BaB',
+        Name(station, 'clean', 'BaG_A12', {'pm10'}): 'BaG',
+        Name(station, 'clean', 'BaR_A12', {'pm10'}): 'BaR',
+    }, send
+)
+station_profile_data['aerosol']['editing']['clap2-pm25'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+    start_epoch_ms, end_epoch_ms, station, 'aerosol', {
         Name(station, 'clean', 'BaB_A12', {'pm25'}): 'BaB',
         Name(station, 'clean', 'BaG_A12', {'pm25'}): 'BaG',
         Name(station, 'clean', 'BaR_A12', {'pm25'}): 'BaR',
     }, send
 )
-station_profile_data['aerosol']['clean']['clap2-coarse'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['editing']['clap2-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+    start_epoch_ms, end_epoch_ms, station, 'aerosol', {
+        Name(station, 'clean', 'BaB_A12', {'pm1'}): 'BaB',
+        Name(station, 'clean', 'BaG_A12', {'pm1'}): 'BaG',
+        Name(station, 'clean', 'BaR_A12', {'pm1'}): 'BaR',
+    }, send
+)
+station_profile_data['aerosol']['clean']['clap2-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
-        Name(station, 'clean', 'BaB_A12', {'pm10'}): 'BaB',
-        Name(station, 'clean', 'BaG_A12', {'pm10'}): 'BaG',
-        Name(station, 'clean', 'BaR_A12', {'pm10'}): 'BaR',
         Name(station, 'clean', 'BaB_A12'): 'BaB',
         Name(station, 'clean', 'BaG_A12'): 'BaG',
         Name(station, 'clean', 'BaR_A12'): 'BaR',
     }, send
 )
-station_profile_data['aerosol']['clean']['clap2-fine'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['clean']['clap2-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
-        Name(station, 'clean', 'BaB_A12', {'pm1'}): 'BaB',
-        Name(station, 'clean', 'BaG_A12', {'pm1'}): 'BaG',
-        Name(station, 'clean', 'BaR_A12', {'pm1'}): 'BaR',
+        Name(station, 'clean', 'BaB_A12', {'pm10'}): 'BaB',
+        Name(station, 'clean', 'BaG_A12', {'pm10'}): 'BaG',
+        Name(station, 'clean', 'BaR_A12', {'pm10'}): 'BaR',
+    }, send
+)
+station_profile_data['aerosol']['clean']['clap2-pm25'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
         Name(station, 'clean', 'BaB_A12', {'pm25'}): 'BaB',
         Name(station, 'clean', 'BaG_A12', {'pm25'}): 'BaG',
         Name(station, 'clean', 'BaR_A12', {'pm25'}): 'BaR',
     }, send
 )
-station_profile_data['aerosol']['avgh']['clap2-coarse'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['clean']['clap2-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
-        Name(station, 'avgh', 'BaB_A12', {'pm10'}): 'BaB',
-        Name(station, 'avgh', 'BaG_A12', {'pm10'}): 'BaG',
-        Name(station, 'avgh', 'BaR_A12', {'pm10'}): 'BaR',
+        Name(station, 'clean', 'BaB_A12', {'pm1'}): 'BaB',
+        Name(station, 'clean', 'BaG_A12', {'pm1'}): 'BaG',
+        Name(station, 'clean', 'BaR_A12', {'pm1'}): 'BaR',
+    }, send
+)
+station_profile_data['aerosol']['avgh']['clap2-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
         Name(station, 'avgh', 'BaB_A12'): 'BaB',
         Name(station, 'avgh', 'BaG_A12'): 'BaG',
         Name(station, 'avgh', 'BaR_A12'): 'BaR',
     }, send
 )
-station_profile_data['aerosol']['avgh']['clap2-fine'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['avgh']['clap2-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'avgh', 'BaB_A12', {'pm10'}): 'BaB',
+        Name(station, 'avgh', 'BaG_A12', {'pm10'}): 'BaG',
+        Name(station, 'avgh', 'BaR_A12', {'pm10'}): 'BaR',
+    }, send
+)
+station_profile_data['aerosol']['avgh']['clap2-pm25'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'avgh', 'BaB_A12', {'pm25'}): 'BaB',
+        Name(station, 'avgh', 'BaG_A12', {'pm25'}): 'BaG',
+        Name(station, 'avgh', 'BaR_A12', {'pm25'}): 'BaR',
+    }, send
+)
+station_profile_data['aerosol']['avgh']['clap2-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'avgh', 'BaB_A12', {'pm1'}): 'BaB',
         Name(station, 'avgh', 'BaG_A12', {'pm1'}): 'BaG',
         Name(station, 'avgh', 'BaR_A12', {'pm1'}): 'BaR',
-        Name(station, 'avgh', 'BaB_A12', {'pm25'}): 'BaB',
-        Name(station, 'avgh', 'BaG_A12', {'pm25'}): 'BaG',
-        Name(station, 'avgh', 'BaR_A12', {'pm25'}): 'BaR',
     }, send
 )
 station_profile_data['aerosol']['raw']['clapstatus2'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(

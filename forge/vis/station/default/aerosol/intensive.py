@@ -53,76 +53,55 @@ return new Intensive.CalculateDispatch(dataName, outputNames,
         super().__init__()
         self.title = "Intensive Parameters at 550nm"
 
-        self.processing[f'{mode}-intensive-coarse'] = self.Calculate()
-        self.processing[f'{mode}-intensive-fine'] = self.Calculate()
-
         albedo = TimeSeries.Graph()
         albedo.title = "Single Scattering Albedo"
         albedo.contamination = f'{mode}-contamination'
         self.graphs.append(albedo)
 
-        no_unit = TimeSeries.Axis()
-        no_unit.format_code = '.3f'
-        albedo.axes.append(no_unit)
-
-        G0 = TimeSeries.Trace(no_unit)
-        G0.legend = "SSA (Coarse)"
-        G0.data_record = f'{mode}-intensive-coarse'
-        G0.data_field = 'SSAG'
-        G0.color = '#0f0'
-        albedo.traces.append(G0)
-
-        G1 = TimeSeries.Trace(no_unit)
-        G1.legend = "SSA (Fine)"
-        G1.data_record = f'{mode}-intensive-fine'
-        G1.data_field = 'SSAG'
-        G1.color = '#070'
-        albedo.traces.append(G1)
-
+        albedo_unit = TimeSeries.Axis()
+        albedo_unit.format_code = '.3f'
+        albedo.axes.append(albedo_unit)
 
         bfr = TimeSeries.Graph()
         bfr.title = "Backscatter Fraction"
         bfr.contamination = f'{mode}-contamination'
         self.graphs.append(bfr)
 
-        no_unit = TimeSeries.Axis()
-        no_unit.format_code = '.3f'
-        bfr.axes.append(no_unit)
-
-        G0 = TimeSeries.Trace(no_unit)
-        G0.legend = "BbsG/BsG (Coarse)"
-        G0.data_record = f'{mode}-intensive-coarse'
-        G0.data_field = 'BfrG'
-        G0.color = '#0f0'
-        bfr.traces.append(G0)
-
-        G1 = TimeSeries.Trace(no_unit)
-        G1.legend = "BbsG/BsG (Fine)"
-        G1.data_record = f'{mode}-intensive-fine'
-        G1.data_field = 'BfrG'
-        G1.color = '#070'
-        bfr.traces.append(G1)
-
+        bfr_unit = TimeSeries.Axis()
+        bfr_unit.format_code = '.3f'
+        bfr.axes.append(bfr_unit)
 
         angstrom = TimeSeries.Graph()
         angstrom.title = "Ångström Exponent"
         angstrom.contamination = f'{mode}-contamination'
         self.graphs.append(angstrom)
 
-        no_unit = TimeSeries.Axis()
-        no_unit.format_code = '.3f'
-        angstrom.axes.append(no_unit)
+        angstrom_unit = TimeSeries.Axis()
+        angstrom_unit.format_code = '.3f'
+        angstrom.axes.append(angstrom_unit)
 
-        G0 = TimeSeries.Trace(no_unit)
-        G0.legend = "Å (Coarse)"
-        G0.data_record = f'{mode}-intensive-coarse'
-        G0.data_field = 'Ang'
-        G0.color = '#0f0'
-        angstrom.traces.append(G0)
+        for size in [("Whole", 'whole', '#0f0'), ("PM10", 'pm10', '#0f0'),
+                     ("PM2.5", 'pm25', '#070'), ("PM1", 'pm1', '#070')]:
+            self.processing[f'{mode}-intensive-{size[1]}'] = self.Calculate()
 
-        G1 = TimeSeries.Trace(no_unit)
-        G1.legend = "Å (Fine)"
-        G1.data_record = f'{mode}-intensive-fine'
-        G1.data_field = 'Ang'
-        G1.color = '#070'
-        angstrom.traces.append(G1)
+            trace = TimeSeries.Trace(albedo_unit)
+            trace.legend = f"SSA ({size[0]})"
+            trace.data_record = f'{mode}-intensive-{size[1]}'
+            trace.data_field = 'SSAG'
+            trace.color = size[2]
+            albedo.traces.append(trace)
+
+            trace = TimeSeries.Trace(bfr_unit)
+            trace.legend = f"BbsG/BsG ({size[0]})"
+            trace.data_record = f'{mode}-intensive-{size[1]}'
+            trace.data_field = 'BfrG'
+            trace.color = size[2]
+            bfr.traces.append(trace)
+
+            trace = TimeSeries.Trace(angstrom_unit)
+            trace.legend = f"Å ({size[0]})"
+            trace.data_record = f'{mode}-intensive-{size[1]}'
+            trace.data_field = 'Ang'
+            trace.color = size[2]
+            angstrom.traces.append(trace)
+

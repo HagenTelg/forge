@@ -5,7 +5,7 @@ from ..cpd3 import DataStream, DataReader, EditedReader, Name, data_profile_get,
 station_profile_data = detach(profile_data)
 
 
-station_profile_data['aerosol']['raw']['scattering2-coarse'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['raw']['scattering2-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'BsB_S12', {'pm10'}): 'BsB',
         Name(station, 'raw', 'BsG_S12', {'pm10'}): 'BsG',
@@ -13,15 +13,9 @@ station_profile_data['aerosol']['raw']['scattering2-coarse'] = lambda station, s
         Name(station, 'raw', 'BbsB_S12', {'pm10'}): 'BbsB',
         Name(station, 'raw', 'BbsG_S12', {'pm10'}): 'BbsG',
         Name(station, 'raw', 'BbsR_S12', {'pm10'}): 'BbsR',
-        Name(station, 'raw', 'BsB_S12'): 'BsB',
-        Name(station, 'raw', 'BsG_S12'): 'BsG',
-        Name(station, 'raw', 'BsR_S12'): 'BsR',
-        Name(station, 'raw', 'BbsB_S12'): 'BbsB',
-        Name(station, 'raw', 'BbsG_S12'): 'BbsG',
-        Name(station, 'raw', 'BbsR_S12'): 'BbsR',
     }, send
 )
-station_profile_data['aerosol']['raw']['scattering2-fine'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['raw']['scattering2-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'BsB_S12', {'pm1'}): 'BsB',
         Name(station, 'raw', 'BsG_S12', {'pm1'}): 'BsG',
@@ -29,15 +23,9 @@ station_profile_data['aerosol']['raw']['scattering2-fine'] = lambda station, sta
         Name(station, 'raw', 'BbsB_S12', {'pm1'}): 'BbsB',
         Name(station, 'raw', 'BbsG_S12', {'pm1'}): 'BbsG',
         Name(station, 'raw', 'BbsR_S12', {'pm1'}): 'BbsR',
-        Name(station, 'raw', 'BsB_S12', {'pm25'}): 'BsB',
-        Name(station, 'raw', 'BsG_S12', {'pm25'}): 'BsG',
-        Name(station, 'raw', 'BsR_S12', {'pm25'}): 'BsR',
-        Name(station, 'raw', 'BbsB_S12', {'pm25'}): 'BbsB',
-        Name(station, 'raw', 'BbsG_S12', {'pm25'}): 'BbsG',
-        Name(station, 'raw', 'BbsR_S12', {'pm25'}): 'BbsR',
     }, send
 )
-station_profile_data['aerosol']['editing']['scattering2-coarse'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+station_profile_data['aerosol']['editing']['scattering2-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
     start_epoch_ms, end_epoch_ms, station, 'aerosol', {
         Name(station, 'clean', 'BsB_S12', {'pm10'}): 'BsB',
         Name(station, 'clean', 'BsG_S12', {'pm10'}): 'BsG',
@@ -45,15 +33,9 @@ station_profile_data['aerosol']['editing']['scattering2-coarse'] = lambda statio
         Name(station, 'clean', 'BbsB_S12', {'pm10'}): 'BbsB',
         Name(station, 'clean', 'BbsG_S12', {'pm10'}): 'BbsG',
         Name(station, 'clean', 'BbsR_S12', {'pm10'}): 'BbsR',
-        Name(station, 'clean', 'BsB_S12'): 'BsB',
-        Name(station, 'clean', 'BsG_S12'): 'BsG',
-        Name(station, 'clean', 'BsR_S12'): 'BsR',
-        Name(station, 'clean', 'BbsB_S12'): 'BbsB',
-        Name(station, 'clean', 'BbsG_S12'): 'BbsG',
-        Name(station, 'clean', 'BbsR_S12'): 'BbsR',
     }, send
 )
-station_profile_data['aerosol']['editing']['scattering2-fine'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+station_profile_data['aerosol']['editing']['scattering2-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
     start_epoch_ms, end_epoch_ms, station, 'aerosol', {
         Name(station, 'clean', 'BsB_S12', {'pm1'}): 'BsB',
         Name(station, 'clean', 'BsG_S12', {'pm1'}): 'BsG',
@@ -61,15 +43,9 @@ station_profile_data['aerosol']['editing']['scattering2-fine'] = lambda station,
         Name(station, 'clean', 'BbsB_S12', {'pm1'}): 'BbsB',
         Name(station, 'clean', 'BbsG_S12', {'pm1'}): 'BbsG',
         Name(station, 'clean', 'BbsR_S12', {'pm1'}): 'BbsR',
-        Name(station, 'clean', 'BsB_S12', {'pm25'}): 'BsB',
-        Name(station, 'clean', 'BsG_S12', {'pm25'}): 'BsG',
-        Name(station, 'clean', 'BsR_S12', {'pm25'}): 'BsR',
-        Name(station, 'clean', 'BbsB_S12', {'pm25'}): 'BbsB',
-        Name(station, 'clean', 'BbsG_S12', {'pm25'}): 'BbsG',
-        Name(station, 'clean', 'BbsR_S12', {'pm25'}): 'BbsR',
     }, send
 )
-station_profile_data['aerosol']['clean']['scattering2-coarse'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['clean']['scattering2-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'clean', 'BsB_S12', {'pm10'}): 'BsB',
         Name(station, 'clean', 'BsG_S12', {'pm10'}): 'BsG',
@@ -77,15 +53,9 @@ station_profile_data['aerosol']['clean']['scattering2-coarse'] = lambda station,
         Name(station, 'clean', 'BbsB_S12', {'pm10'}): 'BbsB',
         Name(station, 'clean', 'BbsG_S12', {'pm10'}): 'BbsG',
         Name(station, 'clean', 'BbsR_S12', {'pm10'}): 'BbsR',
-        Name(station, 'clean', 'BsB_S12'): 'BsB',
-        Name(station, 'clean', 'BsG_S12'): 'BsG',
-        Name(station, 'clean', 'BsR_S12'): 'BsR',
-        Name(station, 'clean', 'BbsB_S12'): 'BbsB',
-        Name(station, 'clean', 'BbsG_S12'): 'BbsG',
-        Name(station, 'clean', 'BbsR_S12'): 'BbsR',
     }, send
 )
-station_profile_data['aerosol']['clean']['scattering2-fine'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['clean']['scattering2-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'clean', 'BsB_S12', {'pm1'}): 'BsB',
         Name(station, 'clean', 'BsG_S12', {'pm1'}): 'BsG',
@@ -93,15 +63,9 @@ station_profile_data['aerosol']['clean']['scattering2-fine'] = lambda station, s
         Name(station, 'clean', 'BbsB_S12', {'pm1'}): 'BbsB',
         Name(station, 'clean', 'BbsG_S12', {'pm1'}): 'BbsG',
         Name(station, 'clean', 'BbsR_S12', {'pm1'}): 'BbsR',
-        Name(station, 'clean', 'BsB_S12', {'pm25'}): 'BsB',
-        Name(station, 'clean', 'BsG_S12', {'pm25'}): 'BsG',
-        Name(station, 'clean', 'BsR_S12', {'pm25'}): 'BsR',
-        Name(station, 'clean', 'BbsB_S12', {'pm25'}): 'BbsB',
-        Name(station, 'clean', 'BbsG_S12', {'pm25'}): 'BbsG',
-        Name(station, 'clean', 'BbsR_S12', {'pm25'}): 'BbsR',
     }, send
 )
-station_profile_data['aerosol']['avgh']['scattering2-coarse'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['avgh']['scattering2-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'avgh', 'BsB_S12', {'pm10'}): 'BsB',
         Name(station, 'avgh', 'BsG_S12', {'pm10'}): 'BsG',
@@ -109,15 +73,9 @@ station_profile_data['aerosol']['avgh']['scattering2-coarse'] = lambda station, 
         Name(station, 'avgh', 'BbsB_S12', {'pm10'}): 'BbsB',
         Name(station, 'avgh', 'BbsG_S12', {'pm10'}): 'BbsG',
         Name(station, 'avgh', 'BbsR_S12', {'pm10'}): 'BbsR',
-        Name(station, 'avgh', 'BsB_S12'): 'BsB',
-        Name(station, 'avgh', 'BsG_S12'): 'BsG',
-        Name(station, 'avgh', 'BsR_S12'): 'BsR',
-        Name(station, 'avgh', 'BbsB_S12'): 'BbsB',
-        Name(station, 'avgh', 'BbsG_S12'): 'BbsG',
-        Name(station, 'avgh', 'BbsR_S12'): 'BbsR',
     }, send
 )
-station_profile_data['aerosol']['avgh']['scattering2-fine'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['avgh']['scattering2-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'avgh', 'BsB_S12', {'pm1'}): 'BsB',
         Name(station, 'avgh', 'BsG_S12', {'pm1'}): 'BsG',
@@ -125,12 +83,6 @@ station_profile_data['aerosol']['avgh']['scattering2-fine'] = lambda station, st
         Name(station, 'avgh', 'BbsB_S12', {'pm1'}): 'BbsB',
         Name(station, 'avgh', 'BbsG_S12', {'pm1'}): 'BbsG',
         Name(station, 'avgh', 'BbsR_S12', {'pm1'}): 'BbsR',
-        Name(station, 'avgh', 'BsB_S12', {'pm25'}): 'BsB',
-        Name(station, 'avgh', 'BsG_S12', {'pm25'}): 'BsG',
-        Name(station, 'avgh', 'BsR_S12', {'pm25'}): 'BsR',
-        Name(station, 'avgh', 'BbsB_S12', {'pm25'}): 'BbsB',
-        Name(station, 'avgh', 'BbsG_S12', {'pm25'}): 'BbsG',
-        Name(station, 'avgh', 'BbsR_S12', {'pm25'}): 'BbsR',
     }, send
 )
 
@@ -211,68 +163,58 @@ station_profile_data['aerosol']['raw']['pressure'] = lambda station, start_epoch
         Name(station, 'raw', 'Pd_P12', {'pm10'}): 'vacuum',
         Name(station, 'raw', 'Pd_P12', {'pm1'}): 'vacuum',
         Name(station, 'raw', 'Pd_P12', {'pm25'}): 'vacuum',
-        Name(station, 'raw', 'P_S11', {'pm10'}): 'neph-coarse',
-        Name(station, 'raw', 'P_S11'): 'neph-coarse',
-        Name(station, 'raw', 'P_S11', {'pm1'}): 'neph-fine',
-        Name(station, 'raw', 'P_S11', {'pm25'}): 'neph-fine',
-        Name(station, 'raw', 'P_S12', {'pm10'}): 'neph2-coarse',
-        Name(station, 'raw', 'P_S12'): 'neph2-coarse',
-        Name(station, 'raw', 'P_S12', {'pm1'}): 'neph2-fine',
-        Name(station, 'raw', 'P_S12', {'pm25'}): 'neph2-fine',
-        Name(station, 'raw', 'Pd_P11', {'pm10'}): 'impactor-coarse',
-        Name(station, 'raw', 'Pd_P11'): 'impactor-coarse',
-        Name(station, 'raw', 'Pd_P11', {'pm1'}): 'impactor-fine',
-        Name(station, 'raw', 'Pd_P11', {'pm25'}): 'impactor-fine',
+    }, send
+)
+station_profile_data['aerosol']['raw']['samplepressure-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'P_S11', {'pm10'}): 'neph',
+        Name(station, 'raw', 'P_S12', {'pm10'}): 'neph2',
+        Name(station, 'raw', 'Pd_P11', {'pm10'}): 'impactor',
+    }, send
+)
+station_profile_data['aerosol']['raw']['samplepressure-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'P_S11', {'pm1'}): 'neph',
+        Name(station, 'raw', 'P_S12', {'pm1'}): 'neph2',
+        Name(station, 'raw', 'Pd_P11', {'pm1'}): 'impactor',
     }, send
 )
 
 
-station_profile_data['aerosol']['raw']['humidograph-coarse'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['raw']['humidograph-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'BsG_S11', {'pm10'}): 'dry',
-        Name(station, 'raw', 'BsG_S11'): 'dry',
         Name(station, 'raw', 'BsG_S12', {'pm10'}): 'wet',
-        Name(station, 'raw', 'BsG_S12'): 'wet',
     }, send
 )
-station_profile_data['aerosol']['raw']['humidograph-fine'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['raw']['humidograph-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'BsG_S11', {'pm1'}): 'dry',
-        Name(station, 'raw', 'BsG_S11', {'pm25'}): 'dry',
         Name(station, 'raw', 'BsG_S12', {'pm1'}): 'wet',
-        Name(station, 'raw', 'BsG_S12', {'pm25'}): 'wet',
     }, send
 )
-station_profile_data['aerosol']['clean']['humidograph-coarse'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['clean']['humidograph-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'clean', 'BsG_S11', {'pm10'}): 'dry',
-        Name(station, 'clean', 'BsG_S11'): 'dry',
         Name(station, 'clean', 'BsG_S12', {'pm10'}): 'wet',
-        Name(station, 'clean', 'BsG_S12'): 'wet',
     }, send
 )
-station_profile_data['aerosol']['clean']['humidograph-fine'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['clean']['humidograph-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'clean', 'BsG_S11', {'pm1'}): 'dry',
-        Name(station, 'clean', 'BsG_S11', {'pm25'}): 'dry',
         Name(station, 'clean', 'BsG_S12', {'pm1'}): 'wet',
-        Name(station, 'clean', 'BsG_S12', {'pm25'}): 'wet',
     }, send
 )
-station_profile_data['aerosol']['avgh']['humidograph-coarse'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['avgh']['humidograph-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'avgh', 'BsG_S11', {'pm10'}): 'dry',
-        Name(station, 'avgh', 'BsG_S11'): 'dry',
         Name(station, 'avgh', 'BsG_S12', {'pm10'}): 'wet',
-        Name(station, 'avgh', 'BsG_S12'): 'wet',
     }, send
 )
-station_profile_data['aerosol']['avgh']['humidograph-fine'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+station_profile_data['aerosol']['avgh']['humidograph-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'avgh', 'BsG_S11', {'pm1'}): 'dry',
-        Name(station, 'avgh', 'BsG_S11', {'pm25'}): 'dry',
         Name(station, 'avgh', 'BsG_S12', {'pm1'}): 'wet',
-        Name(station, 'avgh', 'BsG_S12', {'pm25'}): 'wet',
     }, send
 )
 

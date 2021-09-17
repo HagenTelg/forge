@@ -86,7 +86,7 @@ class DMPSDistribution(SizeDistribution):
 
         self.contamination = f'{mode}-contamination'
         self.size_record = f'{mode}-dmps'
-        self.measured_record = f'{mode}-scattering-fine'
+        self.measured_record = f'{mode}-scattering-pm1'
 
 
 class DMPSCounts(SizeCounts):

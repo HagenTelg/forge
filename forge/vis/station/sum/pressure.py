@@ -8,7 +8,7 @@ class Pressure(TimeSeries):
             super().__init__()
             self.components.append('generic_operations')
             self.script = r"""(function(dataName) {
-    return new GenericOperations.SingleOutput(dataName, GenericOperations.difference, 'dPneph', 'ambient', 'neph-fine');
+    return new GenericOperations.SingleOutput(dataName, GenericOperations.difference, 'dPneph', 'ambient', 'neph');
 })"""
 
     def __init__(self, mode: str):
@@ -32,7 +32,7 @@ class Pressure(TimeSeries):
         nephelometer_fine = TimeSeries.Trace(hpa_ambient)
         nephelometer_fine.legend = "Nephelometer"
         nephelometer_fine.data_record = f'{mode}-pressure'
-        nephelometer_fine.data_field = 'neph-fine'
+        nephelometer_fine.data_field = 'neph'
         pressure.traces.append(nephelometer_fine)
 
 

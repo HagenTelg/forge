@@ -15,47 +15,23 @@ class Optical(TimeSeries):
             Mm_1.format_code = '.2f'
             self.axes.append(Mm_1)
 
-            B0 = TimeSeries.Trace(Mm_1)
-            B0.legend = name.format(code='B', size='Coarse')
-            B0.data_record = f'{record}-coarse'
-            B0.data_field = f'{field}B'
-            B0.color = '#00f'
-            self.traces.append(B0)
+            for size in [("Whole", 'whole'), ("PM10", 'pm10')]:
+                for color in [("B", '#00f'), ("G", '#0f0'), ("R", '#f00')]:
+                    trace = TimeSeries.Trace(Mm_1)
+                    trace.legend = name.format(code=color[0], size=size[0])
+                    trace.data_record = f'{record}-{size[1]}'
+                    trace.data_field = f'{field}{color[0]}'
+                    trace.color = color[1]
+                    self.traces.append(trace)
 
-            G0 = TimeSeries.Trace(Mm_1)
-            G0.legend = name.format(code='G', size='Coarse')
-            G0.data_record = f'{record}-coarse'
-            G0.data_field = f'{field}G'
-            G0.color = '#0f0'
-            self.traces.append(G0)
-
-            R0 = TimeSeries.Trace(Mm_1)
-            R0.legend = name.format(code='R', size='Coarse')
-            R0.data_record = f'{record}-coarse'
-            R0.data_field = f'{field}R'
-            R0.color = '#f00'
-            self.traces.append(R0)
-
-            B1 = TimeSeries.Trace(Mm_1)
-            B1.legend = name.format(code='B', size='Fine')
-            B1.data_record = f'{record}-fine'
-            B1.data_field = f'{field}B'
-            B1.color = '#007'
-            self.traces.append(B1)
-
-            G1 = TimeSeries.Trace(Mm_1)
-            G1.legend = name.format(code='G', size='Fine')
-            G1.data_record = f'{record}-fine'
-            G1.data_field = f'{field}G'
-            G1.color = '#070'
-            self.traces.append(G1)
-
-            R1 = TimeSeries.Trace(Mm_1)
-            R1.legend = name.format(code='R', size='Fine')
-            R1.data_record = f'{record}-fine'
-            R1.data_field = f'{field}R'
-            R1.color = '#700'
-            self.traces.append(R1)
+            for size in [("PM2.5", 'pm25'), ("PM1", 'pm1')]:
+                for color in [("B", '#007'), ("G", '#070'), ("R", '#700')]:
+                    trace = TimeSeries.Trace(Mm_1)
+                    trace.legend = name.format(code=color[0], size=size[0])
+                    trace.data_record = f'{record}-{size[1]}'
+                    trace.data_field = f'{field}{color[0]}'
+                    trace.color = color[1]
+                    self.traces.append(trace)
 
     def __init__(self, mode: str):
         super().__init__()

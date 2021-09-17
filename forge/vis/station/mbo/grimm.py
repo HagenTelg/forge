@@ -31,4 +31,4 @@ class GrimmDistribution(SizeDistribution):
 
         self.contamination = f'{mode}-contamination'
         self.size_record = f'{mode}-grimm'
-        self.measured_record = f'{mode}-scattering-coarse'
+        self.measured_record = f'{mode}-scattering-pm10'

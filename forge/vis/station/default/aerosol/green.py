@@ -35,25 +35,17 @@ return new WavelengthAdjust.AdjustedDispatch(dataName, inputFields, outputFields
         Mm_1.format_code = '.2f'
         scattering.axes.append(Mm_1)
 
-        G0 = TimeSeries.Trace(Mm_1)
-        G0.legend = "Scattering (Coarse)"
-        G0.data_record = f'{mode}-scattering-coarse'
-        G0.data_field = 'G'
-        G0.color = '#0f0'
-        scattering.traces.append(G0)
-        self.processing[G0.data_record] = self.AdjustWavelength(OrderedDict([
-            ('BsB', 450), ('BsG', 550), ('BsR', 700),
-        ]))
-
-        G1 = TimeSeries.Trace(Mm_1)
-        G1.legend = "Scattering (Fine)"
-        G1.data_record = f'{mode}-scattering-fine'
-        G1.data_field = 'G'
-        G1.color = '#070'
-        scattering.traces.append(G1)
-        self.processing[G1.data_record] = self.AdjustWavelength(OrderedDict([
-            ('BsB', 450), ('BsG', 550), ('BsR', 700),
-        ]))
+        for size in [("Whole", 'whole', '#0f0'), ("PM10", 'pm10', '#0f0'),
+                     ("PM2.5", 'pm25', '#070'), ("PM1", 'pm1', '#070')]:
+            trace = TimeSeries.Trace(Mm_1)
+            trace.legend = f"Scattering ({size[0]})"
+            trace.data_record = f'{mode}-scattering-{size[1]}'
+            trace.data_field = 'G'
+            trace.color = size[2]
+            scattering.traces.append(trace)
+            self.processing[trace.data_record] = self.AdjustWavelength(OrderedDict([
+                ('BsB', 450), ('BsG', 550), ('BsR', 700),
+            ]))
 
 
         absorption = TimeSeries.Graph()
@@ -66,25 +58,17 @@ return new WavelengthAdjust.AdjustedDispatch(dataName, inputFields, outputFields
         Mm_1.format_code = '.2f'
         absorption.axes.append(Mm_1)
 
-        G0 = TimeSeries.Trace(Mm_1)
-        G0.legend = "Absorption (Coarse)"
-        G0.data_record = f'{mode}-absorption-coarse'
-        G0.data_field = 'G'
-        G0.color = '#0f0'
-        absorption.traces.append(G0)
-        self.processing[G0.data_record] = self.AdjustWavelength(OrderedDict([
-            ('BaB', 467), ('BaG', 528), ('BaR', 652),
-        ]))
-
-        G1 = TimeSeries.Trace(Mm_1)
-        G1.legend = "Absorption (Fine)"
-        G1.data_record = f'{mode}-absorption-fine'
-        G1.data_field = 'G'
-        G1.color = '#070'
-        absorption.traces.append(G1)
-        self.processing[G1.data_record] = self.AdjustWavelength(OrderedDict([
-            ('BaB', 467), ('BaG', 528), ('BaR', 652),
-        ]))
+        for size in [("Whole", 'whole', '#0f0'), ("PM10", 'pm10', '#0f0'),
+                     ("PM2.5", 'pm25', '#070'), ("PM1", 'pm1', '#070')]:
+            trace = TimeSeries.Trace(Mm_1)
+            trace.legend = f"Absorption ({size[0]})"
+            trace.data_record = f'{mode}-absorption-{size[1]}'
+            trace.data_field = 'G'
+            trace.color = size[2]
+            absorption.traces.append(trace)
+            self.processing[trace.data_record] = self.AdjustWavelength(OrderedDict([
+                ('BaB', 467), ('BaG', 528), ('BaR', 652),
+            ]))
 
         aethalometer = TimeSeries.Trace(Mm_1)
         aethalometer.legend = "Aethalometer"

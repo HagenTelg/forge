@@ -3,6 +3,18 @@ from ..cpd3 import DataStream, DataReader, Name, data_profile_get, detach, profi
 
 
 station_profile_data = detach(profile_data)
+
+
+station_profile_data['aerosol']['raw']['pressure'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'P_XM1'): 'ambient',
+        Name(station, 'raw', 'P_S11'): 'neph',
+        Name(station, 'raw', 'P_S11', {'pm10'}): 'neph',
+        Name(station, 'raw', 'P_S11', {'pm25'}): 'neph',
+        Name(station, 'raw', 'P_S11', {'pm1'}): 'neph',
+    }, send
+)
+
 station_profile_data['aerosol']['raw']['cpcstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'Tu_N71'): 'Tinlet',

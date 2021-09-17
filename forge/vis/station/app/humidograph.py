@@ -25,15 +25,15 @@ class WetDryRatio(TimeSeries):
         humidograph.axes.append(ratio)
 
         R0 = TimeSeries.Trace(ratio)
-        R0.legend = "Coarse"
-        R0.data_record = f'{mode}-humidograph-coarse'
+        R0.legend = "PM10"
+        R0.data_record = f'{mode}-humidograph-pm10'
         R0.data_field = 'ratio'
         humidograph.traces.append(R0)
         self.processing[R0.data_record] = self.CalculateRatio()
 
         R1 = TimeSeries.Trace(ratio)
-        R1.legend = "Fine"
-        R1.data_record = f'{mode}-humidograph-fine'
+        R1.legend = "PM1"
+        R1.data_record = f'{mode}-humidograph-pm1'
         R1.data_field = 'ratio'
         humidograph.traces.append(R1)
         self.processing[R1.data_record] = self.CalculateRatio()

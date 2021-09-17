@@ -26,7 +26,7 @@ class ParticleConcentration(TimeSeries):
         cnc.traces.append(n_cnc)
 
         n_grimm = TimeSeries.Trace(cm_3)
-        n_grimm.legend = "Grimm"
+        n_grimm.legend = "Grimm Counts"
         n_grimm.data_record = f'{mode}-grimm'
         n_grimm.data_field = 'N'
         cnc.traces.append(n_grimm)
@@ -44,19 +44,19 @@ class ParticleConcentration(TimeSeries):
         mass.axes.append(ugm3)
 
         pm10 = TimeSeries.Trace(ugm3)
-        pm10.legend = "Grimm PM10"
+        pm10.legend = "Grimm (PM10)"
         pm10.data_record = f'{mode}-grimm'
         pm10.data_field = 'PM10'
         mass.traces.append(pm10)
 
         pm25 = TimeSeries.Trace(ugm3)
-        pm25.legend = "Grimm PM2.5"
+        pm25.legend = "Grimm (PM2.5)"
         pm25.data_record = f'{mode}-grimm'
         pm25.data_field = 'PM25'
         mass.traces.append(pm25)
 
         pm1 = TimeSeries.Trace(ugm3)
-        pm1.legend = "Grimm PM1"
+        pm1.legend = "Grimm (PM1)"
         pm1.data_record = f'{mode}-grimm'
         pm1.data_field = 'PM1'
         mass.traces.append(pm1)

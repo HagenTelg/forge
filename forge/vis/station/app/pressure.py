@@ -27,29 +27,19 @@ class Pressure(TimeSeries):
         ambient.data_field = 'ambient'
         pressure.traces.append(ambient)
 
-        nephelometer_coarse = TimeSeries.Trace(hpa_ambient)
-        nephelometer_coarse.legend = "Dry Nephelometer (Coarse)"
-        nephelometer_coarse.data_record = f'{mode}-pressure'
-        nephelometer_coarse.data_field = 'neph-coarse'
-        pressure.traces.append(nephelometer_coarse)
+        for size in [("Whole", 'whole'), ("PM10", 'pm10'), ("PM2.5", 'pm25'), ("PM1", 'pm1')]:
+            nephelometer = TimeSeries.Trace(hpa_ambient)
+            nephelometer.legend = f"Nephelometer ({size[0]})"
+            nephelometer.data_record = f'{mode}-samplepressure-{size[1]}'
+            nephelometer.data_field = 'neph'
+            pressure.traces.append(nephelometer)
 
-        nephelometer_fine = TimeSeries.Trace(hpa_ambient)
-        nephelometer_fine.legend = "Dry Nephelometer (Fine)"
-        nephelometer_fine.data_record = f'{mode}-pressure'
-        nephelometer_fine.data_field = 'neph-fine'
-        pressure.traces.append(nephelometer_fine)
-
-        nephelometer_coarse = TimeSeries.Trace(hpa_ambient)
-        nephelometer_coarse.legend = "Wet Nephelometer (Coarse)"
-        nephelometer_coarse.data_record = f'{mode}-pressure'
-        nephelometer_coarse.data_field = 'neph2-coarse'
-        pressure.traces.append(nephelometer_coarse)
-
-        nephelometer_fine = TimeSeries.Trace(hpa_ambient)
-        nephelometer_fine.legend = "Wet Nephelometer (Fine)"
-        nephelometer_fine.data_record = f'{mode}-pressure'
-        nephelometer_fine.data_field = 'neph2-fine'
-        pressure.traces.append(nephelometer_fine)
+        for size in [("Whole", 'whole'), ("PM10", 'pm10'), ("PM2.5", 'pm25'), ("PM1", 'pm1')]:
+            nephelometer = TimeSeries.Trace(hpa_ambient)
+            nephelometer.legend = f"Nephelometer ({size[0]})"
+            nephelometer.data_record = f'{mode}-samplepressure-{size[1]}'
+            nephelometer.data_field = 'neph2'
+            pressure.traces.append(nephelometer)
 
         pitot = TimeSeries.Trace(hpa_delta)
         pitot.legend = "Pitot"
@@ -57,17 +47,12 @@ class Pressure(TimeSeries):
         pitot.data_field = 'pitot'
         pressure.traces.append(pitot)
 
-        impactor_coarse = TimeSeries.Trace(hpa_delta)
-        impactor_coarse.legend = "Impactor (Coarse)"
-        impactor_coarse.data_record = f'{mode}-pressure'
-        impactor_coarse.data_field = 'impactor-coarse'
-        pressure.traces.append(impactor_coarse)
-
-        impactor_fine = TimeSeries.Trace(hpa_delta)
-        impactor_fine.legend = "Impactor (Fine)"
-        impactor_fine.data_record = f'{mode}-pressure'
-        impactor_fine.data_field = 'impactor-fine'
-        pressure.traces.append(impactor_fine)
+        for size in [("Whole", 'whole'), ("PM10", 'pm10'), ("PM2.5", 'pm25'), ("PM1", 'pm1')]:
+            impactor = TimeSeries.Trace(hpa_delta)
+            impactor.legend = f"Impactor ({size[0]})"
+            impactor.data_record = f'{mode}-samplepressure-{size[1]}'
+            impactor.data_field = 'impactor'
+            pressure.traces.append(impactor)
 
 
         system_vacuum = TimeSeries.Graph()
