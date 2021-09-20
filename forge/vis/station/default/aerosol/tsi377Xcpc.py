@@ -124,3 +124,6 @@ class TSI3775CPCStatus(TSI3772CPCStatus):
         sample.data_record = f'{mode}-cpcstatus'
         sample.data_field = 'Alaser'
         laser.traces.append(sample)
+
+
+TSI3776CPCStatus = TSI3775CPCStatus
