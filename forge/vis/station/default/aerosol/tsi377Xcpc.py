@@ -45,18 +45,23 @@ class TSI3772CPCStatus(TimeSeries):
         cpc_flow.title = "Flow"
         self.graphs.append(cpc_flow)
 
-        lpm = TimeSeries.Axis()
-        lpm.title = "lpm"
-        lpm.format_code = '.3f'
-        cpc_flow.axes.append(lpm)
+        lpm_sample = TimeSeries.Axis()
+        lpm_sample.title = "Sample (lpm)"
+        lpm_sample.format_code = '.3f'
+        cpc_flow.axes.append(lpm_sample)
 
-        sample = TimeSeries.Trace(lpm)
+        lpm_inlet = TimeSeries.Axis()
+        lpm_inlet.title = "Inlet (lpm)"
+        lpm_inlet.format_code = '.2f'
+        cpc_flow.axes.append(lpm_inlet)
+
+        sample = TimeSeries.Trace(lpm_sample)
         sample.legend = "Sample"
         sample.data_record = f'{mode}-cpcstatus'
         sample.data_field = 'Qsample'
         cpc_flow.traces.append(sample)
 
-        inlet = TimeSeries.Trace(lpm)
+        inlet = TimeSeries.Trace(lpm_inlet)
         inlet.legend = "Inlet"
         inlet.data_record = f'{mode}-cpcstatus'
         inlet.data_field = 'Qinlet'
