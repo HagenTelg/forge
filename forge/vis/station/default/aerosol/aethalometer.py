@@ -117,7 +117,7 @@ class AE33OpticalStatus(TimeSeries):
         ebc.contamination = f'{mode}-contamination'
         self.graphs.append(ebc)
 
-        factor = self.SevenWavelength(None, '.6f', "FACTOR ({wavelength} nm)", f'{mode}-aethalometer', 'CF{index}')
+        factor = self.SevenWavelength(None, '.6f', "Correction ({wavelength} nm)", f'{mode}-aethalometer', 'CF{index}')
         factor.title = "Loading Correction Factor"
         factor.contamination = f'{mode}-contamination'
         self.graphs.append(factor)

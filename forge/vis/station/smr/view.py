@@ -1,0 +1,36 @@
+import typing
+from collections import OrderedDict
+from ..default.view import detach, View, aerosol_views
+from ..default.aerosol.maap import MAAP5012Status
+from ..default.aerosol.temperature import Temperature
+from ..default.aerosol.pressure import BasicPressure
+from .aethalometer import AE33, AE33Status, AE33OpticalStatus, EditingAE33
+from .maap import MAAP5012Optical, EditingMAAP5012
+from .green import Green
+
+
+station_views = detach(aerosol_views)
+
+
+station_views['aerosol-raw-maap'] = MAAP5012Optical('aerosol-raw')
+station_views['aerosol-editing-maap'] = EditingMAAP5012('aerosol-editing')
+station_views['aerosol-clean-maap'] = MAAP5012Optical('aerosol-clean')
+station_views['aerosol-avgh-maap'] = MAAP5012Optical('aerosol-avgh')
+station_views['aerosol-raw-maapstatus'] = MAAP5012Status('aerosol-raw')
+
+station_views['aerosol-raw-aethalometer'] = AE33('aerosol-raw')
+station_views['aerosol-raw-aethalometerstatus'] = AE33Status('aerosol-raw')
+station_views['aerosol-editing-aethalometer'] = EditingAE33()
+station_views['aerosol-editing-aethalometerstatus'] = AE33OpticalStatus('aerosol-editing')
+station_views['aerosol-clean-aethalometer'] = AE33('aerosol-clean')
+station_views['aerosol-avgh-aethalometer'] = AE33('aerosol-avgh')
+
+station_views['aerosol-raw-green'] = Green('aerosol-raw')
+station_views['aerosol-clean-green'] = Green('aerosol-clean')
+station_views['aerosol-avgh-green'] = Green('aerosol-avgh')
+
+station_views['aerosol-raw-pressure'] = BasicPressure('aerosol-raw')
+
+
+def get(station: str, view_name: str) -> typing.Optional[View]:
+    return station_views.get(view_name)
