@@ -170,7 +170,7 @@ class _DataSocket(WebSocketEndpoint):
         elif action == 'stop':
             stream_id = int(data['stream'])
             stream = self.active_data_streams.get(stream_id)
-            if stream_id is None:
+            if stream is None:
                 return
             del self.active_data_streams[stream_id]
             stream.stopped = True
