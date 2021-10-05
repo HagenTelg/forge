@@ -2,6 +2,7 @@ import typing
 import logging
 import asyncio
 import datetime
+import random
 import sqlalchemy as db
 import sqlalchemy.orm as orm
 import starlette.status
@@ -173,6 +174,7 @@ class _Database:
 class AccessController(BaseAccessController):
     def __init__(self, uri):
         self.db = _Database(uri)
+        self._session_purge_started = False
 
         self.routes: typing.List[Route] = [
             Route('/login', endpoint=self.login, name='login'),
@@ -250,7 +252,33 @@ class AccessController(BaseAccessController):
                                      name='authorize_apple'))
             self.enable_apple = True
 
+    def _purge_sessions(self) -> None:
+        if self._session_purge_started:
+            return
+        self._session_purge_started = True
+
+        async def purge():
+            def remove_old_sessions(engine: Engine):
+                # Session cookies last 14 days, so give it plenty of slack
+                expire_before = datetime.datetime.utcnow() - datetime.timedelta(days=15)
+                with Session(engine) as orm_session:
+                    orm_session.query(_Session).filter(_Session.last_seen < expire_before).delete()
+                    try:
+                        orm_session.commit()
+                    except:
+                        return
+
+                _LOGGER.debug(f"Sessions before {expire_before:%Y-%m-%d} removed")
+
+            while True:
+                self.db.background(remove_old_sessions)
+                await asyncio.sleep(random.uniform(7200, 21600))
+
+        asyncio.get_event_loop().create_task(purge())
+
     async def authenticate(self, request: Request) -> typing.Optional[BaseAccessUser]:
+        self._purge_sessions()
+
         session_user_id = request.session.get('id')
         if session_user_id is None:
             return None
@@ -288,6 +316,8 @@ class AccessController(BaseAccessController):
         return await self.db.execute(execute)
 
     async def login(self, request: Request) -> Response:
+        self._purge_sessions()
+
         return HTMLResponse(await package_template('access', 'login.html').render_async(
             request=request,
             enable_google=self.enable_google,
@@ -316,6 +346,8 @@ class AccessController(BaseAccessController):
         return RedirectResponse(request.url_for('root'))
 
     async def password_login(self, request: Request) -> Response:
+        self._purge_sessions()
+
         data = await request.form()
         email = str(data.get('email', '')).lower()
         if not is_valid_email(email):
@@ -517,11 +549,15 @@ class AccessController(BaseAccessController):
         return RedirectResponse(request.url_for('root'), status_code=starlette.status.HTTP_302_FOUND)
 
     async def oidc_login_generic(self, request: Request, client_name: str, redirect_name: str):
+        self._purge_sessions()
+
         client = self.oauth.create_client(client_name)
         redirect_uri = request.url_for(redirect_name)
         return await client.authorize_redirect(request, redirect_uri)
 
     async def oidc_authorize_generic(self, request: Request, client_name: str) -> Response:
+        self._purge_sessions()
+
         client = self.oauth.create_client(client_name)
         token = await client.authorize_access_token(request)
         oidc_user = await client.parse_id_token(token, None)
