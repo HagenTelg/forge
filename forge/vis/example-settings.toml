@@ -1,0 +1,8 @@
+[[authentication.static]]
+ip = [
+    "127.0.0.0/8",
+    "::1",
+]
+station = "nil"
+mode = "example-*"
+write = true
