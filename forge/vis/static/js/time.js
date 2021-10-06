@@ -24,9 +24,10 @@ let TimeParse = {};
             year--;
             month += 9;
         }
-        const c = year / 100;
+        const c = Math.floor(year / 100);
         const ya = year - 100 * c;
-        return ((146097 * c) / 4 + (1461 * ya) / 4 + (153 * month + 2) / 5 + day + 1721119);
+        return Math.floor((146097 * c) / 4) + Math.floor((1461 * ya) / 4) +
+            Math.floor((153 * month + 2) / 5) + day + 1721119;
     }
 
     function startOfYear(year) {
