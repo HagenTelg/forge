@@ -18,6 +18,12 @@ def _lookup_view(request: Request, station: str, view_name: str) -> typing.Optio
         if view_name.startswith("example-timeseries"):
             from . example import example_timeseries
             return example_timeseries
+        if view_name.startswith("example-solartimeseries"):
+            from . example import example_solartimeseries
+            return example_solartimeseries
+        if view_name.startswith("example-solarposition"):
+            from . example import example_solarposition
+            return example_solarposition
         return None
 
     return station_data(station, 'view', 'get')(station, view_name)

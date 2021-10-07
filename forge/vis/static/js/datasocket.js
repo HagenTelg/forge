@@ -315,7 +315,9 @@ let DataSocket = {};
     DataSocket.reloadData = function() {
         loadingRecords.forEach((dispatch) => {
             dispatch.stopStream();
-            DataSocket.onRecordReload();
+        });
+        DataSocket.onRecordReload();
+        loadingRecords.forEach((dispatch) => {
             dispatch.beginStream();
         });
     };

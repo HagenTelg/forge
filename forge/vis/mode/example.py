@@ -27,3 +27,15 @@ class _ExampleEditing(Editing):
 
 
 example_editing = _ExampleEditing()
+
+
+class _ExampleSolar(Editing):
+    def __init__(self):
+        super().__init__('example-solar', "Example Solar")
+
+        self.views.append(ViewList.Entry('example-solartimeseries-1', "First Solar"))
+        self.views.append(ViewList.Entry('example-solartimeseries-2', "Second Solar"))
+        self.views.append(ViewList.Entry('example-solarposition', "Solar Position"))
+
+
+example_solar = _ExampleSolar()

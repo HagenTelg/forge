@@ -23,6 +23,9 @@ def lookup_mode(request: Request, station: str, mode_name: str) -> typing.Option
         elif mode_name == "example-editing":
             from . example import example_editing
             return example_editing
+        elif mode_name == "example-solar":
+            from . example import example_solar
+            return example_solar
         return None
 
     return station_data(station, 'mode', 'get')(station, mode_name)

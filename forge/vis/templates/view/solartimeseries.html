@@ -1,0 +1,32 @@
+<style>
+div.view {
+  flex-grow: 1;
+}
+
+div.scroll {
+  height: {{ (view.graphs|length)*300 }}px;
+}
+</style>
+
+<div class="view{% if (view.graphs|length) > 3 %} scroll{% endif %}" id="view_timeseries"></div>
+
+<script>
+(function() {
+{% include 'view/components/solar.js' %}
+
+// {% for component in view.required_components() %}
+{% include 'view/components/' + component + '.js' %}
+// {% endfor %}
+
+{% include 'view/common/timeseries.js' %}
+{% include 'view/common/shapes.js' %}
+
+const RecordProcessing = new Map();
+// {% for record, processing in view.processing.items() %}
+RecordProcessing.set('{{ record }}', {{ processing.script | safe }});
+// {% endfor %}
+
+{% include 'view/timeseries.js' %}
+{% include 'view/solartimeseries.js' %}
+})();
+</script>

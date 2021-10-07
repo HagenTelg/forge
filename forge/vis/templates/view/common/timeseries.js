@@ -213,7 +213,7 @@ var TimeSeriesCommon = {};
             Plotly.relayout(this.div, {
                 'xaxis.range': [DataSocket.toPlotTime(TimeSelect.start_ms), DataSocket.toPlotTime(TimeSelect.end_ms)],
                 'xaxis.autorange': false,
-            })
+            });
         }
     }
 })();

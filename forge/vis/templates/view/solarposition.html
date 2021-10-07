@@ -1,0 +1,19 @@
+<style>
+div.view {
+  flex-grow: 1;
+}
+
+div.scroll {
+  height: {{ (view.graphs|length)*300 }}px;
+}
+</style>
+
+<div class="view" id="view_timeseries"></div>
+
+<script>
+(function() {
+{% include 'view/components/solar.js' %}
+{% include 'view/common/timeseries.js' %}
+{% include 'view/solarposition.js' %}
+})();
+</script>

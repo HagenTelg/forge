@@ -8,7 +8,13 @@ var ShapeHandler = (function() {
         update() {
             const shapes = [];
             this.generators.forEach((gen) => {
-                Array.prototype.push.apply(shapes, gen());
+                const add = gen();
+                if (!add) {
+                    return;
+                }
+                for (let i=0; i<add.length; i++) {
+                    shapes.push(add[i]);
+                }
             });
             Plotly.relayout(this.div, {
                 'shapes': shapes,
