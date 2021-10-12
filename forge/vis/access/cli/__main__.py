@@ -177,8 +177,9 @@ def main():
         if args.command == 'list':
             users = await interface.list_users(**vars(args))
             sort_keys = args.sort.split(',')
-            if len(sort_keys) > 0 and len(sort_keys[0]) > 0:
-                sort_users(sort_keys, users)
+            if len(sort_keys) <= 0 or len(sort_keys[0]) <= 0:
+                sort_keys = []
+            sort_users(sort_keys, users)
             if args.reverse:
                 users.reverse()
             if args.json:

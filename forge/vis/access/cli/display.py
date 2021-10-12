@@ -17,9 +17,13 @@ def sort_users(sort_keys: typing.List[str], users: typing.List[typing.Dict]):
 
         return tuple(result)
 
-    users.sort(key=assemble_key)
+    users.sort(key=lambda value: value.get('id', 0))
+    if len(sort_keys) > 0:
+        users.sort(key=assemble_key)
     for user in users:
-        user['access'].sort(key=assemble_key)
+        user['access'].sort(key=lambda value: value.get('station', ''))
+        if len(sort_keys) > 0:
+            user['access'].sort(key=assemble_key)
 
 
 def display_users_json(users: typing.List[typing.Dict]):
