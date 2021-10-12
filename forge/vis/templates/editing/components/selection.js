@@ -391,14 +391,18 @@ EditDirectiveAvailable.ready(() => {
     sortList();
 });
 
-Selection.configure = function(directive) {
+Selection.configure = function(directive, field) {
+    if (!field) {
+        field = 'selection';
+    }
+    if (!directive[field]) {
+        directive[field] = [];
+    }
+    Selection.target = directive[field];
+
     for (let i=0; i<Selection.list.rows.length; i++) {
         Selection.list.rows[i].classList.remove('selected');
     }
-    if (!directive.selection) {
-        directive.selection = [];
-    }
-    Selection.target = directive.selection;
 
     let unclaimedSelections = [];
     Selection.target.forEach((selection) => {
