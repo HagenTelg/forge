@@ -1,0 +1,20 @@
+<div class="details-calibration details-horizontal">
+  <span class="details-calibration-list">
+    <span id="details_{{ instance|default('Calibration') }}_list"></span>
+    <button class="details-calibration-add" title="Add a coefficient to the polynomial" id="details_{{ instance|default('Calibration') }}_add">+ …</button>
+  </span>
+</div>
+
+<script>
+var {{ instance|default('Calibration') }} = {};
+{{ instance|default('Calibration') }}.list = document.getElementById('details_{{ instance|default("Calibration") }}_list');
+{{ instance|default('Calibration') }}.addCoefficient = document.getElementById('details_{{ instance|default("Calibration") }}_add');
+{{ instance|default('Calibration') }}.valueLabel = 'details_{{ instance|default("Calibration") }}_value';
+(function(Calibration) {
+{% include 'editing/components/calibration.js' %}
+})({{ instance|default('Calibration') }});
+</script>
+
+<style>
+{% include 'editing/components/calibration.css' %}
+</style>

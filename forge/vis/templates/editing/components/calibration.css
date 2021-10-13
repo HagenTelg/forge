@@ -1,0 +1,37 @@
+span.details-calibration-list {
+  display: inline;
+}
+
+input.details-calibration-coefficient-value {
+  padding: 4px 8px;
+  margin: 4px 0;
+  border: 1px solid #ccc;
+  width: 60px;
+  text-align: right;
+}
+input.details-calibration-coefficient-value.invalid {
+  color: #a00;
+}
+.details-calibration-coefficient > label {
+  padding: 0 0 0 4px;
+}
+
+.details-calibration-separator {
+  padding: 0 8px;
+}
+
+button.details-calibration-add {
+  margin: 0 0 0 10px;
+  padding: 6px 8px;
+  border: none;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #0080ff;
+  color: white;
+  cursor: pointer;
+  text-align: left;
+}
+button.details-calibration-add:hover {
+  color: black;
+}

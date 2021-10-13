@@ -122,11 +122,53 @@ def _from_cpd3_selection(selection: typing.Any) -> typing.List[typing.Dict[str, 
     return result
 
 
+def _to_cpd3_calibration(calibration: typing.List[float]) -> typing.List[float]:
+    if not isinstance(calibration, list):
+        return []
+    result = []
+    for coefficient in calibration:
+        try:
+            coefficient = float(coefficient)
+        except (ValueError, TypeError):
+            return []
+        result.append(coefficient)
+    while len(result) > 0 and result[-1] == 0.0:
+        result.pop()
+    return result
+
+
+def _from_cpd3_calibration(calibration: typing.Any) -> typing.List[float]:
+    if calibration is None:
+        return []
+
+    if isinstance(calibration, float) or isinstance(calibration, int):
+        return [float(calibration)]
+    elif isinstance(calibration, dict):
+        return _from_cpd3_calibration(calibration.get('Coefficients'))
+    elif not isinstance(calibration, list):
+        return []
+
+    result = []
+    for coefficient in calibration:
+        try:
+            coefficient = float(coefficient)
+        except (ValueError, TypeError):
+            return []
+        result.append(coefficient)
+    return result
+
+
 def _to_cpd3_action(directive: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
     op = directive.get('action', 'invalidate')
     if op == 'contaminate':
         return {
             'Type': 'Contaminate',
+        }
+    elif op == 'calibration':
+        return {
+            'Type': 'Polynomial',
+            'Selection': _to_cpd3_selection(directive.get('selection')),
+            'Calibration': _to_cpd3_calibration(directive.get('calibration')),
         }
     else:
         return {
@@ -306,8 +348,12 @@ def _convert_directive(profile: str, identity: Identity,
     op = action.get('Type')
     if isinstance(op, str):
         op = op.lower()
-    if op == 'contaminate' or op == "contam":
+    if op == 'contaminate' or op == 'contam':
         result['action'] = 'contaminate'
+    elif op == 'polynomial' or op == 'poly' or op == 'cal' or op == 'calibration':
+        result['action'] = 'calibration'
+        result['selection'] = _from_cpd3_selection(action.get('Selection'))
+        result['calibration'] = _from_cpd3_calibration(action.get('Calibration'))
     else:
         result['action'] = 'invalidate'
         result['selection'] = _from_cpd3_selection(action.get('Selection'))
@@ -337,7 +383,7 @@ def _display_directive(raw: typing.Dict[str, typing.Any]) -> bool:
         if _matches("Remove"):
             return False
         elif _matches("Poly", "Polynomial", "Cal", "Calibration"):
-            return False
+            return True
         elif _matches("PolyInvert", "PolynomialInvert", "InvertCal", "InvertCalibration"):
             return False
         elif _matches("Recalibrate"):

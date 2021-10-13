@@ -25,6 +25,10 @@ action_codes['contaminate'] = Action("Contaminate", """
 Mark the whole data stream as not representative of ambient conditions (e.g. a nearby truck emitting aerosol).
 The data are considered valid in high resolution (1-minute) but are not included in the final averages for analysis.
 """)
+action_codes['calibration'] = Action("Calibration", """
+Apply a calibration polynomial to data values.
+This is used to adjust values based by applying a polynomial to the original data (e.g. using a slope and offset).
+""")
 
 
 @requires('authenticated')

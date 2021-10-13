@@ -1,0 +1,23 @@
+<div class="edit-action-calibration-coefficients">
+  {% include 'editing/components/calibration.html' %}
+</div>
+
+<div class="edit-action-calibration-selection">
+  {% include 'editing/components/selection.html' %}
+</div>
+
+<script>
+selectEditDirectiveAction = function(directive) {
+  Calibration.configure(directive);
+  Selection.configure(directive);
+};
+</script>
+
+<style>
+.edit-action-calibration-coefficients {
+  padding: 8px 8px 0;
+}
+.edit-action-calibration-selection {
+  padding: 8px;
+}
+</style>
