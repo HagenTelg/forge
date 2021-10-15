@@ -170,6 +170,13 @@ def _to_cpd3_action(directive: typing.Dict[str, typing.Any]) -> typing.Dict[str,
             'Selection': _to_cpd3_selection(directive.get('selection')),
             'Calibration': _to_cpd3_calibration(directive.get('calibration')),
         }
+    elif op == 'recalibrate':
+        return {
+            'Type': 'Recalibrate',
+            'Selection': _to_cpd3_selection(directive.get('selection')),
+            'Calibration': _to_cpd3_calibration(directive.get('calibration')),
+            'Original': _to_cpd3_calibration(directive.get('reverse_calibration')),
+        }
     else:
         return {
             'Type': 'Invalidate',
@@ -354,6 +361,11 @@ def _convert_directive(profile: str, identity: Identity,
         result['action'] = 'calibration'
         result['selection'] = _from_cpd3_selection(action.get('Selection'))
         result['calibration'] = _from_cpd3_calibration(action.get('Calibration'))
+    elif op == 'recalibrate':
+        result['action'] = 'recalibrate'
+        result['selection'] = _from_cpd3_selection(action.get('Selection'))
+        result['calibration'] = _from_cpd3_calibration(action.get('Calibration'))
+        result['reverse_calibration'] = _from_cpd3_calibration(action.get('Original'))
     else:
         result['action'] = 'invalidate'
         result['selection'] = _from_cpd3_selection(action.get('Selection'))
@@ -387,7 +399,7 @@ def _display_directive(raw: typing.Dict[str, typing.Any]) -> bool:
         elif _matches("PolyInvert", "PolynomialInvert", "InvertCal", "InvertCalibration"):
             return False
         elif _matches("Recalibrate"):
-            return False
+            return True
         elif _matches("Wrap", "Modular", "Modulus"):
             return False
         elif _matches("Overlay", "Set"):

@@ -29,6 +29,10 @@ action_codes['calibration'] = Action("Calibration", """
 Apply a calibration polynomial to data values.
 This is used to adjust values based by applying a polynomial to the original data (e.g. using a slope and offset).
 """)
+action_codes['recalibrate'] = Action("Recalibrate", """
+Reverse a calibration polynomial and apply a new one.
+This is used to reverse an old calibration polynomial applied to values and then apply an updated one. 
+""")
 
 
 @requires('authenticated')

@@ -1,0 +1,47 @@
+<table class="edit-action-recalibrate-coefficients">
+  <tr>
+    <td class="edit-action-recalibrate-label">Reverse:</td>
+    <td>
+      {% with instance = 'OldCalibration' %}
+      {% include 'editing/components/calibration.html' %}
+      {% endwith %}
+    </td>
+  </tr>
+  <tr>
+    <td class="edit-action-recalibrate-label">Apply:</td>
+    <td>
+      {% with instance = 'NewCalibration' %}
+      {% include 'editing/components/calibration.html' %}
+      {% endwith %}
+    </td>
+  </tr>
+</table>
+
+
+<div class="edit-action-calibration-selection">
+  {% include 'editing/components/selection.html' %}
+</div>
+
+<script>
+selectEditDirectiveAction = function(directive) {
+  OldCalibration.configure(directive, 'reverse_calibration');
+  NewCalibration.configure(directive);
+  Selection.configure(directive);
+};
+</script>
+
+<style>
+.edit-action-recalibrate-coefficients {
+  padding: 8px 8px 0;
+  border: none;
+}
+.edit-action-recalibrate-label {
+  text-align: right;
+}
+.edit-action-calibration-selection {
+  padding: 8px;
+}
+.details-selection-scroll {
+  max-height: 150px;
+}
+</style>

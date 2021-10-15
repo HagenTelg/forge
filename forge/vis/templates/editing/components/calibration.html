@@ -1,9 +1,7 @@
-<div class="details-calibration details-horizontal">
-  <span class="details-calibration-list">
-    <span id="details_{{ instance|default('Calibration') }}_list"></span>
-    <button class="details-calibration-add" title="Add a coefficient to the polynomial" id="details_{{ instance|default('Calibration') }}_add">+ …</button>
-  </span>
-</div>
+<span class="details-calibration-list">
+  <span id="details_{{ instance|default('Calibration') }}_list"></span>
+  <button class="details-calibration-add" title="Add a coefficient to the polynomial" id="details_{{ instance|default('Calibration') }}_add">+ …</button>
+</span>
 
 <script>
 var {{ instance|default('Calibration') }} = {};
