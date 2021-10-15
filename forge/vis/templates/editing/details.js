@@ -152,6 +152,7 @@ $('nav.details-category-select button').click(function(event) {
 $('#details_action').change(function(event) {
     $('.details-action-description').removeClass('active');
     $('.details-action-description[code=' + this.value + ']').addClass('active');
+    directive.action =  this.value;
 
     const selectedOption = this.options[this.selectedIndex];
     const editor = $(selectedOption).attr('editor');
