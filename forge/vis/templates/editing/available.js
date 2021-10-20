@@ -17,6 +17,8 @@ const EditDirectiveAvailable = (function() {
             selectionText() {}
 
             selection() {}
+
+            instrument() {}
         },
 
         findMatching: function(selection) {
@@ -69,7 +71,7 @@ const EditDirectiveAvailable = (function() {
             return selection.variable === this.variable;
         }
 
-        summaryText() { return this.variable.split('_', 2)[1]; }
+        summaryText() { return this.instrument(); }
 
         selectionText() { return this.variable; }
 
@@ -79,6 +81,8 @@ const EditDirectiveAvailable = (function() {
                 variable: this.variable,
             };
         }
+
+        instrument() { return this.variable.split('_', 2)[1]; }
     }
 
     $(document).ready(function() {

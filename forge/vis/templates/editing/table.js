@@ -1,5 +1,5 @@
 let displayEditDirectiveDetails = (originalDirective, onsave) => {};
-let selectEditDirectiveAction = (directive) => {};
+let selectEditDirectiveAction = (directive, validityLock) => {};
 
 $(document).ready(function() {
     const directivesTable = document.getElementById('edit_directives');
@@ -148,26 +148,28 @@ $(document).ready(function() {
 
 
     function getDirectiveSummary(directive) {
-        if (!directive.selection) {
-            return "";
-        }
-
-        const summaryItems = new Set();
-        directive.selection.forEach((selection) => {
-            EditDirectiveAvailable.findMatching(selection).forEach((available) => {
-                summaryItems.add(available.summaryText());
+        if (directive.selection) {
+            const summaryItems = new Set();
+            directive.selection.forEach((selection) => {
+                EditDirectiveAvailable.findMatching(selection).forEach((available) => {
+                    summaryItems.add(available.summaryText());
+                });
             });
-        });
 
 
-        const sorted = Array.from(summaryItems);
-        sorted.sort();
-        let result = sorted.join(" ");
-        if (result.length > 16) {
-            result = result.slice(0, 16);
-            result += "…";
+            const sorted = Array.from(summaryItems);
+            sorted.sort();
+            let result = sorted.join(" ");
+            if (result.length > 16) {
+                result = result.slice(0, 16);
+                result += "…";
+            }
+            return result;
+        } else if (directive.instrument) {
+            return directive.instrument;
         }
-        return result;
+
+        return "";
     }
 
     function rowSelected(selected) {

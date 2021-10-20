@@ -1,0 +1,21 @@
+<div class="details-instrument details-vertical">
+  <div class="details-instrument-scroll">
+    <table class="details-instrument-list">
+      <tbody id="details_{{ instance|default('Instrument') }}_list">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+var {{ instance|default('Instrument') }} = {};
+{{ instance|default('Instrument') }}.list = document.getElementById('details_{{ instance|default("Instrument") }}_list');
+{{ instance|default('Instrument') }}.lockKey = '{{ instance|default("Instrument") }}';
+(function(Instrument) {
+{% include 'editing/components/instrument.js' %}
+})({{ instance|default('Instrument') }});
+</script>
+
+<style>
+{% include 'editing/components/instrument.css' %}
+</style>

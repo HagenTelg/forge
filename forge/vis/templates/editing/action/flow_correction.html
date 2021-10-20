@@ -1,0 +1,56 @@
+<table class="edit-action-flowcorrection-coefficients">
+  <tr>
+    <td class="edit-action-flowcorrection-label">Reverse:</td>
+    <td>
+      {% with instance = 'OldCalibration' %}
+      {% include 'editing/components/calibration.html' %}
+      {% endwith %}
+    </td>
+  </tr>
+  <tr>
+    <td class="edit-action-flowcorrection-label">Apply:</td>
+    <td>
+      {% with instance = 'NewCalibration' %}
+      {% include 'editing/components/calibration.html' %}
+      {% endwith %}
+    </td>
+  </tr>
+</table>
+
+
+<div class="edit-action-flowcorrection-instrument">
+  {% include 'editing/components/instrument.html' %}
+</div>
+
+<script>
+Instrument.setSelectionFilter(
+  { type: 'variable', variable: '^Qt?1?_', },
+  { type: 'variable', variable: '^L1?_', },
+);
+selectEditDirectiveAction = function(directive, lockController) {
+  OldCalibration.configure(directive, 'reverse_calibration');
+  NewCalibration.configure(directive);
+  Instrument.lockController = lockController;
+  Instrument.configure(directive, 'instrument');
+
+  return () => {
+    return Instrument.isValid();
+  }
+};
+</script>
+
+<style>
+.edit-action-flowcorrection-coefficients {
+  padding: 8px 8px 0;
+  border: none;
+}
+.edit-action-flowcorrection-label {
+  text-align: right;
+}
+.edit-action-flowcorrection-selection {
+  padding: 8px;
+}
+.details-selection-scroll {
+  max-height: 150px;
+}
+</style>

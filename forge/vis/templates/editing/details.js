@@ -9,15 +9,38 @@ const endTimeDisplay = document.getElementById("details-parsed-end-time");
 const acceptButton = document.getElementById('details_accept');
 
 const invalidLocks = new Set();
+const actionInvalidLocks = new Set();
 function addInvalidLock(key) {
     invalidLocks.add(key);
     acceptButton.classList.add('invalid');
 }
+function isValid() {
+    return !invalidLocks.size && !actionInvalidLocks.size;
+}
 function removeInvalidLock(key) {
     invalidLocks.delete(key);
-    if (!invalidLocks.size) {
+    if (isValid()) {
         acceptButton.classList.remove('invalid');
     }
+}
+function clearActionInvalidLocks() {
+    actionInvalidLocks.clear();
+    if (isValid()) {
+        acceptButton.classList.remove('invalid');
+    }
+}
+
+let actionLockController = {
+    addInvalidLock: function(key) {
+        actionInvalidLocks.add(key);
+        acceptButton.classList.add('invalid');
+    },
+    removeInvalidLock: function(key) {
+        actionInvalidLocks.delete(key);
+        if (isValid()) {
+            acceptButton.classList.remove('invalid');
+        }
+    },
 }
 
 function startTimeEdited() {
@@ -152,13 +175,14 @@ $('nav.details-category-select button').click(function(event) {
 $('#details_action').change(function(event) {
     $('.details-action-description').removeClass('active');
     $('.details-action-description[code=' + this.value + ']').addClass('active');
-    directive.action =  this.value;
+    directive.action = this.value;
+    clearActionInvalidLocks();
 
     const selectedOption = this.options[this.selectedIndex];
     const editor = $(selectedOption).attr('editor');
     $.ajax(editor).done(function(responseText) {
         $('#details_action_content').html(responseText).ready(() => {
-            saveAction = selectEditDirectiveAction(directive);
+            saveAction = selectEditDirectiveAction(directive, actionLockController);
         });
     });
 });
@@ -168,7 +192,6 @@ $(acceptButton).click(function(event) {
         event.preventDefault();
         return;
     }
-    hideModal();
 
     const parsedStart = TimeParse.parseTime(startTimeEntry.value, PlotInteraction.end_ms, -1);
     directive.end = TimeParse.parseTime(endTimeEntry.value, parsedStart, 1);
@@ -178,8 +201,12 @@ $(acceptButton).click(function(event) {
     directive.author = document.getElementById('details_author').value;
 
     if (saveAction) {
-        saveAction(directive);
+        if (!saveAction(directive)) {
+            event.preventDefault();
+            return;
+        }
     }
 
+    hideModal();
     saveChanges(directive);
 });

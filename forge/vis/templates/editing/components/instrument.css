@@ -1,0 +1,32 @@
+.details-instrument-scroll {
+  overflow: auto;
+  position: relative;
+  max-height: 100px;
+}
+
+table.details-instrument-list {
+  position: relative;
+  border-spacing: 0;
+  min-width: 100px;
+  width: 100%;
+}
+
+table.details-instrument-list > tbody > tr {
+  cursor: pointer;
+  font-family: monospace;
+}
+table.details-instrument-list > tbody > tr.hidden {
+  display: none;
+}
+table.details-instrument-list > tbody > tr:nth-child(odd):not(.selected) {
+  background-color: #f8f8f8;
+}
+table.details-instrument-list > tbody > tr:not(:nth-child(odd)):not(.selected) {
+  background-color: #f0f0f0;
+}
+table.details-instrument-list > tbody > tr.selected:nth-child(odd) {
+  background-color: #4af;
+}
+table.details-instrument-list > tbody > tr.selected:not(:nth-child(odd)) {
+  background-color: #3bf;
+}

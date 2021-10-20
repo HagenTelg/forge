@@ -90,7 +90,7 @@ class ExampleEditDirectives(DataStream):
 
 class ExampleEditAvailable(DataStream):
     async def run(self) -> None:
-        for name in ["BsG_S11", "BaG_A11", "N_N71"]:
+        for name in ["BsG_S11", "BaG_A11", "N_N71", "Q_A11"]:
             await self.send({
                 'type': 'variable',
                 'variable': name,

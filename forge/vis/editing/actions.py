@@ -33,6 +33,10 @@ action_codes['recalibrate'] = Action("Recalibrate", """
 Reverse a calibration polynomial and apply a new one.
 This is used to reverse an old calibration polynomial applied to values and then apply an updated one. 
 """)
+action_codes['flow_correction'] = Action("Flow Correction", """
+Reverse a calibration polynomial applied to a measurement flow and then apply a new one.
+This is used to simultaneously correct a measurement flow and parameters derived from the sampled air volume (e.g. a CLAP flow). 
+""")
 
 
 @requires('authenticated')
