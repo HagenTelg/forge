@@ -1,0 +1,61 @@
+<table class="edit-action-cutsize-parameters">
+  <tr>
+    <td class="edit-action-cutsize-label"><label for="cutsize_original">Original:</label></td>
+    <td>
+      <select id="cutsize_original" class="details-combobox">
+        <option value="pm10" title="Logged data with diameter < 10μm">PM10</option>
+        <option value="pm25" title="Logged data with diameter < 2.5μm">PM2.5</option>
+        <option value="pm1" title="Logged data with diameter < 1μm">PM1</option>
+        <option value="" title="Logged data with no size selection">Whole Air</option>
+      </select>
+    </td>
+  </tr>
+  <tr>
+    <td class="edit-action-cutsize-label"><label for="cutsize_updated">Updated:</label></td>
+    <td>
+      <select id="cutsize_updated" class="details-combobox">
+        <option value="invalidate" title="Invalidate data of the selected cut size">Invalidate</option>
+        <option value="pm10" title="Change data to diameter < 10μm">PM10</option>
+        <option value="pm25" title="Change data to diameter < 2.5μm">PM2.5</option>
+        <option value="pm1" title="Change data to diameter < 1μm">PM1</option>
+        <option value="" title="Change data to no size selection">Whole Air</option>
+      </select>
+    </td>
+  </tr>
+</table>
+
+<style>
+.edit-action-cutsize-parameters {
+  padding: 8px;
+  border: none;
+}
+.edit-action-cutsize-label {
+  text-align: right;
+}
+</style>
+
+<script>
+var cutsizeTarget = {};
+
+$('#cutsize_original').change(function(event) {
+  cutsizeTarget.cutsize = this.value;
+});
+$('#cutsize_updated').change(function(event) {
+  cutsizeTarget.modified_cutsize = this.value;
+});
+
+selectEditDirectiveAction = function(directive) {
+  cutsizeTarget = directive;
+
+  if (directive.cutsize) {
+    $('#cutsize_original').val(directive.cutsize).change();
+  } else {
+    $('#cutsize_original').val('pm1').change();
+  }
+  if (directive.modified_cutsize) {
+    $('#cutsize_updated').val(directive.modified_cutsize).change();
+  } else {
+    $('#cutsize_updated').val('invalidate').change();
+  }
+};
+</script>

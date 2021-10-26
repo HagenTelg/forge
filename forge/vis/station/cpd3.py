@@ -158,6 +158,23 @@ def _from_cpd3_calibration(calibration: typing.Any) -> typing.List[float]:
     return result
 
 
+def _selection_to_single_cutsize(selection: typing.List[typing.Dict[str, typing.Any]]) -> typing.Optional[str]:
+    if len(selection) != 1:
+        return None
+    if selection[0] == {'HasFlavors': ['pm10']}:
+        return 'pm10'
+    if selection[0] == {'HasFlavors': ['pm25']}:
+        return 'pm25'
+    if selection[0] == {'HasFlavors': ['pm1']}:
+        return 'pm1'
+    if selection[0] == {
+        'LacksFlavors': ['pm1', 'pm10', 'pm25'],
+        'Variable': '((Ba[cfs]*)|(Bb?s)|Be|Ir|L|(N[nbs]?)|(X[cfs]*))[BGRQ0-9]*_.*',
+    }:
+        return ''
+    return None
+
+
 def _to_cpd3_action(directive: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
     op = directive.get('action', 'invalidate')
     if op == 'contaminate':
@@ -186,6 +203,34 @@ def _to_cpd3_action(directive: typing.Dict[str, typing.Any]) -> typing.Dict[str,
             'Instrument': str(directive.get('instrument', '')),
             'Calibration': _to_cpd3_calibration(directive.get('calibration')),
             'Original': _to_cpd3_calibration(directive.get('reverse_calibration')),
+        }
+    elif op == 'cut_size':
+        original_size = str(directive.get('cutsize', '')).strip()
+        if original_size == '':
+            original_selection = [{
+                'LacksFlavors': ['pm1', 'pm10', 'pm25'],
+                'Variable': '((Ba[cfs]*)|(Bb?s)|Be|Ir|L|(N[nbs]?)|(X[cfs]*))[BGRQ0-9]*_.*',
+            }]
+        else:
+            original_selection = [{
+                'HasFlavors': [original_size],
+            }]
+
+        modified_size = str(directive.get('modified_cutsize', 'invalidate'))
+        if modified_size == 'invalidate':
+            return {
+                'Type': 'Invalidate',
+                'Selection': original_selection,
+            }
+
+        # Not a perfect test, but good enough for most use cases
+        is_stuck_impactor = ((original_size == 'pm1' and modified_size == 'pm10') or
+                             (original_size == 'pm10' and modified_size == 'pm1'))
+        return {
+            'Type': 'SetCut',
+            'ApplyToMetadata': not is_stuck_impactor,
+            'Cut': modified_size.lower(),
+            'Selection': original_selection,
         }
     else:
         return {
@@ -381,9 +426,20 @@ def _convert_directive(profile: str, identity: Identity,
         result['instrument'] = str(action.get('Instrument'), '')
         result['calibration'] = _from_cpd3_calibration(action.get('Calibration'))
         result['reverse_calibration'] = _from_cpd3_calibration(action.get('Original'))
+    elif op == 'setcut' or op == 'cut':
+        result['action'] = 'cut_size'
+        result['cutsize'] = _selection_to_single_cutsize(_from_cpd3_selection(parameters.get('Selection')))
+        result['modified_cutsize'] = str(action.get('Cut'), '')
     else:
-        result['action'] = 'invalidate'
-        result['selection'] = _from_cpd3_selection(action.get('Selection'))
+        selection = _from_cpd3_selection(action.get('Selection'))
+        single_cutsize = _selection_to_single_cutsize(selection)
+        if single_cutsize is not None:
+            result['action'] = 'cut_size'
+            result['cutsize'] = single_cutsize
+            result['modified_cutsize'] = 'invalidate'
+        else:
+            result['action'] = 'invalidate'
+            result['selection'] = selection
 
     return result
 
@@ -394,7 +450,8 @@ def _display_directive(raw: typing.Dict[str, typing.Any]) -> bool:
     if raw.get('SystemInternal'):
         return False
 
-    def is_valid_action(action):
+    def is_valid_action(parameters: typing.Dict[str, typing.Any]):
+        action = parameters.get('Type')
         if action is None:
             return True
         if not isinstance(action, str):
@@ -445,8 +502,10 @@ def _display_directive(raw: typing.Dict[str, typing.Any]) -> bool:
             return False
         elif _matches("Flavors"):
             return False
-        elif _matches("SetCut", "Cut"):
-            return False
+        elif _matches("SetCut", "Cut"): 
+            if _selection_to_single_cutsize(_from_cpd3_selection(parameters.get('Selection'))) is None:
+                return False
+            return True
         elif _matches("MultiPoly", "MultiPolynomial", "MultiCal", "MultiCalibration"):
             return False
         elif _matches("Arithmetic", "Math", "Function"):
@@ -467,7 +526,7 @@ def _display_directive(raw: typing.Dict[str, typing.Any]) -> bool:
         # Invalidate
         return True
 
-    if not is_valid_action(raw.get('Parameters', {}).get('Action', {}).get('Type')):
+    if not is_valid_action(raw.get('Parameters', {}).get('Action', {})):
         return False
     return True
 

@@ -37,6 +37,10 @@ action_codes['flow_correction'] = Action("Flow Correction", """
 Reverse a calibration polynomial applied to a measurement flow and then apply a new one.
 This is used to simultaneously correct a measurement flow and parameters derived from the sampled air volume (e.g. a CLAP flow). 
 """)
+action_codes['cut_size'] = Action("Size Cut Fix", """
+Apply a fix to the size cut of the data.
+This is used to alter or invalidate data when a specific cut size is active (e.g. invalidate a leaking impactor or change the effective size when it is stuck).
+""")
 
 
 @requires('authenticated')
