@@ -54,6 +54,7 @@ class ExampleEditDirectives(DataStream):
                 'selection': [
                     {'type': 'variable', 'variable': 'BsG_S11'},
                 ],
+                'condition': {'type': 'none'},
                 '_id': i,
             })
         await self.send({
@@ -72,6 +73,7 @@ class ExampleEditDirectives(DataStream):
                 {'type': 'variable', 'variable': 'BsG_S11'},
                 {'type': 'variable', 'variable': 'BaG_A11'},
             ],
+            'condition': {'type': 'none'},
             'deleted': True,
             '_id': 100,
         })
@@ -84,6 +86,7 @@ class ExampleEditDirectives(DataStream):
             'action': "contaminate",
             'comment': 'External directive',
             'other_type': True,
+            'condition': {'type': 'none'},
             '_id': 101,
         })
 

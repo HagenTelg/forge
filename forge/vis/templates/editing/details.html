@@ -26,6 +26,7 @@
   <nav class="details-category-select">
     <ul class="details-horizontal">
       <li><button category="#details_category_action">Action</button></li>
+      <li><button category="#details_category_condition">Condition</button></li>
       <li><button category="#details_category_history" class="requires-history">History</button></li>
     </ul>
   </nav>
@@ -47,6 +48,24 @@
         </div>
 
         <div id="details_action_content"></div>
+      </div>
+    </div>
+    <div class="details-category" id="details_category_condition">
+      <div class="details-vertical">
+        <div class="details-horizontal">
+          <select id="details_condition" class="details-combobox">
+          {% for code, condition in conditions.items() %}
+            <option value="{{ code }}" editor="{{ request.url_for('edit_condition', station=station, condition=code) }}">{{ condition.display }}</option>
+          {% endfor %}
+          </select>
+          {% for code, condition in conditions.items() %}
+            {% if condition.description %}
+              <label code="{{ code }}" class="details-condition-description" for="details_condition">{{ condition.description }}</label>
+            {% endif %}
+          {% endfor %}
+        </div>
+
+        <div id="details_condition_content"></div>
       </div>
     </div>
 

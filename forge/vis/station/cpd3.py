@@ -394,6 +394,7 @@ def _convert_directive(profile: str, identity: Identity,
         'history': _convert_history(original.get('History', [])),
         'other_type': identity.variable != profile,
         'type': identity.variable.title(),
+        'condition': {'type': 'none'},
     }
 
     try:

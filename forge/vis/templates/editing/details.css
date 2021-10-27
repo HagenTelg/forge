@@ -233,11 +233,22 @@ button.details-menu-right > .mdi-menu-right {
 .details-action-description:not(.active) {
   display: none;
 }
-
 #details_action_content {
   flex-grow: 1;
 }
 
+.details-condition-description {
+  padding: 2px 0 2px 8px;
+  margin: auto 0;
+  font-size: 12px;
+  flex-grow: 1;
+}
+.details-condition-description:not(.active) {
+  display: none;
+}
+#details_condition_content {
+  flex-grow: 1;
+}
 
 table.details-history {
   position: relative;

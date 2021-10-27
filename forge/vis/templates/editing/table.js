@@ -1,5 +1,6 @@
 let displayEditDirectiveDetails = (originalDirective, onsave) => {};
 let selectEditDirectiveAction = (directive, validityLock) => {};
+let selectEditDirectiveCondition = (directive, validityLock) => {};
 
 $(document).ready(function() {
     const directivesTable = document.getElementById('edit_directives');

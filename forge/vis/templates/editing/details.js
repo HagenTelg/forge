@@ -1,6 +1,7 @@
 let directive = {};
 let saveChanges = (directive) => {};
 let saveAction = undefined;
+let saveCondition = undefined;
 
 const startTimeEntry = document.getElementById("details-input-start-time");
 const startTimeDisplay = document.getElementById("details-parsed-start-time");
@@ -10,12 +11,13 @@ const acceptButton = document.getElementById('details_accept');
 
 const invalidLocks = new Set();
 const actionInvalidLocks = new Set();
+const conditionInvalidLocks = new Set();
 function addInvalidLock(key) {
     invalidLocks.add(key);
     acceptButton.classList.add('invalid');
 }
 function isValid() {
-    return !invalidLocks.size && !actionInvalidLocks.size;
+    return !invalidLocks.size && !actionInvalidLocks.size && !conditionInvalidLocks.size;
 }
 function removeInvalidLock(key) {
     invalidLocks.delete(key);
@@ -29,6 +31,12 @@ function clearActionInvalidLocks() {
         acceptButton.classList.remove('invalid');
     }
 }
+function clearConditionInvalidLocks() {
+    conditionInvalidLocks.clear();
+    if (isValid()) {
+        acceptButton.classList.remove('invalid');
+    }
+}
 
 let actionLockController = {
     addInvalidLock: function(key) {
@@ -37,6 +45,18 @@ let actionLockController = {
     },
     removeInvalidLock: function(key) {
         actionInvalidLocks.delete(key);
+        if (isValid()) {
+            acceptButton.classList.remove('invalid');
+        }
+    },
+}
+let conditionLockController = {
+    addInvalidLock: function(key) {
+        conditionInvalidLocks.add(key);
+        acceptButton.classList.add('invalid');
+    },
+    removeInvalidLock: function(key) {
+        conditionInvalidLocks.delete(key);
         if (isValid()) {
             acceptButton.classList.remove('invalid');
         }
@@ -141,6 +161,7 @@ function populateEditor() {
     document.getElementById('details_comment').value = directive.comment;
     document.getElementById('details_author').value = directive.author;
     $('#details_action').val(directive.action).change();
+    $('#details_condition').val(directive.condition.type).change();
     populateHistory();
 }
 
@@ -153,6 +174,7 @@ displayEditDirectiveDetails = function(originalDirective, onsave) {
             end_epoch_ms: PlotInteraction.end_ms,
             author: "{{ request.user.initials }}",
             action: 'invalidate',
+            condition: { type: 'none' },
             comment: "",
         };
     }
@@ -186,6 +208,20 @@ $('#details_action').change(function(event) {
         });
     });
 });
+$('#details_condition').change(function(event) {
+    $('.details-condition-description').removeClass('active');
+    $('.details-condition-description[code=' + this.value + ']').addClass('active');
+    directive.condition.type = this.value;
+    clearConditionInvalidLocks();
+
+    const selectedOption = this.options[this.selectedIndex];
+    const editor = $(selectedOption).attr('editor');
+    $.ajax(editor).done(function(responseText) {
+        $('#details_condition_content').html(responseText).ready(() => {
+            saveCondition = selectEditDirectiveCondition(directive, conditionLockController);
+        });
+    });
+});
 
 $(acceptButton).click(function(event) {
     if (invalidLocks.size) {
@@ -202,6 +238,12 @@ $(acceptButton).click(function(event) {
 
     if (saveAction) {
         if (!saveAction(directive)) {
+            event.preventDefault();
+            return;
+        }
+    }
+    if (saveCondition) {
+        if (!saveCondition(directive)) {
             event.preventDefault();
             return;
         }
