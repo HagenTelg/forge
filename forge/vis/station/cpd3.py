@@ -5,7 +5,7 @@ import time
 import struct
 import logging
 from signal import SIGTERM
-from math import floor, ceil
+from math import floor, ceil, isfinite
 from copy import deepcopy
 from starlette.responses import StreamingResponse
 from forge.const import __version__
@@ -239,6 +239,219 @@ def _to_cpd3_action(directive: typing.Dict[str, typing.Any]) -> typing.Dict[str,
         }
 
 
+def _to_cpd3_trigger(directive: typing.Dict[str, typing.Any]) -> typing.Optional[typing.Any]:
+    condition = directive.get('condition', None)
+    if not condition:
+        return None
+
+    def to_constant(value: typing.Optional[float]) -> typing.Optional[float]:
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            return None
+        if not isfinite(value):
+            return None
+        return value
+
+    op = condition.get('type', 'none')
+    if op == 'threshold':
+        triggers = []
+        lower = to_constant(condition.get('lower'))
+        upper = to_constant(condition.get('upper'))
+        if lower is None:
+            if upper is None:
+                return None
+            for selection in _to_cpd3_selection(condition.get('selection', [])):
+                triggers.append({
+                    'Type': 'Less',
+                    'Right': upper,
+                    'Left': {
+                        'Value': [selection],
+                    }
+                })
+        elif upper is None:
+            for selection in _to_cpd3_selection(condition.get('selection', [])):
+                triggers.append({
+                    'Type': 'Greater',
+                    'Right': lower,
+                    'Left': {
+                        'Value': [selection],
+                    }
+                })
+        else:
+            for selection in _to_cpd3_selection(condition.get('selection', [])):
+                triggers.append({
+                    'Type': 'Range',
+                    'Start': lower,
+                    'End': upper,
+                    'Value': {
+                        'Value': [selection],
+                    }
+                })
+        return triggers
+
+    return None
+
+
+def _from_cpd3_trigger(trigger: typing.Any) -> typing.Optional[typing.Dict[str, typing.Any]]:
+    if not trigger:
+        return None
+
+    def to_constant(value: typing.Any) -> typing.Optional[float]:
+        if isinstance(value, dict):
+            if value.get('Type').lower() == 'constant':
+                value = value['Value']
+        if value is None:
+            return None
+        if not isinstance(value, float):
+            raise TypeError
+        if not isfinite(value):
+            return None
+        return value
+
+    def to_variable_selection(value: typing.Any) -> typing.List[typing.Dict[str, typing.Any]]:
+        if not isinstance(value, dict):
+            return []
+        op = value.get('Type')
+        if not isinstance(op, str):
+            return _from_cpd3_selection(value.get('Value'))
+        op = op.lower()
+        if op == 'constant':
+            return []
+        elif op == 'sin':
+            return []
+        elif op == 'cos':
+            return []
+        elif op == 'log' or op == 'ln':
+            return []
+        elif op == 'log10':
+            return []
+        elif op == 'exp':
+            return []
+        elif op == 'abs' or op == 'absolute' or op == 'absolutevalue':
+            return []
+        elif op == 'poly' or op == 'polynomial' or op == 'cal' or op == 'calibration':
+            return []
+        elif op == 'polyinvert' or op == 'polynomialinvert' or op == 'invertcal' or op == 'invertcalibration':
+            return []
+        elif op == 'mean':
+            return []
+        elif op == 'sd' or op == 'standarddeviation':
+            return []
+        elif op == 'quantile':
+            return []
+        elif op == 'median':
+            return []
+        elif op == 'maximum' or op == 'max':
+            return []
+        elif op == 'slope':
+            return []
+        elif op == 'length' or op == 'duration' or op == 'elapsed':
+            return []
+        elif op == 'average' or op == 'smoothed':
+            return []
+        elif op == 'sum' or op == 'add':
+            return []
+        elif op == 'difference' or op == 'subtract':
+            return []
+        elif op == 'power':
+            return []
+        elif op == 'largest':
+            return []
+        elif op == 'smallest':
+            return []
+        elif op == 'first' or op == 'firstvalid' or op == 'valid':
+            return []
+
+        return _from_cpd3_selection(value.get('Value'))
+
+
+    def convert_element(element: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
+        if element is None:
+            return {'type': 'none'}
+
+        if isinstance(element, bool):
+            if bool(element):
+                return {'type': 'none'}
+            raise ValueError
+
+        op = element.get('Type')
+        if isinstance(op, str):
+            op = op.lower()
+        if op == 'range' or op == 'insiderange':
+            selection = to_variable_selection(element.get('Value'))
+            if len(selection) != 1:
+                raise ValueError
+            return {
+                'type': 'threshold',
+                'lower': to_constant(element.get('Start')),
+                'upper': to_constant(element.get('End')),
+                'selection': selection,
+            }
+        elif op == 'less' or op == 'lessthan':
+            selection = to_variable_selection(element.get('Left'))
+            if len(selection) == 1:
+                return {
+                    'type': 'threshold',
+                    'upper': to_constant(element.get('Right')),
+                    'selection': selection,
+                }
+            selection = to_variable_selection(element.get('Right'))
+            if len(selection) == 1:
+                return {
+                    'type': 'threshold',
+                    'lower': to_constant(element.get('Left')),
+                    'selection': selection,
+                }
+        elif op == 'greater' or op == 'greaterthan':
+            selection = to_variable_selection(element.get('Left'))
+            if len(selection) == 1:
+                return {
+                    'type': 'threshold',
+                    'lower': to_constant(element.get('Right')),
+                    'selection': selection,
+                }
+            selection = to_variable_selection(element.get('Right'))
+            if len(selection) == 1:
+                return {
+                    'type': 'threshold',
+                    'upper': to_constant(element.get('Left')),
+                    'selection': selection,
+                }
+
+        raise ValueError
+
+    def or_element(target: typing.Dict[str, typing.Any], add: typing.Dict[str, typing.Any]):
+        op = target['type']
+        if op != add['type']:
+            raise ValueError
+
+        if op == 'none':
+            return
+        elif op == 'threshold':
+            if target['lower'] != add['lower']:
+                raise ValueError
+            if target['upper'] != add['upper']:
+                raise ValueError
+            target['selection'].extend(add['selection'])
+            return
+        raise ValueError
+
+    if isinstance(trigger, dict):
+        op = trigger.get('Type', '').lower()
+        if op == 'or' or op == 'any':
+            trigger = trigger.get('Components', [])
+
+    if isinstance(trigger, list):
+        condition = convert_element(trigger[0])
+        for i in range(1, len(trigger)):
+            if not or_element(condition, convert_element(trigger[i])):
+                raise ValueError
+        return condition
+
+    return convert_element(trigger)
+
+
 def _new_directive(user: BaseAccessUser, station: str, profile: str,
                    directive: typing.Dict[str, typing.Any]) -> typing.Tuple[Identity, typing.Dict[str, typing.Any]]:
     start = directive.get('start_epoch_ms')
@@ -262,6 +475,7 @@ def _new_directive(user: BaseAccessUser, station: str, profile: str,
         }],
         'Parameters': {
             'Action': _to_cpd3_action(directive),
+            'Trigger': _to_cpd3_trigger(directive),
         },
     }
 
@@ -305,6 +519,7 @@ def _modify_directive(user: BaseAccessUser, station: str, profile: str,
 
     parameters: typing.Dict[str, typing.Any] = {
         'Action': _to_cpd3_action(modification),
+        'Trigger': _to_cpd3_trigger(modification),
     }
     if existing.get('Parameters') != parameters:
         add_history({
@@ -442,16 +657,21 @@ def _convert_directive(profile: str, identity: Identity,
             result['action'] = 'invalidate'
             result['selection'] = selection
 
+    try:
+        condition = _from_cpd3_trigger(parameters.get('Trigger', None))
+        if condition is not None:
+            result['condition'] = condition
+    except:
+        pass
+
     return result
 
 
 def _display_directive(raw: typing.Dict[str, typing.Any]) -> bool:
-    if raw.get('Parameters', {}).get('Trigger'):
-        return False
     if raw.get('SystemInternal'):
         return False
 
-    def is_valid_action(parameters: typing.Dict[str, typing.Any]):
+    def is_valid_action(parameters: typing.Dict[str, typing.Any]) -> bool:
         action = parameters.get('Type')
         if action is None:
             return True
@@ -527,7 +747,16 @@ def _display_directive(raw: typing.Dict[str, typing.Any]) -> bool:
         # Invalidate
         return True
 
+    def is_valid_trigger(parameters: typing.Dict[str, typing.Any]) -> bool:
+        try:
+            _from_cpd3_trigger(parameters)
+        except:
+            return False
+        return True
+
     if not is_valid_action(raw.get('Parameters', {}).get('Action', {})):
+        return False
+    if not is_valid_trigger(raw.get('Parameters', {}).get('Trigger')):
         return False
     return True
 

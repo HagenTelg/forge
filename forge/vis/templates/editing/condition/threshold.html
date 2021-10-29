@@ -1,0 +1,50 @@
+<span class="edit-condition-threshold-limits">
+  <input class="edit-condition-threshold-value" id="edit_condition_threshold_lower" placeholder="-∞" title="Condition lower bound">
+  <label for="edit_condition_threshold_lower"><</label>
+  <label id="edit_condition_threshold_value">x</label>
+  <label for="edit_condition_threshold_upper"><</label>
+  <input class="edit-condition-threshold-value" id="edit_condition_threshold_upper" placeholder="∞" title="Condition upper bound">
+</span>
+
+<div class="edit-condition-threshold-selection">
+  {% with instance = 'ConditionSelection' %}
+  {% include 'editing/components/selection.html' %}
+  {% endwith %}
+</div>
+
+<script>
+(function() {
+{% include 'editing/condition/threshold.js' %}
+})();
+</script>
+
+<style>
+.edit-condition-threshold-limits {
+  padding: 12px 8px 0;
+}
+.edit-condition-threshold-selection {
+  padding: 8px;
+}
+
+#edit_condition_threshold_value {
+  font-weight: bold;
+  font-family: monospace;
+  text-align: center;
+}
+
+input.edit-condition-threshold-value {
+  padding: 4px 8px;
+  margin: 4px 0;
+  border: 1px solid #ccc;
+  width: 60px;
+}
+input.edit-condition-threshold-value.invalid {
+  color: #a00;
+}
+#edit_condition_threshold_lower {
+  text-align: right;
+}
+#edit_condition_threshold_upper {
+  text-align: left;
+}
+</style>

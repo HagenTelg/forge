@@ -20,6 +20,10 @@ condition_codes: typing.Dict[str, Condition] = OrderedDict()
 condition_codes['none'] = Condition("None", """
 The edit is unconditionally applied.
 """)
+condition_codes['threshold'] = Condition("Threshold", """
+Compare a value to threshold limits and apply the edit only when those limits are met.
+The edit is applied when a value is inside a range (e.g. transmittance less than 0.5).
+""")
 
 
 @requires('authenticated')

@@ -1,4 +1,5 @@
 Selection.target = [];
+Selection.changed = function(selected) {}
 
 
 function updateTarget() {
@@ -16,6 +17,8 @@ function updateTarget() {
             Selection.target.push(tr.originAvailable.selection());
         }
     }
+
+    Selection.changed(Selection.target);
 }
 
 function rowSelected(tr) {
@@ -423,4 +426,6 @@ Selection.configure = function(directive, field) {
     });
 
     sortList();
+
+    Selection.changed(Selection.target);
 };
