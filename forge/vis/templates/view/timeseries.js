@@ -107,6 +107,7 @@ const shapeHandler = new ShapeHandler(div);
 const traces = new TimeSeriesCommon.Traces(div, data, layout, config);
 shapeHandler.generators.push(TimeSeriesCommon.getTimeHighlights);
 TimeSeriesCommon.updateShapes = function() { shapeHandler.update(); }
+TimeSeriesCommon.addContaminationToggleButton(traces);
 
 
 DataSocket.resetLoadedRecords();
@@ -122,11 +123,15 @@ shapeHandler.generators.push(TimeSeriesCommon.installContamination('{{ loop.inde
 //  {% for trace in graph.traces %}
 //      {% if trace.data_record and trace.data_field %}
 (function(traceIndex) {
-    let incomingData = (plotTime, values) => {
-        traces.extendData(traceIndex, plotTime, values);
+    let incomingData = (plotTime, values, epoch) => {
+        traces.extendData(traceIndex, plotTime, values, epoch);
     };
 
     // {% if trace.script_incoming_data %}{{ '\n' }}{{ trace.script_incoming_data | safe }}{% endif %}
+
+    //{% if graph.contamination %}
+    traces.setTraceContamination(traceIndex, '{{ graph.contamination }}');
+    //{% endif %}
 
     DataSocket.addLoadedRecordField('{{ trace.data_record }}', '{{ trace.data_field }}',
         incomingData, RecordProcessing.get('{{ trace.data_record }}'),
@@ -138,10 +143,7 @@ shapeHandler.generators.push(TimeSeriesCommon.installContamination('{{ loop.inde
 //{% endfor %}
 
 DataSocket.onRecordReload = function() {
-    data.forEach((trace) => {
-        trace.x.length = 0;
-        trace.y.length = 0;
-    });
+    traces.clearAllData();
     TimeSeriesCommon.clearContamination();
 
     traces.updateTimeBounds();

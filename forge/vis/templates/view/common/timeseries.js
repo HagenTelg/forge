@@ -134,6 +134,23 @@ var TimeSeriesCommon = {};
         });
     }
 
+    let hideContaminatedData = false;
+    TimeSeriesCommon.addContaminationToggleButton = function(traces) {
+        const button = document.createElement('button');
+        document.getElementById('control_bar').appendChild(button);
+        button.classList.add('mdi');
+        button.classList.add('mdi-filter');
+        button.classList.add('contamination-toggle');
+        button.classList.add('hidden');
+        button.title = 'Toggle displaying contaminated data';
+        $(button).click(function(event) {
+            event.preventDefault();
+            hideContaminatedData = !hideContaminatedData;
+            $(this).toggleClass('mdi-filter mdi-filter-off');
+            traces.updateDisplay(true);
+        });
+    }
+
     TimeSeriesCommon.installZoomHandler = function(div) {
         div.on('plotly_relayout', function(data) {
             const start_time = data['xaxis.range[0]'];
@@ -171,6 +188,86 @@ var TimeSeriesCommon = {};
         });
     }
 
+    class TraceContamination {
+        constructor(traces, record) {
+            this.epoch_ms = [];
+            this.y = undefined;
+
+            this._segments = [];
+            DataSocket.addLoadedRecord(record, (dataName) => { return new Contamination.DataStream(dataName); },
+                (start_ms, end_ms) => {
+                    if (this._segments.length === 0) {
+                        $('button.contamination-toggle.hidden').removeClass('hidden');
+                    }
+                    this._segments.push({
+                        start_ms: start_ms,
+                        end_ms: end_ms,
+                    });
+                    traces.updateDisplay();
+                }, () => {
+                    traces.updateDisplay(true);
+                }
+            );
+        }
+
+        extendData(values, epoch) {
+            for (let i=0; i<epoch.length; i++) {
+                this.epoch_ms.push(epoch[i]);
+                if (this.y) {
+                    this.y.push(values[i]);
+                }
+            }
+        }
+
+        clearData() {
+            this.epoch_ms.length = 0;
+            this.y = undefined;
+            this._segments.length = 0;
+        }
+
+        apply(data) {
+            if (!hideContaminatedData || this._segments.length === 0) {
+                if (this.y) {
+                    data.y = this.y;
+                    this.y = undefined;
+                }
+                return;
+            }
+            if (!this.y) {
+                this.y = data.y.slice();
+            }
+
+            data.y.length = 0;
+            let segmentIndex = 0;
+            let i;
+            for (i=0; i<this.epoch_ms.length; i++) {
+                const epoch_ms = this.epoch_ms[i];
+
+                for (; segmentIndex < this._segments.length; segmentIndex++) {
+                    const segment = this._segments[segmentIndex];
+                    if (epoch_ms >= segment.end_ms) {
+                        continue;
+                    }
+                    break;
+                }
+                if (segmentIndex >= this._segments.length) {
+                    break;
+                }
+
+                const segment = this._segments[segmentIndex];
+                if (epoch_ms < segment.start_ms) {
+                    data.y.push(this.y[i]);
+                } else {
+                    data.y.push(undefined);
+                }
+            }
+
+            for (; i<this.epoch_ms.length; i++) {
+                data.y.push(this.y[i]);
+            }
+        }
+    }
+
     TimeSeriesCommon.Traces = class {
         constructor(div, data, layout, config) {
             this.div = div;
@@ -178,6 +275,7 @@ var TimeSeriesCommon = {};
             this.layout = layout;
             this.config = config;
             this._queuedDisplayUpdate = undefined;
+            this._contaminationHandlers = new Map();
         }
 
         updateDisplay(immediate) {
@@ -196,13 +294,26 @@ var TimeSeriesCommon = {};
 
             this._queuedDisplayUpdate = setTimeout(() => {
                 this._queuedDisplayUpdate = undefined;
+
+                this._contaminationHandlers.forEach((handler, traceIndex) => {
+                    handler.apply(this.data[traceIndex]);
+                });
+
                 this.layout.datarevision++;
                 Plotly.react(this.div, this.data, this.layout, this.config);
             }, delay);
         }
 
-        extendData(traceIndex, times, values) {
+        setTraceContamination(traceIndex, record) {
+            this._contaminationHandlers.set(traceIndex, new TraceContamination(this, record));
+        }
+
+        extendData(traceIndex, times, values, epoch) {
             const data = this.data[traceIndex];
+            const contamination = this._contaminationHandlers.get(traceIndex);
+            if (contamination) {
+                contamination.extendData(values, epoch);
+            }
             for (let i=0; i<times.length; i++) {
                 data.x.push(times[i]);
                 data.y.push(values[i]);
@@ -213,6 +324,25 @@ var TimeSeriesCommon = {};
             Plotly.relayout(this.div, {
                 'xaxis.range': [DataSocket.toPlotTime(TimeSelect.start_ms), DataSocket.toPlotTime(TimeSelect.end_ms)],
                 'xaxis.autorange': false,
+            });
+        }
+
+        clearAllData() {
+            this.data.forEach((data, traceIndex) => {
+                if (data.x) {
+                    data.x.length = 0;
+                }
+                if (data.y) {
+                    data.y.length = 0;
+                }
+                if (data.z) {
+                    data.z.length = 0;
+                }
+
+                const contamination = this._contaminationHandlers.get(traceIndex);
+                if (contamination) {
+                    contamination.clearData();
+                }
             });
         }
     }

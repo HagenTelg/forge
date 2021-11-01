@@ -8,6 +8,7 @@ div.scroll {
 }
 </style>
 
+{% include 'view/controls.html' %}
 <div class="view{% if (view.graphs|length) > 3 %} scroll{% endif %}" id="view_timeseries"></div>
 
 <script>

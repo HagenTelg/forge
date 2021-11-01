@@ -1,0 +1,24 @@
+<style>
+div.controls {
+  position: relative;
+  top: 0;
+  left: 0;
+  opacity: 0.0;
+  transition: 0.2s;
+}
+div.controls:hover {
+  opacity: 1;
+}
+div.controls > button {
+  border: none;
+  text-align: center;
+  font-size: 16px;
+  margin: 4px;
+  background: rgba(0, 0, 0, 0);
+}
+div.controls > button.hidden {
+  display: none;
+}
+</style>
+
+<div id="control_bar" class="controls"></div>

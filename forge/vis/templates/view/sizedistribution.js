@@ -240,31 +240,21 @@ DataSocket.addLoadedRecordField('{{ view.size_record }}', 'dNdlogDp',
 
 //{% for wl in view.scattering_wavelengths %}
 (function(traceIndex) {
-    DataSocket.addLoadedRecordField('{{ view.measured_record }}', '{{ wl.measured_field }}', (plotTime, values) => {
-        traces.extendData(traceIndex, plotTime, values);
+    DataSocket.addLoadedRecordField('{{ view.measured_record }}', '{{ wl.measured_field }}', (plotTime, values, epoch) => {
+        traces.extendData(traceIndex, plotTime, values, epoch);
     }, undefined, () => { traces.updateDisplay(true); });
 })('{{ loop.index0 }}' * 1 + measuredScatteringIndex);
 
 (function(traceIndex) {
-    DataSocket.addLoadedRecordField('{{ view.size_record }}', '{{ wl.calculated_field }}', (plotTime, values) => {
-        traces.extendData(traceIndex, plotTime, values);
+    DataSocket.addLoadedRecordField('{{ view.size_record }}', '{{ wl.calculated_field }}', (plotTime, values, epoch) => {
+        traces.extendData(traceIndex, plotTime, values, epoch);
     }, sizeDistributionProcessing, () => { traces.updateDisplay(true); });
 })('{{ loop.index0 }}' * 1 + calculatedScatteringIndex);
 //{% endfor %}
 
 
 DataSocket.onRecordReload = function() {
-    data.forEach((trace) => {
-        if (trace.x) {
-            trace.x.length = 0;
-        }
-        if (trace.y) {
-            trace.y.length = 0;
-        }
-        if (trace.z) {
-            trace.z.length = 0;
-        }
-    });
+    traces.clearAllData();
     TimeSeriesCommon.clearContamination();
 
     traces.updateTimeBounds();
