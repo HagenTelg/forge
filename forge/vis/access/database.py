@@ -795,9 +795,9 @@ class ControlInterface:
         query = orm_session.query(_User)
         if kwargs.get('station') or kwargs.get('mode'):
             query = query.join(_Access)
-            if 'station' in kwargs:
+            if kwargs.get('station'):
                 query = query.filter(_Access.station == kwargs['station'].lower())
-            if 'mode' in kwargs:
+            if kwargs.get('mode'):
                 query = ControlInterface._mode_filter(query, kwargs['mode'])
         if kwargs.get('user'):
             query = query.filter(_User.id == int(kwargs['user']))
@@ -921,9 +921,9 @@ class ControlInterface:
             with Session(engine) as orm_session:
                 for user in self._select_users(orm_session, **kwargs):
                     revoke = orm_session.query(_Access).filter_by(user=user.id)
-                    if 'station' in kwargs:
+                    if kwargs.get('station'):
                         revoke = revoke.filter_by(station=kwargs['station'].lower())
-                    if 'mode' in kwargs:
+                    if kwargs.get('mode'):
                         revoke = self._mode_filter(revoke, kwargs['mode'])
                     revoke.delete(synchronize_session='fetch')
                     _LOGGER.info(f"Revoked access for '{user.name}' {user.email} ({user.id})")
