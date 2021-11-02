@@ -44,9 +44,9 @@ class Wind(TimeSeries):
             wd.script_incoming_data = r"""(function() {
 const plotIncomingData = incomingData;
 const wrapper = new Winds.DirectionWrapper();
-incomingData = (plotTime, values) => {
-    const r = wrapper.apply(values, plotTime);
-    plotIncomingData(r.times, r.direction);
+incomingData = (plotTime, values, epoch) => {
+    const r = wrapper.apply(values, plotTime, epoch);
+    plotIncomingData(r.times, r.direction, r.epoch);
 };
 })();"""
             direction.traces.append(wd)

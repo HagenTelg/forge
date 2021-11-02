@@ -193,13 +193,13 @@ var TimeSeriesCommon = {};
             this.epoch_ms = [];
             this.y = undefined;
 
-            this._segments = [];
+            this.segments = [];
             DataSocket.addLoadedRecord(record, (dataName) => { return new Contamination.DataStream(dataName); },
                 (start_ms, end_ms) => {
-                    if (this._segments.length === 0) {
+                    if (this.segments.length === 0) {
                         $('button.contamination-toggle.hidden').removeClass('hidden');
                     }
-                    this._segments.push({
+                    this.segments.push({
                         start_ms: start_ms,
                         end_ms: end_ms,
                     });
@@ -222,11 +222,12 @@ var TimeSeriesCommon = {};
         clearData() {
             this.epoch_ms.length = 0;
             this.y = undefined;
-            this._segments.length = 0;
+            this.segments.length = 0;
+            $('button.contamination-toggle').addClass('hidden');
         }
 
         apply(data) {
-            if (!hideContaminatedData || this._segments.length === 0) {
+            if (!hideContaminatedData || this.segments.length === 0) {
                 if (this.y) {
                     data.y = this.y;
                     this.y = undefined;
@@ -243,18 +244,18 @@ var TimeSeriesCommon = {};
             for (i=0; i<this.epoch_ms.length; i++) {
                 const epoch_ms = this.epoch_ms[i];
 
-                for (; segmentIndex < this._segments.length; segmentIndex++) {
-                    const segment = this._segments[segmentIndex];
+                for (; segmentIndex < this.segments.length; segmentIndex++) {
+                    const segment = this.segments[segmentIndex];
                     if (epoch_ms >= segment.end_ms) {
                         continue;
                     }
                     break;
                 }
-                if (segmentIndex >= this._segments.length) {
+                if (segmentIndex >= this.segments.length) {
                     break;
                 }
 
-                const segment = this._segments[segmentIndex];
+                const segment = this.segments[segmentIndex];
                 if (epoch_ms < segment.start_ms) {
                     data.y.push(this.y[i]);
                 } else {
