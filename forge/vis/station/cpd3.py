@@ -17,6 +17,7 @@ from forge.cpd3.identity import Name, Identity
 from forge.cpd3.variant import serialize as variant_serialize
 from forge.cpd3.variant import deserialize as variant_deserialize
 from forge.cpd3.datareader import StandardDataInput, RecordInput
+from forge.cpd3.timeinterval import TimeUnit, TimeInterval
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -253,6 +254,15 @@ def _to_cpd3_trigger(directive: typing.Dict[str, typing.Any]) -> typing.Optional
             return None
         return value
 
+    def to_integer(value: typing.Optional[int]) -> typing.Optional[int]:
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            return None
+        if not isfinite(value):
+            return None
+        return value
+
     op = condition.get('type', 'none')
     if op == 'threshold':
         triggers = []
@@ -289,6 +299,55 @@ def _to_cpd3_trigger(directive: typing.Dict[str, typing.Any]) -> typing.Optional
                     }
                 })
         return triggers
+    elif op == 'periodic':
+        points = condition.get('points', [])
+        interval = condition.get('interval')
+        division = condition.get('division')
+
+        intervals = {
+            'hour': {
+                'Interval': 'Hour',
+                'divisions': {
+                    'minute': {
+                        'MomentUnit': 'Minute',
+                        'maximum': 60
+                    },
+                }
+            },
+            'day': {
+                'Interval': 'Day',
+                'divisions': {
+                    'minute': {
+                        'MomentUnit': 'Minute',
+                        'maximum': 60 * 24,
+                    },
+                    'hour': {
+                        'MomentUnit': 'Hour',
+                        'maximum': 24,
+                    },
+                }
+            },
+        }
+        interval_data = intervals.get(interval)
+        if interval_data is None:
+            return None
+
+        trigger = {
+            'Type': 'Periodic',
+            'Interval': interval_data['Interval'],
+            'Moments': [],
+        }
+        division_data = interval_data['divisions'].get(division)
+        if division_data is None:
+            return None
+        trigger['MomentUnit'] = division_data['MomentUnit']
+
+        for point in points:
+            index = to_integer(point)
+            if index is None or index < 0 or index >= division_data['maximum']:
+                continue
+            trigger['Moments'].append(index)
+        return trigger
 
     return None
 
@@ -365,7 +424,6 @@ def _from_cpd3_trigger(trigger: typing.Any) -> typing.Optional[typing.Dict[str, 
 
         return _from_cpd3_selection(value.get('Value'))
 
-
     def convert_element(element: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
         if element is None:
             return {'type': 'none'}
@@ -418,6 +476,40 @@ def _from_cpd3_trigger(trigger: typing.Any) -> typing.Optional[typing.Dict[str, 
                     'upper': to_constant(element.get('Left')),
                     'selection': selection,
                 }
+        elif op == 'periodic' or op == 'moment' or op == 'instant':
+            moments = element.get('Moments', [])
+            if isinstance(moments, int):
+                moments = [moments]
+            elif not isinstance(moments, list):
+                raise ValueError
+            for i in range(len(moments)):
+                moments[i] = int(moments[i])
+
+            interval = TimeInterval.from_variant(element.get('Interval'), TimeInterval(TimeUnit.Second, 1, True))
+            if interval.count != 1:
+                raise ValueError
+            momentUnit = TimeInterval.from_variant(element.get('MomentUnit'), TimeInterval(TimeUnit.Second, 1, True))
+            if momentUnit.count != 1:
+                raise ValueError
+
+            result = {
+                'type': 'periodic',
+                'points': moments,
+            }
+            if interval.unit == TimeUnit.Hour:
+                result['interval'] = 'hour'
+                if momentUnit.unit == TimeUnit.Minute:
+                    result['division'] = 'minute'
+                    return result
+            elif interval.unit == TimeUnit.Day:
+                result['interval'] = 'day'
+                if momentUnit.unit == TimeUnit.Minute:
+                    result['division'] = 'minute'
+                    return result
+                elif momentUnit.unit == TimeUnit.Hour:
+                    result['division'] = 'hour'
+                    return result
+            raise ValueError
 
         raise ValueError
 

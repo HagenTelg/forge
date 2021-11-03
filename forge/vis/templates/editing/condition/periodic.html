@@ -1,0 +1,70 @@
+<span class="edit-condition-periodic-limits">
+  <select id="periodic_interval" class="edit-condition-periodic-unit details-combobox">
+    <option value="hour" title="Time within the hour">Hourly</option>
+    <option value="day" title="Time within the UTC day">Daily</option>
+  </select>
+  <select id="periodic_division" class="edit-condition-periodic-unit details-combobox">
+    <option value="minute" title="Select time by minutes after the start of the interval">By Minute</option>
+    <option value="hour" title="Select time by hours after the start of the interval">By Hour</option>
+  </select>
+</span>
+
+<div class="edit-condition-periodic-select details-vertical">
+  <div class="details-condition-periodic-scroll">
+    <table class="details-condition-periodic-list">
+      <tbody id="details_condition_periodic_list">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+(function() {
+{% include 'editing/condition/periodic.js' %}
+})();
+</script>
+
+<style>
+.edit-condition-periodic-limits {
+  display: flex;
+  padding: 12px 8px 8px;
+}
+.edit-condition-periodic-unit {
+  margin: 0 8px 0 0;
+}
+.edit-condition-periodic-unit > option.hidden {
+  display: none;
+}
+
+
+.details-condition-periodic-scroll {
+  overflow: auto;
+  position: relative;
+  max-height: 150px;
+  padding: 8px;
+}
+
+table.details-condition-periodic-list {
+  position: relative;
+  border-spacing: 0;
+  min-width: 100px;
+  width: 100%;
+}
+
+table.details-condition-periodic-list > tbody > tr {
+  cursor: pointer;
+  font-family: monospace;
+}
+table.details-condition-periodic-list > tbody > tr:nth-child(odd):not(.selected) {
+  background-color: #f8f8f8;
+}
+table.details-condition-periodic-list > tbody > tr:not(:nth-child(odd)):not(.selected) {
+  background-color: #f0f0f0;
+}
+table.details-condition-periodic-list > tbody > tr.selected:nth-child(odd) {
+  background-color: #4af;
+}
+table.details-condition-periodic-list > tbody > tr.selected:not(:nth-child(odd)) {
+  background-color: #3bf;
+}
+</style>

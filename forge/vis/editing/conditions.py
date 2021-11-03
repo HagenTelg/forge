@@ -24,6 +24,10 @@ condition_codes['threshold'] = Condition("Threshold", """
 Compare a value to threshold limits and apply the edit only when those limits are met.
 The edit is applied when a value is inside a range (e.g. transmittance less than 0.5).
 """)
+condition_codes['periodic'] = Condition("Periodic", """
+Divide time into periodic (UTC) intervals and apply the edit only for certain points in the period.
+The edit is applied when the current time is within one of the selected moments in the total period.
+""")
 
 
 @requires('authenticated')
