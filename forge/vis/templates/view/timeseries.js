@@ -19,6 +19,12 @@ let layout = {
         ygap: 0.3,
     },
 
+    legend: {
+        groupclick: 'toggleitem',
+        tracegroupgap: 30,
+        traceorder: 'grouped',
+    },
+
     annotations: [
         //{% for graph in view.graphs %}{% if graph.title and graph.title|length > 0 %}
         {
@@ -73,12 +79,14 @@ let layout = {
 
 let data = [
     //{% for graph in view.graphs %}
+    //{% set graph_index = loop.index0 %}
     //  {% for trace in graph.traces %}
     {
         x: [ ],
         y: [ ],
         mode: 'lines',
         yaxis: '{{ view.axis_code(trace.axis) }}',
+        legendgroup: '{{ graph_index }}',
         name: "{{ trace.legend }}",
         hovertemplate: "{{ trace.hover_template() }}",
         line: {
