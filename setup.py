@@ -30,6 +30,7 @@ setup(
     entry_points={"console_scripts": [
         "forge-vis = forge.vis.__main__:main",
         "forge-vis-access = forge.vis.access.cli.__main__:main",
+        "forge-vis-export-control = forge.vis.export.controller.server:main",
         "forge-cpd3-cache-client = forge.cpd3.cache.client:main",
         "forge-cpd3-cache-server = forge.cpd3.cache.server:main",
         "forge-cpd3-pass-server = forge.cpd3.pass.server:main",

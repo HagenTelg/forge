@@ -293,7 +293,7 @@ def main():
     if args.debug:
         root_logger = logging.getLogger()
         handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(name)-31s %(message)s')
+        formatter = logging.Formatter('%(name)-40s %(message)s')
         handler.setFormatter(formatter)
         root_logger.setLevel(logging.DEBUG)
         root_logger.addHandler(handler)

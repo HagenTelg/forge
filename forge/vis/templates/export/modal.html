@@ -1,5 +1,5 @@
 <form class="export-entry" action="{{ request.url_for('export_data', station=station, mode_name=mode_name) }}">
-  <table>
+  <table id="export-parameters">
     <tr>
       <td><label for="input-start-time">Start</label></td>
       <td><input type="text" id="input-start-time" name="start"></td>
@@ -20,9 +20,24 @@
         </select>
       </td>
     </tr>
-
-
   </table>
+
+  <div id="export-waiting" class="hidden">
+    <div class="export-waiting-text">The system is exporting data, your download will start automatically when the file is ready.</div>
+    <span class="export-waiting-indicator">
+      <span class="mdi mdi-loading mdi-spin"></span>
+    </span>
+  </div>
+
+  <div id="export-ready" class="hidden">
+    <div class="export-ready-text">
+      Exported data is ready.
+      Your download should start automatically.
+      If it does not, click the link below.
+      Once the download has started, you can close this dialog.
+    </div>
+    <span class="export-ready-download"><a id="export-download-link" href="#" download></a></span>
+  </div>
 
   <div class="export-footer">
     <button id="export-data">Ok</button>

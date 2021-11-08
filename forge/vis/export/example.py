@@ -6,10 +6,9 @@ from . import Export, ExportList
 
 
 class ExampleExport(Export):
-    async def __call__(self) -> Response:
-        return FileResponse(package_data('static', 'example', 'timeseries.csv'), media_type='text/csv', headers={
-            'Content-Disposition': 'attachment; filename="export.csv"',
-        })
+    async def __call__(self) -> typing.Optional[Export.Result]:
+        return Export.DirectResult(package_data('static', 'example', 'timeseries.csv'),
+                                   client_name='timeseries.csv', media_type='text/csv')
 
 
 class ExampleExportList(ExportList):

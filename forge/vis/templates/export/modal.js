@@ -1,12 +1,74 @@
+const exportSocket = new WebSocket("{{ request.url_for('export_socket', station=station) }}");
+
 const startTimeEntry = document.getElementById("input-start-time");
 const startTimeDisplay = document.getElementById("parsed-start-time");
 const endTimeEntry = document.getElementById("input-end-time");
 const endTimeDisplay = document.getElementById("parsed-end-time");
 const exportButton = document.getElementById("export-data");
 
+function exportDownloadURL() {
+    let parsedStart = TimeParse.parseTime(startTimeEntry.value, TimeSelect.end_ms, -1);
+    const parsedEnd = TimeParse.parseTime(endTimeEntry.value, parsedStart, 1);
+    parsedStart = TimeParse.parseTime(startTimeEntry.value, parsedEnd, -1);
+
+    if (!parsedStart || !parsedEnd) {
+        return undefined;
+    }
+
+    const key = document.getElementById("export-type").value;
+
+    return "{{ request.url_for('export_data', station=station, mode_name=mode_name) }}" +
+        '?start=' + parsedStart +
+        '&end=' + parsedEnd +
+        '&key=' + key;
+}
+
+function startExportDownload(filename, size) {
+    $('#export-waiting').addClass('hidden');
+    $("#export-ready").removeClass('hidden');
+    $('#export-cancel').text("Close");
+
+    const url = exportDownloadURL();
+    if (!url) {
+        hideModal();
+        return;
+    }
+
+    const units = ["B", "KiB", "MiB", "GiB", "TiB"];
+    let divisor = 1;
+    let formattedSize;
+    for (let i=0; i<units.length; i++, divisor *= 1024) {
+        let dividedSize = size / divisor;
+        if (divisor === 1) {
+            formattedSize = dividedSize.toFixed(0);
+        } else if (dividedSize <= 9.99) {
+            formattedSize = dividedSize.toFixed(2);
+        } else if (dividedSize <= 99.9) {
+            formattedSize = dividedSize.toFixed(1);
+        } else {
+            formattedSize = dividedSize.toFixed(0);
+        }
+        formattedSize = formattedSize + " " + units[i];
+        if (dividedSize <= 999.0) {
+            break;
+        }
+    }
+
+    const link = document.getElementById('export-download-link');
+    link.href = url;
+    link.download = filename;
+    link.textContent = filename + " (" + formattedSize + ")";
+    link.click();
+}
+
+function showExportWaiting() {
+    exportButton.classList.add('hidden');
+    $('#export-parameters').addClass('hidden');
+    $("#export-waiting").removeClass('hidden');
+}
+
 $(exportButton).click(function(event) {
     event.preventDefault();
-    exportButton.disabled = true;
 
     let parsedStart = TimeParse.parseTime(startTimeEntry.value, TimeSelect.end_ms, -1);
     const parsedEnd = TimeParse.parseTime(endTimeEntry.value, parsedStart, 1);
@@ -17,13 +79,24 @@ $(exportButton).click(function(event) {
         return;
     }
 
-    const key = document.getElementById("export-type").value;
+    showExportWaiting();
 
-    window.open("{{ request.url_for('export_data', station=station, mode_name=mode_name) }}" +
-        '?start=' + parsedStart +
-        '&end=' + parsedEnd +
-        '&key=' + key);
-    hideModal();
+    const key = document.getElementById("export-type").value;
+    exportSocket.addEventListener('message', (event) => {
+        const reply = JSON.parse(event.data);
+        if (reply.type === 'ready') {
+            const filename = reply.filename;
+            const size = reply.size;
+            startExportDownload(filename, size);
+        }
+    });
+    exportSocket.send(JSON.stringify({
+        action: 'wait',
+        mode: '{{ mode_name }}',
+        key: key,
+        start_epoch_ms: parsedStart,
+        end_epoch_ms: parsedEnd,
+    }));
 });
 $('#export-cancel').click(function(event) {
     event.preventDefault();
@@ -48,7 +121,7 @@ function startTimeEdited() {
         return;
     }
     if (parsedEnd) {
-        exportButton.disabled = false;
+        exportButton.disabled = (exportSocket.readyState === 1);
     }
 
     startTimeEntry.classList.remove('invalid');
@@ -85,7 +158,7 @@ function endTimeEdited() {
         return;
     }
     if (parsedStart) {
-        exportButton.disabled = false;
+        exportButton.disabled = (exportSocket.readyState === 1);
     }
 
     endTimeEntry.classList.remove('invalid');
@@ -107,4 +180,18 @@ $('#input-end-time').change(endTimeEdited);
 $('#input-end-time').on('input', endTimeEdited);
 endTimeEntry.value = endTimeDisplay.textContent = TimeParse.toDisplayTime(TimeSelect.end_ms);
 
-exportButton.disabled = false;
+exportButton.disabled = true;
+exportSocket.addEventListener('open', (event) => {
+    let parsedStart = TimeParse.parseTime(startTimeEntry.value, TimeSelect.end_ms, -1);
+    const parsedEnd = TimeParse.parseTime(endTimeEntry.value, parsedStart, 1);
+    parsedStart = TimeParse.parseTime(startTimeEntry.value, parsedEnd, -1);
+    exportButton.disabled = !(parsedEnd && parsedStart);
+});
+const modalWindow = document.getElementById('modal-container');
+const originalHide = modalWindow.onmodalhide;
+modalWindow.onmodalhide = function() {
+    exportSocket.close();
+    if (originalHide) {
+        originalHide();
+    }
+};

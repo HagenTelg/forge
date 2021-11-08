@@ -20,12 +20,19 @@
   color: #999;
   cursor: not-allowed;
 }
+.export-footer button.hidden {
+  display: none;
+}
 
 .export-footer button:hover,
 .export-footer button:focus {
   color: #000;
   text-decoration: none;
   cursor: pointer;
+}
+
+.export-entry > .hidden {
+  display: none;
 }
 
 .export-entry table {
@@ -91,4 +98,44 @@ select.export-select {
   cursor: pointer;
   flex-shrink: 0;
   text-align: left;
+}
+
+
+.export-waiting-text {
+  display: block;
+  margin: 40px 40px 16px 16px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+}
+.export-waiting-indicator {
+  display: flex;
+  align-items: center;
+}
+.export-waiting-indicator > .mdi-loading {
+  font-size: 100px;
+  flex-grow: 1;
+  text-align: center;
+  color: #3AF;
+}
+
+
+.export-ready-text {
+  display: block;
+  margin: 40px 40px 16px 16px;
+}
+.export-ready-download {
+  display: flex;
+  align-items: center;
+  margin: 0 0 16px 16px;
+}
+.export-ready-download > a {
+  flex-grow: 1;
+  font-size: 24px;
+  text-align: center;
+  font-weight: bold;
+  color: #0000EE;
+}
+.export-ready-download > a:visited {
+  color: #0000EE;
 }

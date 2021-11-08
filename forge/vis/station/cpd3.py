@@ -8,6 +8,7 @@ import os
 from signal import SIGTERM
 from math import floor, ceil, isfinite
 from copy import deepcopy
+from pathlib import Path
 from starlette.responses import StreamingResponse
 from forge.const import __version__
 from forge.vis import CONFIGURATION
@@ -1681,17 +1682,29 @@ def data_profile_get(station: str, data_name: str, start_epoch_ms: int, end_epoc
 
 
 class DataExport(Export):
-    def __init__(self, start_epoch_ms: int, end_epoch_ms: int, export_mode: str, data: typing.Set[Name],
-                 limit_flavors: bool = False, filename: str = 'export.csv', media_type: str = 'text/csv'):
+    def __init__(self, start_epoch_ms: int, end_epoch_ms: int, directory: str, export_mode: str,
+                 data: typing.Set[Name], limit_flavors: bool = False):
         self.start_epoch = int(floor(start_epoch_ms / 1000.0))
         self.end_epoch = int(ceil(end_epoch_ms / 1000.0))
+        self.directory = directory
         self.export_mode = export_mode
         self.data = data
         self.limit_flavors = limit_flavors
-        self.filename = filename
-        self.media_type = media_type
 
-    async def create_reader(self) -> asyncio.subprocess.Process:
+    def export_file_name(self) -> typing.Optional[str]:
+        station = None
+        for sel in self.data:
+            station = sel.station
+            if station:
+                break
+        ts = time.gmtime(self.start_epoch)
+        if station:
+            station = station.lower()
+            return f"{station}_{ts.tm_year:04}{ts.tm_mon:02}{ts.tm_mday:02}.csv"
+        else:
+            return f"export_{ts.tm_year:04}{ts.tm_mon:02}{ts.tm_mday:02}.csv"
+
+    async def __call__(self) -> Export.Result:
         selections = list()
         for sel in self.data:
             arg = ''
@@ -1704,33 +1717,20 @@ class DataExport(Export):
             arg = f'{sel.station}:{sel.archive}:{sel.variable}' + arg
             selections.append(arg)
         _LOGGER.debug(f"Starting data export for {self.start_epoch},{self.end_epoch} with {len(selections)} selections")
-        return await asyncio.create_subprocess_exec(_interface, 'export', self.export_mode,
-                                                    str(self.start_epoch), str(self.end_epoch),
-                                                    *selections,
-                                                    stdout=asyncio.subprocess.PIPE,
-                                                    stdin=asyncio.subprocess.DEVNULL)
 
-    async def __call__(self) -> StreamingResponse:
-        reader = await self.create_reader()
-
-        async def run():
-            while True:
-                chunk = await reader.stdout.read(4096)
-                if not chunk:
-                    break
-                yield chunk
-            try:
-                reader.terminate()
-            except:
-                pass
-            try:
-                await reader.wait()
-            except OSError:
-                pass
-
-        return StreamingResponse(run(), media_type=self.media_type, headers={
-            'Content-Disposition': f'attachment; filename="{self.filename}"',
-        })
+        target_file = self.export_file_name()
+        if target_file:
+            target_file = (Path(self.directory) / target_file).open('wb')
+        else:
+            target_file = asyncio.subprocess.DEVNULL
+        exporter = await asyncio.create_subprocess_exec(_interface, 'export', self.export_mode,
+                                                        str(self.start_epoch), str(self.end_epoch),
+                                                        *selections,
+                                                        stdout=target_file,
+                                                        stdin=asyncio.subprocess.DEVNULL,
+                                                        cwd=self.directory)
+        await exporter.communicate()
+        return Export.Result()
 
 
 class DataExportList(ExportList):
@@ -1754,12 +1754,12 @@ class DataExportList(ExportList):
         super().__init__(exports)
 
     def create_export(self, station: str, export_key: str,
-                      start_epoch_ms: int, end_epoch_ms: int) -> typing.Optional[Export]:
+                      start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
         for export in self.exports:
             if export.key == export_key:
                 if export.time_limit_ms and (end_epoch_ms - start_epoch_ms) > export.time_limit_ms:
                     return None
-                return export.data(station, start_epoch_ms, end_epoch_ms)
+                return export.data(station, start_epoch_ms, end_epoch_ms, directory)
         return None
 
 
@@ -1774,15 +1774,16 @@ def export_profile_lookup(station: str, mode_name: str, lookup) -> typing.Option
 
 
 def export_get(station: str, mode_name: str, export_key: str,
-               start_epoch_ms: int, end_epoch_ms: int) -> typing.Optional[Export]:
-    return export_profile_get(station, mode_name, export_key, start_epoch_ms, end_epoch_ms, profile_export)
+               start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
+    return export_profile_get(station, mode_name, export_key, start_epoch_ms, end_epoch_ms, directory, profile_export)
 
 
 def export_available(station: str, mode_name: str) -> typing.Optional[ExportList]:
     return export_profile_lookup(station, mode_name, profile_export)
 
 
-def export_profile_get(station: str, mode_name: str, export_key: str, start_epoch_ms: int, end_epoch_ms: int,
+def export_profile_get(station: str, mode_name: str, export_key: str,
+                       start_epoch_ms: int, end_epoch_ms: int, directory: str,
                        lookup: typing.Dict[str, typing.Dict[str, DataExportList]]) -> typing.Optional[DataExportList]:
     components = mode_name.split('-', 2)
     if len(components) != 2:
@@ -1798,7 +1799,7 @@ def export_profile_get(station: str, mode_name: str, export_key: str, start_epoc
     if not result:
         _LOGGER.debug(f"No information for archive in {mode_name}")
         return None
-    return result.create_export(station, export_key, start_epoch_ms, end_epoch_ms)
+    return result.create_export(station, export_key, start_epoch_ms, end_epoch_ms, directory)
 
 
 def detach(*profiles: typing.Union[
@@ -1816,8 +1817,8 @@ def detach(*profiles: typing.Union[
 
 aerosol_export: typing.Dict[str, DataExportList] = {
     'raw': DataExportList([
-        DataExportList.Entry('extensive', "Extensive", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'basic', {
+        DataExportList.Entry('extensive', "Extensive", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'basic', {
                 Name(station, 'raw', 'T_S11'),
                 Name(station, 'raw', 'P_S11'),
                 Name(station, 'raw', 'U_S11'),
@@ -1834,8 +1835,8 @@ aerosol_export: typing.Dict[str, DataExportList] = {
                 Name(station, 'raw', 'N_N61'),
             },
         )),
-        DataExportList.Entry('scattering', "Scattering", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'basic', {
+        DataExportList.Entry('scattering', "Scattering", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'basic', {
                 Name(station, 'raw', 'T_S11'),
                 Name(station, 'raw', 'P_S11'),
                 Name(station, 'raw', 'U_S11'),
@@ -1847,8 +1848,8 @@ aerosol_export: typing.Dict[str, DataExportList] = {
                 Name(station, 'raw', 'BbsR_S11'),
             },
         )),
-        DataExportList.Entry('absorption', "Absorption", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'basic', {
+        DataExportList.Entry('absorption', "Absorption", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'basic', {
                 Name(station, 'raw', 'Q_A11'),
                 Name(station, 'raw', 'L_A11'),
                 Name(station, 'raw', 'Fn_A11'),
@@ -1860,14 +1861,14 @@ aerosol_export: typing.Dict[str, DataExportList] = {
                 Name(station, 'raw', 'IrR_A11'),
             },
         )),
-        DataExportList.Entry('counts', "Counts", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'unsplit', {
+        DataExportList.Entry('counts', "Counts", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
                 Name(station, 'raw', 'N_N71'),
                 Name(station, 'raw', 'N_N61'),
             },
         )),
-        DataExportList.Entry('aethalometer', "Aethalometer", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'unsplit', set(
+        DataExportList.Entry('aethalometer', "Aethalometer", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'unsplit', set(
                 [Name(station, 'raw', f'Ba{i + 1}_A81') for i in range(7)] +
                 [Name(station, 'raw', f'X{i + 1}_A81') for i in range(7)] +
                 [Name(station, 'raw', f'ZFACTOR{i + 1}_A81') for i in range(7)] +
@@ -1876,8 +1877,8 @@ aerosol_export: typing.Dict[str, DataExportList] = {
         )),
     ]),
     'clean': DataExportList([
-        DataExportList.Entry('intensive', "Intensive", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'basic', {
+        DataExportList.Entry('intensive', "Intensive", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'basic', {
                 Name(station, 'clean', 'N_XI'),
                 Name(station, 'clean', 'BsB_XI'),
                 Name(station, 'clean', 'BsG_XI'),
@@ -1892,8 +1893,8 @@ aerosol_export: typing.Dict[str, DataExportList] = {
                 Name(station, 'clean', 'ZGG_XI'),
             },
         )),
-        DataExportList.Entry('scattering', "Scattering", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'basic', {
+        DataExportList.Entry('scattering', "Scattering", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'basic', {
                 Name(station, 'clean', 'T_S11'),
                 Name(station, 'clean', 'P_S11'),
                 Name(station, 'clean', 'U_S11'),
@@ -1905,8 +1906,8 @@ aerosol_export: typing.Dict[str, DataExportList] = {
                 Name(station, 'clean', 'BbsR_S11'),
             },
         )),
-        DataExportList.Entry('absorption', "Absorption", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'basic', {
+        DataExportList.Entry('absorption', "Absorption", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'basic', {
                 Name(station, 'clean', 'Q_A11'),
                 Name(station, 'clean', 'L_A11'),
                 Name(station, 'clean', 'Fn_A11'),
@@ -1918,14 +1919,14 @@ aerosol_export: typing.Dict[str, DataExportList] = {
                 Name(station, 'clean', 'IrR_A11'),
             },
         )),
-        DataExportList.Entry('counts', "Counts", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'unsplit', {
+        DataExportList.Entry('counts', "Counts", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
                 Name(station, 'clean', 'N_N71'),
                 Name(station, 'clean', 'N_N61'),
             },
         )),
-        DataExportList.Entry('aethalometer', "Aethalometer", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'unsplit', set(
+        DataExportList.Entry('aethalometer', "Aethalometer", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'unsplit', set(
                 [Name(station, 'clean', f'Ba{i + 1}_A81') for i in range(7)] +
                 [Name(station, 'clean', f'X{i + 1}_A81') for i in range(7)] +
                 [Name(station, 'clean', f'ZFACTOR{i + 1}_A81') for i in range(7)] +
@@ -1934,8 +1935,8 @@ aerosol_export: typing.Dict[str, DataExportList] = {
         )),
     ]),
     'avgh': DataExportList([
-        DataExportList.Entry('intensive', "Intensive", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'average', {
+        DataExportList.Entry('intensive', "Intensive", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'average', {
                 Name(station, 'avgh', 'N_XI'),
                 Name(station, 'avgh', 'BsB_XI'),
                 Name(station, 'avgh', 'BsG_XI'),
@@ -1950,8 +1951,8 @@ aerosol_export: typing.Dict[str, DataExportList] = {
                 Name(station, 'avgh', 'ZGG_XI'),
             },
         ), time_limit_days=None),
-        DataExportList.Entry('scattering', "Scattering", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'average', {
+        DataExportList.Entry('scattering', "Scattering", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'average', {
                 Name(station, 'avgh', 'T_S11'),
                 Name(station, 'avgh', 'P_S11'),
                 Name(station, 'avgh', 'U_S11'),
@@ -1963,8 +1964,8 @@ aerosol_export: typing.Dict[str, DataExportList] = {
                 Name(station, 'avgh', 'BbsR_S11'),
             },
         ), time_limit_days=None),
-        DataExportList.Entry('absorption', "Absorption", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'average', {
+        DataExportList.Entry('absorption', "Absorption", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'average', {
                 Name(station, 'avgh', 'Q_A11'),
                 Name(station, 'avgh', 'L_A11'),
                 Name(station, 'avgh', 'Fn_A11'),
@@ -1976,14 +1977,14 @@ aerosol_export: typing.Dict[str, DataExportList] = {
                 Name(station, 'avgh', 'IrR_A11'),
             },
         ), time_limit_days=None),
-        DataExportList.Entry('counts', "Counts", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'average', {
+        DataExportList.Entry('counts', "Counts", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'average', {
                 Name(station, 'avgh', 'N_N71'),
                 Name(station, 'avgh', 'N_N61'),
             },
         ), time_limit_days=None),
-        DataExportList.Entry('aethalometer', "Aethalometer", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'average', set(
+        DataExportList.Entry('aethalometer', "Aethalometer", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'average', set(
                 [Name(station, 'avgh', f'Ba{i + 1}_A81') for i in range(7)] +
                 [Name(station, 'avgh', f'X{i + 1}_A81') for i in range(7)] +
                 [Name(station, 'avgh', f'ZFACTOR{i + 1}_A81') for i in range(7)] +
@@ -1995,8 +1996,8 @@ aerosol_export: typing.Dict[str, DataExportList] = {
 
 ozone_export: typing.Dict[str, DataExportList] = {
     'raw': DataExportList([
-        DataExportList.Entry('basic', "Basic", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'unsplit', {
+        DataExportList.Entry('basic', "Basic", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
                 Name(station, 'raw', 'X_G81'),
                 Name(station, 'raw', 'T1_G81'),
                 Name(station, 'raw', 'T2_G81'),
@@ -2012,8 +2013,8 @@ ozone_export: typing.Dict[str, DataExportList] = {
         )),
     ]),
     'clean': DataExportList([
-        DataExportList.Entry('basic', "Basic", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'unsplit', {
+        DataExportList.Entry('basic', "Basic", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
                 Name(station, 'clean', 'X_G81'),
                 Name(station, 'clean', 'T1_G81'),
                 Name(station, 'clean', 'T2_G81'),
@@ -2029,8 +2030,8 @@ ozone_export: typing.Dict[str, DataExportList] = {
         )),
     ]),
     'avgh': DataExportList([
-        DataExportList.Entry('basic', "Basic", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'unsplit', {
+        DataExportList.Entry('basic', "Basic", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
                 Name(station, 'avgh', 'X_G81'),
                 Name(station, 'avgh', 'T1_G81'),
                 Name(station, 'avgh', 'T2_G81'),
@@ -2049,8 +2050,8 @@ ozone_export: typing.Dict[str, DataExportList] = {
 
 met_export: typing.Dict[str, DataExportList] = {
     'raw': DataExportList([
-        DataExportList.Entry('ambient', "Ambient", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'unsplt', {
+        DataExportList.Entry('ambient', "Ambient", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
                 Name(station, 'raw', 'WS1_XM1'), Name(station, 'raw', 'WD1_XM1'),
                 Name(station, 'raw', 'WS2_XM1'), Name(station, 'raw', 'WD2_XM1'),
                 Name(station, 'raw', 'WS3_XM1'), Name(station, 'raw', 'WD3_XM1'),
@@ -2063,8 +2064,8 @@ met_export: typing.Dict[str, DataExportList] = {
         )),
     ]),
     'clean': DataExportList([
-        DataExportList.Entry('ambient', "Ambient", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'unsplt', {
+        DataExportList.Entry('ambient', "Ambient", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
                 Name(station, 'clean', 'WS1_XM1'), Name(station, 'clean', 'WD1_XM1'),
                 Name(station, 'clean', 'WS2_XM1'), Name(station, 'clean', 'WD2_XM1'),
                 Name(station, 'clean', 'WS3_XM1'), Name(station, 'clean', 'WD3_XM1'),
@@ -2077,8 +2078,8 @@ met_export: typing.Dict[str, DataExportList] = {
         )),
     ]),
     'avgh': DataExportList([
-        DataExportList.Entry('ambient', "Ambient", lambda station, start_epoch_ms, end_epoch_ms: DataExport(
-            start_epoch_ms, end_epoch_ms, 'unsplt', {
+        DataExportList.Entry('ambient', "Ambient", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+            start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
                 Name(station, 'avgh', 'WS1_XM1'), Name(station, 'avgh', 'WD1_XM1'),
                 Name(station, 'avgh', 'WS2_XM1'), Name(station, 'avgh', 'WD2_XM1'),
                 Name(station, 'avgh', 'WS3_XM1'), Name(station, 'avgh', 'WD3_XM1'),

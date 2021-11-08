@@ -82,6 +82,7 @@ routes = [
     Route('/settings', endpoint=forge.vis.mode.server.local_settings, name='local_settings'),
 
     Mount('/socket/data', routes=forge.vis.data.server.sockets),
+    Mount('/socket/export', routes=forge.vis.export.server.sockets),
 
     Route('/index.html', endpoint=_root),
     Route('/index.htm', endpoint=_root),

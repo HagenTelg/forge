@@ -2,15 +2,24 @@ import typing
 import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from starlette.responses import Response
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class Export(ABC):
+    class Result:
+        def __init__(self, client_name: typing.Optional[str] = None):
+            self.client_name = client_name
+
+    class DirectResult(Result):
+        def __init__(self, source_file: str, client_name: str, media_type: str):
+            super().__init__(client_name)
+            self.source_file = source_file
+            self.media_type = media_type
+
     @abstractmethod
-    async def __call__(self) -> Response:
+    async def __call__(self) -> typing.Optional[Result]:
         pass
 
 
