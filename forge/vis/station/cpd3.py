@@ -4,6 +4,7 @@ import base64
 import time
 import struct
 import logging
+import os
 from signal import SIGTERM
 from math import floor, ceil, isfinite
 from copy import deepcopy
@@ -1014,7 +1015,7 @@ async def _get_latest_passed(station: str, profile: str) -> typing.Optional[int]
 
 
 class DataReader(RecordStream):
-    _PASS_STALL_ARCHIVES = frozenset({"clean", "avgh"})
+    PASS_STALL_ARCHIVES = frozenset({"clean", "avgh"})
 
     class Input(RecordInput):
         def __init__(self, reader: "DataReader",
@@ -1079,8 +1080,8 @@ class DataReader(RecordStream):
             fields[target] = convert_value(value)
         await self.send_record(epoch_ms, fields)
 
-    async def create_reader(self) -> asyncio.subprocess.Process:
-        selections = list()
+    def selection_arguments(self) -> typing.List[str]:
+        selections: typing.List[str] = list()
         for sel in self.data:
             if len(sel.flavors) == 0:
                 arg = ':='
@@ -1090,14 +1091,27 @@ class DataReader(RecordStream):
                     arg += f':={f}'
             arg = f'{sel.station}:{sel.archive}:{sel.variable}' + arg
             selections.append(arg)
-        _LOGGER.debug(f"Starting data read for {self.start_epoch},{self.end_epoch} with {len(selections)} selections")
-        return await asyncio.create_subprocess_exec(_interface, 'archive_read',
-                                                    str(self.start_epoch), str(self.end_epoch),
-                                                    *selections,
-                                                    stdout=asyncio.subprocess.PIPE,
-                                                    stdin=asyncio.subprocess.DEVNULL)
+        return selections
 
-    class _CleanReadyStall(RecordStream.Stall):
+    async def create_reader(self) -> typing.Tuple[asyncio.StreamReader, typing.Callable[[bool], typing.Awaitable[None]]]:
+        selections = self.selection_arguments()
+        _LOGGER.debug(f"Starting data read for {self.start_epoch},{self.end_epoch} with {len(selections)} selections")
+
+        process = await asyncio.create_subprocess_exec(_interface, 'archive_read',
+                                                       str(self.start_epoch), str(self.end_epoch),
+                                                       *selections,
+                                                       stdout=asyncio.subprocess.PIPE,
+                                                       stdin=asyncio.subprocess.DEVNULL)
+
+        async def shutdown(terminate: bool) -> None:
+            if terminate:
+                process.terminate()
+                return
+            await process.wait()
+
+        return process.stdout, shutdown
+
+    class CleanReadyStall(RecordStream.Stall):
         def __init__(self, readers: typing.List[asyncio.StreamReader], writers: typing.List[asyncio.StreamWriter]):
             super().__init__("Passed data update in progress")
             self.readers = readers
@@ -1115,11 +1129,15 @@ class DataReader(RecordStream):
                 except OSError:
                     pass
 
-    async def stall(self) -> typing.Optional["DataReader._CleanReadyStall"]:
-        blocking_stations = set()
+    def stall_stations(self) -> typing.Set[str]:
+        blocking_stations: typing.Set[str] = set()
         for check in self.data.keys():
-            if check.archive in self._PASS_STALL_ARCHIVES:
+            if check.archive in self.PASS_STALL_ARCHIVES:
                 blocking_stations.add(check.station)
+        return blocking_stations
+
+    async def stall(self) -> typing.Optional["DataReader.CleanReadyStall"]:
+        blocking_stations = self.stall_stations()
 
         if len(blocking_stations) == 0:
             return None
@@ -1146,19 +1164,19 @@ class DataReader(RecordStream):
 
         if len(readers) == 0:
             return None
-        return self._CleanReadyStall(readers, writers)
+        return self.CleanReadyStall(readers, writers)
 
     async def run(self) -> None:
-        reader = await self.create_reader()
+        data_in, data_shutdown = await self.create_reader()
 
         try:
-            await reader.stdout.readexactly(3)
+            await data_in.readexactly(3)
 
             buffer: typing.List[typing.Tuple[int, typing.Dict[Name, typing.Any]]] = list()
             converter = self.Input(self, buffer)
 
             while True:
-                data = await reader.stdout.read(65536)
+                data = await data_in.read(65536)
                 if not data:
                     break
                 converter.incoming_raw(data)
@@ -1170,22 +1188,16 @@ class DataReader(RecordStream):
             for r in buffer:
                 await self._convert(r[0], r[1])
             await self.flush()
-            await reader.wait()
+            await data_shutdown(False)
         except asyncio.CancelledError:
             try:
-                reader.terminate()
+                await data_shutdown(True)
             except:
                 pass
             raise
 
 
 class EditedReader(DataReader):
-    class Input(DataReader.Input):
-        def value_ready(self, identity: Identity, value: typing.Any) -> None:
-            if identity.name not in self.reader.data:
-                return
-            super().value_ready(identity, value)
-
     def __init__(self, start_epoch_ms: int, end_epoch_ms: int, station: str, profile: str,
                  data: typing.Dict[Name, str],
                  send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
@@ -1196,15 +1208,36 @@ class EditedReader(DataReader):
         super().__init__(start_epoch_ms=start_epoch_ms, end_epoch_ms=end_epoch_ms, data=data, send=send)
         self.station = station
         self.profile = profile
+        self._generator: typing.Optional[asyncio.subprocess.Process] = None
 
-    async def create_reader(self) -> asyncio.subprocess.Process:
-        _LOGGER.debug(f"Starting edited read for {self.station}-{self.profile} {self.start_epoch},{self.end_epoch}")
+    async def create_reader(self) -> typing.Tuple[asyncio.StreamReader, typing.Callable[[bool], typing.Awaitable[None]]]:
+        selections = self.selection_arguments()
+        _LOGGER.debug(f"Starting edited read for {self.station}-{self.profile} {self.start_epoch},{self.end_epoch} with {len(selections)} selections")
 
-        return await asyncio.create_subprocess_exec(_interface, 'edited_read',
-                                                    str(self.start_epoch), str(self.end_epoch),
-                                                    self.station, self.profile,
-                                                    stdout=asyncio.subprocess.PIPE,
-                                                    stdin=asyncio.subprocess.DEVNULL)
+        read, write = os.pipe()
+
+        reader = await asyncio.create_subprocess_exec(_interface, 'edited_read',
+                                                      str(self.start_epoch), str(self.end_epoch),
+                                                      self.station, self.profile,
+                                                      stdout=write,
+                                                      stdin=asyncio.subprocess.DEVNULL)
+        os.close(write)
+
+        filter = await asyncio.create_subprocess_exec(_interface, 'filter',
+                                                      *selections,
+                                                      stdout=asyncio.subprocess.PIPE,
+                                                      stdin=read)
+        os.close(read)
+
+        async def shutdown(terminate: bool) -> None:
+            if terminate:
+                filter.terminate()
+                reader.terminate()
+                return
+            await filter.wait()
+            await reader.wait()
+
+        return filter.stdout, shutdown
 
     async def stall(self) -> typing.Optional["DataStream.Stall"]:
         return None
@@ -1258,7 +1291,7 @@ class EditReader(DataStream):
         except asyncio.CancelledError:
             try:
                 reader.terminate()
-            except OSError:
+            except:
                 pass
             raise
 
@@ -1300,7 +1333,7 @@ class EditAvailable(DataStream):
             raise
 
 
-class ContaminationReader(DataStream):
+class ContaminationReader(DataStream):    
     class _State:
         def __init__(self):
             self.active_contamination: typing.Set[str] = set()
@@ -1373,28 +1406,52 @@ class ContaminationReader(DataStream):
         self.end_epoch = int(ceil(end_epoch_ms / 1000.0))
         self.data = data
 
-    async def create_reader(self) -> asyncio.subprocess.Process:
+    def selection_arguments(self) -> typing.List[str]:
         selections = list()
         for sel in self.data:
             selections.append(f'{sel.station}:{sel.archive}:{sel.variable}:-cover:-stats')
+        return selections
+
+    async def create_reader(self) -> typing.Tuple[asyncio.StreamReader, typing.Callable[[bool], typing.Awaitable[None]]]:
+        selections = self.selection_arguments()            
         _LOGGER.debug(f"Starting contamination read for {self.start_epoch},{self.end_epoch} with {len(selections)} selections")
-        return await asyncio.create_subprocess_exec(_interface, 'archive_read',
-                                                    str(self.start_epoch), str(self.end_epoch),
-                                                    *selections,
-                                                    stdout=asyncio.subprocess.PIPE,
-                                                    stdin=asyncio.subprocess.DEVNULL)
+
+        process = await asyncio.create_subprocess_exec(_interface, 'archive_read',
+                                                       str(self.start_epoch), str(self.end_epoch),
+                                                       *selections,
+                                                       stdout=asyncio.subprocess.PIPE,
+                                                       stdin=asyncio.subprocess.DEVNULL)
+
+        async def shutdown(terminate: bool) -> None:
+            if terminate:
+                process.terminate()
+                return
+            await process.wait()
+
+        return process.stdout, shutdown
+
+    PASS_STALL_ARCHIVES = DataReader.PASS_STALL_ARCHIVES
+    CleanReadyStall = DataReader.CleanReadyStall
+    stall = DataReader.stall
+
+    def stall_stations(self) -> typing.Set[str]:
+        blocking_stations: typing.Set[str] = set()
+        for check in self.data:
+            if check.archive in self.PASS_STALL_ARCHIVES:
+                blocking_stations.add(check.station)
+        return blocking_stations
 
     async def run(self) -> None:
-        reader = await self.create_reader()
+        data_in, data_shutdown = await self.create_reader()
 
         try:
-            await reader.stdout.readexactly(3)
+            await data_in.readexactly(3)
 
             state = self._State()
             converter = self.Input(self, state)
 
             while True:
-                data = await reader.stdout.read(65536)
+                data = await data_in.read(65536)
                 if not data:
                     break
                 converter.incoming_raw(data)
@@ -1403,10 +1460,10 @@ class ContaminationReader(DataStream):
             converter.flush()
             state.complete(self.clip_end_ms)
             await state.flush(self.send)
-            await reader.wait()
+            await data_shutdown(False)
         except asyncio.CancelledError:
             try:
-                reader.terminate()
+                await data_shutdown(True)
             except:
                 pass
             raise
@@ -1433,14 +1490,35 @@ class EditedContaminationReader(ContaminationReader):
         self.station = station
         self.profile = profile
 
-    async def create_reader(self) -> asyncio.subprocess.Process:
-        _LOGGER.debug(f"Starting edited contamination read for {self.station}-{self.profile} {self.start_epoch},{self.end_epoch}")
+    async def create_reader(self) -> typing.Tuple[asyncio.StreamReader, typing.Callable[[bool], typing.Awaitable[None]]]:
+        selections = self.selection_arguments()
+        _LOGGER.debug(
+            f"Starting edited contamination read for {self.station}-{self.profile} {self.start_epoch},{self.end_epoch} with {len(selections)} selections")
 
-        return await asyncio.create_subprocess_exec(_interface, 'edited_read',
-                                                    str(self.start_epoch), str(self.end_epoch),
-                                                    self.station, self.profile,
-                                                    stdout=asyncio.subprocess.PIPE,
-                                                    stdin=asyncio.subprocess.DEVNULL)
+        read, write = os.pipe()
+
+        reader = await asyncio.create_subprocess_exec(_interface, 'edited_read',
+                                                      str(self.start_epoch), str(self.end_epoch),
+                                                      self.station, self.profile,
+                                                      stdout=write,
+                                                      stdin=asyncio.subprocess.DEVNULL)
+        os.close(write)
+
+        filter = await asyncio.create_subprocess_exec(_interface, 'filter',
+                                                      *selections,
+                                                      stdout=asyncio.subprocess.PIPE,
+                                                      stdin=read)
+        os.close(read)
+
+        async def shutdown(terminate: bool) -> None:
+            if terminate:
+                filter.terminate()
+                reader.terminate()
+                return
+            await filter.wait()
+            await reader.wait()
+
+        return filter.stdout, shutdown
 
     async def stall(self) -> typing.Optional["DataStream.Stall"]:
         return None
