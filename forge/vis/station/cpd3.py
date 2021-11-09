@@ -651,7 +651,7 @@ def _modify_directive(user: BaseAccessUser, station: str, profile: str,
 
 def _convert_history(history: typing.List[typing.Dict[str, typing.Any]]) -> typing.List[typing.Dict[str, typing.Any]]:
     def format_time(ts: float) -> str:
-        if not ts:
+        if not ts or not isfinite(ts):
             return "∞"
         ts = time.gmtime(ts)
         return f"{ts.tm_year:04}-{ts.tm_mon:02}-{ts.tm_mday:02}T{ts.tm_hour:02}:{ts.tm_min:02}:{ts.tm_sec:02}Z"
