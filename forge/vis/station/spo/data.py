@@ -119,7 +119,7 @@ station_profile_data['met']['avgh']['wind'] = lambda station, start_epoch_ms, en
         Name(station, 'avgh', 'WS4_XM1'): 'WS4', Name(station, 'avgh', 'WD4_XM1'): 'WD4',
     }, send
 )
-station_profile_data['met']['avgh']['editing'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+station_profile_data['met']['editing']['wind'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
     start_epoch_ms, end_epoch_ms, station, 'met', {
         Name(station, 'clean', 'WS1_XM1'): 'WSambient', Name(station, 'clean', 'WD1_XM1'): 'WDambient',
         Name(station, 'clean', 'WS2_XM1'): 'WS2', Name(station, 'clean', 'WD2_XM1'): 'WD2',
