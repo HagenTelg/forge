@@ -60,6 +60,9 @@ let data = [
             color: '{{ trace.color }}',
             //{% endif %}
         },
+        marker: {
+            symbol: '{% if loop.index0 <= 52 %}{{ loop.index0 }}{% elif loop.index0 <= 52*2 %}{{loop.index0 + 200 }}{% endif %}',
+        },
     },
     // {% endfor %}
 ];

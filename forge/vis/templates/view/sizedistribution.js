@@ -78,6 +78,7 @@ let data = [
 const sizeDistributionIndex = 0;
 
 const measuredScatteringIndex = data.length;
+//{% set trace_loop = namespace(index=0) %}
 //{% for wl in view.scattering_wavelengths %}
 //{% if wl.measured_field %}
 data.push({
@@ -93,8 +94,12 @@ data.push({
         color: '{{ wl.measured_color }}',
         //{% endif %}
     },
+    marker: {
+        symbol: '{% if trace_loop.index <= 52 %}{{ trace_loop.index }}{% elif trace_loop.index <= 52*2 %}{{ trace_loop.index + 200 }}{% endif %}',
+    },
 });
 //{% endif %}
+//{% set trace_loop.index = trace_loop.index + 1 %}
 //{% endfor %}
 
 const calculatedScatteringIndex = data.length;
@@ -113,8 +118,12 @@ data.push({
         color: '{{ wl.calculated_color }}',
         //{% endif %}
     },
+    marker: {
+        symbol: '{% if trace_loop.index <= 52 %}{{ trace_loop.index }}{% elif trace_loop.index <= 52*2 %}{{ trace_loop.index + 200 }}{% endif %}',
+    },
 });
 //{% endif %}
+//{% set trace_loop.index = trace_loop.index + 1 %}
 //{% endfor %}
 
 const bins = new SizeBins.AverageBins(data, 'x2', 'y2');
