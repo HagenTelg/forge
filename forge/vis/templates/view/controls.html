@@ -1,10 +1,11 @@
 <style>
 div.controls {
-  position: relative;
+  position: absolute;
   top: 0;
   left: 0;
   opacity: 0.0;
   transition: 0.2s;
+  margin: 2px 0 0 2px;
 }
 div.controls:hover {
   opacity: 1;
@@ -13,7 +14,8 @@ div.controls > button {
   border: none;
   text-align: center;
   font-size: 16px;
-  margin: 4px;
+  margin: 0;
+  padding: 2px;
   background: rgba(0, 0, 0, 0);
 }
 div.controls > button.hidden {
@@ -22,3 +24,4 @@ div.controls > button.hidden {
 </style>
 
 <div id="control_bar" class="controls"></div>
+

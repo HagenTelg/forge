@@ -151,6 +151,27 @@ var TimeSeriesCommon = {};
         });
     }
 
+    TimeSeriesCommon.addSymbolToggleButton = function(traces) {
+        const button = document.createElement('button');
+        document.getElementById('control_bar').appendChild(button);
+        button.classList.add('mdi');
+        button.classList.add('mdi-chart-line-variant');
+        button.classList.add('symbol-toggle');
+        button.title = 'Toggle data point symbol display';
+        $(button).click(function(event) {
+            event.preventDefault();
+            $(this).toggleClass('mdi-chart-bubble mdi-chart-line-variant');
+            traces.data.forEach((trace) => {
+                if (trace.mode === 'lines') {
+                    trace.mode = 'lines+markers';
+                } else if (trace.mode === 'lines+markers') {
+                    trace.mode = 'lines';
+                }
+            });
+            traces.updateDisplay(true);
+        });
+    }
+
     TimeSeriesCommon.installZoomHandler = function(div) {
         div.on('plotly_relayout', function(data) {
             const start_time = data['xaxis.range[0]'];

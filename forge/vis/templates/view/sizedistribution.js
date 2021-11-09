@@ -136,6 +136,9 @@ shapeHandler.generators.push(TimeSeriesCommon.getTimeHighlights);
 TimeSeriesCommon.updateShapes = function() { shapeHandler.update(); }
 
 
+TimeSeriesCommon.addSymbolToggleButton(traces);
+
+
 DataSocket.resetLoadedRecords();
 
 //{% if view.contamination %}

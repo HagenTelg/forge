@@ -78,6 +78,7 @@ let layout = {
 };
 
 let data = [
+    //{% set trace_loop = namespace(index=0) %}
     //{% for graph in view.graphs %}
     //{% set graph_index = loop.index0 %}
     //  {% for trace in graph.traces %}
@@ -95,7 +96,11 @@ let data = [
             color: '{{ trace.color }}',
             //{% endif %}
         },
+        marker: {
+            symbol: '{% if trace_loop.index <= 52 %}{{ trace_loop.index }}{% elif trace_loop.index <= 52*2 %}{{ trace_loop.index + 200 }}{% endif %}',
+        },
     },
+    //  {% set trace_loop.index = trace_loop.index + 1 %}
     //  {% endfor %}
     //{% endfor %}
 ];
@@ -115,6 +120,8 @@ const shapeHandler = new ShapeHandler(div);
 const traces = new TimeSeriesCommon.Traces(div, data, layout, config);
 shapeHandler.generators.push(TimeSeriesCommon.getTimeHighlights);
 TimeSeriesCommon.updateShapes = function() { shapeHandler.update(); }
+
+TimeSeriesCommon.addSymbolToggleButton(traces);
 TimeSeriesCommon.addContaminationToggleButton(traces);
 
 

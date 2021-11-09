@@ -80,6 +80,8 @@ const shapeHandler = new ShapeHandler(div);
 const traces = new TimeSeriesCommon.Traces(div, data, layout, config);
 shapeHandler.generators.push(TimeSeriesCommon.getTimeHighlights);
 TimeSeriesCommon.updateShapes = function() { shapeHandler.update(); }
+
+TimeSeriesCommon.addSymbolToggleButton(traces);
 TimeSeriesCommon.addContaminationToggleButton(traces);
 
 DataSocket.resetLoadedRecords();

@@ -2,13 +2,10 @@
 div.view {
   flex-grow: 1;
 }
-
-div.scroll {
-  height: {{ (view.graphs|length)*300 }}px;
-}
 </style>
 
 <div class="view" id="view_timeseries"></div>
+{% include 'view/controls.html' %}
 
 <script>
 (function() {
