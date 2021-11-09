@@ -154,9 +154,8 @@ DataSocket.addLoadedRecordField('{{ view.size_record }}', 'dN', incomingdN,
 
     // {% if trace.script_incoming_data %}{{ '\n' }}{{ trace.script_incoming_data | safe }}{% endif %}
 
-    //{% if view.contamination %}
-    traces.setTraceContamination(traceIndex, '{{ view.contamination }}');
-    //{% endif %}
+    traces.applyDataFilter(traceIndex, '{{ view.contamination and view.contamination or "" }}');
+
 
     DataSocket.addLoadedRecordField('{{ trace.data_record }}', '{{ trace.data_field }}',
         incomingData, RecordProcessing.get('{{ trace.data_record }}'),

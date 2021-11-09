@@ -209,74 +209,77 @@ var TimeSeriesCommon = {};
         });
     }
 
-    class TraceContamination {
-        constructor(traces, record) {
+    class DataFilter {
+        constructor(traces, contaminationRecord) {
             this.epoch_ms = [];
+            this.x = undefined;
             this.y = undefined;
 
-            this.segments = [];
-            DataSocket.addLoadedRecord(record, (dataName) => { return new Contamination.DataStream(dataName); },
-                (start_ms, end_ms) => {
-                    if (this.segments.length === 0) {
-                        $('button.contamination-toggle.hidden').removeClass('hidden');
+            this.contaminationSegments = [];
+            if (contaminationRecord && contaminationRecord !== '') {
+                console.log(contaminationRecord);
+                DataSocket.addLoadedRecord(contaminationRecord,
+                    (dataName) => {
+                        return new Contamination.DataStream(dataName);
+                    }, (start_ms, end_ms) => {
+                        if (this.contaminationSegments.length === 0) {
+                            $('button.contamination-toggle.hidden').removeClass('hidden');
+                        }
+                        this.contaminationSegments.push({
+                            start_ms: start_ms,
+                            end_ms: end_ms,
+                        });
+                        traces.updateDisplay();
+                    }, () => {
+                        traces.updateDisplay(true);
                     }
-                    this.segments.push({
-                        start_ms: start_ms,
-                        end_ms: end_ms,
-                    });
-                    traces.updateDisplay();
-                }, () => {
-                    traces.updateDisplay(true);
-                }
-            );
+                );
+            }
         }
 
-        extendData(values, epoch) {
+        extendData(times, values, epoch) {
             for (let i=0; i<epoch.length; i++) {
-                this.epoch_ms.push(epoch[i]);
+                if (this.x) {
+                    this.x.push(times[i]);
+                }
                 if (this.y) {
                     this.y.push(values[i]);
                 }
+                this.epoch_ms.push(epoch[i]);
             }
         }
 
         clearData() {
             this.epoch_ms.length = 0;
             this.y = undefined;
-            this.segments.length = 0;
+            this.x = undefined;
+            this.contaminationSegments.length = 0;
             $('button.contamination-toggle').addClass('hidden');
         }
+        
+        needToApplyContamination() {
+            return hideContaminatedData && this.contaminationSegments.length !== 0;
+        }
 
-        apply(data) {
-            if (!hideContaminatedData || this.segments.length === 0) {
-                if (this.y) {
-                    data.y = this.y;
-                    this.y = undefined;
-                }
-                return;
-            }
-            if (!this.y) {
-                this.y = data.y.slice();
-            }
-
+        filterDataContamination(data) {
             data.y.length = 0;
             let segmentIndex = 0;
             let i;
             for (i=0; i<this.epoch_ms.length; i++) {
                 const epoch_ms = this.epoch_ms[i];
 
-                for (; segmentIndex < this.segments.length; segmentIndex++) {
-                    const segment = this.segments[segmentIndex];
+                for (; segmentIndex < this.contaminationSegments.length; segmentIndex++) {
+                    const segment = this.contaminationSegments[segmentIndex];
                     if (epoch_ms >= segment.end_ms) {
                         continue;
                     }
                     break;
                 }
-                if (segmentIndex >= this.segments.length) {
+                if (segmentIndex >= this.contaminationSegments.length) {
                     break;
                 }
 
-                const segment = this.segments[segmentIndex];
+                const segment = this.contaminationSegments[segmentIndex];
                 if (epoch_ms < segment.start_ms) {
                     data.y.push(this.y[i]);
                 } else {
@@ -288,6 +291,29 @@ var TimeSeriesCommon = {};
                 data.y.push(this.y[i]);
             }
         }
+
+        apply(data) {
+            const applyContamination = this.needToApplyContamination();
+
+            if (!applyContamination) {
+                if (this.y) {
+                    data.y = this.y;
+                    this.y = undefined;
+                }
+                if (this.x) {
+                    data.x = this.x;
+                    this.x = undefined;
+                }
+                return;
+            }
+            if (!this.y) {
+                this.y = data.y.slice();
+            }
+
+            if (applyContamination) {
+                this.filterDataContamination(data);
+            }
+        }
     }
 
     TimeSeriesCommon.Traces = class {
@@ -297,7 +323,7 @@ var TimeSeriesCommon = {};
             this.layout = layout;
             this.config = config;
             this._queuedDisplayUpdate = undefined;
-            this._contaminationHandlers = new Map();
+            this._dataFilters = new Map();
         }
 
         updateDisplay(immediate) {
@@ -317,7 +343,7 @@ var TimeSeriesCommon = {};
             this._queuedDisplayUpdate = setTimeout(() => {
                 this._queuedDisplayUpdate = undefined;
 
-                this._contaminationHandlers.forEach((handler, traceIndex) => {
+                this._dataFilters.forEach((handler, traceIndex) => {
                     handler.apply(this.data[traceIndex]);
                 });
 
@@ -326,15 +352,15 @@ var TimeSeriesCommon = {};
             }, delay);
         }
 
-        setTraceContamination(traceIndex, record) {
-            this._contaminationHandlers.set(traceIndex, new TraceContamination(this, record));
+        applyDataFilter(traceIndex, contaminationRecord) {
+            this._dataFilters.set(traceIndex, new DataFilter(this, contaminationRecord));
         }
 
         extendData(traceIndex, times, values, epoch) {
             const data = this.data[traceIndex];
-            const contamination = this._contaminationHandlers.get(traceIndex);
-            if (contamination) {
-                contamination.extendData(values, epoch);
+            const filter = this._dataFilters.get(traceIndex);
+            if (filter) {
+                filter.extendData(times, values, epoch);
             }
             for (let i=0; i<times.length; i++) {
                 data.x.push(times[i]);
@@ -361,9 +387,9 @@ var TimeSeriesCommon = {};
                     data.z.length = 0;
                 }
 
-                const contamination = this._contaminationHandlers.get(traceIndex);
-                if (contamination) {
-                    contamination.clearData();
+                const filter = this._dataFilters.get(traceIndex);
+                if (filter) {
+                    filter.clearData();
                 }
             });
         }

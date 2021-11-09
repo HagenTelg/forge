@@ -144,9 +144,7 @@ shapeHandler.generators.push(TimeSeriesCommon.installContamination('{{ loop.inde
 
     // {% if trace.script_incoming_data %}{{ '\n' }}{{ trace.script_incoming_data | safe }}{% endif %}
 
-    //{% if graph.contamination %}
-    traces.setTraceContamination(traceIndex, '{{ graph.contamination }}');
-    //{% endif %}
+    traces.applyDataFilter(traceIndex, '{{ graph.contamination and graph.contamination or "" }}');
 
     DataSocket.addLoadedRecordField('{{ trace.data_record }}', '{{ trace.data_field }}',
         incomingData, RecordProcessing.get('{{ trace.data_record }}'),
