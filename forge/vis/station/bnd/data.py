@@ -1,8 +1,10 @@
 import typing
-from ..cpd3 import DataStream, DataReader, Name, data_profile_get, detach, profile_data
+from ..cpd3 import DataStream, DataReader, EditedReader, Name, data_profile_get, detach, profile_data
 
 
 station_profile_data = detach(profile_data)
+
+
 station_profile_data['aerosol']['raw']['temperature'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'T_V51'): 'Tinlet', Name(station, 'raw', 'U_V51'): 'Uinlet',
@@ -25,6 +27,31 @@ station_profile_data['aerosol']['raw']['temperature'] = lambda station, start_ep
         Name(station, 'raw', 'T_S11', {'pm10'}): 'Tneph', Name(station, 'raw', 'U_S11', {'pm10'}): 'Uneph',
         Name(station, 'raw', 'T_S11', {'pm1'}): 'Tneph', Name(station, 'raw', 'U_S11', {'pm1'}): 'Uneph',
         Name(station, 'raw', 'T_S11', {'pm25'}): 'Tneph', Name(station, 'raw', 'U_S11', {'pm25'}): 'Uneph',
+    }, send
+)
+
+station_profile_data['aerosol']['raw']['wind'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'WS1_XM1'): 'WSgrad', Name(station, 'raw', 'WD1_XM1'): 'WDgrad',
+        Name(station, 'raw', 'WS_X1'): 'WSaerosol', Name(station, 'raw', 'WD_X1'): 'WDaerosol',
+    }, send
+)
+station_profile_data['aerosol']['clean']['wind'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'clean', 'WS1_XM1'): 'WSgrad', Name(station, 'clean', 'WD1_XM1'): 'WDgrad',
+        Name(station, 'clean', 'WS_X1'): 'WSaerosol', Name(station, 'clean', 'WD_X1'): 'WDaerosol',
+    }, send
+)
+station_profile_data['aerosol']['avgh']['wind'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'avgh', 'WS1_XM1'): 'WSgrad', Name(station, 'avgh', 'WD1_XM1'): 'WDgrad',
+        Name(station, 'avgh', 'WS_X1'): 'WSaerosol', Name(station, 'avgh', 'WD_X1'): 'WDaerosol',
+    }, send
+)
+station_profile_data['aerosol']['editing']['wind'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+    start_epoch_ms, end_epoch_ms, station, 'aerosol', {
+        Name(station, 'clean', 'WS1_XM1'): 'WSgrad', Name(station, 'clean', 'WD1_XM1'): 'WDgrad',
+        Name(station, 'clean', 'WS_X1'): 'WSaerosol', Name(station, 'clean', 'WD_X1'): 'WDaerosol',
     }, send
 )
 
