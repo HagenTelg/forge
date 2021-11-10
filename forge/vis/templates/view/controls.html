@@ -1,5 +1,5 @@
 <style>
-div.controls {
+nav.controls {
   position: absolute;
   top: 0;
   left: 0;
@@ -7,10 +7,10 @@ div.controls {
   transition: 0.2s;
   margin: 2px 0 0 2px;
 }
-div.controls:hover {
+nav.controls:hover {
   opacity: 1;
 }
-div.controls > button {
+nav.controls > button {
   border: none;
   text-align: center;
   font-size: 16px;
@@ -18,10 +18,16 @@ div.controls > button {
   padding: 2px;
   background: rgba(0, 0, 0, 0);
 }
-div.controls > button.hidden {
+nav.controls > button.character-icon {
+  font-weight: bold;
+  font-family: monospace;
+  width: 16px;
+  text-align: center;
+}
+nav.controls > button.hidden {
   display: none;
 }
 </style>
 
-<div id="control_bar" class="controls"></div>
+<nav id="control_bar" class="controls"></nav>
 

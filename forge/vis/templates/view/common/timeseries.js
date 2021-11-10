@@ -138,8 +138,7 @@ var TimeSeriesCommon = {};
     TimeSeriesCommon.addContaminationToggleButton = function(traces) {
         const button = document.createElement('button');
         document.getElementById('control_bar').appendChild(button);
-        button.classList.add('mdi');
-        button.classList.add('mdi-filter');
+        button.classList.add('mdi', 'mdi-filter');
         button.classList.add('contamination-toggle');
         button.classList.add('hidden');
         button.title = 'Toggle displaying contaminated data';
@@ -154,9 +153,7 @@ var TimeSeriesCommon = {};
     TimeSeriesCommon.addSymbolToggleButton = function(traces) {
         const button = document.createElement('button');
         document.getElementById('control_bar').appendChild(button);
-        button.classList.add('mdi');
-        button.classList.add('mdi-chart-line-variant');
-        button.classList.add('symbol-toggle');
+        button.classList.add('mdi', 'mdi-chart-line-variant');
         button.title = 'Toggle data point symbol display';
         $(button).click(function(event) {
             event.preventDefault();
@@ -168,6 +165,55 @@ var TimeSeriesCommon = {};
                     trace.mode = 'lines';
                 }
             });
+            traces.updateDisplay(true);
+        });
+    }
+
+    const AVERAGE_NONE = 0;
+    const AVERAGE_HOUR = 1;
+    const AVERAGE_DAY = 2;
+    const AVERAGE_MONTH = 3;
+    let averagingMode = AVERAGE_NONE;
+    TimeSeriesCommon.addAveragingButton = function(traces) {
+        const button = document.createElement('button');
+        document.getElementById('control_bar').appendChild(button);
+        button.classList.add('mdi', 'mdi-sine-wave');
+        button.title = 'Cycle data averaging modes (current: no averaging)';
+        $(button).click(function(event) {
+            event.preventDefault();
+            switch (averagingMode) {
+            case AVERAGE_NONE:
+                if (!hideContaminatedData) {
+                    $('button.contamination-toggle').click();
+                }
+                averagingMode = AVERAGE_HOUR;
+                button.classList.remove('mdi', 'mdi-sine-wave');
+                button.classList.add('character-icon');
+                button.textContent = "H";
+                button.title = 'Cycle data averaging modes (current: one hour average)';
+                break;
+            case AVERAGE_HOUR:
+                averagingMode = AVERAGE_DAY;
+                button.classList.remove('mdi', 'mdi-sine-wave');
+                button.classList.add('character-icon');
+                button.textContent = "D";
+                button.title = 'Cycle data averaging modes (current: one day average)';
+                break;
+            case AVERAGE_DAY:
+                averagingMode = AVERAGE_MONTH;
+                button.classList.remove('mdi', 'mdi-sine-wave');
+                button.classList.add('character-icon');
+                button.textContent = "M";
+                button.title = 'Cycle data averaging modes (current: monthly average)';
+                break;
+            default:
+                averagingMode = AVERAGE_NONE;
+                button.classList.add('mdi', 'mdi-sine-wave');
+                button.classList.remove('character-icon');
+                button.textContent = "";
+                button.title = 'Cycle data averaging modes (current: no averaging)';
+                break;
+            }
             traces.updateDisplay(true);
         });
     }
@@ -217,7 +263,6 @@ var TimeSeriesCommon = {};
 
             this.contaminationSegments = [];
             if (contaminationRecord && contaminationRecord !== '') {
-                console.log(contaminationRecord);
                 DataSocket.addLoadedRecord(contaminationRecord,
                     (dataName) => {
                         return new Contamination.DataStream(dataName);
@@ -261,6 +306,10 @@ var TimeSeriesCommon = {};
             return hideContaminatedData && this.contaminationSegments.length !== 0;
         }
 
+        needToApplyAveraging() {
+            return averagingMode !== AVERAGE_NONE;
+        }
+
         filterDataContamination(data) {
             data.y.length = 0;
             let segmentIndex = 0;
@@ -292,10 +341,110 @@ var TimeSeriesCommon = {};
             }
         }
 
+        averageData(data) {
+            if (this.epoch_ms.length === 0) {
+                return;
+            }
+
+            function toAverageBegin(epoch_ms) {
+                switch (averagingMode) {
+                case AVERAGE_HOUR:
+                    return Math.floor(epoch_ms / (60 * 60 * 1000)) * (60 * 60 * 1000);
+                case AVERAGE_DAY:
+                    return Math.floor(epoch_ms / (24 * 60 * 60 * 1000)) * (24 * 60 * 60 * 1000);
+                case AVERAGE_MONTH:
+                    let date = new Date(Math.floor(epoch_ms));
+                    date.setUTCMilliseconds(0);
+                    date.setUTCSeconds(0);
+                    date.setUTCMinutes(0);
+                    date.setUTCHours(0);
+                    date.setUTCDate(1);
+                    return date.getTime();
+                default:
+                    throw 'Unsupported averaging mode';
+                }
+            }
+            function toAverageEnd(epoch_ms) {
+                switch (averagingMode) {
+                case AVERAGE_HOUR:
+                    return epoch_ms + (60 * 60 * 1000);
+                case AVERAGE_DAY:
+                    return epoch_ms + (24 * 60 * 60 * 1000);
+                case AVERAGE_MONTH:
+                    let date = new Date(Math.floor(epoch_ms));
+                    date.setUTCMilliseconds(0);
+                    date.setUTCSeconds(0);
+                    date.setUTCMinutes(0);
+                    date.setUTCHours(0);
+                    date.setUTCDate(1);
+                    if (date.getUTCMonth() === 11) {
+                        date.setUTCFullYear(date.getUTCFullYear() + 1);
+                        date.setUTCMonth(0);
+                    } else {
+                        date.setUTCMonth(date.getUTCMonth() + 1);
+                    }
+                    return date.getTime();
+                default:
+                    throw 'Unsupported averaging mode';
+                }
+            }
+
+            let outputX = [];
+            let outputY = [];
+
+            let averageBegin = toAverageBegin(this.epoch_ms[0]);
+            let averageEnd = toAverageEnd(averageBegin);
+            outputX.push(DataSocket.toPlotTime(averageBegin));
+
+            let sumY = 0;
+            let countY = 0;
+            for (let i=0; i<this.epoch_ms.length; i++) {
+                if (this.epoch_ms[i] < averageEnd) {
+                    if (isFinite(data.y[i])) {
+                        sumY += data.y[i];
+                        countY++;
+                    }
+                    continue;
+                }
+                if (countY > 0) {
+                    outputY.push(sumY / countY);
+                } else {
+                    outputY.push(undefined);
+                }
+                sumY = 0;
+                countY = 0;
+
+                averageBegin = averageEnd;
+                averageEnd = toAverageEnd(averageBegin);
+                while (averageBegin < this.epoch_ms[i]) {
+                    outputX.push(DataSocket.toPlotTime(averageBegin));
+                    outputY.push(undefined);
+
+                    averageBegin = averageEnd;
+                    averageEnd = toAverageEnd(averageBegin);
+                }
+
+                outputX.push(DataSocket.toPlotTime(averageBegin));
+                if (isFinite(data.y[i])) {
+                    sumY += data.y[i];
+                    countY++;
+                }
+            }
+            if (countY > 0) {
+                outputY.push(sumY / countY);
+            } else {
+                outputY.push(undefined);
+            }
+
+            data.x = outputX;
+            data.y = outputY;
+        }
+
         apply(data) {
             const applyContamination = this.needToApplyContamination();
+            const applyAveraging = this.needToApplyAveraging();
 
-            if (!applyContamination) {
+            if (!applyContamination && !applyAveraging) {
                 if (this.y) {
                     data.y = this.y;
                     this.y = undefined;
@@ -310,8 +459,27 @@ var TimeSeriesCommon = {};
                 this.y = data.y.slice();
             }
 
+            data.y.length = 0;
+            for (let i=0; i<this.y.length; i++) {
+                data.y.push(this.y[i]);
+            }
+
             if (applyContamination) {
+                if (this.x) {
+                    data.x.length = 0;
+                    for (let i=0; i<this.x.length; i++) {
+                        data.x.push(this.x[i]);
+                    }
+                }
+
                 this.filterDataContamination(data);
+            }
+
+            if (applyAveraging) {
+                if (!this.x) {
+                    this.x = data.x.slice();
+                }
+                this.averageData(data);
             }
         }
     }

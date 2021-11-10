@@ -123,6 +123,7 @@ TimeSeriesCommon.updateShapes = function() { shapeHandler.update(); }
 
 TimeSeriesCommon.addSymbolToggleButton(traces);
 TimeSeriesCommon.addContaminationToggleButton(traces);
+TimeSeriesCommon.addAveragingButton(traces);
 
 
 DataSocket.resetLoadedRecords();

@@ -13,6 +13,7 @@ class _ExampleTimeSeries(TimeSeries):
 
         Mm_1 = TimeSeries.Axis()
         Mm_1.title = "Mm⁻¹"
+        Mm_1.format_code = '.2f'
         light_extinction.axes.append(Mm_1)
 
         BsG = TimeSeries.Trace(Mm_1)
@@ -36,9 +37,12 @@ class _ExampleTimeSeries(TimeSeries):
 
         C = TimeSeries.Axis()
         C.title = "°C"
+        C.format_code = '.1f'
         sample_conditions.axes.append(C)
+
         hPa = TimeSeries.Axis()
         hPa.title = "hPa"
+        hPa.format_code = '.1f'
         sample_conditions.axes.append(hPa)
 
         T = TimeSeries.Trace(C)
@@ -60,6 +64,7 @@ class _ExampleTimeSeries(TimeSeries):
 
         C = TimeSeries.Axis()
         C.title = "°C"
+        C.format_code = '.1f'
         ambient_conditions.axes.append(C)
 
         Tambient = TimeSeries.Trace(C)
@@ -89,9 +94,12 @@ class _ExampleSolarTimeSeries(SolarTimeSeries):
 
         C = TimeSeries.Axis()
         C.title = "°C"
+        C.format_code = '.1f'
+
         sample_conditions.axes.append(C)
         hPa = TimeSeries.Axis()
         hPa.title = "hPa"
+        hPa.format_code = '.1f'
         sample_conditions.axes.append(hPa)
 
         T = TimeSeries.Trace(C)
