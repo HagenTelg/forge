@@ -31,6 +31,19 @@ nav.topbar > ul {
   flex-grow: 1;
 }
 
+.topbar-text {
+  display: inline-block;
+  color: white;
+  padding: 12px 16px;
+  background-color: inherit;
+  font-size: 16px;
+  box-sizing: border-box;
+  height: 48px;
+  font-family: serif;
+  line-height: 24px;
+  cursor: default;
+}
+
 .topbar-button {
   border: none;
   outline: none;
@@ -41,6 +54,7 @@ nav.topbar > ul {
   font-size: 16px;
   box-sizing: border-box;
   height: 48px;
+  font-family: serif;
 }
 
 .topbar-button.mdi-menu {
