@@ -416,7 +416,7 @@ var TimeSeriesCommon = {};
 
                 averageBegin = averageEnd;
                 averageEnd = toAverageEnd(averageBegin);
-                while (averageBegin < this.epoch_ms[i]) {
+                while (averageEnd <= this.epoch_ms[i]) {
                     outputX.push(DataSocket.toPlotTime(averageBegin));
                     outputY.push(undefined);
 
