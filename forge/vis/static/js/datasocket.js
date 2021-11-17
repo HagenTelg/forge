@@ -86,16 +86,12 @@ let DataSocket = {};
         const parts = plot_time.trim().split(rePlotTimeSplit);
         let date = new Date();
         date.setUTCFullYear(parseInt(parts[0]));
-        date.setUTCMonth(parseInt(parts[1])-1);
-        date.setUTCDate(parseInt(parts[2]));
-        date.setUTCHours(parseInt(parts[3]));
-        date.setUTCMinutes(parseInt(parts[4]));
-        date.setUTCSeconds(parseInt(parts[5]));
-        if (parts.length > 6) {
-            date.setUTCMilliseconds(parseInt(parts[6]));
-        } else {
-            date.setUTCMilliseconds(0);
-        }
+        date.setUTCMonth((parseInt(parts[1]) || 1) - 1);
+        date.setUTCDate(parseInt(parts[2]) || 1);
+        date.setUTCHours(parseInt(parts[3]) || 0);
+        date.setUTCMinutes(parseInt(parts[4]) || 0);
+        date.setUTCSeconds(parseInt(parts[5]) || 0);
+        date.setUTCMilliseconds(parseInt(parts[6]) || 0);
         return date.getTime();
     }
 
