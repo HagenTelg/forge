@@ -235,6 +235,12 @@ var TimeSeriesCommon = {};
 
             TimeSelect.zoom(start_ms, end_ms);
         });
+        TimeSelect.applyZoom = function(start_ms, end_ms) {
+            Plotly.relayout(div, {
+                'xaxis.range[0]': DataSocket.toPlotTime(start_ms),
+                'xaxis.range[1]': DataSocket.toPlotTime(end_ms),
+            });
+        }
     }
 
     TimeSeriesCommon.installSpikeToggleHandler = function(div) {

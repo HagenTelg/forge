@@ -45,3 +45,25 @@ a.view-select.active {
   background-color: #08f;
   color: white;
 }
+
+.time-history {
+  border: none;
+  outline: none;
+  display: none;
+  position: fixed;
+  z-index: 2;
+  left: 0;
+  bottom: 0;
+  padding: 0;
+  margin: 0;
+  width: 300px;
+  overflow: hidden;
+  background-color: #333;
+  color: white;
+}
+.time-history-saved-range {
+  display: block;
+  margin: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}

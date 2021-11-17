@@ -519,5 +519,11 @@ let TimeParse = {};
             cb();
         });
     }
+    TimeSelect.applyZoom = function(start_ms, end_ms) {}
+    TimeSelect.resetZoomConnections = function() {
+        TimeSelect.applyZoom = function(start_ms, end_ms) {};
+        TimeSelect.zoom_start_ms = undefined;
+        TimeSelect.zoom_end_ms = undefined;
+    }
 })();
 

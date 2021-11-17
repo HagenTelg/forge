@@ -5,6 +5,10 @@ localStorage.setItem('forge-last-mode', '{{ mode.mode_name }}');
 
 $('a.view-select').click(function(event) {
     event.preventDefault();
+
+    DataSocket.resetLoadedRecords();
+    TimeSelect.resetZoomConnections();
+
     $('a.view-select').not(this).removeClass('active');
     $(this).addClass('active');
     localStorage.setItem('forge-last-view', $(this).attr('name'));
@@ -64,9 +68,67 @@ window.addEventListener("message", (event) => {
 });
 
 
+let savedZoom = [];
+function restoreSavedZoom() {
+    while (savedZoom.length > 0) {
+        const start_ms = savedZoom[savedZoom.length-1].start_ms;
+        const end_ms = savedZoom[savedZoom.length-1].end_ms;
+        savedZoom.pop();
+
+        if (start_ms === TimeSelect.zoom_start_ms && end_ms === TimeSelect.zoom_end_ms) {
+            continue;
+        }
+
+        TimeSelect.applyZoom(start_ms, end_ms);
+        updateSavedZoomDisplay();
+        return;
+    }
+
+    TimeSelect.resetTimeRange();
+    updateSavedZoomDisplay();
+}
+function updateSavedZoomDisplay() {
+    if (savedZoom.length === 0) {
+        document.getElementById('time_history_container').style.display = 'none';
+        return;
+    }
+
+    document.getElementById('time_history_container').style.display = 'block';
+    document.getElementById("time_history_saved").textContent =
+        TimeParse.toDisplayTime(savedZoom[savedZoom.length-1].start_ms) + " to " +
+        TimeParse.toDisplayTime(savedZoom[savedZoom.length-1].end_ms);
+}
+function saveCurrentZoom() {
+    if (!TimeSelect.zoom_start_ms || !TimeSelect.zoom_end_ms) {
+        return;
+    }
+    if (savedZoom.length !== 0) {
+        if (TimeSelect.zoom_start_ms === savedZoom[savedZoom.length-1].start_ms &&
+                TimeSelect.zoom_end_ms === savedZoom[savedZoom.length-1].end_ms) {
+            return;
+        }
+    }
+    savedZoom.push({
+        start_ms: TimeSelect.zoom_start_ms,
+        end_ms: TimeSelect.zoom_end_ms,
+    });
+    updateSavedZoomDisplay();
+}
+$('#time_history_container').click(function(event) {
+    event.preventDefault();
+    restoreSavedZoom();
+});
+
+
 $(document).ready(function(event) {
     TimeSelect.fetchLatestPassed = function() {
         return $.get("{{ request.url_for('latest_passed', station=station, mode_name=mode.mode_name) }}");
+    }
+
+    if (localStorage.getItem('forge-settings-plot-autosave-zoom')) {
+        TimeSelect.onZoom('ViewListAutosaveZoom', () => {
+            saveCurrentZoom();
+        });
     }
 });
 
@@ -142,6 +204,23 @@ $(document).keydown(function(event) {
         event.preventDefault();
 
         TimeSelect.resetTimeRange();
+        break;
+
+    case 'KeyZ':
+        if (isModalActive()) {
+            break;
+        }
+        event.preventDefault();
+
+        restoreSavedZoom();
+        break;
+    case 'KeyX':
+        if (isModalActive()) {
+            break;
+        }
+        event.preventDefault();
+
+        saveCurrentZoom();
         break;
     }
 });
