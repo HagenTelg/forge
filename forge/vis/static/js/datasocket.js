@@ -91,7 +91,11 @@ let DataSocket = {};
         date.setUTCHours(parseInt(parts[3]));
         date.setUTCMinutes(parseInt(parts[4]));
         date.setUTCSeconds(parseInt(parts[5]));
-        date.setUTCMilliseconds(parseInt(parts[6]));
+        if (parts.length > 6) {
+            date.setUTCMilliseconds(parseInt(parts[6]));
+        } else {
+            date.setUTCMilliseconds(0);
+        }
         return date.getTime();
     }
 
