@@ -1,5 +1,5 @@
 import os.path
-from forge.const import STATIONS, __version__
+from forge.const import STATIONS, HELP_URL, __version__
 from . import CONFIGURATION
 from jinja2 import Environment, PackageLoader, select_autoescape
 
@@ -12,6 +12,7 @@ TEMPLATE_ENV = Environment(
 )
 TEMPLATE_ENV.globals['STATIONS'] = STATIONS
 TEMPLATE_ENV.globals['VERSION'] = __version__
+TEMPLATE_ENV.globals['HELP_URL'] = HELP_URL
 TEMPLATE_ENV.globals['DEBUG'] = CONFIGURATION.as_bool('SERVER.DEBUG')
 TEMPLATE_ENV.globals['OFFLINE'] = CONFIGURATION.as_bool('SERVER.OFFLINE')
 

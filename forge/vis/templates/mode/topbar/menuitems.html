@@ -9,3 +9,7 @@
 {% elif ENABLE_LOGIN %}
 <li><a class="main-menu-item" href="{{ request.url_for('login') }}">Login</a></li>
 {% endif %}
+
+{% if HELP_URL %}
+<li><a class="main-menu-item" href="{{ HELP_URL }}">Help</a></li>
+{% endif %}
