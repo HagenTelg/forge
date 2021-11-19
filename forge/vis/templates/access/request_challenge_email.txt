@@ -1,6 +1,6 @@
-Access request approved for {{ stations|join(',')|upper }}.
+Confirming access for {{ stations|join(',')|upper }} - READ BELOW.
 
-If you are the one that initiated the request, please go to {{ confirm_url }} while logged in to the system.
+Access to {{ stations|join(',')|upper }} has been approved, but this must be confirmed before anything is accessible.  If you requested access, please go to {{ confirm_url }} while logged in to the system to complete the process.  This action must be taken by the user, no further action by the approving authority is required.
 
 If you did not request this access grant, please disregard this email.
 

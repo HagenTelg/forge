@@ -893,7 +893,7 @@ class ControlInterface:
                     }
 
                     message = EmailMessage()
-                    message['Subject'] = f"{','.join(stations).upper()} - Access Grant"
+                    message['Subject'] = f"{','.join(stations).upper()} - Access Confirmation"
                     message['To'] = user.email
                     addrs = ', '.join(CONFIGURATION.get('AUTHENTICATION.REQUEST.EMAIL', []))
                     if len(addrs) > 0:

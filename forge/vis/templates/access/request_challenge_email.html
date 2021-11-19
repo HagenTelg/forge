@@ -1,7 +1,9 @@
-<h1>Access request approved for {{ stations|join(',')|upper }}</h1>
+<h1>Confirming access for {{ stations|join(',')|upper }} - READ BELOW</h1>
 
 <p>
-If you are the one that initiated the request, please click <a href="{{ confirm_url }}">here</a> while logged in to the system.
+Access to {{ stations|join(',')|upper }} has been approved, <b>but this must be confirmed</b> before anything is accessible.
+If you requested access, please click <a href="{{ confirm_url }}">here</a> while logged in to the system to complete the process.
+This action must be taken by the user, no further action by the approving authority is required.
 </p>
 
 <p>
@@ -11,6 +13,6 @@ If you did not request this access grant, please disregard this email.
 
 <p>
 <b>Note for those that initiated the approval:</b> only the granted user needs to use the confirmation link above.
-You are simply CC'ed on this email for documentation purposes
+You are simply CC'ed on this email for documentation purposes.
 </p>
 
