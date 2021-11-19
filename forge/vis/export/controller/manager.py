@@ -55,10 +55,10 @@ class _ExportRequest:
         self.export_key = export_key
         self.start_epoch_ms = start_epoch_ms
         self.end_epoch_ms = end_epoch_ms
-        self._attached: typing.List[asyncio.Future[ExportedFile]] = list()
+        self._attached: typing.List[asyncio.Future] = list()
         self._check_canceled: typing.Optional[typing.Callable[[], None]] = None
 
-    def attach(self) -> asyncio.Future[ExportedFile]:
+    def attach(self) -> asyncio.Future:
         result = asyncio.get_running_loop().create_future()
         self._attached.append(result)
         if self._check_canceled:
@@ -175,7 +175,7 @@ class Manager:
         asyncio.get_event_loop().create_task(execute())
 
     def __call__(self, station: str, mode_name: str, export_key: str,
-                 start_epoch_ms: int, end_epoch_ms: int) -> asyncio.Future[ExportedFile]:
+                 start_epoch_ms: int, end_epoch_ms: int) -> asyncio.Future:
         key = _ExportKey(station, mode_name, export_key, start_epoch_ms, end_epoch_ms)
         ready = self._ready.get(key)
         if ready:

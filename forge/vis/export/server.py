@@ -56,7 +56,7 @@ async def _export_connection(station: str, mode_name: str, export_key: str, star
 
 
 class _ExportStream:
-    def __init__(self, reader: typing.Union[asyncio.Future[ExportedFile], asyncio.StreamReader],
+    def __init__(self, reader: typing.Union[asyncio.Future, asyncio.StreamReader],
                  writer: typing.Optional[asyncio.StreamWriter] = None):
         self.task: typing.Optional[asyncio.Task] = None
 
