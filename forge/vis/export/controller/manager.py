@@ -59,7 +59,7 @@ class _ExportRequest:
         self._check_canceled: typing.Optional[typing.Callable[[], None]] = None
 
     def attach(self) -> asyncio.Future:
-        result = asyncio.get_running_loop().create_future()
+        result = asyncio.get_event_loop().create_future()
         self._attached.append(result)
         if self._check_canceled:
             result.add_done_callback(self._check_canceled)
@@ -180,7 +180,7 @@ class Manager:
         ready = self._ready.get(key)
         if ready:
             ready.accessed = time.time()
-            result = asyncio.get_running_loop().create_future()
+            result = asyncio.get_event_loop().create_future()
             result.set_result(ready)
             return result
 
