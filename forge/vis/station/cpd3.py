@@ -1727,8 +1727,7 @@ class DataExport(Export):
                                                         str(self.start_epoch), str(self.end_epoch),
                                                         *selections,
                                                         stdout=target_file,
-                                                        stdin=asyncio.subprocess.DEVNULL,
-                                                        cwd=self.directory)
+                                                        stdin=asyncio.subprocess.DEVNULL)
         await exporter.communicate()
         return Export.Result()
 
