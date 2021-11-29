@@ -6,36 +6,25 @@ import random
 import sqlalchemy as db
 import sqlalchemy.orm as orm
 import starlette.status
-from sqlite3 import Connection as SQLiteConnection
 from secrets import token_urlsafe
-from concurrent.futures import ThreadPoolExecutor, Future
+from concurrent.futures import Future
 from starlette.responses import Response, RedirectResponse, JSONResponse, HTMLResponse
 from starlette.exceptions import HTTPException
 from starlette.authentication import requires
 from starlette.routing import Route
-from sqlalchemy import event, create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
-from sqlalchemy.pool import SingletonThreadPool
 from passlib.hash import pbkdf2_sha256
 from authlib.integrations.starlette_client import OAuth
 from forge.email import is_valid_email, send_email, EmailMessage
 from forge.vis.util import package_template, name_to_initials
 from forge.vis import CONFIGURATION
 from forge.const import DISPLAY_STATIONS
+from forge.database import ORMDatabase
 from . import BaseAccessUser, BaseAccessController, Request
 
 
 _LOGGER = logging.getLogger(__name__)
-
-
-@event.listens_for(Engine, "connect")
-def _set_sqlite_pragma(dbapi_connection, connection_record):
-    if isinstance(dbapi_connection, SQLiteConnection):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
-
 
 _Base = orm.declarative_base()
 
@@ -144,36 +133,9 @@ class _AuthOpenIDConnect(_Base):
     _users = orm.relationship(_User, backref=orm.backref('auth_oidc', passive_deletes=True))
 
 
-class _Database:
-    def __init__(self, uri):
-        self._engine = create_engine(uri)
-        self.foreground_only = False
-        if isinstance(self._engine.pool, SingletonThreadPool):
-            self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="Database")
-            self.sync(_Base.metadata.create_all)
-        else:
-            _Base.metadata.create_all(self._engine)
-            self._engine.dispose()
-            self._pool = ThreadPoolExecutor(thread_name_prefix="Database")
-
-    def future(self, call: typing.Callable[[Engine], typing.Any]) -> Future:
-        return self._pool.submit(call, self._engine)
-
-    async def execute(self, call: typing.Callable[[Engine], typing.Any]):
-        return await asyncio.wrap_future(self.future(call))
-
-    def background(self, call: typing.Callable[[Engine], None]):
-        if self.foreground_only:
-            return self.sync(call)
-        self.future(call)
-
-    def sync(self, call: typing.Callable[[Engine], typing.Any]):
-        return self.future(call).result()
-
-
 class AccessController(BaseAccessController):
-    def __init__(self, uri):
-        self.db = _Database(uri)
+    def __init__(self, uri: str):
+        self.db = ORMDatabase(uri, _Base)
         self._session_purge_started = False
 
         self.routes: typing.List[Route] = [
@@ -766,8 +728,8 @@ class AccessController(BaseAccessController):
 
 
 class ControlInterface:
-    def __init__(self, uri):
-        self.db = _Database(uri)
+    def __init__(self, uri: str):
+        self.db = ORMDatabase(uri, _Base)
 
     @staticmethod
     def _mode_filter(query, mode: str):
