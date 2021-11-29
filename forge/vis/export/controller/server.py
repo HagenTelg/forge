@@ -90,7 +90,7 @@ class Server(UnixServer):
                     break
             result.cancel()
 
-        read_detector = asyncio.get_event_loop().create_task(_detect_read_closed())
+        read_detector = asyncio.ensure_future(_detect_read_closed())
         try:
             export_file = await result
         except asyncio.CancelledError:

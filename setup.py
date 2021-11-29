@@ -31,6 +31,15 @@ setup(
         "forge-vis = forge.vis.__main__:main",
         "forge-vis-access = forge.vis.access.cli.__main__:main",
         "forge-vis-export-control = forge.vis.export.controller.server:main",
+
+        "forge-telemetry = forge.telemetry.__main__:main",
+        "forge-telemetry-control = forge.telemetry.cli.__main__:main",
+        "forge-telemetry-oneshot = forge.telemetry.oneshot.__main__:main",
+        "forge-telemetry-uplink = forge.telemetry.uplink.__main__:main",
+        "forge-telemetry-tunnel-hub = forge.telemetry.tunnel.hub:main",
+        "forge-telemetry-tunnel-remote = forge.telemetry.tunnel.remote:main",
+        "forge-telemetry-tunnel-proxy = forge.telemetry.tunnel.proxy:main",
+
         "forge-cpd3-cache-client = forge.cpd3.cache.client:main",
         "forge-cpd3-cache-server = forge.cpd3.cache.server:main",
         "forge-cpd3-pass-server = forge.cpd3.pass.server:main",

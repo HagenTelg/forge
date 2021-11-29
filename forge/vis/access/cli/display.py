@@ -27,7 +27,7 @@ def sort_users(sort_keys: typing.List[str], users: typing.List[typing.Dict]):
 
 
 def display_users_json(users: typing.List[typing.Dict]):
-    json_dump(users, sys.stdout)
+    json_dump(users, sys.stdout, default=str)
 
 
 def display_users_text(users: typing.List[typing.Dict]):
