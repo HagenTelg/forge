@@ -10,6 +10,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 from zipfile import ZipFile, ZIP_DEFLATED
 from pathlib import Path
 from shutil import copyfileobj
+from forge.tasks import background_task
 from forge.vis import CONFIGURATION
 from forge.vis.export import Export
 from forge.vis.export.assemble import export_data
@@ -172,7 +173,7 @@ class Manager:
             self._running = None
             asyncio.get_event_loop().call_soon(self._start_export)
 
-        asyncio.get_event_loop().create_task(execute())
+        background_task(execute())
 
     def __call__(self, station: str, mode_name: str, export_key: str,
                  start_epoch_ms: int, end_epoch_ms: int) -> asyncio.Future:

@@ -5,6 +5,7 @@ import struct
 from math import isfinite
 from dynaconf import Dynaconf
 from dynaconf.constants import DEFAULT_SETTINGS_FILES
+from forge.tasks import background_task
 from forge.service import UnixServer
 
 CONFIGURATION = Dynaconf(
@@ -168,7 +169,7 @@ class Server(UnixServer):
 
 def main():
     server = Server()
-    asyncio.get_event_loop().create_task(_process_queue())
+    background_task(_process_queue())
     server.run()
 
 

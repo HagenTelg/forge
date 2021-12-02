@@ -5,6 +5,7 @@ import logging
 import argparse
 import signal
 from abc import ABC, abstractmethod
+from forge.tasks import background_task
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class UnixServer(ABC):
             for fd in systemd.daemon.listen_fds():
                 _LOGGER.info(f"Binding to systemd socket {fd}")
                 sock = socket.socket(fileno=fd, type=socket.SOCK_STREAM, family=socket.AF_UNIX, proto=0)
-                loop.create_task(loop.create_server(factory, sock=sock))
+                background_task(loop.create_server(factory, sock=sock))
 
             async def heartbeat():
                 systemd.daemon.notify("READY=1")
@@ -59,14 +60,14 @@ class UnixServer(ABC):
                     await asyncio.sleep(10)
                     systemd.daemon.notify("WATCHDOG=1")
 
-            loop.create_task(heartbeat())
+            background_task(heartbeat())
         elif self.args.socket:
             _LOGGER.info(f"Binding to socket {self.args.socket}")
             try:
                 os.unlink(self.args.socket)
             except OSError:
                 pass
-            loop.create_task(asyncio.start_unix_server(self.connection, path=self.args.socket))
+            background_task(asyncio.start_unix_server(self.connection, path=self.args.socket))
         else:
             name = self.default_socket
             _LOGGER.info(f"Binding to socket {name}")
@@ -74,7 +75,7 @@ class UnixServer(ABC):
                 os.unlink(name)
             except OSError:
                 pass
-            loop.create_task(asyncio.start_unix_server(self.connection, path=name))
+            background_task(asyncio.start_unix_server(self.connection, path=name))
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         pass

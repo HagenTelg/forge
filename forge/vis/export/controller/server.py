@@ -3,6 +3,7 @@ import os
 import asyncio
 import logging
 import struct
+from forge.tasks import background_task
 from forge.vis import CONFIGURATION
 from forge.service import UnixServer
 from .manager import Manager, ExportedFile
@@ -140,7 +141,7 @@ class Server(UnixServer):
 
 def main():
     server = Server()
-    asyncio.get_event_loop().create_task(_prune())
+    background_task(_prune())
     server.run()
 
 

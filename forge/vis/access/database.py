@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from passlib.hash import pbkdf2_sha256
 from authlib.integrations.starlette_client import OAuth
 from forge.email import is_valid_email, send_email, EmailMessage
+from forge.tasks import background_task
 from forge.vis.util import package_template, name_to_initials
 from forge.vis import CONFIGURATION
 from forge.const import DISPLAY_STATIONS
@@ -236,7 +237,7 @@ class AccessController(BaseAccessController):
                 self.db.background(remove_old_sessions)
                 await asyncio.sleep(random.uniform(7200, 21600))
 
-        asyncio.get_event_loop().create_task(purge())
+        background_task(purge())
 
     async def authenticate(self, request: Request) -> typing.Optional[BaseAccessUser]:
         self._purge_sessions()

@@ -8,6 +8,7 @@ from collections import OrderedDict
 from tempfile import TemporaryFile
 from dynaconf import Dynaconf
 from dynaconf.constants import DEFAULT_SETTINGS_FILES
+from forge.tasks import background_task
 from forge.service import UnixServer
 
 CONFIGURATION = Dynaconf(
@@ -160,17 +161,17 @@ class _CacheEntry:
                     pass
 
             for t in self._queued_targets:
-                asyncio.ensure_future(send_to_target(t))
+                background_task(send_to_target(t))
             self._queued_targets.clear()
 
-        asyncio.ensure_future(run())
+        background_task(run())
 
     async def attach(self, writer: asyncio.StreamWriter) -> None:
         if not self._file:
             async def send():
                 await self._read_process(writer)
                 writer.close()
-            asyncio.ensure_future(send())
+            background_task(send())
             return
         if not self.reader_in_progress:
             self._direct_targets.append(writer)
@@ -179,7 +180,7 @@ class _CacheEntry:
             async def send():
                 await self._read_file(writer)
                 writer.close()
-            asyncio.ensure_future(send())
+            background_task(send())
             return
         self._queued_targets.append(writer)
 
@@ -324,7 +325,7 @@ class Server(UnixServer):
 
 def main():
     server = Server()
-    asyncio.get_event_loop().create_task(_prune())
+    background_task(_prune())
     server.run()
 
 
