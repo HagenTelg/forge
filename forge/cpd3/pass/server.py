@@ -1,13 +1,11 @@
 import typing
-import os
 import asyncio
 import logging
-import argparse
 import struct
-import signal
 from math import isfinite
 from dynaconf import Dynaconf
 from dynaconf.constants import DEFAULT_SETTINGS_FILES
+from forge.service import UnixServer
 
 CONFIGURATION = Dynaconf(
     environments=False,
@@ -75,7 +73,7 @@ _queued_updates: typing.List[_PassOperation] = list()
 _new_queued_update = asyncio.Event()
 
 
-async def _process_queue():
+async def _process_queue() -> typing.NoReturn:
     while True:
         await _new_queued_update.wait()
         n_process = len(_queued_updates)
@@ -121,114 +119,57 @@ async def _wait_for_passed(station: str, writer: asyncio.StreamWriter) -> None:
         await blocker.wait_for_done()
 
 
-async def _connection(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
-    _LOGGER.debug("Accepted connection")
-    try:
-        operation = struct.unpack('<B', await reader.readexactly(1))[0]
+class Server(UnixServer):
+    DESCRIPTION = "Forge tunnel coordinator server."
 
-        if operation == 1:
+    async def connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        _LOGGER.debug("Accepted connection")
+        try:
+            operation = struct.unpack('<B', await reader.readexactly(1))[0]
+
+            if operation == 1:
+                try:
+                    n = struct.unpack('<I', await reader.readexactly(4))[0]
+                    station = (await reader.readexactly(n)).decode('utf-8')
+                except (OSError, UnicodeDecodeError, EOFError):
+                    return
+                await _wait_for_passed(station, writer)
+                return
+
             try:
+                start_epoch = struct.unpack('<Q', await reader.readexactly(8))[0]
+                end_epoch = struct.unpack('<Q', await reader.readexactly(8))[0]
+
                 n = struct.unpack('<I', await reader.readexactly(4))[0]
                 station = (await reader.readexactly(n)).decode('utf-8')
+                n = struct.unpack('<I', await reader.readexactly(4))[0]
+                profile = (await reader.readexactly(n)).decode('utf-8')
+                n = struct.unpack('<I', await reader.readexactly(4))[0]
+                comment = (await reader.readexactly(n)).decode('utf-8')
             except (OSError, UnicodeDecodeError, EOFError):
                 return
-            await _wait_for_passed(station, writer)
-            return
 
-        try:
-            start_epoch = struct.unpack('<Q', await reader.readexactly(8))[0]
-            end_epoch = struct.unpack('<Q', await reader.readexactly(8))[0]
+            if not isfinite(start_epoch) or not isfinite(end_epoch) or end_epoch <= start_epoch:
+                return
+            if len(station) == 0 or len(profile) == 0:
+                return
 
-            n = struct.unpack('<I', await reader.readexactly(4))[0]
-            station = (await reader.readexactly(n)).decode('utf-8')
-            n = struct.unpack('<I', await reader.readexactly(4))[0]
-            profile = (await reader.readexactly(n)).decode('utf-8')
-            n = struct.unpack('<I', await reader.readexactly(4))[0]
-            comment = (await reader.readexactly(n)).decode('utf-8')
-        except (OSError, UnicodeDecodeError, EOFError):
-            return
+            await _pass_data(start_epoch, end_epoch, station, profile, comment)
+        finally:
+            try:
+                writer.close()
+            except OSError:
+                pass
 
-        if not isfinite(start_epoch) or not isfinite(end_epoch) or end_epoch <= start_epoch:
-            return
-        if len(station) == 0 or len(profile) == 0:
-            return
-
-        await _pass_data(start_epoch, end_epoch, station, profile, comment)
-    finally:
-        try:
-            writer.close()
-        except OSError:
-            pass
+    @property
+    def default_socket(self) -> str:
+        return CONFIGURATION.get('CPD3.PASS.SOCKET', '/run/forge-cpd3-pass.socket')
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Forge CPD3 pass control server.")
-
-    parser.add_argument('--debug',
-                        dest='debug', action='store_true',
-                        help="enable debug output")
-
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('--socket',
-                       dest="socket",
-                       help="the Unix socket name")
-    group.add_argument('--systemd',
-                       dest='systemd', action='store_true',
-                       help="receive the socket from systemd")
-
-    args = parser.parse_args()
-    if args.debug:
-        root_logger = logging.getLogger()
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(name)-40s %(message)s')
-        handler.setFormatter(formatter)
-        root_logger.setLevel(logging.DEBUG)
-        root_logger.addHandler(handler)
-
-    loop = asyncio.get_event_loop()
-
-    if args.systemd:
-        import systemd.daemon
-        import socket
-
-        def factory():
-            reader = asyncio.StreamReader()
-            protocol = asyncio.StreamReaderProtocol(reader, _connection)
-            return protocol
-
-        for fd in systemd.daemon.listen_fds():
-            _LOGGER.info(f"Binding to systemd socket {fd}")
-            sock = socket.socket(fileno=fd, type=socket.SOCK_STREAM, family=socket.AF_UNIX, proto=0)
-            loop.create_task(loop.create_server(factory, sock=sock))
-
-        async def heartbeat():
-            systemd.daemon.notify("READY=1")
-            while True:
-                await asyncio.sleep(10)
-                systemd.daemon.notify("WATCHDOG=1")
-
-        loop.create_task(heartbeat())
-    elif args.socket:
-        _LOGGER.info(f"Binding to socket {args.socket}")
-        try:
-            os.unlink(args.socket)
-        except OSError:
-            pass
-        loop.create_task(asyncio.start_unix_server(_connection, path=args.socket))
-    else:
-        name = CONFIGURATION.get('CPD3.PASS.SOCKET', '/run/forge-cpd3-pass.socket')
-        _LOGGER.info(f"Binding to socket {name}")
-        try:
-            os.unlink(name)
-        except OSError:
-            pass
-        loop.create_task(asyncio.start_unix_server(_connection, path=name))
-
-    loop.create_task(_process_queue())
-
-    loop.add_signal_handler(signal.SIGINT, loop.stop)
-    loop.add_signal_handler(signal.SIGTERM, loop.stop)
-    loop.run_forever()
+    server = Server()
+    asyncio.get_event_loop().create_task(_process_queue())
+    server.run()
 
 
 if __name__ == '__main__':

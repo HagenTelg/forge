@@ -2,14 +2,13 @@ import typing
 import os
 import asyncio
 import logging
-import argparse
 import struct
-import signal
 import time
 from collections import OrderedDict
 from tempfile import TemporaryFile
 from dynaconf import Dynaconf
 from dynaconf.constants import DEFAULT_SETTINGS_FILES
+from forge.service import UnixServer
 
 CONFIGURATION = Dynaconf(
     environments=False,
@@ -241,148 +240,92 @@ async def _empty_cache() -> None:
         await e.evict()
 
 
-async def _connection(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
-    _LOGGER.debug("Accepted connection")
-    try:
-        n_args = struct.unpack('<I', await reader.readexactly(4))[0]
-        args: typing.List[str] = list()
-        for i in range(n_args):
-            arg_len = struct.unpack('<I', await reader.readexactly(4))[0]
-            args.append((await reader.readexactly(arg_len)).decode('utf-8'))
-    except (OSError, UnicodeDecodeError, EOFError):
+async def _prune() -> typing.NoReturn:
+    max_entries = CONFIGURATION.get('CPD3.CACHE.MAXENTRIES', 64)
+    max_size = _MAXIMUM_SIZE = CONFIGURATION.get('CPD3.CACHE.MAXSIZE', 4 * 1024 * 1024 * 1024)
+
+    while True:
+        await asyncio.sleep(30)
+        expired: typing.List[_CacheEntry] = []
+        cache_size = 0
+        for key in list(_cache.keys()):
+            entry = _cache[key]
+            if entry.is_expired():
+                expired.append(entry)
+                del _cache[key]
+            else:
+                cache_size += entry.total_size
+
+        def prune_entry(key):
+            nonlocal cache_size
+            entry = _cache[key]
+            expired.append(entry)
+            cache_size -= entry.total_size
+            del _cache[key]
+            return entry
+
+        if len(_cache) > max_entries:
+            total_purge = len(_cache) - max_entries
+            for key in list(_cache.keys()):
+                prune_entry(key)
+                total_purge -= 1
+                if total_purge <= 0:
+                    break
+        if cache_size > max_size:
+            total_purge = cache_size - max_size
+            for key in list(_cache.keys()):
+                total_purge -= prune_entry(key).total_size
+                if total_purge <= 0:
+                    break
+
+        for e in expired:
+            await e.evict()
+
+
+class Server(UnixServer):
+    DESCRIPTION = "Forge CPD3 cache server."
+
+    async def connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        _LOGGER.debug("Accepted connection")
+        try:
+            n_args = struct.unpack('<I', await reader.readexactly(4))[0]
+            args: typing.List[str] = list()
+            for i in range(n_args):
+                arg_len = struct.unpack('<I', await reader.readexactly(4))[0]
+                args.append((await reader.readexactly(arg_len)).decode('utf-8'))
+        except (OSError, UnicodeDecodeError, EOFError):
+            try:
+                writer.close()
+            except OSError:
+                pass
+            return
+        _LOGGER.debug(f"Client args {args}")
+        if len(args) < 1:
+            try:
+                writer.close()
+            except OSError:
+                pass
+            return
+        operation = args[0]
+        if operation == "archive_read" or operation == "edited_read":
+            await _cached_read(writer, args)
+            return
+        elif operation == "directive_create" or operation == "directive_rmw" or operation == "update_passed":
+            await _empty_cache()
         try:
             writer.close()
         except OSError:
             pass
-        return
-    _LOGGER.debug(f"Client args {args}")
-    if len(args) < 1:
-        try:
-            writer.close()
-        except OSError:
-            pass
-        return
-    operation = args[0]
-    if operation == "archive_read" or operation == "edited_read":
-        await _cached_read(writer, args)
-        return
-    elif operation == "directive_create" or operation == "directive_rmw" or operation == "update_passed":
-        await _empty_cache()
-    try:
-        writer.close()
-    except OSError:
-        pass
+
+    @property
+    def default_socket(self) -> str:
+        return CONFIGURATION.get('CPD3.CACHE.SOCKET', '/run/forge-cpd3-cache.socket')
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Forge CPD3 cache server.")
-
-    parser.add_argument('--debug',
-                        dest='debug', action='store_true',
-                        help="enable debug output")
-
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('--socket',
-                       dest="socket",
-                       help="the Unix socket name")
-    group.add_argument('--systemd',
-                       dest='systemd', action='store_true',
-                       help="receive the socket from systemd")
-
-    args = parser.parse_args()
-    if args.debug:
-        root_logger = logging.getLogger()
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(name)-40s %(message)s')
-        handler.setFormatter(formatter)
-        root_logger.setLevel(logging.DEBUG)
-        root_logger.addHandler(handler)
-
-    loop = asyncio.get_event_loop()
-
-    if args.systemd:
-        import systemd.daemon
-        import socket
-
-        def factory():
-            reader = asyncio.StreamReader()
-            protocol = asyncio.StreamReaderProtocol(reader, _connection)
-            return protocol
-
-        for fd in systemd.daemon.listen_fds():
-            _LOGGER.info(f"Binding to systemd socket {fd}")
-            sock = socket.socket(fileno=fd, type=socket.SOCK_STREAM, family=socket.AF_UNIX, proto=0)
-            loop.create_task(loop.create_server(factory, sock=sock))
-
-        async def heartbeat():
-            systemd.daemon.notify("READY=1")
-            while True:
-                await asyncio.sleep(10)
-                systemd.daemon.notify("WATCHDOG=1")
-
-        loop.create_task(heartbeat())
-    elif args.socket:
-        _LOGGER.info(f"Binding to socket {args.socket}")
-        try:
-            os.unlink(args.socket)
-        except OSError:
-            pass
-        loop.create_task(asyncio.start_unix_server(_connection, path=args.socket))
-    else:
-        name = CONFIGURATION.get('CPD3.CACHE.SOCKET', '/run/forge-cpd3-cache.socket')
-        _LOGGER.info(f"Binding to socket {name}")
-        try:
-            os.unlink(name)
-        except OSError:
-            pass
-        loop.create_task(asyncio.start_unix_server(_connection, path=name))
-
-    async def prune():
-        max_entries = CONFIGURATION.get('CPD3.CACHE.MAXENTRIES', 64)
-        max_size = _MAXIMUM_SIZE = CONFIGURATION.get('CPD3.CACHE.MAXSIZE', 4 * 1024 * 1024 * 1024)
-
-        while True:
-            await asyncio.sleep(30)
-            expired: typing.List[_CacheEntry] = []
-            cache_size = 0
-            for key in list(_cache.keys()):
-                entry = _cache[key]
-                if entry.is_expired():
-                    expired.append(entry)
-                    del _cache[key]
-                else:
-                    cache_size += entry.total_size
-
-            def prune_entry(key):
-                nonlocal cache_size
-                entry = _cache[key]
-                expired.append(entry)
-                cache_size -= entry.total_size
-                del _cache[key]
-                return entry
-
-            if len(_cache) > max_entries:
-                total_purge = len(_cache) - max_entries
-                for key in list(_cache.keys()):
-                    prune_entry(key)
-                    total_purge -= 1
-                    if total_purge <= 0:
-                        break
-            if cache_size > max_size:
-                total_purge = cache_size - max_size
-                for key in list(_cache.keys()):
-                    total_purge -= prune_entry(key).total_size
-                    if total_purge <= 0:
-                        break
-
-            for e in expired:
-                await e.evict()
-
-    loop.create_task(prune())
-
-    loop.add_signal_handler(signal.SIGINT, loop.stop)
-    loop.add_signal_handler(signal.SIGTERM, loop.stop)
-    loop.run_forever()
+    server = Server()
+    asyncio.get_event_loop().create_task(_prune())
+    server.run()
 
 
 if __name__ == '__main__':
