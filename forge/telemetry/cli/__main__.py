@@ -124,8 +124,8 @@ def parse_arguments():
     args = parser.parse_args()
     if args.command == 'access-revoke' and args.public_key is None and not args.multiple:
         parser.error("--multiple required when revoking access without a key")
-    elif args.command == 'purge' and args.public_key is None and not args.multiple:
-        parser.error("--multiple required when purging hosts without a key")
+    elif args.command == 'purge' and args.public_key is None and args.host is None and not args.multiple:
+        parser.error("--multiple required when purging hosts without a key or host")
     return args
 
 
