@@ -55,7 +55,7 @@ def display_hosts_text(hosts: typing.List[typing.Dict]) -> None:
 
         columns.append(host['public_key'])
         columns.append(str(host['id']))
-        columns.append(host.get('station', '').upper())
+        columns.append((host.get('station') or "").upper())
         columns.append(f"{host['last_seen']:%Y-%m-%d}")
         columns.append(host.get('remote_host', ''))
 
@@ -126,7 +126,7 @@ def display_details_text(hosts: typing.List[typing.Dict]) -> None:
             print("\n\n")
         first = False
 
-        print(f"****** {host['public_key']} ({host['id']}) {host.get('station', '').upper()} ******")
+        print(f"****** {host['public_key']} ({host['id']}) {(host.get('station') or '').upper()} ******")
         print(f"Last seen: {host['last_seen']:%Y-%m-%d %H:%M:%S}")
         if host.get('boot_time'):
             dt = datetime.datetime.fromtimestamp(host['boot_time'], datetime.timezone.utc)
@@ -211,7 +211,7 @@ def display_access_text(access: typing.List[typing.Dict]) -> None:
         a['display_columns'] = columns
 
         columns.append(a['public_key'])
-        columns.append(a.get('station', '').upper())
+        columns.append((a.get('station') or "").upper())
 
         for i in range(len(columns)):
             column_widths[i] = max(column_widths[i], len(columns[i]))
