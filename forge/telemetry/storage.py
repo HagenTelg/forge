@@ -21,7 +21,7 @@ _Base = orm.declarative_base()
 
 
 class _Host(_Base):
-    __tablename__ = 'hosts'
+    __tablename__ = 'host_data'
     __table_args__ = {
         'mysql_engine': 'InnoDB',
         'mariadb_engine': 'InnoDB',
@@ -41,10 +41,10 @@ class _HostDirect(_Base):
         'mariadb_engine': 'InnoDB',
     }
 
-    host = db.Column(db.Integer, db.ForeignKey('hosts.id', ondelete='CASCADE'), primary_key=True)
+    host_data = db.Column(db.Integer, db.ForeignKey('host_data.id', ondelete='CASCADE'), primary_key=True)
     sequence_number = db.Column(db.BigInteger)
 
-    _hosts = orm.relationship(_Host, backref=orm.backref('host_direct', passive_deletes=True))
+    _host = orm.relationship(_Host, backref=orm.backref('host_direct', passive_deletes=True))
 
 
 class _AccessStation(_Base):
@@ -66,7 +66,7 @@ class _Telemetry(_Base):
         'mariadb_engine': 'InnoDB',
     }
 
-    host = db.Column(db.Integer, db.ForeignKey('hosts.id', ondelete='CASCADE'), primary_key=True)
+    host_data = db.Column(db.Integer, db.ForeignKey('host_data.id', ondelete='CASCADE'), primary_key=True)
     last_update = db.Column(db.DateTime)
     telemetry = db.Column(db.Text)
 
@@ -80,7 +80,7 @@ class _TelemetryTimeOffset(_Base):
         'mariadb_engine': 'InnoDB',
     }
 
-    host = db.Column(db.Integer, db.ForeignKey('hosts.id', ondelete='CASCADE'), primary_key=True)
+    host_data = db.Column(db.Integer, db.ForeignKey('host_data.id', ondelete='CASCADE'), primary_key=True)
     last_update = db.Column(db.DateTime)
     offset = db.Column(db.Integer)
 
@@ -94,7 +94,7 @@ class _TelemetryAddress(_Base):
         'mariadb_engine': 'InnoDB',
     }
 
-    host = db.Column(db.Integer, db.ForeignKey('hosts.id', ondelete='CASCADE'), primary_key=True)
+    host_data = db.Column(db.Integer, db.ForeignKey('host_data.id', ondelete='CASCADE'), primary_key=True)
     last_update = db.Column(db.DateTime)
     public_address = db.Column(db.String(41), nullable=True)
     local_address = db.Column(db.String(16), nullable=True)
@@ -110,7 +110,7 @@ class _TelemetryLogKernel(_Base):
         'mariadb_engine': 'InnoDB',
     }
 
-    host = db.Column(db.Integer, db.ForeignKey('hosts.id', ondelete='CASCADE'), primary_key=True)
+    host_data = db.Column(db.Integer, db.ForeignKey('host_data.id', ondelete='CASCADE'), primary_key=True)
     last_update = db.Column(db.DateTime)
     events = db.Column(db.Text)
 
@@ -124,7 +124,7 @@ class _TelemetryLogAcquisition(_Base):
         'mariadb_engine': 'InnoDB',
     }
 
-    host = db.Column(db.Integer, db.ForeignKey('hosts.id', ondelete='CASCADE'), primary_key=True)
+    host_data = db.Column(db.Integer, db.ForeignKey('host_data.id', ondelete='CASCADE'), primary_key=True)
     last_update = db.Column(db.DateTime)
     events = db.Column(db.Text)
 
@@ -142,9 +142,9 @@ class Interface:
     @staticmethod
     def _update_host_telemetry(orm_session: Session, current_time: datetime.datetime, host,
                                table: _Base, **kwargs) -> None:
-        target = orm_session.query(table).filter_by(host=host.id).one_or_none()
+        target = orm_session.query(table).filter_by(host_data=host.id).one_or_none()
         if target is None:
-            target = table(host=host.id, last_update=current_time, **kwargs)
+            target = table(host_data=host.id, last_update=current_time, **kwargs)
             orm_session.add(target)
         else:
             target.last_update = current_time
@@ -163,11 +163,11 @@ class Interface:
             if 'time' not in e:
                 e['time'] = time.time()
 
-        target = orm_session.query(table).filter_by(host=host.id).one_or_none()
+        target = orm_session.query(table).filter_by(host_data=host.id).one_or_none()
         if target is None:
             events.sort(key=lambda e: e['time'])
             del events[:-100]
-            target = table(host=host.id, last_update=current_time, events=to_json(events))
+            target = table(host_data=host.id, last_update=current_time, events=to_json(events))
             orm_session.add(target)
         else:
             target.last_update = current_time
@@ -241,13 +241,13 @@ class Interface:
                 self._update_host_telemetry(orm_session, current_time, host, _Telemetry,
                                             telemetry=encoded)
             else:
-                target = orm_session.query(_Telemetry).filter_by(host=host.id).one_or_none()
+                target = orm_session.query(_Telemetry).filter_by(host_data=host.id).one_or_none()
                 if target is None:
                     try:
                         encoded = to_json(telemetry)
                     except:
                         return
-                    target = _Telemetry(host=host.id, last_update=current_time, telemetry=encoded)
+                    target = _Telemetry(host_data=host.id, last_update=current_time, telemetry=encoded)
                     orm_session.add(target)
                 else:
                     target.last_update = current_time
@@ -306,9 +306,9 @@ class Interface:
                 current_time = datetime.datetime.utcnow()
                 host = self._key_to_host(orm_session, key, current_time)
 
-                direct = orm_session.query(_HostDirect).filter_by(host=host.id).one_or_none()
+                direct = orm_session.query(_HostDirect).filter_by(host_data=host.id).one_or_none()
                 if direct is None:
-                    direct = _HostDirect(host=host.id, sequence_number=sequence_number)
+                    direct = _HostDirect(host_data=host.id, sequence_number=sequence_number)
                     orm_session.add(direct)
                 else:
                     if direct.sequence_number >= sequence_number:
@@ -529,7 +529,7 @@ class ControlInterface:
             result: typing.List[typing.Dict] = list()
             with Session(engine) as orm_session:
                 for host in self._select_hosts(orm_session, **kwargs):
-                    details = orm_session.query(_Telemetry).filter_by(host=host.id).one_or_none()
+                    details = orm_session.query(_Telemetry).filter_by(host_data=host.id).one_or_none()
                     if details:
                         data = from_json(details.telemetry)
                     else:
@@ -544,24 +544,24 @@ class ControlInterface:
                     data['remote_host'] = host.remote_host
                     data['last_seen'] = host.last_seen
 
-                    add = orm_session.query(_TelemetryTimeOffset).filter_by(host=host.id).one_or_none()
+                    add = orm_session.query(_TelemetryTimeOffset).filter_by(host_data=host.id).one_or_none()
                     if add:
                         data['last_update']['time_offset'] = add.last_update
                         data['time_offset'] = add.offset
 
-                    add = orm_session.query(_TelemetryAddress).filter_by(host=host.id).one_or_none()
+                    add = orm_session.query(_TelemetryAddress).filter_by(host_data=host.id).one_or_none()
                     if add:
                         data['last_update']['address'] = add.last_update
                         data['public_address'] = add.public_address
                         data['local_address'] = add.local_address
                         data['local_address6'] = add.local_address6
 
-                    add = orm_session.query(_TelemetryLogKernel).filter_by(host=host.id).one_or_none()
+                    add = orm_session.query(_TelemetryLogKernel).filter_by(host_data=host.id).one_or_none()
                     if add:
                         data['last_update']['log_kernel'] = add.last_update
                         data['log_kernel'] = from_json(add.events)
 
-                    add = orm_session.query(_TelemetryLogAcquisition).filter_by(host=host.id).one_or_none()
+                    add = orm_session.query(_TelemetryLogAcquisition).filter_by(host_data=host.id).one_or_none()
                     if add:
                         data['last_update']['log_acquisition'] = add.last_update
                         data['log_acquisition'] = from_json(add.events)
