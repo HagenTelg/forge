@@ -1,5 +1,6 @@
 import typing
 import asyncio
+from os import readlink
 from pathlib import Path
 
 
@@ -14,7 +15,11 @@ async def add_serial_ports(telemetry: typing.Dict[str, typing.Any]) -> None:
                 continue
             target = ""
             if port.is_symlink():
-                target = port.readlink().name
+                try:
+                    target = Path(readlink(str(port)))
+                    target = target.name
+                except OSError:
+                    pass
             telemetry['serial_ports'][str(port)] = target
 
     add_all_ports(Path('/dev/serial/by-id'))
