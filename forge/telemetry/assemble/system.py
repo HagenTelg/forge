@@ -17,11 +17,21 @@ async def add_system_info(telemetry: typing.Dict[str, typing.Any]) -> None:
             'session_start': user.started,
         })
 
-    telemetry['processes'] = []
+    processes = []
     for p in psutil.process_iter(['pid', 'username', 'create_time',
                                   'cpu_percent', 'memory_percent',
                                   'name', 'exe', 'cmdline']):
-        telemetry['processes'].append(p.info)
+        processes.append(p.info)
+
+    def sort_key(process):
+        memory = process.get('memory_percent', 0)
+        cpu = process.get('cpu_percent', 0)
+        userspace = (process.get('exe', None) is not None)
+        return int(memory/10), int(cpu/10), userspace
+
+    processes.sort(key=sort_key)
+    del processes[:-30]
+    telemetry['processes'] = processes
 
 
 async def add_lsb_info(telemetry: typing.Dict[str, typing.Any]) -> None:

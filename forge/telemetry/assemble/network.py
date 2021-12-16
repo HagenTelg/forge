@@ -5,7 +5,7 @@ import aiohttp
 import psutil
 import socket
 import time
-from .command import command_output
+from .command import command_output, command_lines
 
 
 async def add_external_address(telemetry: typing.Dict[str, typing.Any]) -> None:
@@ -37,6 +37,10 @@ async def add_external_address(telemetry: typing.Dict[str, typing.Any]) -> None:
                         raise ValueError
                     address = await resp.text()
                     address = address.strip()
+                    if len(address) > 1 and address[0] == '"':
+                        address = address[1:]
+                    if len(address) > 1 and address[-1] == '"':
+                        address = address[:-1]
                     if not address:
                         raise ValueError
                     address = str(ipaddress.ip_address(address))
@@ -147,4 +151,16 @@ async def add_network_configuration(telemetry: typing.Dict[str, typing.Any]) -> 
         'route': await command_output('ip', '-4', 'route', 'show'),
         'route6': await command_output('ip', '-6', 'route', 'show'),
         'nm_device': await command_output('nmcli', 'device', 'show', silent=True),
+        'nm_connections': [],
     }
+
+    connection_lines = await command_lines('nmcli', 'connection', 'show')
+    for line in connection_lines[1:]:
+        fields = line.strip().split()
+        if len(fields) < 3:
+            continue
+        uuid = fields[-3].strip()
+        connection_info = await command_lines('nmcli', 'connection', 'show', uuid, silent=True, check_exit=True)
+        if not connection_info:
+            continue
+        telemetry['network_configuration']['nm_connections'].append(connection_info)

@@ -193,8 +193,12 @@ def display_details_text(hosts: typing.List[typing.Dict]) -> None:
                 print(" Routes (IPv6):")
                 _prefix_output(host['network_configuration']['route6'], prefix="    ")
             if host['network_configuration'].get('nm_device'):
-                print(" Network user interface settings:")
+                print(" Network interface settings:")
                 _prefix_output(host['network_configuration']['nm_device'], prefix="    ")
+            if host['network_configuration'].get('nm_connections'):
+                for connection in host['network_configuration']['nm_connections']:
+                    print(" Network interface connection:")
+                    _prefix_output(connection, prefix="    ")
 
 
 def display_access_text(access: typing.List[typing.Dict]) -> None:
