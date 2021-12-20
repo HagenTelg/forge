@@ -427,6 +427,7 @@ class Interface:
 
     async def tunnel_station_target(self, from_key: PublicKey, station: str) -> typing.Optional[PublicKey]:
         from_key = _key_to_column(from_key)
+        station = station.lower()
 
         def execute(engine: Engine):
             with Session(engine) as orm_session:
@@ -496,6 +497,8 @@ class ControlInterface:
         return query
 
     async def tunnel_station_to_public_key(self, station: str) -> PublicKey:
+        station = station.lower()
+
         def execute(engine: Engine):
             with Session(engine) as orm_session:
                 host = orm_session.query(_Host).filter_by(
@@ -601,6 +604,7 @@ class ControlInterface:
         def execute(engine: Engine) -> None:
             with Session(engine) as orm_session:
                 for station in stations:
+                    station = station.lower()
                     if orm_session.query(_AccessStation).filter_by(public_key=public_key,
                                                                    station=station).one_or_none():
                         _LOGGER.debug(
