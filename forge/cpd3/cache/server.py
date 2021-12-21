@@ -30,7 +30,7 @@ class _CacheEntry:
         self.created = time.monotonic()
         self.args = args
         self._file = TemporaryFile(dir=self._CACHE_DIRECTORY, buffering=0)
-        self._direct_targets: typing.List[asyncio.StreamWriter] = list()
+        self._direct_targets: typing.Set[asyncio.StreamWriter] = set()
         self._queued_targets: typing.List[asyncio.StreamWriter] = list()
         self.reader_in_progress = False
         self.reader_complete = False
@@ -52,7 +52,12 @@ class _CacheEntry:
                 writer.write(data)
                 await writer.drain()
             except OSError:
+                try:
+                    reader.terminate()
+                except:
+                    pass
                 break
+        await reader.wait()
         _LOGGER.debug(f"Completed process read for {self.args}")
 
     async def _read_file(self, writer: asyncio.StreamWriter) -> None:
@@ -60,14 +65,14 @@ class _CacheEntry:
             return await self._read_process(writer)
         _LOGGER.debug(f"Reading file for {self.args}")
 
-        async def reader():
-            try:
-                source = os.dup(self._file.fileno())
-            except OSError:
-                _LOGGER.debug("Error initializing file", exc_info=True)
-                return
+        try:
+            source = os.dup(self._file.fileno())
+        except OSError:
+            _LOGGER.warning("Error initializing file", exc_info=True)
+            return
 
-            try:
+        try:
+            async def reader():
                 offset = 0
                 while True:
                     data = os.pread(source, 65536, offset)
@@ -75,20 +80,27 @@ class _CacheEntry:
                         break
                     offset += len(data)
                     yield data
-            finally:
-                try:
-                    os.close(source)
-                except OSError:
-                    pass
 
-        async for chunk in reader():
+            async for chunk in reader():
+                try:
+                    writer.write(chunk)
+                    await writer.drain()
+                except OSError:
+                    break
+        finally:
             try:
-                writer.write(chunk)
-                await writer.drain()
+                os.close(source)
             except OSError:
                 pass
 
         _LOGGER.debug(f"Completed file read for {self.args}")
+
+    async def _send_to_target(self, writer: asyncio.StreamWriter) -> None:
+        await self._read_file(writer)
+        try:
+            writer.close()
+        except OSError:
+            pass
 
     async def start(self) -> None:
         _LOGGER.debug(f"Starting initial read for {self.args}")
@@ -108,10 +120,13 @@ class _CacheEntry:
                     for t in self._queued_targets:
                         try:
                             t.write(bytes(initial_buffer))
-                            await t.drain()
                         except OSError:
-                            pass
-                    self._direct_targets += self._queued_targets
+                            try:
+                                t.close()
+                            except OSError:
+                                pass
+                            continue
+                        self._direct_targets.add(t)
                     self._queued_targets.clear()
 
                     if len(initial_buffer) > 65536:
@@ -125,16 +140,35 @@ class _CacheEntry:
                     else:
                         self._file.write(data)
 
-                for t in self._direct_targets:
+                for t in list(self._direct_targets):
                     try:
                         t.write(data)
                     except OSError:
-                        pass
-                for t in self._direct_targets:
+                        try:
+                            t.close()
+                        except OSError:
+                            pass
+                        self._direct_targets.remove(t)
+                        continue
+                for t in list(self._direct_targets):
                     try:
                         await t.drain()
                     except OSError:
+                        try:
+                            t.close()
+                        except OSError:
+                            pass
+                        self._direct_targets.remove(t)
+                        continue
+
+                if not self._file and len(self._direct_targets) == 0 and (len(self._queued_targets) == 0 or
+                                                                          initial_buffer is None):
+                    _LOGGER.debug(f"Aborting canceled read for {self.args}")
+                    try:
+                        reader.terminate()
+                    except:
                         pass
+                    break
 
             self.reader_complete = True
             _LOGGER.debug(f"Completed initial read for {self.args} with {self.total_size} bytes")
@@ -150,18 +184,8 @@ class _CacheEntry:
             if self._file:
                 os.lseek(self._file.fileno(), 0, os.SEEK_SET)
 
-            async def send_to_target(writer: asyncio.StreamWriter):
-                if not self._file:
-                    await self._read_process(writer)
-                else:
-                    await self._read_file(writer)
-                try:
-                    writer.close()
-                except OSError:
-                    pass
-
             for t in self._queued_targets:
-                background_task(send_to_target(t))
+                background_task(self._send_to_target(t))
             self._queued_targets.clear()
 
         background_task(run())
@@ -174,13 +198,10 @@ class _CacheEntry:
             background_task(send())
             return
         if not self.reader_in_progress:
-            self._direct_targets.append(writer)
+            self._direct_targets.add(writer)
             return
         if self.reader_complete:
-            async def send():
-                await self._read_file(writer)
-                writer.close()
-            background_task(send())
+            background_task(self._send_to_target(writer))
             return
         self._queued_targets.append(writer)
 
@@ -197,7 +218,7 @@ class _CacheEntry:
 
         old = self._file
         self._file = None
-        # This would happen automatically at GC, but just do it now so we release the space sooner
+        # This would happen automatically at GC, but just do it now, so we release the space sooner
         old.close()
 
 
