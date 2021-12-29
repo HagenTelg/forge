@@ -1,7 +1,9 @@
 import typing
 import asyncio
 import logging
+import time
 import starlette.status
+from math import floor, ceil
 from starlette.routing import BaseRoute, WebSocketRoute
 from starlette.datastructures import URL
 from starlette.authentication import requires
@@ -88,8 +90,21 @@ class _DataSocket(WebSocketEndpoint):
         if action == 'start':
             stream_id = int(data['stream'])
             data_name = str(data['data'])
-            start_epoch_ms = int(data['start_epoch_ms'])
-            end_epoch_ms = int(data['end_epoch_ms'])
+
+            start_epoch_ms = data.get('start_epoch_ms')
+            if not start_epoch_ms:
+                start_epoch_ms = floor(time.time() * 1000.0)
+            start_epoch_ms = int(start_epoch_ms)
+
+            end_epoch_ms = data.get('end_epoch_ms')
+            if not end_epoch_ms:
+                end_epoch_ms = ceil(time.time() * 1000.0)
+            end_epoch_ms = int(end_epoch_ms)
+
+            if end_epoch_ms <= start_epoch_ms:
+                _LOGGER.debug(f"Invalid time bounds ({start_epoch_ms},{end_epoch_ms}) for {data_name} to {websocket.client.host}")
+                await self._end_data_stream(websocket, stream_id)
+                return
 
             async def send(send_data: typing.Dict) -> None:
                 await websocket.send_json({

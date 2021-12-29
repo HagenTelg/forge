@@ -45,8 +45,9 @@ class TimeSeries(View):
             self.components: typing.List[str] = []
             self.script = str()
 
-    def __init__(self):
+    def __init__(self, realtime: bool = False):
         super().__init__()
+        self.realtime = realtime
         self.title: typing.Optional[str] = None
         self.graphs: typing.List[TimeSeries.Graph] = []
         self.processing: typing.Dict[str, TimeSeries.Processing] = dict()
@@ -96,5 +97,6 @@ class TimeSeries(View):
         return HTMLResponse(await package_template('view', 'timeseries.html').render_async(
             request=request,
             view=self,
+            realtime=self.realtime,
             **kwargs
         ))

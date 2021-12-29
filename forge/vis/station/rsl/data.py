@@ -1,5 +1,5 @@
 import typing
-from ..cpd3 import DataStream, DataReader, EditedReader, Name, data_profile_get, detach, profile_data
+from ..cpd3 import DataStream, DataReader, EditedReader, RealtimeTranslator, Name, data_profile_get, detach, profile_data
 
 
 station_profile_data = detach(profile_data)
@@ -15,6 +15,14 @@ station_profile_data['aerosol']['raw']['cpcstatus'] = lambda station, start_epoc
         Name(station, 'raw', 'Qu_N61'): 'Qinlet',
     }, send
 )
+station_profile_data['aerosol']['realtime']['cpcstatus'] = {
+    RealtimeTranslator.Key('T1_N61'): 'Tsaturator',
+    RealtimeTranslator.Key('T2_N61'): 'Tcondenser',
+    RealtimeTranslator.Key('T3_N61'): 'Toptics',
+    RealtimeTranslator.Key('T4_N61'): 'Tcabinet',
+    RealtimeTranslator.Key('Q_N61'): 'Qsample',
+    RealtimeTranslator.Key('Qu_N61'): 'Qinlet',
+}
 
 
 station_profile_data['aerosol']['raw']['smps'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(

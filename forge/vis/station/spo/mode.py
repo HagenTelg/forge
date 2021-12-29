@@ -4,6 +4,9 @@ from ..default.mode import Mode, ViewList, detach, aerosol_modes, ozone_modes, m
 
 station_modes = detach(aerosol_modes, ozone_modes, met_modes)
 
+station_modes['aerosol-realtime'].remove('aerosol-realtime-wind')
+station_modes['ozone-realtime'].remove('ozone-realtime-wind')
+
 station_modes['met-raw'].insert(ViewList.Entry('met-raw-tower', "Tower dT"))
 station_modes['met-editing'].insert(ViewList.Entry('met-editing-tower', "Tower dT"))
 

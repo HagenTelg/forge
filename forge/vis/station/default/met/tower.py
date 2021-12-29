@@ -11,8 +11,8 @@ class TowerTemperatureDifference(TimeSeries):
     return new GenericOperations.SingleOutput(dataName, GenericOperations.difference, 'dT', 'Tmiddle', 'Ttop');
 })"""
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
 
         temperature_difference = TimeSeries.Graph()
         temperature_difference.title = "Tower Middle Minus Top"

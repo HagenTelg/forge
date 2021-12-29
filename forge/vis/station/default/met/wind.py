@@ -4,8 +4,8 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class Wind(TimeSeries):
-    def __init__(self, record: str, measurements: typing.Optional[typing.Dict[str, str]] = None):
-        super().__init__()
+    def __init__(self, record: str, measurements: typing.Optional[typing.Dict[str, str]] = None, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Winds"
 
         if measurements is None:

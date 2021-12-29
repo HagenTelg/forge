@@ -1,9 +1,9 @@
 import typing
-from enum import Enum
+from enum import IntEnum
 from math import isfinite
 
 
-class TimeUnit(Enum):
+class TimeUnit(IntEnum):
     Millisecond = 0
     Second = 1
     Minute = 2

@@ -1,0 +1,145 @@
+<style>
+.intervalselect-footer {
+  padding: 2px 16px;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+}
+
+.intervalselect-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 16px;
+  background-color: inherit;
+  font-family: inherit;
+  font-weight: bold;
+  float: right;
+}
+
+.intervalselect-footer button:hover:not(:disabled),
+.intervalselect-footer button:focus:not(:disabled) {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+.intervalselect-footer button:disabled {
+  color: #777;
+  text-decoration: none;
+  cursor: not-allowed;
+}
+
+.intervalselect-entry table {
+  padding: 40px 40px 16px 16px;
+  border: none;
+  width: 100%;
+}
+
+.intervalselect-entry td:first-child,
+.intervalselect-entry td:last-child {
+  white-space: nowrap;
+}
+
+.intervalselect-entry td:first-child {
+  width: 100px;
+}
+
+.intervalselect-entry td:first-child label {
+  right: 0;
+  padding: 16px 16px 0 16px;
+  font-weight: bold;
+}
+
+.intervalselect-entry td:last-child {
+  width: 300px;
+}
+
+.intervalselect-entry td:last-child label {
+  padding: 16px 32px 0 32px;
+}
+
+.intervalselect-entry td:not(:last-child) td:not(:last-child) {
+  width: 100%;
+}
+
+.intervalselect-entry input {
+  border: none;
+  border-bottom: 2px solid black;
+  padding: 12px 20px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.intervalselect-entry input.invalid {
+  border-bottom: 2px solid red;
+}
+
+.intervalselect-entry label.invalid {
+  color: red;
+}
+</style>
+
+<form class="intervalselect-entry">
+  <table>
+    <tr>
+      <td><label for="input-interval">Interval</label></td>
+      <td><input type="text" id="input-interval" name="interval"></td>
+      <td><label id="parsed-interval"></label></td>
+    </tr>
+  </table>
+
+  <div class="intervalselect-footer">
+    <button id="intervalselect-apply" title="Set interval and replot">Apply</button>
+    <button id="intervalselect-reset" title="Reset the interval to its initial value and replot">Reset</button>
+    <button id="intervalselect-default" title="Reset the interval to its default value and replot">Default</button>
+  </div>
+</form>
+
+<script>
+(function() {
+    const intervalEntry = document.getElementById('input-interval');
+    const intervalDisplay = document.getElementById('parsed-interval');
+
+    $('#intervalselect-apply').click(function(event) {
+        event.preventDefault();
+        hideModal();
+
+        let parseInterval = TimeParse.parseInterval(intervalEntry.value);
+        if (!parseInterval) {
+            return;
+        }
+
+        TimeSelect.changeInterval(parseInterval);
+    });
+    $('#intervalselect-reset').click(function(event) {
+        event.preventDefault();
+        hideModal();
+        TimeSelect.resetInterval();
+    });
+    $('#intervalselect-default').click(function(event) {
+        event.preventDefault();
+        hideModal();
+        TimeSelect.setDefaultInterval();
+    });
+
+    function intervalEdited() {
+        let parsedInterval = TimeParse.parseInterval(intervalEntry.value);
+
+        if (!parsedInterval) {
+            intervalEntry.classList.add('invalid');
+            intervalDisplay.classList.add('invalid');
+
+            intervalDisplay.textContent = "ERROR";
+            return;
+        }
+
+        intervalEntry.classList.remove('invalid');
+        intervalDisplay.classList.remove('invalid');
+        intervalDisplay.textContent = TimeParse.toDisplayInterval(parsedInterval);
+    }
+    $(intervalEntry).change(intervalEdited);
+    $(intervalEntry).on('input', intervalEdited);
+    intervalEntry.value = intervalDisplay.textContent = TimeParse.toDisplayInterval(TimeSelect.interval_ms);
+})();
+</script>

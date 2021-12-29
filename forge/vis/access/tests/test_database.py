@@ -170,7 +170,8 @@ def test_external_interface():
     interface = ControlInterface("sqlite+pysqlite:///:memory:")
     interface.db = controller.db
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     loop.run_until_complete(interface.add_user('test@example.com', 'testtesttest'))
 
     client.post('/auth/password/login', data={

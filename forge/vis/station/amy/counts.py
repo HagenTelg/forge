@@ -4,8 +4,8 @@ from ..default.aerosol.bmi17XXcpc import BMI1720CPCStatus as BaseBMI1720CPCStatu
 
 
 class BMI1720CPCStatus(BaseBMI1720CPCStatus):
-    def __init__(self, mode: str):
-        super().__init__(mode)
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
 
         drier_flow = TimeSeries.Graph()
         drier_flow.title = "Drier Flow"

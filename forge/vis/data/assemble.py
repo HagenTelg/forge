@@ -15,6 +15,9 @@ def begin_stream(user: BaseAccessUser, station: str, data_name: str, start_epoch
         if data_name.startswith("example-timeseries"):
             from .example import ExampleTimeSeries
             return ExampleTimeSeries(start_epoch_ms, send)
+        elif data_name.startswith("example-realtime"):
+            from .example import ExampleRealtime
+            return ExampleRealtime(start_epoch_ms, send)
         elif data_name.startswith("example-editing-directives"):
             from .example import ExampleEditDirectives
             return ExampleEditDirectives(start_epoch_ms, send)

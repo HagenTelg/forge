@@ -2,7 +2,6 @@ dynaconf>=3.1.2
 starlette==0.14.2
 uvicorn[standard]>=0.13.4
 gunicorn>=20.0.4
-aiofiles>=0.6.0
 itsdangerous>=1.1.0
 jinja2>=2.11.0
 passlib>=1.7.4
@@ -11,7 +10,6 @@ SQLAlchemy>=1.4.23
 authlib>=1.0.0b2
 dnspython>=2.1.0
 python-multipart>=0.0.5
-aiofile>=3.5.0
 asgi-ratelimit>=0.4.0
 aredis>=1.1.8
 httpx>=0.21.1

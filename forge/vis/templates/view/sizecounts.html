@@ -26,6 +26,7 @@ const RecordProcessing = new Map();
 RecordProcessing.set('{{ record }}', {{ processing.script | safe }});
 // {% endfor %}
 
+{% include 'view/layout/sizecounts.js' %}
 {% include 'view/sizecounts.js' %}
 })();
 </script>

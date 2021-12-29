@@ -1,5 +1,5 @@
 import typing
-from ..cpd3 import DataStream, DataReader, Name, data_profile_get, detach, profile_data
+from ..cpd3 import DataStream, DataReader, RealtimeTranslator, Name, data_profile_get, detach, profile_data
 
 
 station_profile_data = detach(profile_data)
@@ -14,6 +14,13 @@ station_profile_data['aerosol']['raw']['pressure'] = lambda station, start_epoch
         Name(station, 'raw', 'P_S11', {'pm1'}): 'neph',
     }, send
 )
+station_profile_data['aerosol']['raw']['pressure'] = {
+    RealtimeTranslator.Key('P_XM1'): 'ambient',
+    RealtimeTranslator.Key('P_S11'): 'neph',
+    RealtimeTranslator.Key('P_S11', {'pm10'}): 'neph',
+    RealtimeTranslator.Key('P_S11', {'pm25'}): 'neph',
+    RealtimeTranslator.Key('P_S11', {'pm1'}): 'neph',
+}
 
 station_profile_data['aerosol']['raw']['cpcstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
@@ -32,6 +39,21 @@ station_profile_data['aerosol']['raw']['cpcstatus'] = lambda station, start_epoc
         Name(station, 'raw', 'Pd_N71'): 'PDorifice',
     }, send
 )
+station_profile_data['aerosol']['raw']['cpcstatus'] = {
+    RealtimeTranslator.Key('Tu_N71'): 'Tinlet',
+    RealtimeTranslator.Key('TDu_N71'): 'TDinlet',
+    RealtimeTranslator.Key('Uu_N71'): 'Uinlet',
+    RealtimeTranslator.Key('T1_N71'): 'Tconditioner',
+    RealtimeTranslator.Key('T2_N71'): 'Tinitiator',
+    RealtimeTranslator.Key('T3_N71'): 'Tmoderator',
+    RealtimeTranslator.Key('T4_N71'): 'Toptics',
+    RealtimeTranslator.Key('T5_N71'): 'Theatsink',
+    RealtimeTranslator.Key('T6_N71'): 'Tpcb',
+    RealtimeTranslator.Key('T7_N71'): 'Tcabinet',
+    RealtimeTranslator.Key('Q_N71'): 'Qsample',
+    RealtimeTranslator.Key('P_N71'): 'Psample',
+    RealtimeTranslator.Key('Pd_N71'): 'PDorifice',
+}
 
 
 def get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,

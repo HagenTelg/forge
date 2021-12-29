@@ -4,8 +4,8 @@ from ..tower import TowerTemperatureDifference
 
 
 class EditingTowerTemperatureDifference(TimeSeries):
-    def __init__(self, profile: str = 'met'):
-        super().__init__()
+    def __init__(self, profile: str = 'met', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Tower Middle Minus Top"
 
         raw = TimeSeries.Graph()

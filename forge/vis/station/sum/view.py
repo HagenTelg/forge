@@ -13,6 +13,8 @@ station_views = detach(aerosol_views, ozone_views, met_views)
 
 station_views['aerosol-raw-pressure'] = Pressure('aerosol-raw')
 station_views['aerosol-raw-cpcstatus'] = ADMagicCPC200Status('aerosol-raw')
+station_views['aerosol-realtime-pressure'] = Pressure('aerosol-realtime', realtime=True)
+station_views['aerosol-realtime-cpcstatus'] = ADMagicCPC200Status('aerosol-realtime', realtime=True)
 
 
 measurements = OrderedDict([

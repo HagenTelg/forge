@@ -10,13 +10,20 @@ station_views = detach(aerosol_views)
 
 
 station_views['aerosol-raw-flow'] = DilutionFlow('aerosol-raw')
+station_views['aerosol-realtime-flow'] = DilutionFlow('aerosol-realtime', realtime=True)
 
-station_views['aerosol-raw-temperature'] = Temperature('aerosol-raw', measurements=OrderedDict([
+measurements = OrderedDict([
     ('{code}nephinlet', '{code}u_S11 (neph inlet)'),
     ('{code}neph', '{code}_S11 (neph sample)'),
-]), omit_traces={'TDnephinlet'})
+])
+omit_traces = {'TDnephinlet'}
+station_views['aerosol-raw-temperature'] = Temperature('aerosol-raw', measurements=measurements, 
+                                                       omit_traces=omit_traces)
+station_views['aerosol-realtime-temperature'] = Temperature('aerosol-realtime', measurements=measurements, 
+                                                            omit_traces=omit_traces, realtime=True)
 
 station_views['aerosol-raw-pressure'] = BasicPressure('aerosol-raw')
+station_views['aerosol-realtime-pressure'] = BasicPressure('aerosol-realtime', realtime=True)
 
 
 def get(station: str, view_name: str) -> typing.Optional[View]:

@@ -3,8 +3,8 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class EditingMAA5012P(TimeSeries):
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "MAAP"
 
         raw = TimeSeries.Graph()

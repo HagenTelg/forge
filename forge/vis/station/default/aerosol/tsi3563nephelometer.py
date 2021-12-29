@@ -37,8 +37,8 @@ class NephelometerZero(TimeSeries):
             R.color = '#f00'
             self.traces.append(R)
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Nephelometer Zero Results"
 
         total_scattering = self.ThreeWavelength(f'{mode}-nephzero', 'Bsw')
@@ -51,8 +51,8 @@ class NephelometerZero(TimeSeries):
 
 
 class NephelometerStatus(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Nephelometer Status"
 
         reference = TimeSeries.Graph()

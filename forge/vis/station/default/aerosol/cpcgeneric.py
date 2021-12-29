@@ -3,8 +3,8 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class SystemCPCFlow(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "CPC Flow"
 
         cpc_flow = TimeSeries.Graph()

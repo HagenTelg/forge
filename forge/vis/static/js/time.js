@@ -276,6 +276,98 @@ let TimeParse = {};
 
         return date.getTime();
     }
+    TimeParse.parseInterval = function(input, disableBareDay) {
+        if (input === undefined || input === null) {
+            return undefined;
+        }
+        if (input.match(/^\s*(undef|inf|∞)/i)) {
+            return null;
+        }
+        if (input.match(/^\s*none\s*$/i)) {
+            return 0;
+        }
+
+        let match;
+
+        match = input.match(/^\s*(\d+(?:\.\d*)?)\s*S(?:econds?)?\s*$/i)
+        if (match) {
+            try {
+                const interval = parseFloat(match[1]);
+                if (isFinite(interval) && interval > 0.0) {
+                    return interval * 1000;
+                }
+            } catch (e) {
+            }
+        }
+
+        match = input.match(/^\s*(\d+(?:\.\d*)?)\s*M(?:inutes?)?\s*$/i)
+        if (match) {
+            try {
+                const interval = parseFloat(match[1]);
+                if (isFinite(interval) && interval > 0.0) {
+                    return Math.round(interval * 60) * 1000;
+                }
+            } catch (e) {
+            }
+        }
+
+        match = input.match(/^\s*(\d+(?:\.\d*)?)\s*H(?:ours?)?\s*$/i)
+        if (match) {
+            try {
+                const interval = parseFloat(match[1]);
+                if (isFinite(interval) && interval > 0.0) {
+                    return Math.round(interval * 60) * 60 * 1000;
+                }
+            } catch (e) {
+            }
+        }
+
+        match = input.match(/^\s*(\d+(?:\.\d*)?)\s*D(?:ays?)?\s*$/i)
+        if (match) {
+            try {
+                const interval = parseFloat(match[1]);
+                if (isFinite(interval) && interval > 0.0) {
+                    const parts = match[1].split('.');
+                    if (parts.length === 2 && parts[1].length === 2) {
+                        return Math.round(interval * 24) * 3600 * 1000;
+                    } else {
+                        return Math.round(interval * 86400) * 1000;
+                    }
+                }
+            } catch (e) {
+            }
+        }
+
+        match = input.match(/^\s*(\d+(?:\.\d*)?)\s*W(?:eeks)?\s*$/i)
+        if (match) {
+            try {
+                const interval = parseFloat(match[1]);
+                if (isFinite(interval) && interval > 0.0) {
+                    return Math.round(interval * 7 * 86400) * 1000;
+                }
+            } catch (e) {
+            }
+        }
+
+        if (disableBareDay) {
+            return undefined;
+        }
+
+        try {
+            const interval = parseFloat(input);
+            if (isFinite(interval) && interval > 0.0) {
+                const parts = input.split('.');
+                if (parts.length === 2 && parts[1].length === 2) {
+                    return Math.round(interval * 24) * 3600 * 1000;
+                } else {
+                    return Math.round(interval * 86400) * 1000;
+                }
+            }
+        } catch (e) {
+        }
+
+        return undefined;
+    }
     TimeParse.getImpliedOffset = function(input, time_ms) {
         if (input === undefined || input === null) {
             return undefined;
@@ -398,6 +490,48 @@ let TimeParse = {};
             date.getUTCSeconds().toString().padStart(2, '0') + 'Z'
         );
     }
+    TimeParse.toDisplayInterval = function(ms) {
+        if (!ms || !isFinite(ms)) {
+            return "∞";
+        }
+
+        if ((ms % (7 * 86400 * 1000)) === 0) {
+            const count = (ms / (7 * 86400 * 1000));
+            if (count === 1) {
+                return "1 Week"
+            }
+            return count.toFixed(0) + " Weeks";
+        }
+
+        const days = ms / (86400 * 1000);
+        if ((ms % (86400 * 1000)) === 0) {
+            if (days === 1) {
+                return "1 Day"
+            }
+            return days.toFixed(0) + " Days";
+        }
+
+        if (days > 3.0) {
+            if ((ms % (3600 * 1000)) === 0) {
+                return days.toFixed(2) + " Days";
+            }
+            return days.toFixed(5) + " Days";
+        }
+
+        if ((ms % (3600 * 1000)) === 0) {
+            const count = Math.round(ms / (3600 * 1000));
+            if (count === 1) {
+                return "1 Hour"
+            }
+            return count.toFixed(0) + " Hours";
+        }
+
+        const count = Math.round(ms / (60 * 1000));
+        if (count === 1) {
+            return "1 Minute"
+        }
+        return count.toFixed(0) + " Minutes";
+    }
 
     const runWhenChanged = new Map();
     TimeSelect.onChanged = function(key, cb) {
@@ -416,23 +550,50 @@ let TimeParse = {};
             cb();
         });
     }
-    
-    
-    TimeSelect.setDefaultTimeRange = function(showDays) {
+    TimeSelect.changeInterval = function(interval_ms) {
+        TimeSelect.interval_ms = interval_ms;
+
+        TimeSelect.setIntervalBounds();
+        TimeSelect.zoom_start_ms = undefined;
+        TimeSelect.zoom_end_ms = undefined;
+
+        localStorage.setItem('forge-last-interval', TimeSelect.interval_ms.toString());
+
+        runWhenChanged.forEach((cb) => {
+            cb();
+        });
+    }
+
+    function applyDefaultTimeRange(showDays) {
         let currentUTCDay = new Date();
         currentUTCDay.setUTCMilliseconds(0);
         currentUTCDay.setUTCSeconds(0);
         currentUTCDay.setUTCMinutes(0);
         currentUTCDay.setUTCHours(0);
-    
+
         if (showDays === undefined) {
             showDays = 7;
         }
-    
-        const end_ms = currentUTCDay.getTime();
-        const start_ms = end_ms - showDays * 86400 * 1000;
-        TimeSelect.change(start_ms, end_ms);
+
+        TimeSelect.end_ms = currentUTCDay.getTime();
+        TimeSelect.start_ms = TimeSelect.end_ms - showDays * 86400 * 1000;
+    }
+    TimeSelect.setDefaultTimeRange = function(showDays) {
+        applyDefaultTimeRange(showDays)
+        TimeSelect.change(TimeSelect.start_ms, TimeSelect.end_ms);
     };
+
+    function applyDefaultInterval(showDays) {
+        if (showDays === undefined) {
+            showDays = 1;
+        }
+
+        TimeSelect.interval_ms = showDays * 86400 * 1000;
+    }
+    TimeSelect.setDefaultInterval = function() {
+        applyDefaultInterval();
+        TimeSelect.changeInterval(TimeSelect.interval_ms);
+    }
 
     TimeSelect.fetchLatestPassed = undefined;
 
@@ -454,13 +615,35 @@ let TimeParse = {};
         TimeSelect.end_ms = parseInt(localStorage.getItem('forge-last-end'));
     }
     if (!isFinite(TimeSelect.start_ms) || !isFinite(TimeSelect.end_ms)) {
-        TimeSelect.setDefaultTimeRange();
+        applyDefaultTimeRange();
+    }
+
+    TimeSelect.interval_ms = TimeParse.parseInterval(queryParameters.get('interval'));
+    if (!isFinite(TimeSelect.interval_ms) || TimeSelect.interval_ms <= 0.0)  {
+        TimeSelect.interval_ms = parseInt(localStorage.getItem('forge-last-interval'));
+    }
+    if (!isFinite(TimeSelect.interval_ms) || TimeSelect.interval_ms <= 0.0)  {
+        applyDefaultInterval();
     }
     
     let original_start_ms = TimeSelect.start_ms;
     let original_end_ms = TimeSelect.end_ms;
     TimeSelect.resetTimeRange = function() {
         TimeSelect.change(original_start_ms, original_end_ms);
+    }
+
+    let original_interval_ms = TimeSelect.interval_ms;
+    TimeSelect.resetInterval = function() {
+        TimeSelect.changeInterval(original_interval_ms);
+    }
+
+    TimeSelect.setIntervalBounds = function() {
+        const end_ms = (new Date()).getTime();
+        TimeSelect.start_ms = end_ms - TimeSelect.interval_ms;
+        TimeSelect.end_ms = end_ms;
+
+        original_start_ms = TimeSelect.start_ms;
+        original_end_ms = TimeSelect.end_ms;
     }
 
     let runOnHightlight = function(start_ms, end_ms) {};
@@ -509,6 +692,9 @@ let TimeParse = {};
     const runOnZoom = new Map();
     TimeSelect.zoom_start_ms = undefined;
     TimeSelect.zoom_end_ms = undefined;
+    TimeSelect.isZoomed = function() {
+        return !!(TimeSelect.zoom_start_ms || TimeSelect.zoom_start_ms);
+    }
     TimeSelect.onZoom = function(key, cb) {
         runOnZoom.set(key, cb);
     }
@@ -525,5 +711,14 @@ let TimeParse = {};
         TimeSelect.zoom_start_ms = undefined;
         TimeSelect.zoom_end_ms = undefined;
     }
+
+    TimeSelect.onIntervalHeartbeat = function() {}
+    TimeSelect.resetIntervalHeartbeat = function() {
+        TimeSelect.onIntervalHeartbeat = function() {}
+    }
+    function runIntervalHeartbeat() {
+        TimeSelect.onIntervalHeartbeat();
+    }
+    setInterval(runIntervalHeartbeat, 5 * 60 * 1000);
 })();
 

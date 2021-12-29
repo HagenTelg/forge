@@ -6,8 +6,8 @@ from ..aethalometer import AethalometerOptical
 class EditingAethalometer(TimeSeries):
     SevenWavelength = AethalometerOptical.SevenWavelength
 
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Absorption Coefficient"
 
         raw = self.SevenWavelength("Mm⁻¹", '.2f', "Raw ({wavelength} nm)",

@@ -17,8 +17,10 @@ class SizeDistribution(View):
             self.calculated_color: typing.Optional[str] = None
             self.calculated_field: typing.Optional[str] = field_name
 
-    def __init__(self):
+    def __init__(self, realtime: bool = False):
         super().__init__()
+        self.realtime = realtime
+
         self.title: typing.Optional[str] = None
         self.scattering_wavelengths: typing.List[SizeDistribution.ScatteringWavelength] = list()
         self.contamination: typing.Optional[str] = None
@@ -45,6 +47,7 @@ class SizeDistribution(View):
         return HTMLResponse(await package_template('view', 'sizedistribution.html').render_async(
             request=request,
             view=self,
+            realtime=self.realtime,
             **kwargs
         ))
 
@@ -77,8 +80,9 @@ const outputConcentrations = new Map();
 return new SizeDistribution.ConcentrationDispatch(dataName, outputConcentrations);
     })"""
 
-    def __init__(self):
+    def __init__(self, realtime: bool = False):
         super().__init__()
+        self.realtime = realtime
         self.title: typing.Optional[str] = None
         self.contamination: typing.Optional[str] = None
         self.traces: typing.List[SizeCounts.Trace] = []
@@ -98,5 +102,6 @@ return new SizeDistribution.ConcentrationDispatch(dataName, outputConcentrations
         return HTMLResponse(await package_template('view', 'sizecounts.html').render_async(
             request=request,
             view=self,
+            realtime=self.realtime,
             **kwargs
         ))

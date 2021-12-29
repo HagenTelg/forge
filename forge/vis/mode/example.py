@@ -1,4 +1,4 @@
-from .viewlist import ViewList, Editing
+from .viewlist import ViewList, Realtime, Editing
 
 
 class _ExampleViewList(ViewList):
@@ -39,3 +39,14 @@ class _ExampleSolar(Editing):
 
 
 example_solar = _ExampleSolar()
+
+
+class _ExampleRealtime(Realtime):
+    def __init__(self, suffix=''):
+        super().__init__('example-realtime', "Example Realtime")
+
+        self.views.append(ViewList.Entry('example-realtime-1', "First View"))
+        self.views.append(ViewList.Entry('example-realtime-2', "Second View"))
+
+
+example_realtime = _ExampleRealtime()

@@ -13,8 +13,10 @@ station_views['aerosol-editing-counts'] = EditingParticleConcentration()
 station_views['aerosol-clean-counts'] = SMPSCounts('aerosol-clean')
 station_views['aerosol-avgh-counts'] = SMPSCounts('aerosol-avgh')
 station_views['aerosol-raw-cpcstatus'] = TSI3772CPCStatus('aerosol-raw')
+station_views['aerosol-realtime-cpcstatus'] = TSI3772CPCStatus('aerosol-realtime', realtime=True)
 
 station_views['aerosol-raw-pressure'] = BasicPressure('aerosol-raw')
+station_views['aerosol-realtime-pressure'] = BasicPressure('aerosol-realtime', realtime=True)
 
 station_views['aerosol-raw-smps'] = SMPSDistribution('aerosol-raw')
 station_views['aerosol-editing-smps'] = SMPSDistribution('aerosol-editing')

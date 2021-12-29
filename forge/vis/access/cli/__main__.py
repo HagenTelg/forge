@@ -210,7 +210,8 @@ def main():
             args.set_password = get_password(args.set_password)
             await interface.modify_user(**vars(args))
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     loop.run_until_complete(run())
     loop.close()
 

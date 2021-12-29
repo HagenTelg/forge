@@ -20,6 +20,9 @@ def lookup_mode(request: Request, station: str, mode_name: str) -> typing.Option
         elif mode_name == "example-basic3":
             from . example import example_view_list3
             return example_view_list3
+        elif mode_name == "example-realtime":
+            from . example import example_realtime
+            return example_realtime
         elif mode_name == "example-editing":
             from . example import example_editing
             return example_editing

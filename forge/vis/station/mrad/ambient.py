@@ -7,8 +7,8 @@ from . import Site
 class Ambient(TimeSeries):
     _TRACE_FORMAT = '{site.name} {parameter} ({code}_{site.instrument_code})'
 
-    def __init__(self, record: str, sites: typing.List[Site]):
-        super().__init__()
+    def __init__(self, record: str, sites: typing.List[Site], **kwargs):
+        super().__init__(**kwargs)
         self.title = "Ambient Conditions"
 
         self.processing[record] = Temperature.CalculateMissing()

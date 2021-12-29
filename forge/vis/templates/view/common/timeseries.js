@@ -218,7 +218,7 @@ var TimeSeriesCommon = {};
         });
     }
 
-    TimeSeriesCommon.installZoomHandler = function(div) {
+    TimeSeriesCommon.installZoomHandler = function(div, realtime) {
         div.on('plotly_relayout', function(data) {
             const start_time = data['xaxis.range[0]'];
             const end_time = data['xaxis.range[1]'];
@@ -228,9 +228,16 @@ var TimeSeriesCommon = {};
 
             const start_ms = DataSocket.fromPlotTime(start_time);
             const end_ms = DataSocket.fromPlotTime(end_time);
-            if (start_ms === TimeSelect.start_ms && end_ms === TimeSelect.end_ms) {
-                TimeSelect.zoom(undefined, undefined);
-                return;
+            if (realtime) {
+                if ((end_ms - start_ms + 1001) >= TimeSelect.interval_ms) {
+                    TimeSelect.zoom(undefined, undefined);
+                    return;
+                }
+            } else {
+                if (start_ms === TimeSelect.start_ms && end_ms === TimeSelect.end_ms) {
+                    TimeSelect.zoom(undefined, undefined);
+                    return;
+                }
             }
 
             TimeSelect.zoom(start_ms, end_ms);
@@ -488,6 +495,30 @@ var TimeSeriesCommon = {};
                 this.averageData(data);
             }
         }
+
+        discardBefore(data, cutoff) {
+            let countDiscard = 0;
+            for (; countDiscard<this.epoch_ms.length; countDiscard++) {
+                if (this.epoch_ms[countDiscard] >= cutoff) {
+                    break;
+                }
+            }
+            if (countDiscard <= 0) {
+                return;
+            }
+
+            this.epoch_ms.splice(0, countDiscard);
+            if (this.x) {
+                this.x.splice(0, countDiscard);
+            } else {
+                data.x.splice(0, countDiscard);
+            }
+            if (this.y) {
+                this.y.splice(0, countDiscard);
+            } else {
+                data.y.splice(0, countDiscard);
+            }
+        }
     }
 
     TimeSeriesCommon.Traces = class {
@@ -498,6 +529,15 @@ var TimeSeriesCommon = {};
             this.config = config;
             this._queuedDisplayUpdate = undefined;
             this._dataFilters = new Map();
+        }
+
+        applyUpdate() {
+            this._dataFilters.forEach((handler, traceIndex) => {
+                handler.apply(this.data[traceIndex]);
+            });
+
+            this.layout.datarevision++;
+            Plotly.react(this.div, this.data, this.layout, this.config);
         }
 
         updateDisplay(immediate) {
@@ -516,13 +556,7 @@ var TimeSeriesCommon = {};
 
             this._queuedDisplayUpdate = setTimeout(() => {
                 this._queuedDisplayUpdate = undefined;
-
-                this._dataFilters.forEach((handler, traceIndex) => {
-                    handler.apply(this.data[traceIndex]);
-                });
-
-                this.layout.datarevision++;
-                Plotly.react(this.div, this.data, this.layout, this.config);
+                this.applyUpdate();
             }, delay);
         }
 
@@ -566,6 +600,63 @@ var TimeSeriesCommon = {};
                     filter.clearData();
                 }
             });
+        }
+    }
+
+    TimeSeriesCommon.RealtimeTraces = class extends TimeSeriesCommon.Traces {
+        constructor(div, data, layout, config) {
+            super(div, data, layout, config);
+        }
+
+        updateTimeBounds() {
+            TimeSelect.setIntervalBounds();
+            super.updateTimeBounds();
+        }
+
+        extendData(traceIndex, times, values, epoch) {
+            super.extendData(traceIndex, times, values, epoch);
+
+            TimeSelect.setIntervalBounds();
+            let discardCutoff = TimeSelect.start_ms;
+            if (!TimeSelect.isZoomed()) {
+                this.layout.xaxis.range = [DataSocket.toPlotTime(TimeSelect.start_ms),
+                    DataSocket.toPlotTime(TimeSelect.end_ms)];
+            } else {
+                discardCutoff = Math.min(discardCutoff, TimeSelect.zoom_start_ms);
+            }
+
+            const data = this.data[traceIndex];
+            const filter = this._dataFilters.get(traceIndex);
+            if (filter) {
+                 filter.discardBefore(data, discardCutoff);
+            } else {
+                let countDiscard = 0;
+                for (; countDiscard<data.x.length; countDiscard++) {
+                    const pointTime = DataSocket.fromPlotTime(data.x[countDiscard]);
+                    if (pointTime >= discardCutoff) {
+                        break;
+                    }
+                }
+
+                if (countDiscard > 0) {
+                    if (data.x) {
+                        data.x.splice(0, countDiscard);
+                    }
+                    if (data.y) {
+                        data.y.splice(0, countDiscard);
+                    }
+                    if (data.z) {
+                        data.z.splice(0, countDiscard);
+                    }
+                }
+            }
+
+            this.updateDisplay();
+        }
+
+        applyUpdate() {
+            super.applyUpdate();
+            TimeSeriesCommon.updateShapes();
         }
     }
 })();

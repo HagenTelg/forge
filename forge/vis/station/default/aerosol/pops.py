@@ -4,8 +4,8 @@ from forge.vis.view.sizedistribution import SizeDistribution, SizeCounts
 
 
 class POPSStatus(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "POPS Status"
 
         temperature = TimeSeries.Graph()
@@ -69,8 +69,8 @@ class POPSStatus(TimeSeries):
 
 
 class POPSDistribution(SizeDistribution):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "POPS Size Distribution"
 
         self.contamination = f'{mode}-contamination'
@@ -79,8 +79,8 @@ class POPSDistribution(SizeDistribution):
 
 
 class POPSCounts(SizeCounts):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Particle Concentration"
 
         self.contamination = f'{mode}-contamination'

@@ -14,7 +14,11 @@ from forge.const import __version__
 from forge.vis import CONFIGURATION
 from forge.vis.access import BaseAccessUser
 from forge.vis.data.stream import DataStream, RecordStream
+from forge.vis.realtime.controller.client import ReadData as RealtimeRead
+from forge.vis.realtime.controller.block import DataBlock as RealtimeDataBlock
 from forge.vis.export import Export, ExportList
+from forge.vis.realtime import Translator as BaseRealtimeTranslator
+from forge.vis.realtime.translation import get_translator
 from forge.cpd3.identity import Name, Identity
 from forge.cpd3.variant import serialize as variant_serialize, deserialize as variant_deserialize
 from forge.cpd3.datareader import StandardDataInput, RecordInput
@@ -1275,6 +1279,77 @@ class EditedReader(DataReader):
         return None
 
 
+class RealtimeReader(DataReader):
+    class Input(DataReader.Input):
+        def record_ready(self, start: typing.Optional[float], end: typing.Optional[float],
+                         record: typing.Dict[Name, typing.Any]) -> None:
+            super().record_ready(start, end, record)
+            if not end:
+                return
+            end = round(start * 1000)
+            self.reader.realtime_start_ms = end
+
+    class RealtimeStream(RealtimeRead):
+        def __init__(self, data: "RealtimeReader",  reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+            super().__init__(reader, writer, data.station, data.data_name, stream_incoming=True)
+            self.data = data
+            self.discard_epoch_ms: int = data.realtime_start_ms
+
+            # Realtime records are recorded at the END of the average, so offset them back to the start
+            self.record_time_offset: int = round(data.realtime_offset * 1000.0)
+            # A bit of slack for network delays
+            self.discard_epoch_ms += ceil(data.realtime_offset / 4.0 * 1000.0)
+
+            # Since we only get the current time, add the expected interval to the break threshold
+            self.data_break_threshold = ceil((data.Input.TIME_SLACK + data.realtime_offset) * 1000)
+            self.data_break_epoch_ms = self.discard_epoch_ms + self.data_break_threshold
+
+        async def block_ready(self, block: RealtimeDataBlock) -> None:
+            for record in block.records:
+                adjusted_time = record.epoch_ms - self.record_time_offset
+                if adjusted_time <= self.discard_epoch_ms:
+                    continue
+                if adjusted_time > self.data_break_epoch_ms:
+                    await self.data.send_record(self.data_break_epoch_ms - 1, {})
+                await self.data.send_record(adjusted_time, record.fields)
+                self.data_break_epoch_ms = adjusted_time + self.data_break_threshold
+            await self.data.flush()
+
+    def __init__(self, start_epoch_ms: int, end_epoch_ms: int, station: str, data_name: str,
+                 data: typing.Dict[Name, str],
+                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]],
+                 realtime_offset: float = 60.0):
+        now_ms = round(time.time() * 1000)
+        if end_epoch_ms < now_ms - 60 * 60 * 1000:
+            end_epoch_ms = now_ms - 60 * 60 * 1000
+        if end_epoch_ms - start_epoch_ms > 32 * 24 * 60 * 60 * 1000:
+            start_epoch_ms = end_epoch_ms - 32 * 24 * 60 * 60 * 1000
+
+        super().__init__(start_epoch_ms, end_epoch_ms, data, send)
+        self.station = station
+        self.data_name = data_name
+        self.realtime_start_ms = start_epoch_ms
+        self.realtime_offset = realtime_offset
+
+    async def run(self) -> None:
+        await super().run()
+
+        try:
+            reader, writer = await asyncio.open_unix_connection(
+                CONFIGURATION.get('REALTIME.SOCKET', '/run/forge-vis-realtime.socket'))
+        except FileNotFoundError:
+            _LOGGER.debug(f"Unable to open realtime connection for {self.station} {self.data_name}")
+            return
+        try:
+            stream = self.RealtimeStream(self, reader, writer)
+            await stream.run()
+        finally:
+            try:
+                writer.close()
+            except OSError:
+                pass
+
+
 class EditReader(DataStream):
     class _Input(StandardDataInput):
         def __init__(self, profile: str, result: typing.List[typing.Dict]):
@@ -1626,6 +1701,113 @@ class EventLogReader(DataStream):
             raise
 
 
+class RealtimeTranslator(BaseRealtimeTranslator):
+    class Key:
+        def __init__(self, variable: str, flavors: typing.Optional[typing.Set[str]] = None):
+            self.variable = variable
+            self.flavors: typing.Set[str] = {flavor.lower() for flavor in flavors} if flavors else set()
+
+        def __eq__(self, other):
+            if not isinstance(other, RealtimeTranslator.Key):
+                return NotImplemented
+            return self.variable == other.variable and self.flavors == other.flavors
+
+        def __hash__(self):
+            flavors = None
+            if len(self.flavors) == 1:
+                flavors = next(x for x in self.flavors)
+            return hash((self.variable, flavors))
+
+        def __repr__(self):
+            return f"Key({self.variable}, {self.flavors})"
+
+    class Target:
+        def __init__(self, data_name: str, field: str):
+            self.data_name = data_name
+            self.field = field
+
+    def __init__(self, data: typing.Dict[str, typing.Dict["RealtimeTranslator.Key", str]],
+                 realtime_offset: float = 60.0):
+        super().__init__()
+        self.data = data
+        self.realtime_offset = realtime_offset
+
+        self._dispatch: typing.Dict["RealtimeTranslator.Key", typing.List["RealtimeTranslator.Target"]] = dict()
+        for data_name, field_lookup in self.data.items():
+            for key, field in field_lookup.items():
+                targets = self._dispatch.get(key)
+                if targets is None:
+                    targets: typing.List["RealtimeTranslator.Target"] = list()
+                    self._dispatch[key] = targets
+                targets.append(self.Target(data_name, field))
+
+    def realtime_targets(self, key: "RealtimeTranslator.Key") -> typing.List["RealtimeTranslator.Target"]:
+        return self._dispatch.get(key, [])
+
+    def reader(self, start_epoch_ms: int, end_epoch_ms: int, station: str, data_name: str,
+               send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[RealtimeReader]:
+        contents = self.data.get(data_name)
+        if not contents:
+            _LOGGER.debug(f"No realtime data defined for {data_name}")
+            return None
+        reader_data: typing.Dict[Name, str] = dict()
+        for key, field in contents.items():
+            reader_data[Name(station, 'raw', key.variable, key.flavors)] = field
+        return RealtimeReader(start_epoch_ms, end_epoch_ms, station, data_name, reader_data, send,
+                              realtime_offset=self.realtime_offset)
+
+    def __deepcopy__(self, memo):
+        y = type(self)(self.data, realtime_offset=self.realtime_offset)
+        memo[id(self)] = y
+        return y
+
+    def detach(self):
+        return type(self)(self.data, realtime_offset=self.realtime_offset)
+
+    class Data(dict):
+        def __init__(self, profile: str, *args, archive: str = 'realtime', **kwargs):
+            super().__init__(*args, **kwargs)
+            self.profile = profile
+            self.archive = archive
+
+        def _translated_reader(self, record: str) -> typing.Callable[[str, int, int, typing.Callable],
+                                                                     typing.Optional[DataStream]]:
+            def lookup(station: str, start_epoch_ms: int, end_epoch_ms: int,
+                       send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
+                translator: typing.Optional[RealtimeTranslator] = get_translator(station)
+                if translator is None or not isinstance(translator, RealtimeTranslator):
+                    _LOGGER.debug(f"No realtime translator for {station}")
+                    return None
+                data_name = f'{self.profile}-{self.archive}-{record}'
+                return translator.reader(start_epoch_ms, end_epoch_ms, station, data_name, send)
+            return lookup
+
+        def __getitem__(self, key) -> typing.Callable[[str, int, int, typing.Callable], typing.Optional[DataStream]]:
+            return self._translated_reader(key)
+
+        def get(self, key, default=None) -> typing.Callable[[str, int, int, typing.Callable],
+                                                            typing.Optional[DataStream]]:
+            return self._translated_reader(key)
+
+        def __deepcopy__(self, memo):
+            y = type(self)(self.profile, self, archive=self.archive)
+            memo[id(self)] = y
+            return y
+
+    @classmethod
+    def assemble_translator(cls, profile_data: typing.Dict[str, typing.Dict[str, typing.Union[typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]], "RealtimeTranslator.Data"]]],
+                            realtime_offset = 60.0) -> "RealtimeTranslator":
+        data: typing.Dict[str, typing.Dict["RealtimeTranslator.Key", str]] = dict()
+        for profile_name, profile_archives in profile_data.items():
+            for archive_name, archive_records in profile_archives.items():
+                if not isinstance(archive_records, cls.Data):
+                    continue
+                for record_name, record_data in archive_records.items():
+                    data_name = f'{profile_name}-{archive_name}-{record_name}'
+                    data[data_name] = record_data
+        return cls(data, realtime_offset=realtime_offset)
+
+
 def editing_get(station: str, mode_name: str, start_epoch_ms: int, end_epoch_ms: int,
                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
     profile = mode_name.split('-', 1)[0]
@@ -1832,14 +2014,8 @@ def export_profile_get(station: str, mode_name: str, export_key: str,
     return result.create_export(station, export_key, start_epoch_ms, end_epoch_ms, directory)
 
 
-def detach(*profiles: typing.Union[
-        typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]],
-        typing.Dict[str, typing.Dict[str, DataExportList]]]) -> typing.Union[
-        typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]],
-        typing.Dict[str, typing.Dict[str, DataExportList]]]:
-    result: typing.Union[
-        typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]],
-        typing.Dict[str, typing.Dict[str, DataExportList]]] = dict()
+def detach(*profiles):
+    result = dict()
     for profile in profiles:
         result.update(deepcopy(profile))
     return result
@@ -2130,7 +2306,7 @@ profile_export: typing.Dict[str, typing.Dict[str, DataExportList]] = {
 }
 
 
-aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]] = {
+aerosol_data = {
     'raw': {
         'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: ContaminationReader(
             start_epoch_ms, end_epoch_ms, {
@@ -2906,9 +3082,253 @@ aerosol_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, 
             }, send
         ),
     },
+
+    'realtime': RealtimeTranslator.Data('aerosol', {
+        'cnc': {
+            RealtimeTranslator.Key('N_N71'): 'cnc',
+            RealtimeTranslator.Key('N_N61'): 'cnc',
+        },
+
+        'scattering-whole': {
+            RealtimeTranslator.Key('BsB_S11'): 'BsB',
+            RealtimeTranslator.Key('BsG_S11'): 'BsG',
+            RealtimeTranslator.Key('BsR_S11'): 'BsR',
+            RealtimeTranslator.Key('BbsB_S11'): 'BbsB',
+            RealtimeTranslator.Key('BbsG_S11'): 'BbsG',
+            RealtimeTranslator.Key('BbsR_S11'): 'BbsR',
+        },
+        
+        'scattering-pm10': {
+            RealtimeTranslator.Key('BsB_S11', {'pm10'}): 'BsB',
+            RealtimeTranslator.Key('BsG_S11', {'pm10'}): 'BsG',
+            RealtimeTranslator.Key('BsR_S11', {'pm10'}): 'BsR',
+            RealtimeTranslator.Key('BbsB_S11', {'pm10'}): 'BbsB',
+            RealtimeTranslator.Key('BbsG_S11', {'pm10'}): 'BbsG',
+            RealtimeTranslator.Key('BbsR_S11', {'pm10'}): 'BbsR',
+        },
+        'scattering-pm25': {
+            RealtimeTranslator.Key('BsB_S11', {'pm25'}): 'BsB',
+            RealtimeTranslator.Key('BsG_S11', {'pm25'}): 'BsG',
+            RealtimeTranslator.Key('BsR_S11', {'pm25'}): 'BsR',
+            RealtimeTranslator.Key('BbsB_S11', {'pm25'}): 'BbsB',
+            RealtimeTranslator.Key('BbsG_S11', {'pm25'}): 'BbsG',
+            RealtimeTranslator.Key('BbsR_S11', {'pm25'}): 'BbsR',
+        },
+        'scattering-pm1': {
+            RealtimeTranslator.Key('BsB_S11', {'pm1'}): 'BsB',
+            RealtimeTranslator.Key('BsG_S11', {'pm1'}): 'BsG',
+            RealtimeTranslator.Key('BsR_S11', {'pm1'}): 'BsR',
+            RealtimeTranslator.Key('BbsB_S11', {'pm1'}): 'BbsB',
+            RealtimeTranslator.Key('BbsG_S11', {'pm1'}): 'BbsG',
+            RealtimeTranslator.Key('BbsR_S11', {'pm1'}): 'BbsR',
+        },
+
+        'absorption-whole': {
+            RealtimeTranslator.Key('BaB_A11'): 'BaB',
+            RealtimeTranslator.Key('BaG_A11'): 'BaG',
+            RealtimeTranslator.Key('BaR_A11'): 'BaR',
+        },
+        'absorption-pm10': {
+            RealtimeTranslator.Key('BaB_A11', {'pm10'}): 'BaB',
+            RealtimeTranslator.Key('BaG_A11', {'pm10'}): 'BaG',
+            RealtimeTranslator.Key('BaR_A11', {'pm10'}): 'BaR',
+        },
+        'absorption-pm25': {
+            RealtimeTranslator.Key('BaB_A11', {'pm25'}): 'BaB',
+            RealtimeTranslator.Key('BaG_A11', {'pm25'}): 'BaG',
+            RealtimeTranslator.Key('BaR_A11', {'pm25'}): 'BaR',
+        },
+        'absorption-pm1': {
+            RealtimeTranslator.Key('BaB_A11', {'pm1'}): 'BaB',
+            RealtimeTranslator.Key('BaG_A11', {'pm1'}): 'BaG',
+            RealtimeTranslator.Key('BaR_A11', {'pm1'}): 'BaR',
+        },
+
+        'aethalometer': dict(
+            [(RealtimeTranslator.Key(f'Ba{i + 1}_A81'), f'Ba{i + 1}') for i in range(7)] +
+            [(RealtimeTranslator.Key(f'X{i + 1}_A81'), f'X{i + 1}') for i in range(7)] +
+            [(RealtimeTranslator.Key(f'ZFACTOR{i + 1}_A81'), f'CF{i + 1}') for i in range(7)] +
+            [(RealtimeTranslator.Key(f'Ir{i + 1}_A81'), f'Ir{i + 1}') for i in range(7)]
+        ),
+
+        'intensive-whole': {
+            RealtimeTranslator.Key('BsB_S11'): 'BsB',
+            RealtimeTranslator.Key('BsG_S11'): 'BsG',
+            RealtimeTranslator.Key('BsR_S11'): 'BsR',
+            RealtimeTranslator.Key('BbsB_S11'): 'BbsB',
+            RealtimeTranslator.Key('BbsG_S11'): 'BbsG',
+            RealtimeTranslator.Key('BbsR_S11'): 'BbsR',
+            RealtimeTranslator.Key('BaB_A11'): 'BaB',
+            RealtimeTranslator.Key('BaG_A11'): 'BaG',
+            RealtimeTranslator.Key('BaR_A11'): 'BaR',
+        },
+        'intensive-pm10': {
+            RealtimeTranslator.Key('BsB_S11', {'pm10'}): 'BsB',
+            RealtimeTranslator.Key('BsG_S11', {'pm10'}): 'BsG',
+            RealtimeTranslator.Key('BsR_S11', {'pm10'}): 'BsR',
+            RealtimeTranslator.Key('BbsB_S11', {'pm10'}): 'BbsB',
+            RealtimeTranslator.Key('BbsG_S11', {'pm10'}): 'BbsG',
+            RealtimeTranslator.Key('BbsR_S11', {'pm10'}): 'BbsR',
+            RealtimeTranslator.Key('BaB_A11', {'pm10'}): 'BaB',
+            RealtimeTranslator.Key('BaG_A11', {'pm10'}): 'BaG',
+            RealtimeTranslator.Key('BaR_A11', {'pm10'}): 'BaR',
+        },
+        'intensive-pm25': {
+            RealtimeTranslator.Key('BsB_S11', {'pm25'}): 'BsB',
+            RealtimeTranslator.Key('BsG_S11', {'pm25'}): 'BsG',
+            RealtimeTranslator.Key('BsR_S11', {'pm25'}): 'BsR',
+            RealtimeTranslator.Key('BbsB_S11', {'pm25'}): 'BbsB',
+            RealtimeTranslator.Key('BbsG_S11', {'pm25'}): 'BbsG',
+            RealtimeTranslator.Key('BbsR_S11', {'pm25'}): 'BbsR',
+            RealtimeTranslator.Key('BaB_A11', {'pm25'}): 'BaB',
+            RealtimeTranslator.Key('BaG_A11', {'pm25'}): 'BaG',
+            RealtimeTranslator.Key('BaR_A11', {'pm25'}): 'BaR',
+        },
+        'intensive-pm1': {
+            RealtimeTranslator.Key('BsB_S11', {'pm1'}): 'BsB',
+            RealtimeTranslator.Key('BsG_S11', {'pm1'}): 'BsG',
+            RealtimeTranslator.Key('BsR_S11', {'pm1'}): 'BsR',
+            RealtimeTranslator.Key('BbsB_S11', {'pm1'}): 'BbsB',
+            RealtimeTranslator.Key('BbsG_S11', {'pm1'}): 'BbsG',
+            RealtimeTranslator.Key('BbsR_S11', {'pm1'}): 'BbsR',
+            RealtimeTranslator.Key('BaB_A11', {'pm1'}): 'BaB',
+            RealtimeTranslator.Key('BaG_A11', {'pm1'}): 'BaG',
+            RealtimeTranslator.Key('BaR_A11', {'pm1'}): 'BaR',
+        },
+
+        'wind': {
+            RealtimeTranslator.Key('WS1_XM1'): 'WS',
+            RealtimeTranslator.Key('WD1_XM1'): 'WD',
+        },
+        'flow': {
+            RealtimeTranslator.Key('Q_Q11'): 'sample',
+            RealtimeTranslator.Key('Q_Q11', {'pm10'}): 'sample',
+            RealtimeTranslator.Key('Q_Q11', {'pm1'}): 'sample',
+            RealtimeTranslator.Key('Q_Q11', {'pm25'}): 'sample',
+            RealtimeTranslator.Key('Pd_P01'): 'pitot',
+        },
+        'temperature': {
+            RealtimeTranslator.Key('T_V51'): 'Tinlet', RealtimeTranslator.Key('U_V51'): 'Uinlet',
+            RealtimeTranslator.Key('T_V01'): 'Taux', RealtimeTranslator.Key('U_V01'): 'Uaux',
+            RealtimeTranslator.Key('T1_XM1'): 'Tambient',
+            RealtimeTranslator.Key('U1_XM1'): 'Uambient',
+            RealtimeTranslator.Key('TD1_XM1'): 'TDambient',
+
+            RealtimeTranslator.Key('T_V11'): 'Tsample', RealtimeTranslator.Key('U_V11'): 'Usample',
+            RealtimeTranslator.Key('T_V11', {'pm10'}): 'Tsample', RealtimeTranslator.Key('U_V11', {'pm10'}): 'Usample',
+            RealtimeTranslator.Key('T_V11', {'pm1'}): 'Tsample', RealtimeTranslator.Key('U_V11', {'pm1'}): 'Usample',
+            RealtimeTranslator.Key('T_V11', {'pm25'}): 'Tsample', RealtimeTranslator.Key('U_V11', {'pm25'}): 'Usample',
+
+            RealtimeTranslator.Key('Tu_S11'): 'Tnephinlet', RealtimeTranslator.Key('Uu_S11'): 'Unephinlet',
+            RealtimeTranslator.Key('Tu_S11', {'pm10'}): 'Tnephinlet',
+            RealtimeTranslator.Key('Uu_S11', {'pm10'}): 'Unephinlet',
+            RealtimeTranslator.Key('Tu_S11', {'pm1'}): 'Tnephinlet',
+            RealtimeTranslator.Key('Uu_S11', {'pm1'}): 'Unephinlet',
+            RealtimeTranslator.Key('Tu_S11', {'pm25'}): 'Tnephinlet',
+            RealtimeTranslator.Key('Uu_S11', {'pm25'}): 'Unephinlet',
+
+            RealtimeTranslator.Key('T_S11'): 'Tneph', RealtimeTranslator.Key('U_S11'): 'Uneph',
+            RealtimeTranslator.Key('T_S11', {'pm10'}): 'Tneph', RealtimeTranslator.Key('U_S11', {'pm10'}): 'Uneph',
+            RealtimeTranslator.Key('T_S11', {'pm1'}): 'Tneph', RealtimeTranslator.Key('U_S11', {'pm1'}): 'Uneph',
+            RealtimeTranslator.Key('T_S11', {'pm25'}): 'Tneph', RealtimeTranslator.Key('U_S11', {'pm25'}): 'Uneph',
+        },
+        'pressure': {
+            RealtimeTranslator.Key('P_XM1'): 'ambient',
+            RealtimeTranslator.Key('Pd_P01'): 'pitot',
+            RealtimeTranslator.Key('Pd_P12'): 'vacuum',
+            RealtimeTranslator.Key('Pd_P12', {'pm10'}): 'vacuum',
+            RealtimeTranslator.Key('Pd_P12', {'pm1'}): 'vacuum',
+            RealtimeTranslator.Key('Pd_P12', {'pm25'}): 'vacuum',
+        },
+        'samplepressure-whole': {
+            RealtimeTranslator.Key('P_S11'): 'neph',
+            RealtimeTranslator.Key('Pd_P11'): 'impactor',
+        },
+        'samplepressure-pm10': {
+            RealtimeTranslator.Key('P_S11', {'pm10'}): 'neph',
+            RealtimeTranslator.Key('Pd_P11', {'pm10'}): 'impactor',
+        },
+        'samplepressure-pm25': {
+            RealtimeTranslator.Key('P_S11', {'pm25'}): 'neph',
+            RealtimeTranslator.Key('Pd_P11', {'pm25'}): 'impactor',
+        },
+        'samplepressure-pm1': {
+            RealtimeTranslator.Key('P_S11', {'pm1'}): 'neph',
+            RealtimeTranslator.Key('Pd_P11', {'pm1'}): 'impactor',
+        },
+
+        'nephzero': {
+            RealtimeTranslator.Key('BswB_S11'): 'BswB',
+            RealtimeTranslator.Key('BswG_S11'): 'BswG',
+            RealtimeTranslator.Key('BswR_S11'): 'BswR',
+            RealtimeTranslator.Key('BbswB_S11'): 'BbswB',
+            RealtimeTranslator.Key('BbswG_S11'): 'BbswG',
+            RealtimeTranslator.Key('BbswR_S11'): 'BbswR',
+        },
+        'nephstatus': {
+            RealtimeTranslator.Key('CfG_S11'): 'CfG',
+            RealtimeTranslator.Key('CfG_S11', {'pm10'}): 'CfG',
+            RealtimeTranslator.Key('CfG_S11', {'pm1'}): 'CfG',
+            RealtimeTranslator.Key('CfG_S11', {'pm25'}): 'CfG',
+            RealtimeTranslator.Key('Vl_S11'): 'Vl',
+            RealtimeTranslator.Key('Vl_S11', {'pm10'}): 'Vl',
+            RealtimeTranslator.Key('Vl_S11', {'pm1'}): 'Vl',
+            RealtimeTranslator.Key('Vl_S11', {'pm25'}): 'Vl',
+            RealtimeTranslator.Key('Al_S11'): 'Al',
+            RealtimeTranslator.Key('Al_S11', {'pm10'}): 'Al',
+            RealtimeTranslator.Key('Al_S11', {'pm1'}): 'Al',
+            RealtimeTranslator.Key('Al_S11', {'pm25'}): 'Al',
+        },
+
+        'clapstatus': {
+            RealtimeTranslator.Key('IrG_A11'): 'IrG',
+            RealtimeTranslator.Key('IrG_A11', {'pm10'}): 'IrG',
+            RealtimeTranslator.Key('IrG_A11', {'pm1'}): 'IrG',
+            RealtimeTranslator.Key('IrG_A11', {'pm25'}): 'IrG',
+            RealtimeTranslator.Key('IfG_A11'): 'IfG',
+            RealtimeTranslator.Key('IfG_A11', {'pm10'}): 'IfG',
+            RealtimeTranslator.Key('IfG_A11', {'pm1'}): 'IfG',
+            RealtimeTranslator.Key('IfG_A11', {'pm25'}): 'IfG',
+            RealtimeTranslator.Key('IpG_A11'): 'IpG',
+            RealtimeTranslator.Key('IpG_A11', {'pm10'}): 'IpG',
+            RealtimeTranslator.Key('IpG_A11', {'pm1'}): 'IpG',
+            RealtimeTranslator.Key('IpG_A11', {'pm25'}): 'IpG',
+            RealtimeTranslator.Key('Q_A11'): 'Q',
+            RealtimeTranslator.Key('Q_A11', {'pm10'}): 'Q',
+            RealtimeTranslator.Key('Q_A11', {'pm1'}): 'Q',
+            RealtimeTranslator.Key('Q_A11', {'pm25'}): 'Q',
+            RealtimeTranslator.Key('T1_A11'): 'Tsample',
+            RealtimeTranslator.Key('T1_A11', {'pm10'}): 'Tsample',
+            RealtimeTranslator.Key('T1_A11', {'pm1'}): 'Tsample',
+            RealtimeTranslator.Key('T1_A11', {'pm25'}): 'Tsample',
+            RealtimeTranslator.Key('T2_A11'): 'Tcase',
+            RealtimeTranslator.Key('T2_A11', {'pm10'}): 'Tcase',
+            RealtimeTranslator.Key('T2_A11', {'pm1'}): 'Tcase',
+            RealtimeTranslator.Key('T2_A11', {'pm25'}): 'Tcase',
+            RealtimeTranslator.Key('Fn_A11'): 'spot',
+        },
+
+        'aethalometerstatus': {
+            RealtimeTranslator.Key('T1_A81'): 'Tcontroller',
+            RealtimeTranslator.Key('T2_A81'): 'Tsupply',
+            RealtimeTranslator.Key('T3_A81'): 'Tled',
+        },
+
+        'cpcstatus': {
+            RealtimeTranslator.Key('Q_Q71'): 'Qsample',
+            RealtimeTranslator.Key('Q_Q61'): 'Qsample',
+            RealtimeTranslator.Key('Q_Q72'): 'Qdrier',
+            RealtimeTranslator.Key('Q_Q62'): 'Qdrier',
+        },
+
+        'umacstatus': {
+            RealtimeTranslator.Key('T_X1'): 'T',
+            RealtimeTranslator.Key('V_X1'): 'V',
+        },
+    }),
 }
 
-ozone_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]] = {
+ozone_data = {
     'raw': {
         'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: ContaminationReader(
             start_epoch_ms, end_epoch_ms, {
@@ -3010,9 +3430,34 @@ ozone_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, ty
             }, send
         ),
     },
+
+    'realtime': RealtimeTranslator.Data('ozone', {
+        'ozone': {
+            RealtimeTranslator.Key('X_G81'): 'ozone',
+        },
+
+        'status': {
+            RealtimeTranslator.Key('T1_G81'): 'Tsample',
+            RealtimeTranslator.Key('T2_G81'): 'Tlamp',
+            RealtimeTranslator.Key('P_G81'): 'Psample',
+            RealtimeTranslator.Key('P1_G81'): 'Psample',
+        },
+
+        'cells': {
+            RealtimeTranslator.Key('Q1_G81'): 'Qa',
+            RealtimeTranslator.Key('Q2_G81'): 'Qb',
+            RealtimeTranslator.Key('C1_G81'): 'Ca',
+            RealtimeTranslator.Key('C2_G81'): 'Cb',
+        },
+
+        'wind': {
+            RealtimeTranslator.Key('WS1_XM1'): 'WS',
+            RealtimeTranslator.Key('WD1_XM1'): 'WD',
+        },
+    }),
 }
 
-met_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]] = {
+met_data = {
     'raw': {
         'wind': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
@@ -3178,11 +3623,14 @@ met_data: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typi
             }, send
         ),
     },
+
+    'realtime': RealtimeTranslator.Data('met'),
 }
 
-profile_data: typing.Dict[str, typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, typing.Callable], DataStream]]]] = {
+profile_data = {
     'aerosol': aerosol_data,
     'ozone': ozone_data,
     'met': met_data,
 }
 
+realtime_translator = RealtimeTranslator.assemble_translator(profile_data)

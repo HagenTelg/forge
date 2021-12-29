@@ -1,5 +1,5 @@
 import typing
-from ..cpd3 import DataStream, DataReader, EditedReader, Name, data_profile_get, detach, profile_data
+from ..cpd3 import DataStream, DataReader, EditedReader, RealtimeTranslator, Name, data_profile_get, detach, profile_data
 
 
 station_profile_data = detach(profile_data)
@@ -29,6 +29,22 @@ station_profile_data['aerosol']['raw']['maap-pm1'] = lambda station, start_epoch
         Name(station, 'raw', 'XR_A21', {'pm1'}): 'X',
     }, send
 )
+station_profile_data['aerosol']['realtime']['maap-whole'] = {
+    RealtimeTranslator.Key('BacR_A21'): 'Ba',
+    RealtimeTranslator.Key('XR_A21'): 'X',
+}
+station_profile_data['aerosol']['realtime']['maap-pm10'] ={
+    RealtimeTranslator.Key('BacR_A21', {'pm10'}): 'Ba',
+    RealtimeTranslator.Key('XR_A21', {'pm10'}): 'X',
+}
+station_profile_data['aerosol']['realtime']['maap-pm25'] = {
+    RealtimeTranslator.Key('BacR_A21', {'pm25'}): 'Ba',
+    RealtimeTranslator.Key('XR_A21', {'pm25'}): 'X',
+}
+station_profile_data['aerosol']['realtime']['maap-pm1'] = {
+    RealtimeTranslator.Key('BacR_A21', {'pm1'}): 'Ba',
+    RealtimeTranslator.Key('XR_A21', {'pm1'}): 'X',
+}
 station_profile_data['aerosol']['editing']['maap-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
     start_epoch_ms, end_epoch_ms, station, 'aerosol', {
         Name(station, 'clean', 'BacR_A21'): 'Ba',
@@ -149,6 +165,51 @@ station_profile_data['aerosol']['raw']['maapstatus'] = lambda station, start_epo
         Name(station, 'raw', 'Is2_A21', {'pm25'}): 'Is2',
     }, send
 )
+station_profile_data['aerosol']['realtime']['maapstatus'] = {
+    RealtimeTranslator.Key('P_A21'): 'Psample',
+    RealtimeTranslator.Key('P_A21', {'pm10'}): 'Psample',
+    RealtimeTranslator.Key('P_A21', {'pm1'}): 'Psample',
+    RealtimeTranslator.Key('P_A21', {'pm25'}): 'Psample',
+
+    RealtimeTranslator.Key('T1_A21'): 'Tambient',
+    RealtimeTranslator.Key('T1_A21', {'pm10'}): 'Tambient',
+    RealtimeTranslator.Key('T1_A21', {'pm1'}): 'Tambient',
+    RealtimeTranslator.Key('T1_A21', {'pm25'}): 'Tambient',
+    RealtimeTranslator.Key('T2_A21'): 'Tmeasurementhead',
+    RealtimeTranslator.Key('T2_A21', {'pm10'}): 'Tmeasurementhead',
+    RealtimeTranslator.Key('T2_A21', {'pm1'}): 'Tmeasurementhead',
+    RealtimeTranslator.Key('T2_A21', {'pm25'}): 'Tmeasurementhead',
+    RealtimeTranslator.Key('T3_A21'): 'Tsystem',
+    RealtimeTranslator.Key('T3_A21', {'pm10'}): 'Tsystem',
+    RealtimeTranslator.Key('T3_A21', {'pm1'}): 'Tsystem',
+    RealtimeTranslator.Key('T3_A21', {'pm25'}): 'Tsystem',
+
+    RealtimeTranslator.Key('Q_A21'): 'Qsample',
+    RealtimeTranslator.Key('Q_A21', {'pm10'}): 'Qsample',
+    RealtimeTranslator.Key('Q_A21', {'pm1'}): 'Qsample',
+    RealtimeTranslator.Key('Q_A21', {'pm25'}): 'Qsample',
+
+    RealtimeTranslator.Key('IrR_A21'): 'Ir',
+    RealtimeTranslator.Key('IrR_A21', {'pm10'}): 'Ir',
+    RealtimeTranslator.Key('IrR_A21', {'pm1'}): 'Ir',
+    RealtimeTranslator.Key('IrR_A21', {'pm25'}): 'Ir',
+    RealtimeTranslator.Key('IfR_A21'): 'If',
+    RealtimeTranslator.Key('IfR_A21', {'pm10'}): 'If',
+    RealtimeTranslator.Key('IfR_A21', {'pm1'}): 'If',
+    RealtimeTranslator.Key('IfR_A21', {'pm25'}): 'If',
+    RealtimeTranslator.Key('IpR_A21'): 'Ip',
+    RealtimeTranslator.Key('IpR_A21', {'pm10'}): 'Ip',
+    RealtimeTranslator.Key('IpR_A21', {'pm1'}): 'Ip',
+    RealtimeTranslator.Key('IpR_A21', {'pm25'}): 'Ip',
+    RealtimeTranslator.Key('Is1_A21'): 'Is1',
+    RealtimeTranslator.Key('Is1_A21', {'pm10'}): 'Is1',
+    RealtimeTranslator.Key('Is1_A21', {'pm1'}): 'Is1',
+    RealtimeTranslator.Key('Is1_A21', {'pm25'}): 'Is1',
+    RealtimeTranslator.Key('Is2_A21'): 'Is2',
+    RealtimeTranslator.Key('Is2_A21', {'pm10'}): 'Is2',
+    RealtimeTranslator.Key('Is2_A21', {'pm1'}): 'Is2',
+    RealtimeTranslator.Key('Is2_A21', {'pm25'}): 'Is2',
+}
 
 
 station_profile_data['aerosol']['raw']['aethalometer-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -178,6 +239,26 @@ station_profile_data['aerosol']['raw']['aethalometer-pm1'] = lambda station, sta
         [(Name(station, 'raw', f'Bac{i+1}_A81', {'pm1'}), f'Ba{i+1}') for i in range(7)] +
         [(Name(station, 'raw', f'X{i+1}_A81', {'pm1'}), f'X{i+1}') for i in range(7)]
     ), send
+)
+station_profile_data['aerosol']['realtime']['aethalometer-whole'] = dict(
+    [(RealtimeTranslator.Key(f'Ir{i+1}_A81'), f'Ir{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'Bac{i+1}_A81'), f'Ba{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'X{i+1}_A81'), f'X{i+1}') for i in range(7)]
+)
+station_profile_data['aerosol']['realtime']['aethalometer-pm10'] = dict(
+    [(RealtimeTranslator.Key(f'Ir{i+1}_A81', {'pm10'}), f'Ir{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'Bac{i+1}_A81', {'pm10'}), f'Ba{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'X{i+1}_A81', {'pm10'}), f'X{i+1}') for i in range(7)]
+)
+station_profile_data['aerosol']['realtime']['aethalometer-pm25'] = dict(
+    [(RealtimeTranslator.Key(f'Ir{i+1}_A81', {'pm25'}), f'Ir{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'Bac{i+1}_A81', {'pm25'}), f'Ba{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'X{i+1}_A81', {'pm25'}), f'X{i+1}') for i in range(7)]
+)
+station_profile_data['aerosol']['realtime']['aethalometer-pm1'] = dict(
+    [(RealtimeTranslator.Key(f'Ir{i+1}_A81', {'pm1'}), f'Ir{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'Bac{i+1}_A81', {'pm1'}), f'Ba{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'X{i+1}_A81', {'pm1'}), f'X{i+1}') for i in range(7)]
 )
 station_profile_data['aerosol']['editing']['aethalometer-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
     start_epoch_ms, end_epoch_ms, station, 'aerosol', dict(
@@ -287,6 +368,28 @@ station_profile_data['aerosol']['raw']['aethalometerstatus'] = lambda station, s
         [(Name(station, 'raw', f'ZFACTOR{i+1}_A81', {'pm25'}), f'CF{i+1}') for i in range(7)] +
         [(Name(station, 'raw', f'ZFACTOR{i+1}_A81', {'pm1'}), f'CF{i+1}') for i in range(7)]
     ), send
+)
+station_profile_data['aerosol']['realtime']['aethalometerstatus'] = dict(
+    [(RealtimeTranslator.Key('T1_A81'), 'Tcontroller'),
+     (RealtimeTranslator.Key('T1_A81', {'pm10'}), 'Tcontroller'),
+     (RealtimeTranslator.Key('T1_A81', {'pm25'}), 'Tcontroller'),
+     (RealtimeTranslator.Key('T1_A81', {'pm1'}), 'Tcontroller'),
+     (RealtimeTranslator.Key('T2_A81'), 'Tsupply'),
+     (RealtimeTranslator.Key('T2_A81', {'pm10'}), 'Tsupply'),
+     (RealtimeTranslator.Key('T2_A81', {'pm25'}), 'Tsupply'),
+     (RealtimeTranslator.Key('T2_A81', {'pm1'}), 'Tsupply'),
+     (RealtimeTranslator.Key('T3_A81'), 'Tled'),
+     (RealtimeTranslator.Key('T3_A81', {'pm10'}), 'Tled'),
+     (RealtimeTranslator.Key('T3_A81', {'pm25'}), 'Tled'),
+     (RealtimeTranslator.Key('T3_A81', {'pm1'}), 'Tled')] +
+    [(RealtimeTranslator.Key(f'Ir{i+1}_A81'), f'Ir{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'Ir{i+1}_A81', {'pm10'}), f'Ir{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'Ir{i+1}_A81', {'pm25'}), f'Ir{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'Ir{i+1}_A81', {'pm1'}), f'Ir{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'ZFACTOR{i+1}_A81'), f'CF{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'ZFACTOR{i+1}_A81', {'pm10'}), f'CF{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'ZFACTOR{i+1}_A81', {'pm25'}), f'CF{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'ZFACTOR{i+1}_A81', {'pm1'}), f'CF{i+1}') for i in range(7)]
 )
 station_profile_data['aerosol']['editing']['aethalometerstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
     start_epoch_ms, end_epoch_ms, station, 'aerosol', dict(

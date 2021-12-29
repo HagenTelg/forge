@@ -404,7 +404,8 @@ def main():
         root_logger.setLevel(logging.DEBUG)
         root_logger.addHandler(handler)
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     loop.add_signal_handler(signal.SIGINT, loop.stop)
     loop.add_signal_handler(signal.SIGTERM, loop.stop)
     loop.run_until_complete(run(parser, args))

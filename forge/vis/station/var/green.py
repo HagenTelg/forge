@@ -8,8 +8,8 @@ from ..default.aerosol.green import AethalometerOptical
 class Green(TimeSeries):
     AdjustWavelength = GreenBase.AdjustWavelength
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Optical Properties Adjusted to 550nm"
 
         scattering = TimeSeries.Graph()

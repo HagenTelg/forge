@@ -6,8 +6,8 @@ from ..default.aerosol.optical import Optical
 class OpticalScatteringSecondary(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Ecotech Optical Properties"
 
         total_scattering = self.ThreeWavelength(f'{mode}-scattering2', 'Bs')
@@ -29,8 +29,8 @@ class OpticalScatteringSecondary(TimeSeries):
 class EditingScatteringSecondary(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Ecotech Total Light Scattering"
 
         raw = self.ThreeWavelength(f'{profile}-raw-scattering2', 'Bs', 'Raw {code} ({size})')
@@ -47,8 +47,8 @@ class EditingScatteringSecondary(TimeSeries):
 class EditingBackScatteringSecondary(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Ecotech Backwards-hemispheric Light Scattering"
 
         raw = self.ThreeWavelength(f'{profile}-raw-scattering2', 'Bbs', 'Raw {code} ({size})')

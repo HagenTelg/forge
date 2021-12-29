@@ -1,5 +1,5 @@
 import typing
-from ..cpd3 import DataStream, DataReader, EditedReader, Name, data_profile_get, detach, profile_data
+from ..cpd3 import DataStream, DataReader, EditedReader, Name, RealtimeTranslator, data_profile_get, detach, profile_data
 
 
 station_profile_data = detach(profile_data)
@@ -56,6 +56,7 @@ station_profile_data['aerosol']['raw']['dmpsstatus'] = lambda station, start_epo
     }, send
 )
 
+
 station_profile_data['aerosol']['raw']['pops'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'Ns_N21'): 'Dp',
@@ -96,6 +97,12 @@ station_profile_data['aerosol']['avgh']['pops'] = lambda station, start_epoch_ms
         Name(station, 'avgh', 'BsR_N21'): 'BsR',
     }, send
 )
+station_profile_data['aerosol']['realtime']['pops'] = {
+    RealtimeTranslator.Key('Ns_N21'): 'Dp',
+    RealtimeTranslator.Key('Nn_N21'): 'dNdlogDp',
+    RealtimeTranslator.Key('Nb_N21'): 'dN',
+}
+
 station_profile_data['aerosol']['raw']['popsstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'T1_N21'): 'Tpressure',
@@ -107,6 +114,15 @@ station_profile_data['aerosol']['raw']['popsstatus'] = lambda station, start_epo
         Name(station, 'raw', 'P_N21'): 'Pboard',
     }, send
 )
+station_profile_data['aerosol']['realtime']['popsstatus'] = {
+    RealtimeTranslator.Key('T1_N21'): 'Tpressure',
+    RealtimeTranslator.Key('T2_N21'): 'Tlaser',
+    RealtimeTranslator.Key('T3_N21'): 'Tinternal',
+
+    RealtimeTranslator.Key('Q_N21'): 'Qsample',
+
+    RealtimeTranslator.Key('P_N21'): 'Pboard',
+}
 
 
 def get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,

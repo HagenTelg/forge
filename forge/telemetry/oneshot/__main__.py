@@ -198,7 +198,8 @@ def main():
         _LOGGER.error("All upload URLs failed")
         return False
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     ok = loop.run_until_complete(run())
     loop.close()
 

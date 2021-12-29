@@ -4,8 +4,8 @@ from forge.vis.view.sizedistribution import SizeDistribution, SizeCounts
 
 
 class DMPSStatus(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "DMPS Status"
 
         temperature = TimeSeries.Graph()
@@ -80,8 +80,8 @@ class DMPSStatus(TimeSeries):
 
 
 class DMPSDistribution(SizeDistribution):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "DMPS Size Distribution"
 
         self.contamination = f'{mode}-contamination'
@@ -90,8 +90,8 @@ class DMPSDistribution(SizeDistribution):
 
 
 class DMPSCounts(SizeCounts):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Particle Concentration"
 
         self.contamination = f'{mode}-contamination'

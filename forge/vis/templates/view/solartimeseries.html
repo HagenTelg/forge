@@ -27,6 +27,7 @@ const RecordProcessing = new Map();
 RecordProcessing.set('{{ record }}', {{ processing.script | safe }});
 // {% endfor %}
 
+{% include 'view/layout/timeseries.js' %}
 {% include 'view/timeseries.js' %}
 {% include 'view/solartimeseries.js' %}
 })();

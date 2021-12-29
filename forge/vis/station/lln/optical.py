@@ -6,8 +6,8 @@ from ..default.aerosol.optical import Optical
 class OpticalCLAP(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "CLAP Optical Properties"
 
         total_scattering = self.ThreeWavelength(f'{mode}-scattering', 'Bs')
@@ -29,8 +29,8 @@ class OpticalCLAP(TimeSeries):
 class OpticalPSAP(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "PSAP Optical Properties"
 
         total_scattering = self.ThreeWavelength(f'{mode}-scattering', 'Bs')
@@ -52,8 +52,8 @@ class OpticalPSAP(TimeSeries):
 class OpticalCOSMOS(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "COSMOS Absorption Comparison"
 
         absorption = self.ThreeWavelength(f'{mode}-clap', 'Ba')
@@ -70,8 +70,8 @@ class OpticalCOSMOS(TimeSeries):
 class EditingCLAP(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "CLAP Light Absorption"
 
         raw = self.ThreeWavelength(f'{profile}-raw-clap', 'Ba', 'Raw {code} ({size})')
@@ -88,8 +88,8 @@ class EditingCLAP(TimeSeries):
 class EditingPSAP(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "PSAP Light Absorption"
 
         raw = self.ThreeWavelength(f'{profile}-raw-absorption', 'Ba', 'Raw {code} ({size})')
@@ -106,8 +106,8 @@ class EditingPSAP(TimeSeries):
 class EditingCOSMOS(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "CLAP Light Absorption"
 
         raw = self.ThreeWavelength(f'{profile}-raw-clap2', 'Ba', 'Raw {code} ({size})')

@@ -11,8 +11,8 @@ class WetDryRatio(TimeSeries):
         return new GenericOperations.SingleOutput(dataName, GenericOperations.divide, 'ratio', 'wet', 'dry');
     })"""
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Wet/Dry Scattering Ratio at 550nm"
 
         humidograph = TimeSeries.Graph()

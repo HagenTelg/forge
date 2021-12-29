@@ -3,8 +3,8 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class BMI1710CPCStatus(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "CPC Status"
 
         temperatures = TimeSeries.Graph()
@@ -70,8 +70,8 @@ class BMI1710CPCStatus(TimeSeries):
 
 
 class BMI1720CPCStatus(BMI1710CPCStatus):
-    def __init__(self, mode: str):
-        super().__init__(mode)
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
 
         pressure = TimeSeries.Graph()
         pressure.title = "Pressure"

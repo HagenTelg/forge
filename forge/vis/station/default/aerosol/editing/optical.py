@@ -6,8 +6,8 @@ from ..optical import Optical
 class EditingScattering(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Total Light Scattering"
 
         raw = self.ThreeWavelength(f'{profile}-raw-scattering', 'Bs', 'Raw {code} ({size})')
@@ -24,8 +24,8 @@ class EditingScattering(TimeSeries):
 class EditingBackScattering(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Backwards-hemispheric Light Scattering"
 
         raw = self.ThreeWavelength(f'{profile}-raw-scattering', 'Bbs', 'Raw {code} ({size})')
@@ -42,8 +42,8 @@ class EditingBackScattering(TimeSeries):
 class EditingAbsorption(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Light Absorption"
 
         raw = self.ThreeWavelength(f'{profile}-raw-absorption', 'Ba', 'Raw {code} ({size})')

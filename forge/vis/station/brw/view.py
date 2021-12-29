@@ -17,7 +17,10 @@ station_views['aerosol-raw-wind'] = Wind('aerosol-raw', measurements=OrderedDict
     ('{code}ambient', '{type} ambient'),
     ('{code}filter', '{type} filter'),
 ]))
+
 station_views['aerosol-raw-flow'] = Flow('aerosol-raw')
+station_views['aerosol-realtime-flow'] = Flow('aerosol-realtime', realtime=True)
+
 station_views['aerosol-raw-temperature'] = Temperature('aerosol-raw', measurements=OrderedDict([
     ('{code}inlet', '{code}_V51 (inlet)'),
     ('{code}sample', '{code}_V11 (sample)'),
@@ -27,8 +30,19 @@ station_views['aerosol-raw-temperature'] = Temperature('aerosol-raw', measuremen
     ('{code}filterrack', 'Filter rack {type}'),
     ('{code}ambient', 'Ambient {type}'),
 ]), omit_traces={'TDnephinlet', 'TDfilterrack', 'Ufilterrack'})
+station_views['aerosol-realtime-temperature'] = Temperature('aerosol-realtime', measurements=OrderedDict([
+    ('{code}inlet', '{code}_V51 (inlet)'),
+    ('{code}sample', '{code}_V11 (sample)'),
+    ('{code}nephinlet', '{code}u_S11 (neph inlet)'),
+    ('{code}neph', '{code}_S11 (neph sample)'),
+    ('{code}filter', 'Filter {type}'),
+    ('{code}filterrack', 'Filter rack {type}'),
+]), omit_traces={'TDnephinlet', 'TDfilterrack', 'Ufilterrack'}, realtime=True)
+
 station_views['aerosol-raw-filterstatus'] = FilterStatus('aerosol-raw')
 station_views['aerosol-raw-umacstatus'] = UMACStatus('aerosol-raw')
+station_views['aerosol-realtime-filterstatus'] = FilterStatus('aerosol-realtime', realtime=True)
+station_views['aerosol-realtime-umacstatus'] = UMACStatus('aerosol-realtime', realtime=True)
 
 
 measurements = OrderedDict([

@@ -21,11 +21,17 @@ station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-pops', "POPS
                                       'aerosol-clean-dmps')
 station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-pops', "POPS"),
                                      'aerosol-avgh-dmps')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-pops', "POPS"),
+                                         'aerosol-realtime-aethalometer')
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-dmpsstatus', "DMPS Status"),
                                     'aerosol-raw-cpcstatus')
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-popsstatus', "POPS Status"),
                                     'aerosol-raw-dmpsstatus')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-popsstatus', "POPS Status"),
+                                         'aerosol-realtime-cpcstatus')
+
+station_modes['aerosol-realtime'].remove('aerosol-realtime-wind')
 
 
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:

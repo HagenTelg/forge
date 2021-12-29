@@ -11,8 +11,8 @@ class Hurricane(TimeSeries):
         return new PurpleAir.CalculateDispatch(dataName, 'IBsa', 'IBsb', 'Bs');
     })"""
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Hurricane Hardened Monitoring"
 
         scattering = TimeSeries.Graph()

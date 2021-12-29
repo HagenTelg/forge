@@ -11,8 +11,8 @@ class EditingTemperature(TimeSeries):
             self.components.append('dewpoint')
             self.script = r"""(function(dataName) { return new Dewpoint.CalculateDispatch(dataName); })"""
 
-    def __init__(self, profile: str = 'met', measurements: typing.Optional[typing.Dict[str, str]] = None):
-        super().__init__()
+    def __init__(self, profile: str = 'met', measurements: typing.Optional[typing.Dict[str, str]] = None, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Temperature"
 
         if measurements is None:
@@ -66,8 +66,8 @@ class EditingDewpoint(TimeSeries):
             self.components.append('dewpoint')
             self.script = r"""(function(dataName) { return new Dewpoint.CalculateDispatch(dataName); })"""
 
-    def __init__(self, profile: str = 'met', measurements: typing.Optional[typing.Dict[str, str]] = None):
-        super().__init__()
+    def __init__(self, profile: str = 'met', measurements: typing.Optional[typing.Dict[str, str]] = None, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Dewpoint"
 
         if measurements is None:
@@ -121,8 +121,8 @@ class EditingRH(TimeSeries):
             self.components.append('dewpoint')
             self.script = r"""(function(dataName) { return new Dewpoint.CalculateDispatch(dataName); })"""
 
-    def __init__(self, profile: str = 'met', measurements: typing.Optional[typing.Dict[str, str]] = None):
-        super().__init__()
+    def __init__(self, profile: str = 'met', measurements: typing.Optional[typing.Dict[str, str]] = None, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Relative Humidity"
 
         if measurements is None:

@@ -5,7 +5,7 @@ from ..default.met.temperature import Temperature as BaseTemperature
 
 
 class Temperature(BaseTemperature):
-    def __init__(self, mode: str):
+    def __init__(self, mode: str, **kwargs):
         super().__init__(f'{mode}-temperature', OrderedDict([
             ('{code}sample', '{code}_V11 (sample)'),
             ('{code}nephinlet', '{code}u_S11 (neph inlet)'),
@@ -13,7 +13,7 @@ class Temperature(BaseTemperature):
             ('{code}ambient', 'Ambient {type}'),
             ('{code}room', 'Room {type}'),
             ('{code}cr1000', 'CR1000 Panel {type}'),
-        ]), {'TDnephinlet', 'TDroom', 'Uroom', 'TDcr1000', 'Ucr1000'})
+        ]), {'TDnephinlet', 'TDroom', 'Uroom', 'TDcr1000', 'Ucr1000'}, **kwargs)
         self.title = "System Conditions"
         for graph in self.graphs:
             graph.contamination = f'{mode}-contamination'
@@ -42,11 +42,11 @@ class Temperature(BaseTemperature):
 
 
 class Ambient(BaseTemperature):
-    def __init__(self, mode: str):
+    def __init__(self, mode: str, **kwargs):
         super().__init__(f'{mode}-ambient', OrderedDict([
             ('{code}ambient', 'Ambient {type}'),
             ('{code}sheltered', 'Sheltered {type}'),
-        ]))
+        ]), **kwargs)
         self.title = "Ambient Conditions"
         for graph in self.graphs:
             graph.contamination = f'{mode}-contamination'

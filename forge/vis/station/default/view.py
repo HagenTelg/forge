@@ -77,6 +77,22 @@ aerosol_views: typing.Dict[str, View] = {
     'aerosol-avgh-intensive': Intensive('aerosol-avgh'),
     'aerosol-avgh-extensive': Extensive('aerosol-avgh'),
     'aerosol-avgh-wind': Wind('aerosol-avgh'),
+    
+    'aerosol-realtime-counts': ParticleConcentration('aerosol-realtime', realtime=True),
+    'aerosol-realtime-optical': Optical('aerosol-realtime', realtime=True),
+    'aerosol-realtime-green': Green('aerosol-realtime', realtime=True),
+    'aerosol-realtime-aethalometer': AE33('aerosol-realtime', realtime=True),
+    'aerosol-realtime-intensive': Intensive('aerosol-realtime', realtime=True),
+    'aerosol-realtime-wind': Wind('aerosol-realtime', realtime=True),
+    'aerosol-realtime-flow': Flow('aerosol-realtime', realtime=True),
+    'aerosol-realtime-temperature': Temperature('aerosol-realtime', realtime=True),
+    'aerosol-realtime-pressure': Pressure('aerosol-realtime', realtime=True),
+    'aerosol-realtime-nephelometerzero': NephelometerZero('aerosol-realtime', realtime=True),
+    'aerosol-realtime-nephelometerstatus': NephelometerStatus('aerosol-realtime', realtime=True),
+    'aerosol-realtime-clapstatus': CLAPStatus('aerosol-realtime', realtime=True),
+    'aerosol-realtime-aethalometerstatus': AE33Status('aerosol-realtime', realtime=True),
+    'aerosol-realtime-cpcstatus': SystemCPCFlow('aerosol-realtime', realtime=True),
+    'aerosol-realtime-umacstatus': UMACStatus('aerosol-realtime', realtime=True),
 }
 ozone_views: typing.Dict[str, View] = {
     'ozone-raw-concentration': OzoneConcentration('ozone-raw'),
@@ -92,6 +108,11 @@ ozone_views: typing.Dict[str, View] = {
     
     'ozone-avgh-concentration': OzoneConcentration('ozone-avgh'),
     'ozone-avgh-wind': OzoneWind('ozone-avgh'),
+    
+    'ozone-realtime-concentration': OzoneConcentration('ozone-realtime', realtime=True),
+    'ozone-realtime-status': Thermo49Status('ozone-realtime', realtime=True),
+    'ozone-realtime-cells': Thermo49Cells('ozone-realtime', realtime=True),
+    'ozone-realtime-wind': OzoneWind('ozone-realtime', realtime=True),
 }
 met_views: typing.Dict[str, View] = {
     'met-raw-wind': MetWind('met-raw-wind'),

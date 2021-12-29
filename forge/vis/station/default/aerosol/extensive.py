@@ -6,8 +6,8 @@ from .optical import Optical
 class Extensive(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Extensive Parameters"
 
         cnc = TimeSeries.Graph()

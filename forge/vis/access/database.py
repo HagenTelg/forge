@@ -16,7 +16,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from passlib.hash import pbkdf2_sha256
 from authlib.integrations.starlette_client import OAuth
-from forge.email import is_valid_email, send_email, EmailMessage
+from forge.emailutil import is_valid_email, send_email, EmailMessage
 from forge.tasks import background_task
 from forge.vis.util import package_template, name_to_initials
 from forge.vis import CONFIGURATION

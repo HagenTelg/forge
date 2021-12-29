@@ -6,32 +6,41 @@ station_modes = detach(aerosol_modes)
 
 
 station_modes['aerosol-raw'].remove('aerosol-raw-counts')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-counts')
 station_modes['aerosol-editing'].remove('aerosol-editing-counts')
 station_modes['aerosol-clean'].remove('aerosol-clean-counts')
 station_modes['aerosol-avgh'].remove('aerosol-avgh-counts')
 station_modes['aerosol-raw'].remove('aerosol-raw-cpcstatus')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-cpcstatus')
 
 station_modes['aerosol-raw'].remove('aerosol-raw-green')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-green')
 station_modes['aerosol-clean'].remove('aerosol-clean-green')
 station_modes['aerosol-avgh'].remove('aerosol-clean-green')
 
 station_modes['aerosol-raw'].remove('aerosol-raw-clapstatus')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-clapstatus')
 station_modes['aerosol-editing'].remove('aerosol-editing-absorption')
 
 station_modes['aerosol-raw'].remove('aerosol-raw-aethalometer')
 station_modes['aerosol-raw'].remove('aerosol-raw-aethalometerstatus')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-aethalometer')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-aethalometerstatus')
 station_modes['aerosol-editing'].remove('aerosol-editing-aethalometer')
 station_modes['aerosol-editing'].remove('aerosol-editing-aethalometerstatus')
 station_modes['aerosol-clean'].remove('aerosol-clean-aethalometer')
 station_modes['aerosol-avgh'].remove('aerosol-avgh-aethalometer')
 
 station_modes['aerosol-raw'].remove('aerosol-raw-wind')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-wind')
 station_modes['aerosol-editing'].remove('aerosol-editing-wind')
 station_modes['aerosol-clean'].remove('aerosol-clean-wind')
 station_modes['aerosol-avgh'].remove('aerosol-avgh-wind')
 
 station_modes['aerosol-raw'].remove('aerosol-raw-flow')
 station_modes['aerosol-raw'].remove('aerosol-raw-umacstatus')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-flow')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-umacstatus')
 
 
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:

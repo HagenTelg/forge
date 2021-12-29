@@ -3,8 +3,8 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class EditingOzoneConcentration(TimeSeries):
-    def __init__(self, profile: str = 'ozone'):
-        super().__init__()
+    def __init__(self, profile: str = 'ozone', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Ozone Concentration"
 
         raw = TimeSeries.Graph()

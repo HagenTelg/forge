@@ -9,15 +9,20 @@ from .counts import ParticleConcentration, EditingParticleConcentration, TSI3776
 station_views = detach(aerosol_views)
 
 station_views['aerosol-raw-counts'] = ParticleConcentration('aerosol-raw')
+station_views['aerosol-realtime-counts'] = ParticleConcentration('aerosol-realtime', realtime=True)
 station_views['aerosol-editing-counts'] = EditingParticleConcentration()
 station_views['aerosol-clean-counts'] = ParticleConcentration('aerosol-clean')
 station_views['aerosol-avgh-counts'] = ParticleConcentration('aerosol-avgh')
 station_views['aerosol-raw-cpcstatus'] = TSI3010CPCStatus('aerosol-raw')
 station_views['aerosol-raw-cpcstatus2'] = TSI3776CPCStatus('aerosol-raw')
+station_views['aerosol-realtime-cpcstatus'] = TSI3010CPCStatus('aerosol-realtime', realtime=True)
+station_views['aerosol-realtime-cpcstatus2'] = TSI3776CPCStatus('aerosol-realtime', realtime=True)
 
 station_views['aerosol-raw-flow'] = BasicFlow('aerosol-raw')
+station_views['aerosol-realtime-flow'] = BasicFlow('aerosol-realtime', realtime=True)
 
 station_views['aerosol-raw-ccnstatus'] = CCNStatus('aerosol-raw')
+station_views['aerosol-raw-ccnstatus'] = CCNStatus('aerosol-raw', realtime=True)
 
 
 def get(station: str, view_name: str) -> typing.Optional[View]:

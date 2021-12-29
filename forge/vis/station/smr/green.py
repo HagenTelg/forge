@@ -21,8 +21,8 @@ return new WavelengthAdjust.AdjustedDispatch(dataName, inputFields, outputFields
     { center: 550, validDistance: 150, angstrom: 1.0 });
 })"""
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Optical Properties Adjusted to 550nm"
 
         scattering = TimeSeries.Graph()

@@ -33,8 +33,8 @@ class Optical(TimeSeries):
                     trace.color = color[1]
                     self.traces.append(trace)
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Optical Properties"
 
         total_scattering = self.ThreeWavelength(f'{mode}-scattering', 'Bs')

@@ -3,8 +3,8 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class EditingPressure(TimeSeries):
-    def __init__(self, profile: str = 'met'):
-        super().__init__()
+    def __init__(self, profile: str = 'met', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Pressure"
 
         raw = TimeSeries.Graph()

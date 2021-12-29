@@ -7,7 +7,6 @@ from smtplib import SMTP, SMTPNotSupportedError
 from dns.exception import DNSException
 from dns.resolver import resolve
 from email.message import EmailMessage
-from email.utils import parseaddr
 from email.headerregistry import AddressHeader
 from socket import getfqdn
 from dynaconf import Dynaconf

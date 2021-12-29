@@ -26,8 +26,8 @@ class AE33(TimeSeries):
                                                     size=size[1])
                     self.traces.append(trace)
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "AE33"
 
         absorption = self.SevenWavelength("Mm⁻¹", '.2f', "Ba {wavelength} nm ({size})", f'{mode}-aethalometer', 'Ba{index}')
@@ -49,8 +49,8 @@ class AE33(TimeSeries):
 class EditingAE33(TimeSeries):
     SevenWavelength = AE33.SevenWavelength
 
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Absorption Coefficient"
 
         raw = self.SevenWavelength("Mm⁻¹", '.2f', "Raw {wavelength} nm ({size})",
@@ -67,8 +67,8 @@ class EditingAE33(TimeSeries):
 
 
 class AE33Status(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "AE33 Status"
 
         transmittance = BaseAethalometerOptical.SevenWavelength(None, '.7f', "Transmittance ({wavelength} nm)",
@@ -106,8 +106,8 @@ class AE33Status(TimeSeries):
 
 
 class AE33OpticalStatus(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "AE33 Status"
 
         transmittance = BaseAethalometerOptical.SevenWavelength(None, '.7f', "Transmittance {wavelength} nm",

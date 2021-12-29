@@ -95,7 +95,7 @@
   </table>
 
   <div class="timeselect-footer">
-    <button id="timeselect-apply" title="Times and replot">Apply</button>
+    <button id="timeselect-apply" title="Set times and replot">Apply</button>
     <button id="timeselect-reset" title="Reset times to their initial values and replot">Reset</button>
     <button id="timeselect-default" title="Reset times to their default values and replot">Default</button>
     <button id="timeselect-unzoom" title="Set times to their values before zooming">Un-zoom</button>
@@ -206,7 +206,7 @@
 
     const unzoomButton = document.getElementById('timeselect-unzoom');
     function updateZoom() {
-        if (!TimeSelect.zoom_start_ms || !TimeSelect.zoom_end_ms) {
+        if (!TimeSelect.isZoomed()) {
             unzoomButton.style.display = 'none';
             return;
         }

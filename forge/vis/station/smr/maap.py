@@ -3,8 +3,8 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class MAAP5012Optical(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "MAAP"
 
         mass = TimeSeries.Graph()
@@ -58,8 +58,8 @@ class MAAP5012Optical(TimeSeries):
 
 
 class EditingMAAP5012(TimeSeries):
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "MAAP"
 
         raw = TimeSeries.Graph()

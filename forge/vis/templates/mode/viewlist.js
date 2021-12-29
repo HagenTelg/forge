@@ -8,6 +8,7 @@ $('a.view-select').click(function(event) {
 
     DataSocket.resetLoadedRecords();
     TimeSelect.resetZoomConnections();
+    TimeSelect.resetIntervalHeartbeat();
 
     $('a.view-select').not(this).removeClass('active');
     $(this).addClass('active');
@@ -99,7 +100,7 @@ function updateSavedZoomDisplay() {
         TimeParse.toDisplayTime(savedZoom[savedZoom.length-1].end_ms);
 }
 function saveCurrentZoom() {
-    if (!TimeSelect.zoom_start_ms || !TimeSelect.zoom_end_ms) {
+    if (!TimeSelect.isZoomed()) {
         return;
     }
     if (savedZoom.length !== 0) {
@@ -190,11 +191,15 @@ $(document).keydown(function(event) {
         }
         event.preventDefault();
 
-        if (TimeSelect.zoom_start_ms && TimeSelect.zoom_end_ms) {
+        //{% if not realtime %}
+        if (TimeSelect.isZoomed()) {
             TimeSelect.change(TimeSelect.zoom_start_ms, TimeSelect.zoom_end_ms);
         } else {
             DataSocket.reloadData();
         }
+        //{% else %}
+        DataSocket.reloadData();
+        //{% endif %}
         break;
 
     case 'KeyA':
@@ -203,7 +208,11 @@ $(document).keydown(function(event) {
         }
         event.preventDefault();
 
+        //{% if not realtime %}
         TimeSelect.resetTimeRange();
+        //{% else %}
+        TimeSelect.resetInterval();
+        //{% endif %}
         break;
 
     case 'KeyZ':

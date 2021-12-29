@@ -11,8 +11,8 @@ class Flow(TimeSeries):
     return new PitotFlow.CalculateDispatch(dataName, 'pitot');
 })"""
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "System Flow"
 
         system_flow = TimeSeries.Graph()
@@ -44,8 +44,8 @@ class Flow(TimeSeries):
 
 
 class BasicFlow(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "System Flow"
 
         system_flow = TimeSeries.Graph()
@@ -67,8 +67,8 @@ class BasicFlow(TimeSeries):
 class DilutionFlow(TimeSeries):
     CalculatePitotFlow = Flow.CalculatePitotFlow
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "System Flow"
 
         system_flow = TimeSeries.Graph()

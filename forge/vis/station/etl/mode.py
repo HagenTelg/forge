@@ -7,6 +7,9 @@ station_modes = detach(aerosol_modes)
 
 station_modes['aerosol-raw'].remove('aerosol-raw-flow')
 station_modes['aerosol-raw'].remove('aerosol-raw-umacstatus')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-flow')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-umacstatus')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-wind')
 
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-smps', "SMPS"),
@@ -21,14 +24,19 @@ station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-smps', "SMPS")
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-grimm', "Grimm OPC"),
                                     'aerosol-raw-smps')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-grimm', "Grimm OPC"),
+                                         'aerosol-realtime-green')
 station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-grimm', "Grimm OPC"),
                                         'aerosol-editing-smps')
 station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-grimm', "Grimm OPC"),
                                       'aerosol-clean-smps')
 station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-grimm', "Grimm OPC"),
                                      'aerosol-avgh-smps')
+
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-grimmstatus', "Grimm OPC Status"),
-                                    'aerosol-raw-aethalometerstatus')
+                                    'aerosol-raw-cpcstatus')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-grimmstatus', "Grimm OPC Status"),
+                                         'aerosol-realtime-cpcstatus')
 
 
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:

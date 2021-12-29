@@ -6,6 +6,8 @@ station_modes = detach(aerosol_modes, ozone_modes)
 
 station_modes['aerosol-raw'].remove('aerosol-raw-aethalometer')
 station_modes['aerosol-raw'].remove('aerosol-raw-aethalometerstatus')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-aethalometer')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-aethalometerstatus')
 station_modes['aerosol-editing'].remove('aerosol-editing-aethalometer')
 station_modes['aerosol-editing'].remove('aerosol-editing-aethalometerstatus')
 station_modes['aerosol-clean'].remove('aerosol-clean-aethalometer')
@@ -14,6 +16,8 @@ station_modes['aerosol-avgh'].remove('aerosol-avgh-aethalometer')
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-opticaltap', "TAP Optical"),
                                     'aerosol-raw-optical')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-opticaltap', "TAP Optical"),
+                                         'aerosol-realtime-optical')
 station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-tap', "TAP Absorption"),
                                         'aerosol-editing-absorption')
 station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-opticaltap', "TAP Optical"),
@@ -23,10 +27,14 @@ station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-opticaltap', "
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-tapstatus', "TAP Status"),
                                     'aerosol-raw-clapstatus')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-tapstatus', "TAP Status"),
+                                         'aerosol-realtime-clapstatus')
 
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-grimm', "Grimm OPC"),
                                     'aerosol-raw-green')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-grimm', "Grimm OPC"),
+                                         'aerosol-realtime-green')
 station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-grimm', "Grimm OPC"),
                                         'aerosol-editing-counts')
 station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-grimmdistribution', "Grimm Size Distribution"),
@@ -37,6 +45,8 @@ station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-grimm', "Grimm
                                      'aerosol-avgh-green')
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-grimmstatus', "Grimm OPC Status"),
                                     'aerosol-raw-cpcstatus')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-grimmstatus', "Grimm OPC Status"),
+                                         'aerosol-realtime-cpcstatus')
 
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-gasses', "Gasses"),

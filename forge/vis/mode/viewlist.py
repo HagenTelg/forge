@@ -67,3 +67,12 @@ class Editing(ViewList):
             request=request,
             **kwargs
         ))
+
+
+class Realtime(ViewList):
+    async def __call__(self, request: Request, **kwargs) -> Response:
+        return HTMLResponse(await package_template('mode', 'realtime.html').render_async(
+            mode=self,
+            request=request,
+            **kwargs
+        ))

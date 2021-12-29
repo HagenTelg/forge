@@ -7,8 +7,8 @@ class EditingSolar(SolarTimeSeries):
     _RAW_FORMAT = '{site.name} Raw {parameter}'
     _EDITED_FORMAT = '{site.name} Edited {parameter} ({code}_{site.instrument_code})'
 
-    def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site]):
-        super().__init__(latitude, longitude)
+    def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site], **kwargs):
+        super().__init__(latitude, longitude, **kwargs)
         self.title = "Solar"
 
         raw = SolarTimeSeries.Graph()
@@ -113,8 +113,8 @@ class EditingIR(SolarTimeSeries):
     _RAW_FORMAT = '{site.name} Raw {parameter}'
     _EDITED_FORMAT = '{site.name} Edited {parameter} ({code}_{site.instrument_code})'
 
-    def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site]):
-        super().__init__(latitude, longitude)
+    def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site], **kwargs):
+        super().__init__(latitude, longitude, **kwargs)
         self.title = "Infrared"
 
         raw = SolarTimeSeries.Graph()
@@ -169,8 +169,8 @@ class EditingPyranometerTemperature(SolarTimeSeries):
     _RAW_FORMAT = '{site.name} Raw {parameter}'
     _EDITED_FORMAT = '{site.name} Edited {parameter} ({code}_{site.instrument_code})'
 
-    def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site]):
-        super().__init__(latitude, longitude)
+    def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site], **kwargs):
+        super().__init__(latitude, longitude, **kwargs)
         self.title = "Pyranometer Temperature"
 
         raw = SolarTimeSeries.Graph()
@@ -281,8 +281,8 @@ function calc(up, down, zsa) {
     return new GenericOperations.SingleOutput(dataName, calc, 'albedo', 'up', 'down', 'zsa');
 })"""
 
-    def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site]):
-        super().__init__(latitude, longitude)
+    def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site], **kwargs):
+        super().__init__(latitude, longitude, **kwargs)
         self.title = "Albedo"
 
         raw = SolarTimeSeries.Graph()
@@ -367,8 +367,8 @@ function calc(direct, diffuse, global, zsa) {
     return new GenericOperations.SingleOutput(dataName, calc, 'ratio', 'direct', 'diffuse', 'global', 'zsa');
 })"""
 
-    def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site]):
-        super().__init__(latitude, longitude)
+    def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site], **kwargs):
+        super().__init__(latitude, longitude, **kwargs)
         self.title = "Total Ratio"
 
         raw = SolarTimeSeries.Graph()

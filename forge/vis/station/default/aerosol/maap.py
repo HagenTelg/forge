@@ -3,8 +3,8 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class MAAP5012Optical(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "MAAP"
 
         mass = TimeSeries.Graph()
@@ -54,8 +54,8 @@ class MAAP5012Optical(TimeSeries):
 
 
 class MAAP5012Status(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "MAAP Status"
 
         pressure = TimeSeries.Graph()

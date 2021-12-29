@@ -12,8 +12,8 @@ class Temperature(TimeSeries):
             self.script = r"""(function(dataName) { return new Dewpoint.CalculateDispatch(dataName); })"""
 
     def __init__(self, record: str, measurements: typing.Optional[typing.Dict[str, str]] = None,
-                 omit_traces: typing.Optional[typing.Set[str]] = None):
-        super().__init__()
+                 omit_traces: typing.Optional[typing.Set[str]] = None, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Ambient Conditions"
 
         self.processing[record] = self.CalculateMissing()

@@ -1,5 +1,5 @@
 import typing
-from ..cpd3 import DataStream, DataReader, EditedReader, Name, data_profile_get, detach, profile_data
+from ..cpd3 import DataStream, DataReader, EditedReader, RealtimeTranslator, Name, data_profile_get, detach, profile_data
 
 
 station_profile_data = detach(profile_data)
@@ -28,6 +28,11 @@ station_profile_data['aerosol']['avgh']['cnc'] = lambda station, start_epoch_ms,
         Name(station, 'avgh', 'N_N62'): 'cnc2',
     }, send
 )
+station_profile_data['aerosol']['realtime']['cnc'] = {
+    RealtimeTranslator.Key('N_N61'): 'cnc',
+    RealtimeTranslator.Key('N_N62'): 'cnc2',
+}
+
 station_profile_data['aerosol']['raw']['cpcstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'T1_N61'): 'Tsaturator',
@@ -38,6 +43,16 @@ station_profile_data['aerosol']['raw']['cpcstatus'] = lambda station, start_epoc
         Name(station, 'raw', 'Qu_N61'): 'Qinlet',
     }, send
 )
+
+station_profile_data['aerosol']['realtime']['cpcstatus'] = {
+    RealtimeTranslator.Key('T1_N61'): 'Tsaturator',
+    RealtimeTranslator.Key('T2_N61'): 'Tcondenser',
+    RealtimeTranslator.Key('T3_N61'): 'Toptics',
+    RealtimeTranslator.Key('T4_N61'): 'Tcabinet',
+    RealtimeTranslator.Key('Q_N61'): 'Qsample',
+    RealtimeTranslator.Key('Qu_N61'): 'Qinlet',
+}
+
 station_profile_data['aerosol']['raw']['cpcstatus2'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'T1_N62'): 'Tsaturator',
@@ -48,6 +63,14 @@ station_profile_data['aerosol']['raw']['cpcstatus2'] = lambda station, start_epo
         Name(station, 'raw', 'Qu_N62'): 'Qinlet',
     }, send
 )
+station_profile_data['aerosol']['realtime']['cpcstatus2'] = {
+    RealtimeTranslator.Key('T1_N62'): 'Tsaturator',
+    RealtimeTranslator.Key('T2_N62'): 'Tcondenser',
+    RealtimeTranslator.Key('T3_N62'): 'Toptics',
+    RealtimeTranslator.Key('T4_N62'): 'Tcabinet',
+    RealtimeTranslator.Key('Q_N62'): 'Qsample',
+    RealtimeTranslator.Key('Qu_N62'): 'Qinlet',
+}
 
 station_profile_data['aerosol']['raw']['clap2-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
@@ -162,6 +185,28 @@ station_profile_data['aerosol']['avgh']['clap2-pm1'] = lambda station, start_epo
         Name(station, 'avgh', 'BaR_A12', {'pm1'}): 'BaR',
     }, send
 )
+
+station_profile_data['aerosol']['realtime']['clap2-whole'] = {
+    RealtimeTranslator.Key('BaB_A12'): 'BaB',
+    RealtimeTranslator.Key('BaG_A12'): 'BaG',
+    RealtimeTranslator.Key('BaR_A12'): 'BaR',
+}
+station_profile_data['aerosol']['realtime']['clap2-pm10'] = {
+    RealtimeTranslator.Key('BaB_A12', {'pm10'}): 'BaB',
+    RealtimeTranslator.Key('BaG_A12', {'pm10'}): 'BaG',
+    RealtimeTranslator.Key('BaR_A12', {'pm10'}): 'BaR',
+}
+station_profile_data['aerosol']['realtime']['clap2-pm1'] = {
+    RealtimeTranslator.Key('BaB_A12', {'pm1'}): 'BaB',
+    RealtimeTranslator.Key('BaG_A12', {'pm1'}): 'BaG',
+    RealtimeTranslator.Key('BaR_A12', {'pm1'}): 'BaR',
+}
+station_profile_data['aerosol']['realtime']['clap2-pm25'] = {
+    RealtimeTranslator.Key('BaB_A12', {'pm25'}): 'BaB',
+    RealtimeTranslator.Key('BaG_A12', {'pm25'}): 'BaG',
+    RealtimeTranslator.Key('BaR_A12', {'pm25'}): 'BaR',
+}
+
 station_profile_data['aerosol']['raw']['clapstatus2'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'IrG_A12'): 'IrG',
@@ -191,6 +236,33 @@ station_profile_data['aerosol']['raw']['clapstatus2'] = lambda station, start_ep
         Name(station, 'raw', 'Fn_A12'): 'spot',
     }, send
 )
+station_profile_data['aerosol']['raw']['clapstatus2'] = {
+    RealtimeTranslator.Key('IrG_A12'): 'IrG',
+    RealtimeTranslator.Key('IrG_A12', {'pm10'}): 'IrG',
+    RealtimeTranslator.Key('IrG_A12', {'pm1'}): 'IrG',
+    RealtimeTranslator.Key('IrG_A12', {'pm25'}): 'IrG',
+    RealtimeTranslator.Key('IfG_A12'): 'IfG',
+    RealtimeTranslator.Key('IfG_A12', {'pm10'}): 'IfG',
+    RealtimeTranslator.Key('IfG_A12', {'pm1'}): 'IfG',
+    RealtimeTranslator.Key('IfG_A12', {'pm25'}): 'IfG',
+    RealtimeTranslator.Key('IpG_A12'): 'IpG',
+    RealtimeTranslator.Key('IpG_A12', {'pm10'}): 'IpG',
+    RealtimeTranslator.Key('IpG_A12', {'pm1'}): 'IpG',
+    RealtimeTranslator.Key('IpG_A12', {'pm25'}): 'IpG',
+    RealtimeTranslator.Key('Q_A12'): 'Q',
+    RealtimeTranslator.Key('Q_A12', {'pm10'}): 'Q',
+    RealtimeTranslator.Key('Q_A12', {'pm1'}): 'Q',
+    RealtimeTranslator.Key('Q_A12', {'pm25'}): 'Q',
+    RealtimeTranslator.Key('T1_A12'): 'Tsample',
+    RealtimeTranslator.Key('T1_A12', {'pm10'}): 'Tsample',
+    RealtimeTranslator.Key('T1_A12', {'pm1'}): 'Tsample',
+    RealtimeTranslator.Key('T1_A12', {'pm25'}): 'Tsample',
+    RealtimeTranslator.Key('T2_A12'): 'Tcase',
+    RealtimeTranslator.Key('T2_A12', {'pm10'}): 'Tcase',
+    RealtimeTranslator.Key('T2_A12', {'pm1'}): 'Tcase',
+    RealtimeTranslator.Key('T2_A12', {'pm25'}): 'Tcase',
+    RealtimeTranslator.Key('Fn_A12'): 'spot',
+}
 
 
 station_profile_data['aerosol']['raw']['psap-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -305,6 +377,27 @@ station_profile_data['aerosol']['avgh']['psap-pm1'] = lambda station, start_epoc
         Name(station, 'avgh', 'BaR_A13', {'pm1'}): 'BaR',
     }, send
 )
+station_profile_data['aerosol']['realtime']['psap-whole'] = {
+    RealtimeTranslator.Key('BaB_A13'): 'BaB',
+    RealtimeTranslator.Key('BaG_A13'): 'BaG',
+    RealtimeTranslator.Key('BaR_A13'): 'BaR',
+}
+station_profile_data['aerosol']['realtime']['psap-pm10'] = {
+    RealtimeTranslator.Key('BaB_A13', {'pm10'}): 'BaB',
+    RealtimeTranslator.Key('BaG_A13', {'pm10'}): 'BaG',
+    RealtimeTranslator.Key('BaR_A13', {'pm10'}): 'BaR',
+}
+station_profile_data['aerosol']['realtime']['psap-pm25'] = {
+    RealtimeTranslator.Key('BaB_A13', {'pm25'}): 'BaB',
+    RealtimeTranslator.Key('BaG_A13', {'pm25'}): 'BaG',
+    RealtimeTranslator.Key('BaR_A13', {'pm25'}): 'BaR',
+}
+station_profile_data['aerosol']['realtime']['psap-pm1'] = {
+    RealtimeTranslator.Key('BaB_A13', {'pm1'}): 'BaB',
+    RealtimeTranslator.Key('BaG_A13', {'pm1'}): 'BaG',
+    RealtimeTranslator.Key('BaR_A13', {'pm1'}): 'BaR',
+}
+
 station_profile_data['aerosol']['raw']['psapstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'IrG_A13'): 'IrG',
@@ -325,7 +418,24 @@ station_profile_data['aerosol']['raw']['psapstatus'] = lambda station, start_epo
         Name(station, 'raw', 'Q_A13', {'pm25'}): 'Q',
     }, send
 )
-
+station_profile_data['aerosol']['realtime']['psapstatus'] = {
+    RealtimeTranslator.Key('IrG_A13'): 'IrG',
+    RealtimeTranslator.Key('IrG_A13', {'pm10'}): 'IrG',
+    RealtimeTranslator.Key('IrG_A13', {'pm1'}): 'IrG',
+    RealtimeTranslator.Key('IrG_A13', {'pm25'}): 'IrG',
+    RealtimeTranslator.Key('IfG_A13'): 'IfG',
+    RealtimeTranslator.Key('IfG_A13', {'pm10'}): 'IfG',
+    RealtimeTranslator.Key('IfG_A13', {'pm1'}): 'IfG',
+    RealtimeTranslator.Key('IfG_A13', {'pm25'}): 'IfG',
+    RealtimeTranslator.Key('IpG_A13'): 'IpG',
+    RealtimeTranslator.Key('IpG_A13', {'pm10'}): 'IpG',
+    RealtimeTranslator.Key('IpG_A13', {'pm1'}): 'IpG',
+    RealtimeTranslator.Key('IpG_A13', {'pm25'}): 'IpG',
+    RealtimeTranslator.Key('Q_A13'): 'Q',
+    RealtimeTranslator.Key('Q_A13', {'pm10'}): 'Q',
+    RealtimeTranslator.Key('Q_A13', {'pm1'}): 'Q',
+    RealtimeTranslator.Key('Q_A13', {'pm25'}): 'Q',
+}
 
 station_profile_data['aerosol']['raw']['ae33'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, dict(
@@ -359,6 +469,13 @@ station_profile_data['aerosol']['avgh']['ae33'] = lambda station, start_epoch_ms
         [(Name(station, 'avgh', f'Ir{i+1}_A82'), f'Ir{i+1}') for i in range(7)]
     ), send
 )
+station_profile_data['aerosol']['realtime']['ae33'] = dict(
+    [(RealtimeTranslator.Key(f'Ba{i + 1}_A82'), f'Ba{i + 1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'X{i + 1}_A82'), f'X{i + 1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'ZFACTOR{i + 1}_A82'), f'CF{i + 1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'Ir{i + 1}_A82'), f'Ir{i + 1}') for i in range(7)]
+)
+
 station_profile_data['aerosol']['raw']['ae33status'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'T1_A82'): 'Tcontroller',
@@ -366,6 +483,11 @@ station_profile_data['aerosol']['raw']['ae33status'] = lambda station, start_epo
         Name(station, 'raw', 'T3_A82'): 'Tled',
     }, send
 )
+station_profile_data['aerosol']['realtime']['ae33status'] = {
+    RealtimeTranslator.Key('T1_A82'): 'Tcontroller',
+    RealtimeTranslator.Key('T2_A82'): 'Tsupply',
+    RealtimeTranslator.Key('T3_A82'): 'Tled',
+}
 
 
 station_profile_data['aerosol']['raw']['ae31'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -395,6 +517,11 @@ station_profile_data['aerosol']['avgh']['ae31'] = lambda station, start_epoch_ms
         [(Name(station, 'avgh', f'X{i+1}_A81'), f'X{i+1}') for i in range(7)] +
         [(Name(station, 'avgh', f'Ir{i+1}_A81'), f'Ir{i+1}') for i in range(7)]
     ), send
+)
+station_profile_data['aerosol']['realtime']['ae31'] = dict(
+    [(RealtimeTranslator.Key(f'Ba{i + 1}_A81'), f'Ba{i + 1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'X{i + 1}_A81'), f'X{i + 1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'Ir{i + 1}_A81'), f'Ir{i + 1}') for i in range(7)]
 )
 station_profile_data['aerosol']['raw']['ae31status'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {

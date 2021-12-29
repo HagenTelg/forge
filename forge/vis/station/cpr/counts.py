@@ -4,8 +4,8 @@ from ..default.aerosol.tsi377Xcpc import TSI3772CPCStatus
 
 
 class ParticleConcentration(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Particle Concentration"
 
         cnc = TimeSeries.Graph()
@@ -32,8 +32,8 @@ class ParticleConcentration(TimeSeries):
 
 
 class EditingParticleConcentration(TimeSeries):
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Particle Concentration"
 
         raw = TimeSeries.Graph()
@@ -85,8 +85,8 @@ class EditingParticleConcentration(TimeSeries):
 
 
 class TSI3772CPCStatusSecondary(TSI3772CPCStatus):
-    def __init__(self, mode: str):
-        super().__init__(mode)
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
         self.title = "Secondary CPC Status"
 
         for g in self.graphs:

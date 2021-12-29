@@ -65,7 +65,7 @@ var SizeBins = {};
             return changed;
         }
 
-        addPoint(index, v) {
+        updateFit(index, averageBin) {
             function fitMean(y) {
                 let sum = 0.0;
                 let count = 0;
@@ -79,13 +79,63 @@ var SizeBins = {};
                 return sum / count;
             }
 
+            this._getAverageFitPoint(index).y[index] = fitMean(averageBin.y);
+        }
+
+        addPoint(index, v, epoch_ms) {
             if (!isFinite(v)) {
-                return;
+                return undefined;
             }
 
             const averageBin = this._getAverageBin(index);
             averageBin.y.push(v);
-            this._getAverageFitPoint(index).y[index] = fitMean(averageBin.y);
+            this.updateFit(index, averageBin);
+            return averageBin;
+        }
+    }
+
+    SizeBins.RealtimeAverageBins = class extends SizeBins.AverageBins {
+        constructor(data, xaxis, yaxis) {
+            super(data, xaxis, yaxis);
+
+            this._dataTimes = [];
+        }
+
+        _getDataTime(index) {
+            while (this._dataTimes.length <= index) {
+                this._dataTimes.push([]);
+            }
+            return this._dataTimes[index];
+        }
+
+        addPoint(index, v, epoch_ms) {
+            const averageBin = super.addPoint(index, v, epoch_ms);
+            if (!averageBin) {
+                return;
+            }
+
+            const times = this._getDataTime(index);
+            times.push(epoch_ms);
+
+            TimeSelect.setIntervalBounds();
+            let discardCutoff = TimeSelect.start_ms;
+            if (TimeSelect.isZoomed()) {
+                discardCutoff = Math.min(discardCutoff, TimeSelect.zoom_start_ms);
+            }
+
+            let countDiscard = 0;
+            for (; countDiscard<times.length; countDiscard++) {
+                if (times[countDiscard] >= discardCutoff) {
+                    break;
+                }
+            }
+            if (countDiscard <= 0) {
+                return;
+            }
+
+            times.slice(0, countDiscard);
+            averageBin.y.slice(0, countDiscard);
+            this.updateFit(index, averageBin);
         }
     }
 })();

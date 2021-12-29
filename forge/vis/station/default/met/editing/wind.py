@@ -4,8 +4,8 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class EditingWindSpeed(TimeSeries):
-    def __init__(self, profile: str = 'met', measurements: typing.Optional[typing.Dict[str, str]] = None):
-        super().__init__()
+    def __init__(self, profile: str = 'met', measurements: typing.Optional[typing.Dict[str, str]] = None, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Wind Speed"
 
         if measurements is None:
@@ -49,8 +49,8 @@ class EditingWindSpeed(TimeSeries):
 
 
 class EditingWindDirection(TimeSeries):
-    def __init__(self, profile: str = 'met', measurements: typing.Optional[typing.Dict[str, str]] = None):
-        super().__init__()
+    def __init__(self, profile: str = 'met', measurements: typing.Optional[typing.Dict[str, str]] = None, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Wind Direction"
 
         if measurements is None:

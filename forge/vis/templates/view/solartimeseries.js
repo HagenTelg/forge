@@ -35,17 +35,17 @@ shapeHandler.generators.push(() => {
         if (isFinite(priorSunset) && isFinite(sunrise)) {
             //{% for graph in view.graphs %}
             shapes.push({
-                type: 'line',
+                type: 'rect',
                 xref: 'x',
                 yref: 'y{% if loop.index > 1 %}{{ loop.index }}{% endif %} domain',
                 x0: DataSocket.toPlotTime(priorSunset),
                 x1: DataSocket.toPlotTime(sunrise),
-                y0: 0.95,
-                y1: 0.95,
-                opacity: 0.9,
+                y0: 0,
+                y1: 1,
+                opacity: 0.1,
+                fillcolor: '#400080',
                 line: {
-                    width: 5,
-                    color: '#400080',
+                    width: 0,
                 },
             });
             //{% endfor %}

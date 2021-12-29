@@ -1,7 +1,7 @@
 import typing
 from copy import deepcopy
 from forge.vis.mode import Mode, ModeGroup, VisibleModes
-from forge.vis.mode.viewlist import ViewList, Editing
+from forge.vis.mode.viewlist import ViewList, Editing, Realtime
 from forge.vis.station.lookup import station_data
 
 
@@ -59,6 +59,23 @@ aerosol_modes: typing.Dict[str, Mode] = _construct_modes([
         ViewList.Entry('aerosol-avgh-extensive', "Extensive"),
         ViewList.Entry('aerosol-avgh-wind', "Wind"),
     ]),
+    Realtime('aerosol-realtime', "Realtime", [
+        ViewList.Entry('aerosol-realtime-counts', "Counts"),
+        ViewList.Entry('aerosol-realtime-optical', "Optical"),
+        ViewList.Entry('aerosol-realtime-green', "Green Adjusted"),
+        ViewList.Entry('aerosol-realtime-aethalometer', "Aethalometer"),
+        ViewList.Entry('aerosol-realtime-intensive', "Intensive"),
+        ViewList.Entry('aerosol-realtime-wind', "Wind"),
+        ViewList.Entry('aerosol-realtime-flow', "Flow"),
+        ViewList.Entry('aerosol-realtime-temperature', "Temperature and RH"),
+        ViewList.Entry('aerosol-realtime-pressure', "Pressure"),
+        ViewList.Entry('aerosol-realtime-nephelometerzero', "Nephelometer Zero"),
+        ViewList.Entry('aerosol-realtime-nephelometerstatus', "Nephelometer Status"),
+        ViewList.Entry('aerosol-realtime-clapstatus', "CLAP Status"),
+        ViewList.Entry('aerosol-realtime-aethalometerstatus', "Aethalometer Status"),
+        ViewList.Entry('aerosol-realtime-cpcstatus', "CPC Status"),
+        ViewList.Entry('aerosol-realtime-umacstatus', "μMAC Status"),
+    ]),
 ])
 ozone_modes: typing.Dict[str, Mode] = _construct_modes([
     ViewList('ozone-raw', "Raw", [
@@ -78,6 +95,12 @@ ozone_modes: typing.Dict[str, Mode] = _construct_modes([
     ViewList('ozone-avgh', "Hourly Average", [
         ViewList.Entry('ozone-avgh-concentration', "Ozone"),
         ViewList.Entry('ozone-avgh-wind', "Wind"),
+    ]),
+    Realtime('ozone-realtime', "Realtime", [
+        ViewList.Entry('ozone-realtime-concentration', "Ozone"),
+        ViewList.Entry('ozone-realtime-status', "Status"),
+        ViewList.Entry('ozone-realtime-cells', "Cells"),
+        ViewList.Entry('ozone-realtime-wind', "Wind"),
     ]),
 ])
 met_modes: typing.Dict[str, Mode] = _construct_modes([
@@ -120,6 +143,7 @@ def get(station: str, mode_name: str) -> typing.Optional[Mode]:
 
 def visible(station: str, mode_name: typing.Optional[str] = None) -> VisibleModes:
     lookup: typing.Callable[[str, str], typing.Optional[Mode]] = station_data(station, 'mode', 'get')
+    realtime_visible: typing.Callable[[str, str], typing.Optional[Mode]] = station_data(station, 'realtime', 'visible')
     visible_modes = VisibleModes()
 
     def _assemble_mode(display_name: str, mode_names: typing.List[str]):
@@ -128,6 +152,11 @@ def visible(station: str, mode_name: typing.Optional[str] = None) -> VisibleMode
             add = lookup(station, mode)
             if not add:
                 continue
+
+            if isinstance(add, Realtime):
+                if not realtime_visible(station, mode):
+                    continue
+
             result.modes.append(add)
         if len(result.modes) == 0:
             return
@@ -138,12 +167,14 @@ def visible(station: str, mode_name: typing.Optional[str] = None) -> VisibleMode
         'aerosol-editing',
         'aerosol-clean',
         'aerosol-avgh',
+        'aerosol-realtime',
     ]),
     _assemble_mode("Ozone", [
         'ozone-raw',
         'ozone-editing',
         'ozone-clean',
         'ozone-avgh',
+        'ozone-realtime',
     ]),
     _assemble_mode("Metrological", [
         'met-raw',

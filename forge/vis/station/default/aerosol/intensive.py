@@ -49,8 +49,8 @@ return new Intensive.CalculateDispatch(dataName, outputNames,
     inputScattering, inputBackscattering, inputAbsorption, inputExtinction);
     })"""
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Intensive Parameters at 550nm"
 
         albedo = TimeSeries.Graph()

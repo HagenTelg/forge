@@ -10,80 +10,80 @@ from ..default.aerosol.editing.aethalometer import EditingAethalometer
 
 
 class AE33Optical(AethalometerOptical):
-    def __init__(self, mode: str):
-        super().__init__(mode)
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
         for g in self.graphs:
             for t in g.traces:
                 t.data_record = t.data_record.replace('-aethalometer', '-ae33')
 
 
 class AE33(AE33Base):
-    def __init__(self, mode: str):
-        super().__init__(mode)
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
         for g in self.graphs:
             for t in g.traces:
                 t.data_record = t.data_record.replace('-aethalometer', '-ae33')
 
 
 class AE33Status(AE33StatusBase):
-    def __init__(self, mode: str):
-        super().__init__(mode)
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
         for g in self.graphs:
             for t in g.traces:
                 t.data_record = t.data_record.replace('-aethalometer', '-ae33')
 
 
 class AE33OpticalStatus(AE33OpticalStatusBase):
-    def __init__(self, mode: str):
-        super().__init__(mode)
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
         for g in self.graphs:
             for t in g.traces:
                 t.data_record = t.data_record.replace('-aethalometer', '-ae33')
 
 
 class EditingAE33(EditingAethalometer):
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__(profile)
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(profile, **kwargs)
         for g in self.graphs:
             for t in g.traces:
                 t.data_record = t.data_record.replace('-aethalometer', '-ae33')
 
 
 class AE31Optical(AethalometerOptical):
-    def __init__(self, mode: str):
-        super().__init__(mode)
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
         for g in self.graphs:
             for t in g.traces:
                 t.data_record = t.data_record.replace('-aethalometer', '-ae31')
 
 
 class AE31(AE31Base):
-    def __init__(self, mode: str):
-        super().__init__(mode)
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
         for g in self.graphs:
             for t in g.traces:
                 t.data_record = t.data_record.replace('-aethalometer', '-ae31')
 
 
 class AE31Status(AE31StatusBase):
-    def __init__(self, mode: str):
-        super().__init__(mode)
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
         for g in self.graphs:
             for t in g.traces:
                 t.data_record = t.data_record.replace('-aethalometer', '-ae31')
 
 
 class AE31OpticalStatus(AE31OpticalStatusBase):
-    def __init__(self, mode: str):
-        super().__init__(mode)
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
         for g in self.graphs:
             for t in g.traces:
                 t.data_record = t.data_record.replace('-aethalometer', '-ae31')
 
 
 class EditingAE31(EditingAethalometer):
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__(profile)
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(profile, **kwargs)
         for g in self.graphs:
             for t in g.traces:
                 t.data_record = t.data_record.replace('-aethalometer', '-ae31')

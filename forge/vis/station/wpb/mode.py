@@ -7,6 +7,8 @@ station_modes = detach(aerosol_modes)
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-cpcstatus2', "Second CPC Status"),
                                     'aerosol-raw-cpcstatus')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-cpcstatus2', "Second CPC Status"),
+                                         'aerosol-realtime-cpcstatus')
 
 
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:

@@ -6,8 +6,8 @@ from ..default.aerosol.optical import Optical
 class OpticalCLAPSecondary(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Second CLAP Optical Properties"
 
         total_scattering = self.ThreeWavelength(f'{mode}-scattering', 'Bs')
@@ -29,8 +29,8 @@ class OpticalCLAPSecondary(TimeSeries):
 class OpticalPSAP(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "PSAP Optical Properties"
 
         total_scattering = self.ThreeWavelength(f'{mode}-scattering', 'Bs')
@@ -52,8 +52,8 @@ class OpticalPSAP(TimeSeries):
 class EditingCLAPSecondary(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Second CLAP Light Absorption"
 
         raw = self.ThreeWavelength(f'{profile}-raw-clap2', 'Ba', 'Raw {code} ({size})')
@@ -70,8 +70,8 @@ class EditingCLAPSecondary(TimeSeries):
 class EditingPSAP(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "PSAP Light Absorption"
 
         raw = self.ThreeWavelength(f'{profile}-raw-psap', 'Ba', 'Raw {code} ({size})')

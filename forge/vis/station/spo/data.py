@@ -1,6 +1,6 @@
 import typing
-from ..cpd3 import DataStream, DataReader, EditedReader, ContaminationReader, EditedContaminationReader, Name, \
-    data_profile_get, detach, profile_data
+from ..cpd3 import DataStream, DataReader, EditedReader, ContaminationReader, EditedContaminationReader, \
+    RealtimeTranslator, Name, data_profile_get, detach, profile_data
 
 
 station_profile_data = detach(profile_data)
@@ -39,6 +39,9 @@ station_profile_data['aerosol']['raw']['cnc'] = lambda station, start_epoch_ms, 
         Name(station, 'raw', 'N_N41'): 'cnc',
     }, send
 )
+station_profile_data['aerosol']['realtime']['cnc'] = {
+    RealtimeTranslator.Key('N_N41'): 'cnc',
+}
 station_profile_data['aerosol']['clean']['cnc'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'clean', 'N_N41'): 'cnc',
@@ -70,6 +73,17 @@ station_profile_data['aerosol']['raw']['aethalometerstatus'] = lambda station, s
         Name(station, 'raw', 'T3_A82'): 'Tled',
     }, send
 )
+station_profile_data['aerosol']['realtime']['aethalometer'] = dict(
+    [(RealtimeTranslator.Key(f'Ba{i+1}_A82'), f'Ba{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'X{i+1}_A82'), f'X{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'ZFACTOR{i+1}_A82'), f'CF{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'Ir{i+1}_A82'), f'Ir{i+1}') for i in range(7)]
+)
+station_profile_data['aerosol']['realtime']['aethalometerstatus'] = {
+    RealtimeTranslator.Key('T1_A82'): 'Tcontroller',
+    RealtimeTranslator.Key('T2_A82'): 'Tsupply',
+    RealtimeTranslator.Key('T3_A82'): 'Tled',
+}
 station_profile_data['aerosol']['clean']['aethalometer'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, dict(
         [(Name(station, 'clean', f'Ba{i+1}_A82'), f'Ba{i+1}') for i in range(7)] +

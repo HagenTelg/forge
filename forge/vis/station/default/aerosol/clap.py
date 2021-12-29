@@ -3,8 +3,8 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class CLAPStatus(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "CLAP Status"
 
         flow_transmittance = TimeSeries.Graph()

@@ -6,8 +6,8 @@ from ..default.aerosol.optical import Optical
 class OpticalTAP(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "TAP Optical Properties"
 
         total_scattering = self.ThreeWavelength(f'{mode}-scattering', 'Bs')
@@ -29,8 +29,8 @@ class OpticalTAP(TimeSeries):
 class EditingTAP(TimeSeries):
     ThreeWavelength = Optical.ThreeWavelength
 
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "TAP Light Absorption"
 
         raw = self.ThreeWavelength(f'{profile}-raw-tap', 'Ba', 'Raw {code} ({size})')

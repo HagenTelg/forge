@@ -4,8 +4,8 @@ from ..default.aerosol.aethalometer import AethalometerOptical
 
 
 class TCA08Mass(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Mass Concentration"
 
         mass = TimeSeries.Graph()
@@ -37,8 +37,8 @@ class TCA08Mass(TimeSeries):
 
 
 class EditingTCA(TimeSeries):
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Mass Concentration"
 
         raw = TimeSeries.Graph()
@@ -86,8 +86,8 @@ class TCA08Status(TimeSeries):
     return op;
 })"""
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "TCA Status"
 
 

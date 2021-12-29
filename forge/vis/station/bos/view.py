@@ -2,6 +2,7 @@ import typing
 from ..default.view import detach, View, aerosol_views, ozone_views
 from ..default.aerosol.pops import POPSStatus, POPSDistribution
 from .dmps import DMPSStatus, DMPSDistribution, DMPSCounts
+from .counts import RealtimeParticleConcentration
 
 
 station_views = detach(aerosol_views, ozone_views)
@@ -9,6 +10,7 @@ station_views = detach(aerosol_views, ozone_views)
 station_views['aerosol-raw-counts'] = DMPSCounts('aerosol-raw')
 station_views['aerosol-clean-counts'] = DMPSCounts('aerosol-clean')
 station_views['aerosol-avgh-counts'] = DMPSCounts('aerosol-avgh')
+station_views['aerosol-realtime-counts'] = RealtimeParticleConcentration('aerosol-realtime')
 
 station_views['aerosol-raw-dmps'] = DMPSDistribution('aerosol-raw')
 station_views['aerosol-raw-dmpsstatus'] = DMPSStatus('aerosol-raw')
@@ -21,6 +23,8 @@ station_views['aerosol-raw-popsstatus'] = POPSStatus('aerosol-raw')
 station_views['aerosol-editing-pops'] = POPSDistribution('aerosol-editing')
 station_views['aerosol-clean-pops'] = POPSDistribution('aerosol-clean')
 station_views['aerosol-avgh-pops'] = POPSDistribution('aerosol-avgh')
+station_views['aerosol-realtime-pops'] = POPSDistribution('aerosol-realtime', realtime=True)
+station_views['aerosol-realtime-popsstatus'] = POPSStatus('aerosol-realtime', realtime=True)
 
 
 

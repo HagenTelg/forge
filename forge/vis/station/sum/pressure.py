@@ -11,8 +11,8 @@ class Pressure(TimeSeries):
     return new GenericOperations.SingleOutput(dataName, GenericOperations.difference, 'dPneph', 'ambient', 'neph');
 })"""
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
 
         pressure = TimeSeries.Graph()
         pressure.title = "Pressure"

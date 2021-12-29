@@ -4,8 +4,8 @@ from ..default.aerosol.flow import Flow as BaseFlow
 
 
 class Flow(TimeSeries):
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "System Flow"
 
         system_flow = TimeSeries.Graph()

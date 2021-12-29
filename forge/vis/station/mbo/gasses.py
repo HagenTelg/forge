@@ -13,8 +13,8 @@ class Gasses(TimeSeries):
     return op;
 })"""
 
-    def __init__(self, mode: str):
-        super().__init__()
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
         self.title = "Gas Concentrations"
 
         ozone = TimeSeries.Graph()

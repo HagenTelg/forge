@@ -1,6 +1,7 @@
 import typing
+import asyncio
+import random
 from .stream import DataStream, RecordStream
-from aiofile import AIOFile, LineReader
 from forge.vis.util import package_data
 
 
@@ -9,13 +10,14 @@ class ExampleTimeSeries(RecordStream):
         super().__init__(send, ['BsG', 'BaG', 'Tsample', 'Psample', 'Tambient'])
         self.filename = package_data('static', 'example', 'timeseries.csv')
         self.start_epoch_ms = start_epoch_ms
+        self.last_epoch_ms = self.start_epoch_ms
+        self.last_record: typing.Dict[str, float] = dict()
 
     async def run(self) -> None:
         first_time = None
-        async with AIOFile(self.filename, mode='r') as csv:
-            lines = LineReader(csv)
-            header = await lines.readline()
-            async for line in lines:
+        with open(self.filename, mode='r') as csv:
+            header = csv.readline()
+            for line in csv:
                 text_fields = line.split(',')
                 epoch_ms = int(text_fields[1]) * 1000
                 if first_time is None:
@@ -29,8 +31,31 @@ class ExampleTimeSeries(RecordStream):
                         field = float(field)
                     number_fields[self.fields[i-2]] = field
 
-                await self.send_record(epoch_ms - first_time + self.start_epoch_ms, number_fields)
+                record_time = epoch_ms - first_time + self.start_epoch_ms
+                await self.send_record(record_time, number_fields)
+                self.last_epoch_ms = record_time
+                self.last_record = number_fields
         await self.flush()
+
+
+class ExampleRealtime(ExampleTimeSeries):
+    async def run(self) -> None:
+        await super().run()
+        await self.flush()
+        while True:
+            await asyncio.sleep(10)
+            self.last_epoch_ms += 10 * 1000
+            record: typing.Dict[str, float] = dict()
+            for field in self.fields:
+                value = self.last_record.get(field)
+                if value is None:
+                    value = 0.0
+                value += random.uniform(-5, 5)
+                record[field] = value
+
+            await self.send_record(self.last_epoch_ms, record)
+            await self.flush()
+            self.last_record = record
 
 
 class ExampleEditDirectives(DataStream):

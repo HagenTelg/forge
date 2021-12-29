@@ -3,8 +3,8 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class EditingParticleConcentration(TimeSeries):
-    def __init__(self, profile: str = 'aerosol'):
-        super().__init__()
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
         self.title = "Particle Concentration"
 
         raw = TimeSeries.Graph()

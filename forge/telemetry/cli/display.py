@@ -62,17 +62,17 @@ def display_hosts_text(hosts: typing.List[typing.Dict]) -> None:
         for i in range(len(columns)):
             column_widths[i] = max(column_widths[i], len(columns[i]))
 
-    def print_columns(widths, *args):
+    def print_columns(*args):
         result = ''
         for i in range(len(args)):
             if len(result) > 0:
                 result += '  '
-            result += args[i].ljust(widths[i])
+            result += args[i].ljust(column_widths[i])
         print(result)
 
-    print_columns(column_widths, header_public_key, header_id, header_station, header_last_seen, header_remote_address)
+    print_columns(header_public_key, header_id, header_station, header_last_seen, header_remote_address)
     for host in hosts:
-        print_columns(column_widths, *host['display_columns'])
+        print_columns(*host['display_columns'])
 
 
 def _format_bytes(n: float) -> str:
@@ -240,18 +240,18 @@ def display_login_text(access: typing.List[typing.Dict]) -> None:
         for i in range(len(columns)):
             column_widths[i] = max(column_widths[i], len(columns[i]))
 
-    def print_columns(widths, *args):
+    def print_columns(*args):
         result = ''
         for i in range(len(args)):
             if len(result) > 0:
                 result += '  '
-            result += args[i].ljust(widths[i])
+            result += args[i].ljust(column_widths[i])
         print(result)
 
-    print_columns(column_widths, header_public_key, header_station, header_login_user,
+    print_columns(header_public_key, header_station, header_login_user,
                   header_public_address, header_local_address)
     for a in access:
-        print_columns(column_widths, *a['display_columns'])
+        print_columns(*a['display_columns'])
 
 
 def display_access_text(access: typing.List[typing.Dict]) -> None:
@@ -273,14 +273,14 @@ def display_access_text(access: typing.List[typing.Dict]) -> None:
         for i in range(len(columns)):
             column_widths[i] = max(column_widths[i], len(columns[i]))
 
-    def print_columns(widths, *args):
+    def print_columns(*args):
         result = ''
         for i in range(len(args)):
             if len(result) > 0:
                 result += '  '
-            result += args[i].ljust(widths[i])
+            result += args[i].ljust(column_widths[i])
         print(result)
 
-    print_columns(column_widths, header_public_key, header_station)
+    print_columns(header_public_key, header_station)
     for a in access:
-        print_columns(column_widths, *a['display_columns'])
+        print_columns(*a['display_columns'])

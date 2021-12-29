@@ -3,8 +3,8 @@ from ..default.aerosol.clap import CLAPStatus
 
 
 class CLAPStatusSecondary(CLAPStatus):
-    def __init__(self, mode: str):
-        super().__init__(mode)
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
         self.title = "Secondary CLAP Status"
         for g in self.graphs:
             for t in g.traces:

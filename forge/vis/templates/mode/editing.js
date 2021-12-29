@@ -13,7 +13,7 @@ $('#show_edit_directives').click(function(event) {
         directives.onunload = function() { TimeSelect.highlight('EditDirective'); }
 
         TimeSelect.onZoom('EditDirective', () => {
-            if (!TimeSelect.zoom_start_ms || !TimeSelect.zoom_end_ms) {
+            if (!TimeSelect.isZoomed()) {
                 return;
             }
             if (!directives || directives.closed || directives.location.href !== directivesURL) {
