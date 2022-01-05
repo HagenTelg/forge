@@ -28,6 +28,7 @@ STATIONS = frozenset({
     'lln',
     'mbo',
     'mlo',
+    'mrad',
     'msa',
     'msy',
     'nil',
@@ -61,6 +62,7 @@ STATIONS = frozenset({
 })
 DISPLAY_STATIONS = frozenset(STATIONS - {
     'lab',
+    'mrad',
     'nil',
     'pon',
     'rsl',

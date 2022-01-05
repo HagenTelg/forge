@@ -32,7 +32,7 @@ class Wind(TimeSeries):
 
         for field, legend in measurements.items():
             ws = TimeSeries.Trace(mps)
-            ws.legend = legend.format(type='Speed', code='TD')
+            ws.legend = legend.format(type='Speed', code='WS')
             ws.data_record = record
             ws.data_field = field.format(code='WS')
             speed.traces.append(ws)

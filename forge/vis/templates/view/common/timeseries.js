@@ -113,10 +113,10 @@ var TimeSeriesCommon = {};
                     x1: DataSocket.toPlotTime(end_ms),
                     y0: 0.05,
                     y1: 0.05,
-                    fillcolor: '#000000',
                     opacity: 0.9,
                     line: {
                         width: 5,
+                        color: '#000000',
                     },
                 });
 

@@ -40,12 +40,12 @@ shapeHandler.generators.push(() => {
                 yref: 'y{% if loop.index > 1 %}{{ loop.index }}{% endif %} domain',
                 x0: DataSocket.toPlotTime(priorSunset),
                 x1: DataSocket.toPlotTime(sunrise),
-                y0: 0.05,
-                y1: 0.05,
-                fillcolor: '#000000',
+                y0: 0.95,
+                y1: 0.95,
                 opacity: 0.9,
                 line: {
                     width: 5,
+                    color: '#400080',
                 },
             });
             //{% endfor %}
