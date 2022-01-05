@@ -263,7 +263,22 @@ class EditingAlbedo(SolarTimeSeries):
             super().__init__()
             self.components.append('generic_operations')
             self.script = r"""(function(dataName) {
-    return new GenericOperations.SingleOutput(dataName, GenericOperations.divide, 'albedo', 'up', 'down');
+function calc(up, down, zsa) {
+    if (!isFinite(up) || !isFinite(down)) {
+        return undefined;
+    }
+    if (up <= 0.0) {
+        return undefined;
+    }
+    if (down < 100.0) {
+        return undefined;
+    }
+    if (isFinite(zsa) && zsa >= 75.0) {
+        return undefined;
+    }
+    return up / down;
+}
+    return new GenericOperations.SingleOutput(dataName, calc, 'albedo', 'up', 'down', 'zsa');
 })"""
 
     def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site]):
@@ -314,7 +329,19 @@ class EditingTotalRatio(SolarTimeSeries):
             super().__init__()
             self.components.append('generic_operations')
             self.script = r"""(function(dataName) {
-    return new GenericOperations.SingleOutput(dataName, GenericOperations.divide, 'ratio', 'total', 'global');
+function calc(total, global) {
+    if (!isFinite(total) || !isFinite(global)) {
+        return undefined;
+    }
+    if (total <= 0.01) {
+        return undefined;
+    }
+    if (global <= 0.01) {
+        return undefined;
+    }
+    return total / global;
+}
+    return new GenericOperations.SingleOutput(dataName, calc, 'ratio', 'total', 'global');
 })"""
 
     class CalculateDirectDiffuse(SolarTimeSeries.Processing):
@@ -326,7 +353,13 @@ function calc(direct, diffuse, global) {
     if (!isFinite(direct) || !isFinite(diffuse) || !isFinite(global)) {
         return undefined;
     }
-    if (global === 0.0) {
+    if (direct <= 0.01) {
+        return undefined;
+    }
+    if (diffuse <= 0.01) {
+        return undefined;
+    }
+    if (global <= 0.01) {
         return undefined;
     }
     return (direct + diffuse) / global;

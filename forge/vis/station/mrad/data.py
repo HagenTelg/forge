@@ -57,12 +57,14 @@ sail_splash: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, t
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'Rdg_RMSURFRAD'): 'down',
                 Name(station, 'raw', 'Rug_RMSURFRAD'): 'up',
+                Name(station, 'raw', 'ZSA_RMSURFRAD'): 'zsa',
             }, send
         ),
         'albedo-radsys2': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'Rdg_RADSYS2'): 'down',
                 Name(station, 'raw', 'Rug_RADSYS2'): 'up',
+                Name(station, 'raw', 'ZSA_RADSYS2'): 'zsa',
             }, send
         ),
 
@@ -151,12 +153,14 @@ sail_splash: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, t
             start_epoch_ms, end_epoch_ms, station, 'radiation', {
                 Name(station, 'clean', 'Rdg_RMSURFRAD'): 'down',
                 Name(station, 'clean', 'Rug_RMSURFRAD'): 'up',
+                Name(station, 'clean', 'ZSA_RMSURFRAD'): 'zsa',
             }, send
         ),
         'albedo-radsys2': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'radiation', {
                 Name(station, 'clean', 'Rdg_RADSYS2'): 'down',
                 Name(station, 'clean', 'Rug_RADSYS2'): 'up',
+                Name(station, 'clean', 'ZSA_RADSYS2'): 'zsa',
             }, send
         ),
         
