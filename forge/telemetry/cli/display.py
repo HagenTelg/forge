@@ -147,6 +147,9 @@ def display_details_text(hosts: typing.List[typing.Dict]) -> None:
             if host.get('local_address6'):
                 print(f"    Local IPv6: {host['local_address6']}")
             print(f"       Updated: {host['last_update']['address']:%Y-%m-%d %H:%M:%S}")
+        if host.get('login_user'):
+            print(f"Local login user: {host['login_user']}")
+            print(f"         Updated: {host['last_update']['login']:%Y-%m-%d %H:%M:%S}")
         if host.get('memory_utilization'):
             print(f"RAM: {host['memory_utilization'].get('usage_percent'):.1f}% of {_format_bytes(host['memory_utilization'].get('total_bytes'))}")
             print(f"Swap: {host['memory_utilization'].get('swap_percent'):.1f}% of {_format_bytes(host['memory_utilization'].get('swap_bytes'))}")
@@ -199,6 +202,48 @@ def display_details_text(hosts: typing.List[typing.Dict]) -> None:
                 for connection in host['network_configuration']['nm_connections']:
                     print(" Network interface connection:")
                     _prefix_output(connection, prefix="    ")
+
+
+def display_login_text(access: typing.List[typing.Dict]) -> None:
+    header_public_key = "Public Key"
+    header_station = "Station"
+    header_login_user = "User"
+    header_public_address = "Public Address"
+    header_local_address = "Local Address"
+
+    column_widths = [
+        len(header_public_key),
+        len(header_station),
+        len(header_login_user),
+        len(header_public_address),
+        len(header_local_address),
+    ]
+
+    for a in access:
+        columns = list()
+        a['display_columns'] = columns
+
+        columns.append(a['public_key'])
+        columns.append((a.get('station') or "").upper())
+        columns.append(a.get('login_user') or "")
+        columns.append(a.get('remote_host') or a.get('public_address') or "")
+        columns.append(a.get('local_address') or a.get('local_address6') or "")
+
+        for i in range(len(columns)):
+            column_widths[i] = max(column_widths[i], len(columns[i]))
+
+    def print_columns(widths, *args):
+        result = ''
+        for i in range(len(args)):
+            if len(result) > 0:
+                result += '  '
+            result += args[i].ljust(widths[i])
+        print(result)
+
+    print_columns(column_widths, header_public_key, header_station, header_login_user,
+                  header_public_address, header_local_address)
+    for a in access:
+        print_columns(column_widths, *a['display_columns'])
 
 
 def display_access_text(access: typing.List[typing.Dict]) -> None:

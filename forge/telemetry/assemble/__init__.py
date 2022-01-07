@@ -20,6 +20,9 @@ async def complete() -> typing.Dict[str, typing.Any]:
     _tasks.append(asyncio.ensure_future(add_lsb_info(result)))
     _tasks.append(asyncio.ensure_future(add_uname(result)))
 
+    from .login import add_login_user
+    _tasks.append(asyncio.ensure_future(add_login_user(result)))
+
     from .network import add_external_address, add_local_addresses, add_network_rate, add_network_configuration
     _tasks.append(asyncio.ensure_future(add_external_address(result)))
     _tasks.append(asyncio.ensure_future(add_local_addresses(result)))

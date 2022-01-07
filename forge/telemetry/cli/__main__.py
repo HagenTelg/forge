@@ -6,7 +6,7 @@ import logging
 from base64 import b64encode, b64decode
 from forge.telemetry import CONFIGURATION, PublicKey, key_to_bytes
 from forge.telemetry.storage import ControlInterface
-from .display import sort_hosts, sort_access, display_json, display_hosts_text, display_details_text, display_access_text
+from .display import sort_hosts, sort_access, display_json, display_hosts_text, display_details_text, display_login_text, display_access_text
 
 
 def add_host_selection_arguments(parser):
@@ -80,6 +80,19 @@ def parse_arguments():
     command_parser = subparsers.add_parser('address',
                                            help="get last public address of a host")
     add_host_selection_arguments(command_parser)
+    command_parser.add_argument('--sort',
+                                dest='sort', default='station,last_seen,public_key',
+                                help="sort hosts by field")
+    command_parser.add_argument('--reverse',
+                                dest='reverse', action='store_true',
+                                help="reverse output order")
+
+    command_parser = subparsers.add_parser('login',
+                                           help="get remote login information")
+    add_host_selection_arguments(command_parser)
+    command_parser.add_argument('--json',
+                                dest='json', action='store_true',
+                                help="output host list in JSON")
     command_parser.add_argument('--sort',
                                 dest='sort', default='station,last_seen,public_key',
                                 help="sort hosts by field")
@@ -188,10 +201,18 @@ def main():
             hosts = await interface.list_hosts(**vars(args))
             apply_sort(hosts)
             for h in reversed(hosts):
-                if not h.get('remote_host'):
+                remote_host = h.get('remote_host')
+                if not remote_host:
                     continue
-                print(h['remote_host'])
+                print(remote_host)
                 break
+        elif args.command == 'login':
+            hosts = await interface.login_info(**vars(args))
+            apply_sort(hosts)
+            if args.json:
+                display_json(hosts)
+            else:
+                display_login_text(hosts)
         elif args.command == 'purge':
             await interface.purge_hosts(**vars(args))
         elif args.command == 'access-list':

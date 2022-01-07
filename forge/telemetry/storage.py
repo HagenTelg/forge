@@ -101,6 +101,20 @@ class _TelemetryAddress(_Base):
     local_address6 = db.Column(db.String(41), nullable=True)
 
     _hosts = orm.relationship(_Host, backref=orm.backref('host_telemetry_address', passive_deletes=True))
+    
+    
+class _TelemetryLogin(_Base):
+    __tablename__ = 'telemetry_login'
+    __table_args__ = {
+        'mysql_engine': 'InnoDB',
+        'mariadb_engine': 'InnoDB',
+    }
+
+    host_data = db.Column(db.Integer, db.ForeignKey('host_data.id', ondelete='CASCADE'), primary_key=True)
+    last_update = db.Column(db.DateTime)
+    name = db.Column(db.String(32))
+
+    _hosts = orm.relationship(_Host, backref=orm.backref('host_telemetry_login', passive_deletes=True))
 
 
 class _TelemetryLogKernel(_Base):
@@ -224,6 +238,14 @@ class Interface:
                                             local_address=local_address,
                                             local_address6=local_address6)
 
+        except (KeyError, ValueError, TypeError):
+            pass
+
+        try:
+            name = str(telemetry.pop('login_user'))
+
+            self._update_host_telemetry(orm_session, current_time, host, _TelemetryLogin,
+                                        name=name)
         except (KeyError, ValueError, TypeError):
             pass
 
@@ -559,6 +581,11 @@ class ControlInterface:
                         data['local_address'] = add.local_address
                         data['local_address6'] = add.local_address6
 
+                    add = orm_session.query(_TelemetryLogin).filter_by(host_data=host.id).one_or_none()
+                    if add:
+                        data['last_update']['login'] = add.last_update
+                        data['login_user'] = add.name
+
                     add = orm_session.query(_TelemetryLogKernel).filter_by(host_data=host.id).one_or_none()
                     if add:
                         data['last_update']['log_kernel'] = add.last_update
@@ -568,6 +595,43 @@ class ControlInterface:
                     if add:
                         data['last_update']['log_acquisition'] = add.last_update
                         data['log_acquisition'] = from_json(add.events)
+
+                    result.append(data)
+
+            return result
+
+        return await self.db.execute(execute)
+
+    async def login_info(self, **kwargs) -> typing.List[typing.Dict]:
+        def execute(engine: Engine) -> typing.List[typing.Dict]:
+            result: typing.List[typing.Dict] = list()
+            with Session(engine) as orm_session:
+                for host in self._select_hosts(orm_session, **kwargs):
+                    data = {
+                        'id': host.id,
+                        'public_key': host.public_key,
+                        'station': host.station,
+                        'remote_host': host.remote_host,
+                        'last_seen': host.last_seen,
+                    }
+
+                    add = orm_session.query(_TelemetryAddress).filter_by(host_data=host.id).one_or_none()
+                    if add:
+                        data['public_address'] = add.public_address
+                        data['local_address'] = add.local_address
+                        data['local_address6'] = add.local_address6
+
+                    add = orm_session.query(_TelemetryLogin).filter_by(host_data=host.id).one_or_none()
+                    if add:
+                        data['login_user'] = add.name
+                    else:
+                        details = orm_session.query(_Telemetry).filter_by(host_data=host.id).one_or_none()
+                        try:
+                            from .assemble.login import convert_login_user
+                            if details and 'users' in details:
+                                data['login_user'] = convert_login_user(details['users'])
+                        except (KeyError, ValueError, TypeError):
+                            pass
 
                     result.append(data)
 
