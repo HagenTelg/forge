@@ -626,12 +626,13 @@ class ControlInterface:
                         data['login_user'] = add.name
                     else:
                         details = orm_session.query(_Telemetry).filter_by(host_data=host.id).one_or_none()
-                        try:
-                            from .assemble.login import convert_login_user
-                            if details and 'users' in details:
+                        if details:
+                            details = from_json(details.telemetry)
+                            try:
+                                from .assemble.login import convert_login_user
                                 data['login_user'] = convert_login_user(details['users'])
-                        except (KeyError, ValueError, TypeError):
-                            pass
+                            except (KeyError, ValueError, TypeError):
+                                pass
 
                     result.append(data)
 
