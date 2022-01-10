@@ -25,7 +25,7 @@ async def add_disk_rate(telemetry: typing.Dict[str, typing.Any]) -> None:
     global _disk_accumulator_time
 
     disk_counters = psutil.disk_io_counters()
-    now = time.time()
+    now = time.monotonic()
 
     if _disk_accumulator_time is None:
         _disk_accumulator_read = disk_counters.read_bytes
@@ -34,7 +34,7 @@ async def add_disk_rate(telemetry: typing.Dict[str, typing.Any]) -> None:
 
         await asyncio.sleep(0.5)
         disk_counters = psutil.disk_io_counters()
-        now = time.time()
+        now = time.monotonic()
 
     dT = now - _disk_accumulator_time
     if dT <= 0.0:

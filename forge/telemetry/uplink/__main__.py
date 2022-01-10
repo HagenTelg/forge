@@ -87,22 +87,22 @@ class UplinkConnection:
                 'request': 'update',
                 'telemetry': await assemble_complete_telemetry(),
             })
-            _last_full_telemetry = time.time()
+            _last_full_telemetry = time.monotonic()
         else:
-            time_since_send = time.time() - _last_full_telemetry
+            time_since_send = time.monotonic() - _last_full_telemetry
             if time_since_send > 3600:
                 await self.websocket.send_json({
                     'request': 'update',
                     'telemetry': await assemble_complete_telemetry(),
                 })
-                _last_full_telemetry = time.time()
+                _last_full_telemetry = time.monotonic()
 
         while True:
             if self.args.level > 1:
                 await asyncio.sleep(random.uniform(3600, 7200))
             else:
                 target_time = int(_last_full_telemetry / 86400) * 86400 + 86400
-                delay = target_time - time.time()
+                delay = target_time - time.monotonic()
                 delay += random.uniform(0, 7200)
                 if delay > 0:
                     await asyncio.sleep(delay)
@@ -110,7 +110,7 @@ class UplinkConnection:
                 'request': 'update',
                 'telemetry': await assemble_complete_telemetry(),
             })
-            _last_full_telemetry = time.time()
+            _last_full_telemetry = time.monotonic()
 
     async def _send_basic_telemetry(self):
         from forge.telemetry.assemble.memory import add_memory_utilization
@@ -160,7 +160,7 @@ class UplinkConnection:
 
         async def _stream():
             _queued: typing.List[typing.Dict[str, typing.Any]] = list()
-            _next_send = time.time()
+            _next_send = time.monotonic()
             _send_task: typing.Optional[asyncio.Task] = None
 
             def _schedule_send():
@@ -169,7 +169,7 @@ class UplinkConnection:
                     return
                 if len(_queued) == 0:
                     return
-                delay = _next_send - time.time()
+                delay = _next_send - time.monotonic()
                 if delay <= 0.0:
                     delay = 0.1
                 _send_task = asyncio.ensure_future(_empty_queue(delay))
@@ -185,7 +185,7 @@ class UplinkConnection:
 
                 to_send = list(_queued)
                 _queued.clear()
-                _next_send = time.time() + 1.0
+                _next_send = time.monotonic() + 1.0
 
                 await self.websocket.send_json({
                     'request': 'log',

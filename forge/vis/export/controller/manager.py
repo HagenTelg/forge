@@ -43,7 +43,7 @@ class ExportedFile:
         self.size = os.fstat(file.fileno()).st_size
         self.client_name = client_name
         self.media_type = media_type
-        self.accessed = time.time()
+        self.accessed = time.monotonic()
 
 
 class _ExportRequest:
@@ -180,7 +180,7 @@ class Manager:
         key = _ExportKey(station, mode_name, export_key, start_epoch_ms, end_epoch_ms)
         ready = self._ready.get(key)
         if ready:
-            ready.accessed = time.time()
+            ready.accessed = time.monotonic()
             result = asyncio.get_event_loop().create_future()
             result.set_result(ready)
             return result
@@ -196,7 +196,7 @@ class Manager:
         return pending.attach()
 
     def prune(self, all=False):
-        evict_time = time.time() - self._MAXIMUM_AGE
+        evict_time = time.monotonic() - self._MAXIMUM_AGE
         for key in list(self._ready.keys()):
             file = self._ready[key]
             if all or file.accessed < evict_time:

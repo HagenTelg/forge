@@ -109,7 +109,7 @@ _last_interface_accumulators: typing.Dict[str, _InterfaceAccumulated] = {}
 
 async def add_network_rate(telemetry: typing.Dict[str, typing.Any]) -> None:
     interface_counters = psutil.net_io_counters(pernic=True, nowrap=True)
-    now = time.time()
+    now = time.monotonic()
 
     need_delay = False
     for interface, counters in interface_counters.items():
@@ -122,7 +122,7 @@ async def add_network_rate(telemetry: typing.Dict[str, typing.Any]) -> None:
     if need_delay:
         await asyncio.sleep(0.5)
         interface_counters = psutil.net_io_counters(pernic=True, nowrap=True)
-        now = time.time()
+        now = time.monotonic()
 
     total_rx = 0
     total_tx = 0
