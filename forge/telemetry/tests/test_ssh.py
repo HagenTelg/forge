@@ -83,7 +83,7 @@ async def test_tunnel(client, interface, tmp_path):
         writer = await writer
 
         packet = await reader.readexactly(1)
-        data = struct.pack('<B', ServerConnectionType.TO_REMOTE)
+        data = struct.pack('<B', ServerConnectionType.TO_REMOTE.value)
         assert packet == data
 
         packet = await reader.readexactly(32)
@@ -161,7 +161,7 @@ async def test_connection(client, interface, tmp_path):
         writer = await writer
 
         packet = await reader.readexactly(1)
-        data = struct.pack('<B', ServerConnectionType.INITIATE_CONNECTION)
+        data = struct.pack('<B', ServerConnectionType.INITIATE_CONNECTION.value)
         assert packet == data
 
         packet = await reader.readexactly(32)
@@ -237,7 +237,7 @@ async def test_restricted_connection(client, interface, tmp_path):
         writer = await writer
 
         packet = await reader.readexactly(1)
-        data = struct.pack('<B', ServerConnectionType.INITIATE_CONNECTION)
+        data = struct.pack('<B', ServerConnectionType.INITIATE_CONNECTION.value)
         assert packet == data
 
         packet = await reader.readexactly(32)
@@ -287,7 +287,7 @@ async def test_station(client, interface, tmp_path):
         writer = await writer
 
         packet = await reader.readexactly(1)
-        data = struct.pack('<B', ServerConnectionType.INITIATE_CONNECTION)
+        data = struct.pack('<B', ServerConnectionType.INITIATE_CONNECTION.value)
         assert packet == data
 
         packet = await reader.readexactly(32)
@@ -359,7 +359,7 @@ async def test_restricted_station(client, interface, tmp_path):
         writer = await writer
 
         packet = await reader.readexactly(1)
-        data = struct.pack('<B', ServerConnectionType.INITIATE_CONNECTION)
+        data = struct.pack('<B', ServerConnectionType.INITIATE_CONNECTION.value)
         assert packet == data
 
         packet = await reader.readexactly(32)

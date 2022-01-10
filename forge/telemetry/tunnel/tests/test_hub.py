@@ -70,7 +70,7 @@ async def test_basic(tmp_path):
     assert packet == data
 
     data = b'2' * 11
-    remote_writer.write(struct.pack('<BHH', FromRemotePacketType.DATA, connection_id, len(data)))
+    remote_writer.write(struct.pack('<BHH', FromRemotePacketType.DATA.value, connection_id, len(data)))
     remote_writer.write(data)
     await remote_writer.drain()
     packet = await connection_reader.readexactly(11)
@@ -113,7 +113,7 @@ async def test_remote_closed(tmp_path):
     packet_type = struct.unpack('<B', packet)[0]
     assert packet_type == InitiateConnectionStatus.OK.value
 
-    remote_writer.write(struct.pack('<BH', FromRemotePacketType.CONNECTION_CLOSED, connection_id))
+    remote_writer.write(struct.pack('<BH', FromRemotePacketType.CONNECTION_CLOSED.value, connection_id))
     await remote_writer.drain()
 
     packet = await connection_reader.read(1)

@@ -234,7 +234,7 @@ async def establish_uplink(parser, args) -> typing.Tuple[typing.Optional[asyncio
         _LOGGER.debug(f"Establishing direct connection to {b64encode(key_to_bytes(connect_to_key))}")
 
         reader, writer = await asyncio.open_unix_connection(hub_socket)
-        writer.write(struct.pack('<B', ServerConnectionType.INITIATE_CONNECTION))
+        writer.write(struct.pack('<B', ServerConnectionType.INITIATE_CONNECTION.value))
         writer.write(key_to_bytes(connect_to_key))
         await writer.drain()
 

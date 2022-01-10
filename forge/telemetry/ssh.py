@@ -167,7 +167,7 @@ class TunnelSocket(_TunnelHandshakeSocket):
         super().__init__(*args, **kwargs)
 
     async def handshake(self, websocket: WebSocket, data: bytes) -> bool:
-        self.server_writer.write(struct.pack('<B', ServerConnectionType.TO_REMOTE))
+        self.server_writer.write(struct.pack('<B', ServerConnectionType.TO_REMOTE.value))
         self.server_writer.write(key_to_bytes(self.public_key))
         await self.server_writer.drain()
 
@@ -246,7 +246,7 @@ class ConnectionSocket(_TunnelHandshakeSocket):
 
         _LOGGER.debug(f"Starting forwarding for {self.display_id} ")
 
-        self.server_writer.write(struct.pack('<B', ServerConnectionType.INITIATE_CONNECTION))
+        self.server_writer.write(struct.pack('<B', ServerConnectionType.INITIATE_CONNECTION.value))
         self.server_writer.write(key_to_bytes(target))
         await self.server_writer.drain()
 
