@@ -9,7 +9,7 @@ from starlette.requests import Request
 from starlette.responses import Response, JSONResponse
 from starlette.exceptions import HTTPException
 from cryptography.exceptions import InvalidSignature
-from . import PublicKey
+from forge.crypto import PublicKey
 
 
 _LOGGER = logging.getLogger(__name__)

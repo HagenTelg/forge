@@ -16,8 +16,7 @@ from forge.vis.access import BaseAccessUser
 from forge.vis.data.stream import DataStream, RecordStream
 from forge.vis.export import Export, ExportList
 from forge.cpd3.identity import Name, Identity
-from forge.cpd3.variant import serialize as variant_serialize
-from forge.cpd3.variant import deserialize as variant_deserialize
+from forge.cpd3.variant import serialize as variant_serialize, deserialize as variant_deserialize
 from forge.cpd3.datareader import StandardDataInput, RecordInput
 from forge.cpd3.timeinterval import TimeUnit, TimeInterval
 

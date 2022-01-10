@@ -9,7 +9,7 @@ import sys
 from base64 import b64decode, b64encode
 from os.path import exists as file_exists
 from forge.tasks import background_task
-from forge.telemetry import PrivateKey, PublicKey, key_to_bytes
+from forge.authsocket import WebsocketBinary as AuthSocket, PrivateKey, PublicKey, key_to_bytes
 from .protocol import ServerConnectionType, InitiateConnectionStatus
 
 
@@ -20,16 +20,16 @@ async def check_uplink_handshake(reader: asyncio.StreamReader) -> bool:
     try:
         status = await reader.readexactly(1)
     except asyncio.IncompleteReadError:
-        print("Connection closed")
+        print("Connection closed", file=sys.stderr, flush=True)
         return False
     status = InitiateConnectionStatus(struct.unpack('<B', status)[0])
     if status == InitiateConnectionStatus.OK:
         return True
     elif status == InitiateConnectionStatus.PERMISSION_DENIED:
-        print("Permission denied")
+        print("Permission denied", file=sys.stderr, flush=True)
         return False
     elif status == InitiateConnectionStatus.TARGET_NOT_FOUND:
-        print("Tunnel target not found")
+        print("Tunnel target not found", file=sys.stderr, flush=True)
         return False
     else:
         raise ValueError("Invalid handshake status")
@@ -150,6 +150,7 @@ async def establish_uplink(parser, args) -> typing.Tuple[typing.Optional[asyncio
                     if msg.type == aiohttp.WSMsgType.BINARY:
                         self._protocol.data_received(msg.data)
                     elif msg.type == aiohttp.WSMsgType.ERROR:
+                        _LOGGER.warning(f"Websocket error {msg}")
                         return
 
             async def run(self):
@@ -160,53 +161,53 @@ async def establish_uplink(parser, args) -> typing.Tuple[typing.Optional[asyncio
                     pass
                 self._protocol.eof_received()
 
-        async def handshake(websocket: "aiohttp.client.ClientWebSocketResponse") -> bool:
-            await websocket.send_bytes(key_to_bytes(key.public_key()))
-            token = await websocket.receive_bytes()
-            signature = key.sign(token)
-
-            if connect_to_key:
-                await websocket.send_bytes(signature + key_to_bytes(connect_to_key))
-            else:
-                await websocket.send_bytes(signature)
-            return True
-
-        reader = asyncio.get_event_loop().create_future()
-        writer = asyncio.get_event_loop().create_future()
+        reader_ready = asyncio.get_event_loop().create_future()
+        writer_ready = asyncio.get_event_loop().create_future()
 
         async def connect():
             _LOGGER.debug(f"Connecting to websocket uplink {url}")
             timeout = aiohttp.ClientTimeout(connect=30, sock_read=60)
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.ws_connect(str(url)) as websocket:
-                    if not await handshake(websocket):
-                        reader.set_result(None)
-                        writer.set_result(None)
-                        return
+                    if connect_to_key:
+                        await AuthSocket.client_handshake(websocket, key, extra_data=key_to_bytes(connect_to_key))
+                    else:
+                        await AuthSocket.client_handshake(websocket, key)
 
                     _LOGGER.debug("Websocket connected")
 
-                    r = asyncio.StreamReader()
-                    protocol = asyncio.StreamReaderProtocol(r)
+                    reader = asyncio.StreamReader()
+                    protocol = asyncio.StreamReaderProtocol(reader)
                     transport = WebsocketTransport(websocket, protocol)
-                    w = asyncio.StreamWriter(transport, protocol, r, asyncio.get_event_loop())
-                    reader.set_result(r)
-                    writer.set_result(w)
+                    writer = asyncio.StreamWriter(transport, protocol, reader, asyncio.get_event_loop())
+                    reader_ready.set_result(reader)
+                    writer_ready.set_result(writer)
                     await transport.run()
+            _LOGGER.debug("Websocket completed")
 
         handler = asyncio.ensure_future(connect())
 
-        r = await reader
-        w = await writer
-        if not r or not w:
+        reader = await reader_ready
+        writer = await writer_ready
+        if not reader or not writer:
+            _LOGGER.debug("Websocket streaming failed")
             return None, None, None
-        if not await check_uplink_handshake(r):
+        if not await check_uplink_handshake(reader):
+            _LOGGER.debug("Websocket handshake failed")
             try:
-                w.close()
+                handler.cancel()
+            except:
+                pass
+            try:
+                writer.close()
             except OSError:
                 pass
+            try:
+                await handler
+            except:
+                pass
             return None, None, None
-        return r, w, handler
+        return reader, writer, handler
     elif args.direct:
         from forge.telemetry import CONFIGURATION
         from forge.telemetry.storage import ControlInterface
@@ -241,6 +242,7 @@ async def establish_uplink(parser, args) -> typing.Tuple[typing.Optional[asyncio
         _LOGGER.debug("Direct connection open")
 
         if not await check_uplink_handshake(reader):
+            _LOGGER.debug("Direct connection handshake failed")
             try:
                 writer.close()
             except OSError:
@@ -360,7 +362,7 @@ def main():
                         help="system key file")
     parser.add_argument('--station',
                         dest='station',
-                        help="system key file")
+                        help="target station identifier")
     parser.add_argument('--connect',
                         dest='target',
                         help="target key identifier")

@@ -10,7 +10,7 @@ from starlette.middleware import Middleware
 from starlette.routing import WebSocketRoute
 from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.websockets import WebSocketDisconnect
-from forge.telemetry import PrivateKey, key_to_bytes
+from forge.authsocket import PrivateKey, key_to_bytes
 from forge.telemetry.connected import TelemetrySocket
 from forge.telemetry.storage import Interface as TelemetryInterface
 
@@ -52,7 +52,7 @@ def client(app):
 def test_basic(client, interface):
     key = PrivateKey.generate()
     with client.websocket_connect("/update") as ws:
-        public_key =  b64encode(key_to_bytes(key.public_key())).decode('ascii')
+        public_key = b64encode(key_to_bytes(key.public_key())).decode('ascii')
         ws.send_json({
             'public_key': public_key,
         })
@@ -80,7 +80,7 @@ def test_basic(client, interface):
             nonlocal host_id
             nonlocal host_key
             with engine.connect() as conn:
-                row = conn.execute('SELECT id, public_key FROM hosts WHERE station = "nil"').one()
+                row = conn.execute('SELECT id, public_key FROM host_data WHERE station = "nil"').one()
                 host_id = int(row[0])
                 host_key = str(row[1])
 
@@ -104,7 +104,7 @@ def test_basic(client, interface):
         def fetch_host_telemetry(engine):
             nonlocal telemetry_json
             with engine.connect() as conn:
-                row = conn.execute(f'SELECT telemetry FROM telemetry WHERE host = {host_id}').one()
+                row = conn.execute(f'SELECT telemetry FROM telemetry WHERE host_data = {host_id}').one()
                 telemetry_json = row[0]
 
         interface.db.sync(fetch_host_telemetry)
@@ -158,7 +158,7 @@ def test_signature_fail(client, interface):
         def fetch_host_id(engine):
             nonlocal host_id
             with engine.connect() as conn:
-                row = conn.execute('SELECT id FROM hosts WHERE station = "nil"').one_or_none()
+                row = conn.execute('SELECT id FROM host_data WHERE station = "nil"').one_or_none()
                 if row is None:
                     return
                 host_id = int(row[0])

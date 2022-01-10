@@ -6,15 +6,14 @@ import signal
 import aiohttp
 import time
 import random
-from base64 import b64decode, b64encode
-from json import loads as from_json
-from json import dumps as to_json
+from base64 import b64decode
+from json import loads as from_json, dumps as to_json
 from os.path import exists as file_exists
 from dynaconf import Dynaconf
 from dynaconf.constants import DEFAULT_SETTINGS_FILES
 from starlette.datastructures import URL
 from forge.tasks import background_task
-from forge.telemetry import PrivateKey, key_to_bytes
+from forge.authsocket import WebsocketJSON as AuthSocket, PrivateKey
 from forge.telemetry.assemble import complete as assemble_complete_telemetry
 from forge.telemetry.assemble.station import get_station
 
@@ -37,18 +36,6 @@ class UplinkConnection:
         self.args = args
         self.websocket: "aiohttp.client.ClientWebSocketResponse" = None
         self._tasks: typing.List[asyncio.Task] = list()
-
-    async def _handshake(self) -> None:
-        await self.websocket.send_json({
-            'public_key': b64encode(key_to_bytes(self.key.public_key())).decode('ascii'),
-        })
-        challenge = await self.websocket.receive_json()
-        token = b64decode(challenge['token'])
-        signature = self.key.sign(token)
-        await self.websocket.send_json({
-            'signature': b64encode(signature).decode('ascii'),
-            'station': await get_station(),
-        })
 
     def _handle_server_time(self, data: typing.Dict[str, typing.Any]) -> None:
         if self.args.time_output is not None:
@@ -224,7 +211,9 @@ class UplinkConnection:
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.ws_connect(str(self.url)) as websocket:
                     self.websocket = websocket
-                    await self._handshake()
+                    await AuthSocket.client_handshake(self.websocket, self.key, extra_data={
+                        'station': await get_station(),
+                    })
                     _LOGGER.info(f"Telemetry uplink connected to {self.url}")
 
                     self._tasks.append(asyncio.ensure_future(self._poll_server_time()))

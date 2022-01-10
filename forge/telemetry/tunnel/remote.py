@@ -12,7 +12,7 @@ from dynaconf import Dynaconf
 from dynaconf.constants import DEFAULT_SETTINGS_FILES
 from starlette.datastructures import URL
 from forge.tasks import background_task
-from forge.telemetry import PrivateKey, key_to_bytes
+from forge.authsocket import WebsocketBinary as AuthSocket, PrivateKey, key_to_bytes
 from .protocol import ToRemotePacketType, FromRemotePacketType
 
 CONFIGURATION = Dynaconf(
@@ -76,12 +76,6 @@ class UplinkConnection:
         self.websocket: "aiohttp.client.ClientWebSocketResponse" = None
         self._connections: typing.Dict[int, UplinkConnection._SSHConnection] = dict()
 
-    async def _handshake(self) -> None:
-        await self.websocket.send_bytes(key_to_bytes(self.key.public_key()))
-        challenge = await self.websocket.receive_bytes()
-        signature = self.key.sign(challenge)
-        await self.websocket.send_bytes(signature)
-
     async def _run_ssh_connection(self, connection_id: int):
         try:
             reader, writer = await asyncio.open_connection(host='localhost', port=self.ssh_port)
@@ -143,13 +137,14 @@ class UplinkConnection:
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.ws_connect(str(self.url)) as websocket:
                 self.websocket = websocket
-                await self._handshake()
+                await AuthSocket.client_handshake(self.websocket, self.key)
                 _LOGGER.info(f"Tunnel connected to {self.url}")
 
                 async for msg in self.websocket:
                     if msg.type == aiohttp.WSMsgType.BINARY:
                         await self._dispatch_packet(msg.data)
                     elif msg.type == aiohttp.WSMsgType.ERROR:
+                        _LOGGER.debug(f"Websocket error {msg}")
                         return
 
     def disconnect(self):

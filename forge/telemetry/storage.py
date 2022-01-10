@@ -13,7 +13,7 @@ from json import loads as from_json
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from forge.database import ORMDatabase
-from . import PublicKey, key_to_bytes
+from forge.crypto import PublicKey, key_to_bytes
 
 
 _LOGGER = logging.getLogger(__name__)

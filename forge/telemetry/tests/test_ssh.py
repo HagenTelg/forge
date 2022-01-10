@@ -9,7 +9,8 @@ from starlette.middleware import Middleware
 from starlette.routing import WebSocketRoute
 from starlette.types import ASGIApp, Receive, Scope, Send
 from starlette.websockets import WebSocketDisconnect
-from forge.telemetry import PrivateKey, PublicKey, key_to_bytes, CONFIGURATION
+from forge.authsocket import PrivateKey, PublicKey, key_to_bytes
+from forge.telemetry import CONFIGURATION
 from forge.telemetry.ssh import TunnelSocket, ConnectionSocket, StationConnectionSocket
 from forge.telemetry.storage import Interface as TelemetryInterface
 from forge.telemetry.tunnel.protocol import ServerConnectionType, FromRemotePacketType, ToRemotePacketType, InitiateConnectionStatus

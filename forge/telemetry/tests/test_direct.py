@@ -10,7 +10,7 @@ from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.routing import Route
 from starlette.types import ASGIApp, Receive, Scope, Send
-from forge.telemetry import PrivateKey, key_to_bytes
+from forge.authsocket import PrivateKey, key_to_bytes
 from forge.telemetry.direct import update
 from forge.telemetry.storage import Interface as TelemetryInterface
 
@@ -76,10 +76,10 @@ def test_basic(client, interface):
         nonlocal host_key
         nonlocal telemetry_json
         with engine.connect() as conn:
-            row = conn.execute('SELECT id, public_key FROM hosts WHERE station = "nil"').one()
+            row = conn.execute('SELECT id, public_key FROM host_data WHERE station = "nil"').one()
             host_id = int(row[0])
             host_key = str(row[1])
-            row = conn.execute(f'SELECT telemetry FROM telemetry WHERE host = {host_id}').one()
+            row = conn.execute(f'SELECT telemetry FROM telemetry WHERE host_data = {host_id}').one()
             telemetry_json = row[0]
 
     interface.db.sync(fetch_info)

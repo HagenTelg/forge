@@ -13,7 +13,8 @@ from base64 import b64encode, b64decode, b32encode
 from os.path import exists as file_exists
 from json import dumps as to_json
 from starlette.datastructures import URL
-from forge.telemetry import CONFIGURATION, PrivateKey, PublicKey, key_to_bytes
+from forge.authsocket import WebsocketJSON as AuthSocket, PublicKey, PrivateKey, key_to_bytes
+from forge.telemetry import CONFIGURATION
 from forge.telemetry.assemble import complete as assemble_telemetry
 from forge.telemetry.assemble.station import get_station
 
@@ -99,19 +100,9 @@ async def submit_to_url(url: URL, telemetry: bytes, public_key: PublicKey,
 async def upload_websocket(websocket: "aiohttp.client.ClientWebSocketResponse", key: PrivateKey,
                            station: typing.Optional[str],
                            telemetry: typing.Dict[str, typing.Any]) -> typing.Optional[typing.Dict[str, typing.Any]]:
-    async def handshake():
-        await websocket.send_json({
-            'public_key': b64encode(key_to_bytes(key.public_key())).decode('ascii'),
-        })
-        challenge = await websocket.receive_json()
-        token = b64decode(challenge['token'])
-        signature = key.sign(token)
-        await websocket.send_json({
-            'signature': b64encode(signature).decode('ascii'),
-            'station': station,
-        })
-
-    await handshake()
+    await AuthSocket.client_handshake(websocket, key, extra_data={
+        'station': station,
+    })
 
     await websocket.send_json({
         'request': 'update',

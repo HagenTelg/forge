@@ -4,7 +4,8 @@ import argparse
 import asyncio
 import logging
 from base64 import b64encode, b64decode
-from forge.telemetry import CONFIGURATION, PublicKey, key_to_bytes
+from forge.crypto import PublicKey, key_to_bytes
+from forge.telemetry import CONFIGURATION
 from forge.telemetry.storage import ControlInterface
 from .display import sort_hosts, sort_access, display_json, display_hosts_text, display_details_text, display_login_text, display_access_text
 
@@ -154,7 +155,7 @@ def main():
 
     if args.command == 'generate-key':
         import secrets
-        from forge.telemetry import PrivateKey
+        from forge.crypto import PrivateKey
         private_key = PrivateKey.from_private_bytes(secrets.token_bytes(32))
         public_key = b64encode(key_to_bytes(private_key.public_key())).decode('ascii')
         private_key = b64encode(key_to_bytes(private_key)).decode('ascii')
