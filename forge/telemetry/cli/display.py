@@ -178,6 +178,14 @@ def display_details_text(hosts: typing.List[typing.Dict]) -> None:
                 print("NTP (systemd) status:")
                 _prefix_output(host['ntp']['timedatectl_status'], prefix="    ")
 
+        if host.get('failed_services'):
+            failed_services = host['failed_services']
+            if len(failed_services) > 0:
+                print("Failed services:")
+                for service in failed_services:
+                    _prefix_output(f"{service['name']} ({service['sub_state']}) - {service['description']}",
+                                   prefix="    ")
+
         if host.get('log_acquisition'):
             print(f"Acquisition log updated at {host['last_update']['log_acquisition']:%Y-%m-%d %H:%M:%S}:")
             _display_log_text(host['log_acquisition'][-10:], prefix="    ")

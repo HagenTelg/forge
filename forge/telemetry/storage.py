@@ -630,7 +630,9 @@ class ControlInterface:
                             details = from_json(details.telemetry)
                             try:
                                 from .assemble.login import convert_login_user
-                                data['login_user'] = convert_login_user(details['users'])
+                                user = convert_login_user(details['users'])
+                                if user:
+                                    data['login_user'] = user
                             except (KeyError, ValueError, TypeError):
                                 pass
 

@@ -50,6 +50,9 @@ async def complete() -> typing.Dict[str, typing.Any]:
     from .serial import add_serial_ports
     _tasks.append(asyncio.ensure_future(add_serial_ports(result)))
 
+    from .services import add_failed_services
+    _tasks.append(asyncio.ensure_future(add_failed_services(result)))
+
     if len(_tasks) > 0:
         try:
             await asyncio.wait(_tasks)

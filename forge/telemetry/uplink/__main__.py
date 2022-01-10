@@ -116,6 +116,7 @@ class UplinkConnection:
         from forge.telemetry.assemble.memory import add_memory_utilization
         from forge.telemetry.assemble.disk import add_disk_rate
         from forge.telemetry.assemble.cpu import add_cpu_utilization
+        from forge.telemetry.assemble.services import add_failed_services
 
         await asyncio.sleep(random.uniform(1, 600))
         while True:
@@ -123,6 +124,7 @@ class UplinkConnection:
             await add_memory_utilization(telemetry)
             await add_disk_rate(telemetry)
             await add_cpu_utilization(telemetry)
+            await add_failed_services(telemetry)
             await self.websocket.send_json({
                 'request': 'partial',
                 'telemetry': telemetry,
@@ -135,6 +137,7 @@ class UplinkConnection:
         from forge.telemetry.assemble.memory import add_memory_utilization
         from forge.telemetry.assemble.disk import add_disk_rate, add_disk_space
         from forge.telemetry.assemble.cpu import add_cpu_utilization
+        from forge.telemetry.assemble.services import add_failed_services
 
         await asyncio.sleep(random.uniform(1, 60))
         while True:
@@ -145,6 +148,7 @@ class UplinkConnection:
             await add_disk_rate(telemetry)
             await add_disk_space(telemetry)
             await add_cpu_utilization(telemetry)
+            await add_failed_services(telemetry)
             await self.websocket.send_json({
                 'request': 'partial',
                 'telemetry': telemetry,
