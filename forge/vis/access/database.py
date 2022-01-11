@@ -527,6 +527,17 @@ class AccessController(BaseAccessController):
 
         await self._clear_session(request)
 
+        # Remove the suffixes NOAA policy requires
+        def strip_noaa_suffixes(email: str, name: str) -> str:
+            if not name:
+                return name
+            if not email.lower().endswith('@noaa.gov'):
+                return name
+            for suffix in ("- NOAA Federal", "- NOAA Affiliate"):
+                if name.lower().endswith(suffix.lower()):
+                    return name[:-len(suffix)].strip()
+            return name
+
         def execute(engine: Engine):
             with Session(engine) as orm_session:
                 auth = orm_session.query(_AuthOpenIDConnect).filter_by(provider=client_name,
@@ -535,6 +546,7 @@ class AccessController(BaseAccessController):
                     email = oidc_user.get('email')
                     email = email[0:255] if email else ''
                     name = oidc_user.get('name')
+                    name = strip_noaa_suffixes(email, name)
                     name = name[0:255] if name else None
                     user = _User(email=email, name=name, last_seen=datetime.datetime.utcnow())
                     if user.name is not None:
