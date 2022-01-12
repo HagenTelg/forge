@@ -143,6 +143,9 @@ class _DataSocket(WebSocketEndpoint):
                     await stream.run()
                 except asyncio.CancelledError:
                     return
+                except:
+                    _LOGGER.warning(f"Error in stream {stream_id} to {websocket.client.host}", exc_info=True)
+
                 if active_stream.stopped:
                     return
 

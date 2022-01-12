@@ -152,7 +152,7 @@ def _deserialize_qstring(data: bytearray) -> str:
     if n == 0xffffffff:
         del data[:4]
         return str()
-    result = data[4:4+n].decode('utf-8')
+    result = data[4:4+n].decode('utf-8', errors='replace')
     del data[:4+n]
     return result
 def _deserialize_string_v1(data: bytearray) -> str:
@@ -166,7 +166,7 @@ def _deserialize_string_v1(data: bytearray) -> str:
 _deserializers[_ID.String_v1] = _deserialize_string_v1
 def deserialize_short_string(data: bytearray) -> str:
     n = _deserialize_short_length(data)
-    result = data[:n].decode('utf-8')
+    result = data[:n].decode('utf-8', errors='replace')
     del data[:n]
     return result
 _deserializers[_ID.String_v2] = deserialize_short_string
@@ -215,7 +215,7 @@ def _deserialize_overlay_v1(data: bytearray) -> Overlay:
 _deserializers[_ID.Overlay_v1] = _deserialize_overlay_v1
 def _deserialize_overlay_v2(data: bytearray) -> Overlay:
     n = struct.unpack('<I', data[:4])[0]
-    result = Overlay(data[4:4 + n].decode('utf-8'))
+    result = Overlay(data[4:4 + n].decode('utf-8', errors='replace'))
     del data[:4+n]
     return result
 _deserializers[_ID.Overlay_v2] = _deserialize_overlay_v2
