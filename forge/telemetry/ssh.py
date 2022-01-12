@@ -8,6 +8,7 @@ from starlette.exceptions import HTTPException
 from forge.const import STATIONS
 from forge.authsocket import WebsocketBinary as AuthSocket, PublicKey, key_to_bytes, public_key_display
 from .tunnel.protocol import ServerConnectionType, InitiateConnectionStatus, FromRemotePacketType, ToRemotePacketType
+from . import CONFIGURATION
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -93,8 +94,8 @@ class TunnelSocket(AuthSocket):
 
         if packet_type == FromRemotePacketType.DATA:
             data_length = len(data) - 3
-            if data_length <= 0 or data_length >= 0xFFFF:
-                raise ValueError("Invalid data packet")
+            if data_length <= 0 or data_length > 0xFFFF:
+                raise ValueError(f"Data packet length ({data_length}) invalid")
             connection_id = struct.unpack('<H', data[1:3])[0]
 
             self.server_writer.write(struct.pack('<BHH', packet_type.value, connection_id,  data_length))
