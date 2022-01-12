@@ -67,7 +67,7 @@ ozone_modes: typing.Dict[str, Mode] = _construct_modes([
         ViewList.Entry('ozone-raw-cells', "Cells"),
         ViewList.Entry('ozone-raw-wind', "Wind"),
     ]),
-    ViewList('ozone-editing', "Editing", [
+    Editing('ozone-editing', "Editing", [
         ViewList.Entry('ozone-editing-concentration', "Ozone"),
         ViewList.Entry('ozone-editing-wind', "Wind"),
     ]),
@@ -86,7 +86,7 @@ met_modes: typing.Dict[str, Mode] = _construct_modes([
         ViewList.Entry('met-raw-temperature', "Temperature and RH"),
         ViewList.Entry('met-raw-pressure', "Pressure"),
     ]),
-    ViewList('met-editing', "Editing", [
+    Editing('met-editing', "Editing", [
         ViewList.Entry('met-editing-windspeed', "Wind Speed"),
         ViewList.Entry('met-editing-winddirection', "Wind Direction"),
         ViewList.Entry('met-editing-temperature', "Temperature"),
