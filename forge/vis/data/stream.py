@@ -92,7 +92,10 @@ class RecordStream(DataStream):
                     if v is None or not isfinite(v):
                         raw += self._MVC_FLOAT
                         continue
-                    raw += struct.pack('<f', v)
+                    try:
+                        raw += struct.pack('<f', v)
+                    except OverflowError:
+                        raw += self._MVC_FLOAT
                 content['data'][field] = b64encode(raw).decode('ascii')
                 continue
 
@@ -107,7 +110,10 @@ class RecordStream(DataStream):
                         if v is None or not isfinite(v):
                             raw += self._MVC_FLOAT
                             continue
-                        raw += struct.pack('<f', v)
+                        try:
+                            raw += struct.pack('<f', v)
+                        except OverflowError:
+                            raw += self._MVC_FLOAT
                     content['data'][field]['values'].append(b64encode(raw).decode('ascii'))
                 continue
 
