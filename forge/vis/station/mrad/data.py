@@ -73,6 +73,7 @@ sail_splash: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, t
                 Name(station, 'raw', 'Rdn_RMSURFRAD'): 'direct',
                 Name(station, 'raw', 'Rdf_RMSURFRAD'): 'diffuse',
                 Name(station, 'raw', 'Rdg_RMSURFRAD'): 'global',
+                Name(station, 'raw', 'ZSA_RMSURFRAD'): 'zsa',
             }, send
         ),
         'totalratio-radsys2': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
@@ -169,6 +170,7 @@ sail_splash: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, t
                 Name(station, 'clean', 'Rdn_RMSURFRAD'): 'direct',
                 Name(station, 'clean', 'Rdf_RMSURFRAD'): 'diffuse',
                 Name(station, 'clean', 'Rdg_RMSURFRAD'): 'global',
+                Name(station, 'clean', 'ZSA_RMSURFRAD'): 'zsa',
             }, send
         ),
         'totalratio-radsys2': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(

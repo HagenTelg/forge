@@ -349,8 +349,8 @@ function calc(total, global) {
             super().__init__()
             self.components.append('generic_operations')
             self.script = r"""(function(dataName) {
-function calc(direct, diffuse, global) {
-    if (!isFinite(direct) || !isFinite(diffuse) || !isFinite(global)) {
+function calc(direct, diffuse, global, zsa) {
+    if (!isFinite(direct) || !isFinite(diffuse) || !isFinite(global) || !isFinite(zsa)) {
         return undefined;
     }
     if (direct <= 0.01) {
@@ -362,9 +362,9 @@ function calc(direct, diffuse, global) {
     if (global <= 0.01) {
         return undefined;
     }
-    return (direct + diffuse) / global;
+    return (direct * Math.cos(zsa * Math.PI/180.0) + diffuse) / global;
 }
-    return new GenericOperations.SingleOutput(dataName, calc, 'ratio', 'direct', 'diffuse', 'global');
+    return new GenericOperations.SingleOutput(dataName, calc, 'ratio', 'direct', 'diffuse', 'global', 'zsa');
 })"""
 
     def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site]):
