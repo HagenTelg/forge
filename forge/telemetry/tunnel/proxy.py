@@ -377,7 +377,7 @@ def main():
                         dest='hub_socket',
                         help="direct connection hub server socket")
 
-    group = parser.add_mutually_exclusive_group()
+    group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--listen',
                        dest='listen', type=int,
                        help="TCP port to listen on")
@@ -388,7 +388,7 @@ def main():
                        dest='launch',
                        help="command to launch with stdio proxied")
 
-    group = parser.add_mutually_exclusive_group()
+    group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--direct', action='store_true',
                        dest='direct',
                        help="directly connect to the hub server")
