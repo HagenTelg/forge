@@ -168,7 +168,7 @@ $(document).ready(function() {
             return result;
         } else if (directive.instrument) {
             return directive.instrument;
-        } else if (directive.cutsize) {
+        } else if (typeof directive.cutsize === 'string') {
             switch(directive.cutsize) {
             case 'pm10': return "PM10";
             case 'pm25': return "PM2.5";

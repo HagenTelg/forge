@@ -47,12 +47,12 @@ $('#cutsize_updated').change(function(event) {
 selectEditDirectiveAction = function(directive) {
   cutsizeTarget = directive;
 
-  if (directive.cutsize) {
+  if (typeof directive.cutsize === 'string') {
     $('#cutsize_original').val(directive.cutsize).change();
   } else {
     $('#cutsize_original').val('pm1').change();
   }
-  if (directive.modified_cutsize) {
+  if (typeof directive.modified_cutsize === 'string') {
     $('#cutsize_updated').val(directive.modified_cutsize).change();
   } else {
     $('#cutsize_updated').val('invalidate').change();

@@ -163,15 +163,47 @@ def _from_cpd3_calibration(calibration: typing.Any) -> typing.List[float]:
 def _selection_to_single_cutsize(selection: typing.List[typing.Dict[str, typing.Any]]) -> typing.Optional[str]:
     if len(selection) != 1:
         return None
-    if selection[0] == {'HasFlavors': ['pm10']}:
+
+    selection = selection[0]
+    if selection == {
+        'type': 'variable',
+        'has_flavors': ['pm10']
+    } or selection == {
+        'type': 'variable',
+        'has_flavors': ['pm10'],
+        'lacks_flavors': []
+    }:
         return 'pm10'
-    if selection[0] == {'HasFlavors': ['pm25']}:
+
+    if selection == {
+        'type': 'variable',
+        'has_flavors': ['pm25']
+    } or selection == {
+        'type': 'variable',
+        'has_flavors': ['pm25'],
+        'lacks_flavors': []
+    }:
         return 'pm25'
-    if selection[0] == {'HasFlavors': ['pm1']}:
+
+    if selection == {
+        'type': 'variable',
+        'has_flavors': ['pm1']
+    } or selection == {
+        'type': 'variable',
+        'has_flavors': ['pm1'],
+        'lacks_flavors': []
+    }:
         return 'pm1'
-    if selection[0] == {
-        'LacksFlavors': ['pm1', 'pm10', 'pm25'],
-        'Variable': '((Ba[cfs]*)|(Bb?s)|Be|Ir|L|(N[nbs]?)|(X[cfs]*))[BGRQ0-9]*_.*',
+
+    if selection == {
+        'type': 'variable',
+        'lacks_flavors': ['pm1', 'pm10', 'pm25'],
+        'variable': '((Ba[cfs]*)|(Bb?s)|Be|Ir|L|(N[nbs]?)|(X[cfs]*))[BGRQ0-9]*_.*',
+    } or selection == {
+        'type': 'variable',
+        'lacks_flavors': ['pm1', 'pm10', 'pm25'],
+        'has_flavors': [],
+        'variable': '((Ba[cfs]*)|(Bb?s)|Be|Ir|L|(N[nbs]?)|(X[cfs]*))[BGRQ0-9]*_.*',
     }:
         return ''
     return None
@@ -737,8 +769,8 @@ def _convert_directive(profile: str, identity: Identity,
         result['reverse_calibration'] = _from_cpd3_calibration(action.get('Original'))
     elif op == 'setcut' or op == 'cut':
         result['action'] = 'cut_size'
-        result['cutsize'] = _selection_to_single_cutsize(_from_cpd3_selection(parameters.get('Selection')))
-        result['modified_cutsize'] = str(action.get('Cut'), '')
+        result['cutsize'] = _selection_to_single_cutsize(_from_cpd3_selection(action.get('Selection')))
+        result['modified_cutsize'] = str(action.get('Cut', ''))
     else:
         selection = _from_cpd3_selection(action.get('Selection'))
         single_cutsize = _selection_to_single_cutsize(selection)
