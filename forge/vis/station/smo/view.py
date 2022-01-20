@@ -4,6 +4,7 @@ from ..default.view import detach, View, aerosol_views, ozone_views, met_views
 from ..default.met.temperature import Temperature as MetTemperature
 from ..default.met.precipitation import Precipitation as MetPrecipitation
 from ..default.met.editing.precipitation import EditingPrecipitation as MetEditingPrecipitation
+from ..default.met.editing.temperature import EditingTemperature as MetEditingTemperature
 
 
 station_views = detach(aerosol_views, ozone_views, met_views)
@@ -19,6 +20,10 @@ station_views['met-clean-temperature'] = MetTemperature('met-clean-temperature',
                                                         omit_traces=omit_traces)
 station_views['met-avgh-temperature'] = MetTemperature('met-avgh-temperature', measurements=measurements,
                                                        omit_traces=omit_traces)
+station_views['met-editing-temperature'] = MetEditingTemperature(measurements=OrderedDict([
+    ('{code}ambient', '{mode} at 2m'),
+    ('{code}2', '{mode} at 17m'),
+]))
 
 station_views['met-raw-precipitation'] = MetPrecipitation('met-raw')
 station_views['met-clean-precipitation'] = MetPrecipitation('met-clean')

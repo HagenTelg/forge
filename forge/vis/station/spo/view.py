@@ -7,8 +7,6 @@ from ..default.met.tower import TowerTemperatureDifference as MetTowerTemperatur
 from ..default.met.editing.wind import EditingWindSpeed as MetEditingWindSpeed
 from ..default.met.editing.wind import EditingWindDirection as MetEditingWindDirection
 from ..default.met.editing.temperature import EditingTemperature as MetEditingTemperature
-from ..default.met.editing.temperature import EditingDewpoint as MetEditingDewpoint
-from ..default.met.editing.temperature import EditingRH as MetEditingRH
 from ..default.met.editing.tower import EditingTowerTemperatureDifference as MetEditingTowerTemperatureDifference
 
 
@@ -26,14 +24,11 @@ station_views['met-clean-temperature'] = MetTemperature('met-clean-temperature',
                                                         omit_traces=omit_traces)
 station_views['met-avgh-temperature'] = MetTemperature('met-avgh-temperature', measurements=measurements,
                                                        omit_traces=omit_traces)
-measurements = OrderedDict([
+station_views['met-editing-temperature'] = MetEditingTemperature(measurements=OrderedDict([
     ('{code}ambient', '{mode} at 2m'),
     ('{code}2', '{mode} at 10m'),
     ('{code}3', '{mode} at 25m'),
-])
-station_views['met-editing-temperature'] = MetEditingTemperature(measurements=measurements)
-station_views['met-editing-dewpoint'] = MetEditingDewpoint(measurements=measurements)
-station_views['met-editing-rh'] = MetEditingRH(measurements=measurements)
+]))
 
 measurements = OrderedDict([
     ('{code}ambient', '{type} at 10m'),

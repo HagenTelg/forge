@@ -4,6 +4,7 @@ from ..default.view import detach, View, aerosol_views, ozone_views, met_views
 from ..default.aerosol.wind import Wind
 from ..default.aerosol.temperature import Temperature
 from ..default.met.temperature import Temperature as MetTemperature
+from ..default.met.editing.temperature import EditingTemperature as MetEditingTemperature
 from .flow import Flow
 from .filter import FilterStatus
 from .umac import UMACStatus
@@ -41,6 +42,10 @@ station_views['met-clean-temperature'] = MetTemperature('met-clean-temperature',
                                                         omit_traces=omit_traces)
 station_views['met-avgh-temperature'] = MetTemperature('met-avgh-temperature', measurements=measurements,
                                                        omit_traces=omit_traces)
+station_views['met-editing-temperature'] = MetEditingTemperature(measurements=OrderedDict([
+    ('{code}ambient', '{mode} at 2m'),
+    ('{code}2', '{mode} at 16m'),
+]))
 
 
 

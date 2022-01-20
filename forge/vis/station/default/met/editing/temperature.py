@@ -17,7 +17,7 @@ class EditingTemperature(TimeSeries):
 
         if measurements is None:
             measurements = OrderedDict([
-                ('{code}1', '2m'),
+                ('{code}ambient', '{mode} at 2m'),
             ])
 
         self.processing[f'{profile}-raw-temperature'] = self.CalculateMissing()
@@ -72,7 +72,7 @@ class EditingDewpoint(TimeSeries):
 
         if measurements is None:
             measurements = OrderedDict([
-                ('{code}1', '2m'),
+                ('{code}ambient', '{mode} at 2m'),
             ])
 
         self.processing[f'{profile}-raw-temperature'] = self.CalculateMissing()
@@ -110,7 +110,7 @@ class EditingDewpoint(TimeSeries):
             trace.legend = legend.format(type='Dewpoint', code='TD', mode='Edited')
             trace.data_record = f'{profile}-editing-temperature'
             trace.data_field = field.format(code='TD')
-            raw.traces.append(trace)
+            edited.traces.append(trace)
 
 
 class EditingRH(TimeSeries):
@@ -127,7 +127,7 @@ class EditingRH(TimeSeries):
 
         if measurements is None:
             measurements = OrderedDict([
-                ('{code}2m', '2m'),
+                ('{code}ambient', '{mode} at 2m'),
             ])
 
         self.processing[f'{profile}-raw-temperature'] = self.CalculateMissing()
@@ -165,4 +165,4 @@ class EditingRH(TimeSeries):
             trace.legend = legend.format(type='RH', code='U', mode='Edited')
             trace.data_record = f'{profile}-editing-temperature'
             trace.data_field = field.format(code='U')
-            raw.traces.append(trace)
+            edited.traces.append(trace)

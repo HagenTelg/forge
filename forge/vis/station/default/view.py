@@ -99,7 +99,7 @@ met_views: typing.Dict[str, View] = {
     'met-raw-pressure': MetPressure('met-raw'),
 
     'met-editing-windspeed': MetEditingWindSpeed(),
-    'met-editing-windirection': MetEditingWindDirection(),
+    'met-editing-winddirection': MetEditingWindDirection(),
     'met-editing-temperature': MetEditingTemperature(),
     'met-editing-dewpoint': MetEditingDewpoint(),
     'met-editing-rh': MetEditingRH(),
