@@ -1,6 +1,6 @@
 import typing
 from forge.vis.view.timeseries import TimeSeries
-from ..default.aerosol.tsi377Xcpc import TSI3772CPCStatus
+from ..default.aerosol.admagiccpc import ADMagicCPC200Status
 
 
 class ParticleConcentration(TimeSeries):
@@ -84,7 +84,7 @@ class EditingParticleConcentration(TimeSeries):
         edited.traces.append(n_cnc)
 
 
-class TSI3772CPCStatusSecondary(TSI3772CPCStatus):
+class ADMagicCPC200StatusStatusSecondary(ADMagicCPC200Status):
     def __init__(self, mode: str):
         super().__init__(mode)
         self.title = "Secondary CPC Status"
