@@ -81,8 +81,11 @@ class UplinkConnection:
             reader, writer = await asyncio.open_connection(host='localhost', port=self.ssh_port)
         except:
             _LOGGER.warning("SSH loopback connection failed", exc_info=True)
-            await self.websocket.send_bytes(struct.pack('<BH', FromRemotePacketType.CONNECTION_CLOSED.value,
-                                                        connection_id))
+            try:
+                await self.websocket.send_bytes(struct.pack('<BH', FromRemotePacketType.CONNECTION_CLOSED.value,
+                                                            connection_id))
+            except ConnectionError:
+                pass
             return
 
         async def _send(data: bytes):
@@ -94,14 +97,20 @@ class UplinkConnection:
             await self.websocket.send_bytes(struct.pack('<BH', FromRemotePacketType.CONNECTION_OPEN.value,
                                                         connection_id))
             await connection.run()
+        except OSError:
+            # This could be a read error or a write to a closed websocket
+            _LOGGER.debug("Error in SSH connection dispatch", exc_info=True)
         finally:
             if connection.connection_id is not None:
                 self._connections.pop(connection.connection_id, None)
                 closed_id = connection.connection_id
                 connection.connection_id = None
                 connection.closed()
-                await self.websocket.send_bytes(struct.pack('<BH', FromRemotePacketType.CONNECTION_CLOSED.value,
-                                                            closed_id))
+                try:
+                    await self.websocket.send_bytes(struct.pack('<BH', FromRemotePacketType.CONNECTION_CLOSED.value,
+                                                                closed_id))
+                except ConnectionError:
+                    pass
 
     async def _dispatch_packet(self, data: bytes) -> None:
         packet_type = ToRemotePacketType(struct.unpack('<B', data[:1])[0])
@@ -109,7 +118,10 @@ class UplinkConnection:
             connection_id = struct.unpack('<H', data[1:3])[0]
             target = self._connections.get(connection_id)
             if target:
-                await self._connections[connection_id].send(data[3:])
+                try:
+                    await target.send(data[3:])
+                except OSError:
+                    target.disconnect()
             # Not found is ok (closed locally, but server hasn't received that yet)
         elif packet_type == ToRemotePacketType.SSH_CONNECTION_OPEN:
             connection_id = struct.unpack('<H', data[1:3])[0]
