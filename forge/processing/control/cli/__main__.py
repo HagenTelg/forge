@@ -53,6 +53,9 @@ def parse_arguments():
 
     command_parser = subparsers.add_parser('access-grant',
                                            help="grant access")
+    command_parser.add_argument('--no-revoke',
+                                dest='no_revoke', action='store_true',
+                                help="do not revoke existing station keys")
     group = command_parser.add_mutually_exclusive_group()
     group.add_argument('--acquisition',
                        dest='acquisition', action='store_true',
@@ -107,6 +110,7 @@ def main():
             public_key = PublicKey.from_public_bytes(b64decode(args.grant_key[0]))
             station = args.grant_station[0]
             await interface.set_access(public_key, station,
+                                       revoke_existing=(not args.no_revoke),
                                        acquisition=args.acquisition)
         elif args.command == 'access-revoke':
             await interface.revoke_access(**vars(args))

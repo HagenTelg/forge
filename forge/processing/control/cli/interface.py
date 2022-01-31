@@ -43,12 +43,16 @@ class ControlInterface(Interface):
         return query
 
     async def set_access(self, key: PublicKey, station: str,
+                         revoke_existing: bool = True,
                          acquisition: typing.Optional[bool] = True) -> None:
         key = self.key_to_column(key)
         station = station.lower()
 
         def execute(engine: Engine):
             with Session(engine) as orm_session:
+                if revoke_existing:
+                    orm_session.query(AccessStation).filter_by(station=station).delete(synchronize_session='fetch')
+
                 access = self._access_station(orm_session, key, station)
 
                 def set_component(table, state: typing.Optional[bool]):
