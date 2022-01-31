@@ -462,6 +462,7 @@ class UplinkConnection:
         websocket_task: typing.Optional[asyncio.Task] = None
         try:
             timeout = aiohttp.ClientTimeout(connect=30, sock_read=60)
+            _LOGGER.debug(f"Starting connection to {self.url}")
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.ws_connect(str(self.url)) as websocket:
                     await AuthSocket.client_handshake(websocket, self.key,
@@ -480,12 +481,14 @@ class UplinkConnection:
                             port = int(parts[1])
                         else:
                             port = 14234
+                        _LOGGER.debug(f"Connecting to remote CPD3 socket {host} on {port}")
                         try:
                             reader, writer = await asyncio.open_connection(host=host, port=port)
                         except ConnectionError:
                             _LOGGER.warning(f"Error connecting acquisition socket {cpd3_socket}", exc_info=True)
                             return
                     else:
+                        _LOGGER.debug(f"Connecting to local CPD3 socket {cpd3_socket}")
                         try:
                             reader, writer = await asyncio.open_unix_connection(cpd3_socket)
                         except ConnectionError:
