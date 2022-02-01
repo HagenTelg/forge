@@ -14,7 +14,7 @@ station_profile_data['aerosol']['raw']['pressure'] = lambda station, start_epoch
         Name(station, 'raw', 'P_S11', {'pm1'}): 'neph',
     }, send
 )
-station_profile_data['aerosol']['raw']['pressure'] = {
+station_profile_data['aerosol']['realtime']['pressure'] = {
     RealtimeTranslator.Key('P_XM1'): 'ambient',
     RealtimeTranslator.Key('P_S11'): 'neph',
     RealtimeTranslator.Key('P_S11', {'pm10'}): 'neph',
@@ -39,7 +39,7 @@ station_profile_data['aerosol']['raw']['cpcstatus'] = lambda station, start_epoc
         Name(station, 'raw', 'Pd_N71'): 'PDorifice',
     }, send
 )
-station_profile_data['aerosol']['raw']['cpcstatus'] = {
+station_profile_data['aerosol']['realtime']['cpcstatus'] = {
     RealtimeTranslator.Key('Tu_N71'): 'Tinlet',
     RealtimeTranslator.Key('TDu_N71'): 'TDinlet',
     RealtimeTranslator.Key('Uu_N71'): 'Uinlet',
