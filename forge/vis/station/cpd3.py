@@ -1281,13 +1281,27 @@ class EditedReader(DataReader):
 
 class RealtimeReader(DataReader):
     class Input(DataReader.Input):
+        def _valid_time(self, start: typing.Optional[float], end: typing.Optional[float]) -> bool:
+            if end and end < self.reader.clip_start_epoch:
+                return False
+            if start and start >= self.reader.clip_end_epoch:
+                return False
+            return True
+
         def record_ready(self, start: typing.Optional[float], end: typing.Optional[float],
                          record: typing.Dict[Name, typing.Any]) -> None:
+            if not self._valid_time(start, end):
+                return
             super().record_ready(start, end, record)
             if not end:
                 return
             end = round(start * 1000)
             self.reader.realtime_start_ms = end
+
+        def record_break(self, start: float, end: float) -> None:
+            if not self._valid_time(start, end):
+                return
+            super().record_break(start, end)
 
     class RealtimeStream(RealtimeRead):
         def __init__(self, data: "RealtimeReader",  reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
@@ -1325,24 +1339,34 @@ class RealtimeReader(DataReader):
         if end_epoch_ms - start_epoch_ms > 32 * 24 * 60 * 60 * 1000:
             start_epoch_ms = end_epoch_ms - 32 * 24 * 60 * 60 * 1000
 
-        super().__init__(start_epoch_ms, end_epoch_ms, data, send)
+        # Apply rounding so we hit the cache better
+        rounded_start = floor(start_epoch_ms / (1000 * 60 * 60)) * 1000 * 60 * 60
+        rounded_end = ceil(end_epoch_ms / (1000 * 60 * 60)) * 1000 * 60 * 60
+
+        super().__init__(rounded_start, rounded_end, data, send)
         self.station = station
         self.data_name = data_name
         self.realtime_start_ms = start_epoch_ms
         self.realtime_offset = realtime_offset
 
+        self.clip_start_ms = start_epoch_ms
+        self.clip_start_epoch = rounded_start / 1000.0
+        self.clip_end_epoch = rounded_end / 1000.0
+
     async def run(self) -> None:
         await super().run()
 
+        socket_name = CONFIGURATION.get('REALTIME.SOCKET', '/run/forge-vis-realtime.socket')
         try:
-            reader, writer = await asyncio.open_unix_connection(
-                CONFIGURATION.get('REALTIME.SOCKET', '/run/forge-vis-realtime.socket'))
+            reader, writer = await asyncio.open_unix_connection(socket_name)
         except FileNotFoundError:
-            _LOGGER.debug(f"Unable to open realtime connection for {self.station} {self.data_name}")
+            _LOGGER.debug(f"Unable to open realtime connection for {self.station} {self.data_name} on {socket_name}")
             return
+        _LOGGER.debug(f"Realtime data connection open for {self.station} {self.data_name} on {socket_name}")
         try:
             stream = self.RealtimeStream(self, reader, writer)
             await stream.run()
+            _LOGGER.debug(f"Realtime data connection ended for {self.station} {self.data_name}")
         finally:
             try:
                 writer.close()
