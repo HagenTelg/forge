@@ -9,6 +9,7 @@ from .grimm import GrimmDistribution, GrimmStatus
 from .flow import Flow
 from .gasses import Gasses
 from .temperature import Temperature, Ambient
+from .summary import Summary
 
 
 station_views = detach(aerosol_views, ozone_views)
@@ -48,6 +49,9 @@ station_views['aerosol-raw-flow'] = Flow('aerosol-raw')
 station_views['aerosol-raw-temperature'] = Temperature('aerosol-raw')
 station_views['aerosol-realtime-temperature'] = Temperature('aerosol-realtime', realtime=True)
 station_views['aerosol-raw-ambient'] = Ambient('aerosol-raw')
+
+
+station_views['aerosol-raw-summary'] = Summary()
 
 
 def get(station: str, view_name: str) -> typing.Optional[View]:

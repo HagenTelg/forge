@@ -99,6 +99,25 @@ var GenericOperations = {};
         }
         return result;
     }
+    GenericOperations.calibration = function(value, ...coefficients) {
+        if (!isFinite(value)) {
+            return value;
+        }
+        if (coefficients.length === 0) {
+            return undefined;
+        }
+
+        let result = 0.0;
+        let accumulator = 1.0;
+        for (const c of coefficients) {
+            if (!isFinite(c)) {
+                return undefined;
+            }
+            result += c * accumulator;
+            accumulator *= value;
+        }
+        return result;
+    }
 
     GenericOperations.SingleOutput = class extends DataSocket.RecordDispatch {
         constructor(dataName, operation, output, ...inputs) {
@@ -147,6 +166,56 @@ var GenericOperations = {};
                 }
                 args.push(...this.after);
                 outputValues[timeIndex] = this.operation(...args);
+            }
+        }
+    }
+
+    GenericOperations.ApplyToFields = class extends DataSocket.RecordDispatch {
+        constructor(dataName, fieldOperations, ...inputs) {
+            super(dataName);
+            this.inputFields = inputs;
+
+            this.fieldOperations = fieldOperations;
+
+            this.before = [];
+            this.after = [];
+
+            this._inputValues = [];
+        }
+
+        processRecord(record, epoch) {
+            this._inputValues.length = 0;
+            for (const fieldName of this.inputFields) {
+                let values = record.get(fieldName);
+                if (!values) {
+                    values = [];
+                }
+                this._inputValues.push(values);
+            }
+
+            for (const fieldName of Object.keys(this.fieldOperations)) {
+                const operation = this.fieldOperations[fieldName];
+
+                let outputValues = record.get(fieldName);
+                if (!outputValues) {
+                    outputValues = [];
+                    for (let i=0; i<epoch.length; i++) {
+                        outputValues.push(undefined);
+                    }
+                    record.set(fieldName, outputValues);
+                }
+
+                const args = Array.from(this.before);
+                for (let timeIndex=0; timeIndex<epoch.length; timeIndex++) {
+                    args.length = this.before.length;
+                    args.push(outputValues[timeIndex]);
+
+                    for (const fieldValues of this._inputValues) {
+                        args.push(fieldValues[timeIndex]);
+                    }
+                    args.push(...this.after);
+                    outputValues[timeIndex] = operation(...args);
+                }
             }
         }
     }

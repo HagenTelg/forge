@@ -55,6 +55,9 @@ station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-gasses', "Gasses
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-ambient', "Met Temperature and RH"),
                                     'aerosol-raw-temperature')
 
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-summary', "Summary"),
+                                    'aerosol-raw-umacstatus')
+
 
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:
     return station_modes.get(mode_name)

@@ -330,9 +330,14 @@ station_profile_data['aerosol']['raw']['temperature'] = lambda station, start_ep
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'T_V01'): 'Troom', Name(station, 'raw', 'U_V01'): 'Uroom',
         Name(station, 'raw', 'T_V02'): 'Tcr1000', Name(station, 'raw', 'U_V02'): 'Ucr1000',
+
         Name(station, 'raw', 'T1_XM1'): 'Tambient',
         Name(station, 'raw', 'U1_XM1'): 'Uambient',
         Name(station, 'raw', 'TD1_XM1'): 'TDambient',
+
+        Name(station, 'raw', 'T2_XM1'): 'Tsheltered',
+        Name(station, 'raw', 'U2_XM1'): 'Usheltered',
+        Name(station, 'raw', 'TD2_XM1'): 'TDsheltered',
 
         Name(station, 'raw', 'T_V11'): 'Tsample', Name(station, 'raw', 'U_V11'): 'Usample',
         Name(station, 'raw', 'T_V11', {'pm10'}): 'Tsample', Name(station, 'raw', 'U_V11', {'pm10'}): 'Usample',
