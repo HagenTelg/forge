@@ -27,7 +27,7 @@ station_profile_data['aerosol']['raw']['flow'] = lambda station, start_epoch_ms,
         Name(station, 'raw', 'Pd_P01'): 'pitot',
     }, send
 )
-station_profile_data['aerosol']['raw']['flow'] = {
+station_profile_data['aerosol']['realtime']['flow'] = {
     RealtimeTranslator.Key('Q_Q11'): 'sample',
     RealtimeTranslator.Key('Q_Q11', {'pm10'}): 'sample',
     RealtimeTranslator.Key('Q_Q11', {'pm1'}): 'sample',
