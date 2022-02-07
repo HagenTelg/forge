@@ -24,6 +24,7 @@ import forge.vis.editing.server
 import forge.vis.eventlog.server
 import forge.vis.status.server
 import forge.vis.export.server
+import forge.vis.acquisition.server
 
 
 async def _favicon(request: Request) -> Response:
@@ -85,10 +86,12 @@ routes = [
     Mount('/status', routes=forge.vis.status.server.routes),
     Mount('/export', routes=forge.vis.export.server.routes),
     Mount('/station', routes=forge.vis.mode.server.routes),
+    Mount('/acquisition', routes=forge.vis.acquisition.server.routes),
     Route('/settings', endpoint=forge.vis.mode.server.local_settings, name='local_settings'),
 
     Mount('/socket/data', routes=forge.vis.data.server.sockets),
     Mount('/socket/export', routes=forge.vis.export.server.sockets),
+    Mount('/socket/acquisition', routes=forge.vis.acquisition.server.sockets),
 
     Route('/index.html', endpoint=_root),
     Route('/index.htm', endpoint=_root),

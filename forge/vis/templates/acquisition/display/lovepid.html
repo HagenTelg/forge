@@ -1,0 +1,127 @@
+<div class="display-container collapsable collapsed{% if writable %} menu{% endif %}">
+    <div class="header communication-state warning-state format-source" instrument="Love PID"></div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% if writable %}
+    <div class="menu communication-state hide-false">
+        <button class="menu mdi mdi-menu" title="Instrument actions"></button>
+        <ul class="menu menu-below">
+            <li><button id="{{uid}}_change_setpoint"
+                        title="Change a controller setpoint">Change setpoint</button></li>
+        </ul>
+    </div>
+    {% endif %}
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <table class="content display-data column-split communication-state hide-false">
+        <thead>
+            <tr>
+                <th></th>
+                <th></th>
+                <th>Value</th>
+                <th>Raw</th>
+                <th>Setpoint</th>
+                <th>Control (%)</th>
+            </tr>
+        </thead>
+        <tbody id="{{uid}}_controllers">
+        </tbody>
+    </table>
+
+</div>
+
+<style>
+#{{uid}}_controllers > tr td:nth-child(1) {
+  min-width: 0;
+  text-align: right;
+  font-family: monospace;
+}
+#{{uid}}_controllers > tr td:nth-child(2) {
+  text-align: left;
+  min-width: 0;
+}
+</style>
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+
+    const controllerDisplay = document.getElementById('{{uid}}_controllers');
+
+    function getRow(index) {
+        if (index < controllerDisplay.children.length) {
+            return controllerDisplay.children[index];
+        }
+
+        const tr = controllerDisplay.insertRow();
+        for (let i=0; i<6; i++) {
+            tr.insertCell();
+        }
+        return tr;
+    }
+
+    context.addInstrumentPresent((source, info) => {
+        const address = info.address;
+        const variable = info.variable;
+        for (let i=0; i<Math.max(address.length, variable.length); i++)  {
+            const tr = getRow(i);
+            if (address[i] !== null && isFinite(address[i])) {
+                tr.children[0].textContent = (address[i] * 1).toString(16).toUpperCase();
+            }
+            tr.children[1].textContent = variable[i] || '';
+        }
+    }, context.source);
+
+    context.addSourceTarget((value) => {
+        if (!value || !value.length) {
+            return;
+        }
+        for (let i=0; i<value.length; i++)  {
+            const v = value[i];
+            if (v === null || !isFinite(v)) {
+                continue;
+            }
+            getRow(i).children[2].textContent = (v * 1.0).toFixed(1);
+        }
+    }, context.source, 'value');
+    context.addSourceTarget((value) => {
+        if (!value || !value.length) {
+            return;
+        }
+        for (let i=0; i<value.length; i++)  {
+            const v = value[i];
+            if (v === null || !isFinite(v)) {
+                continue;
+            }
+            getRow(i).children[3].textContent = (v * 1.0).toFixed(1);
+        }
+    }, context.source, 'raw');
+    context.addSourceTarget((value) => {
+        if (!value || !value.length) {
+            return;
+        }
+        for (let i=0; i<value.length; i++)  {
+            const v = value[i];
+            if (v === null || !isFinite(v)) {
+                continue;
+            }
+            getRow(i).children[4].textContent = (v * 1.0).toFixed(1);
+        }
+    }, context.source, 'setpoint');
+    context.addSourceTarget((value) => {
+        if (!value || !value.length) {
+            return;
+        }
+        for (let i=0; i<value.length; i++)  {
+            const v = value[i];
+            if (v === null || !isFinite(v)) {
+                continue;
+            }
+            getRow(i).children[5].textContent = (v * 1.0).toFixed(0);
+        }
+    }, context.source, 'control');
+})();
+</script>

@@ -1,0 +1,12 @@
+<div id="chat_scroll_box" class="chat-scroll">
+    <table class="chat-messages">
+        <tbody id="chat_contents">
+        </tbody>
+    </table>
+</div>
+
+<form class="chat-entry" action="#" {% if not writable %}style="display: none;"{% endif %}>
+    <input type="text" id="chat_name" title="The name attached to the message" required>
+    <textarea id="chat_text" title="Text message to send.  Use Shift-Enter to input multiple lines."></textarea>
+    <button id="chat_send" class="mdi mdi-dots-horizontal" title="Send message"></button>
+</form>

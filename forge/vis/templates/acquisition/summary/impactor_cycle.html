@@ -1,0 +1,76 @@
+{% include 'acquisition/summary/block_open.html' %}
+
+<div class="summary-content">
+    <div><span class="description" id="{{uid}}_current_desc"></span> <span class="time" id="{{uid}}_current_time"></span></div>
+    <div><span class="description" id="{{uid}}_next_desc"></span> <span class="time" id="{{uid}}_next_time"></span></div>
+</div>
+
+{% include 'acquisition/summary/block_close.html' %}
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+
+    function formatTime(epoch_ms) {
+        epoch_ms = Math.floor(epoch_ms);
+        let date = new Date(epoch_ms);
+
+        return date.getUTCHours().toString().padStart(2, '0') + ':' +
+            date.getUTCMinutes().toString().padStart(2, '0') + ':' +
+            date.getUTCSeconds().toString().padStart(2, '0');
+    }
+    
+    function isValid(value) {
+        if (!value) {
+            return false;
+        }
+        if (!value.size || value.size.length <= 0) {
+            return false;
+        }
+        return value.epoch_ms !== null && isFinite(value.epoch_ms) && value.epoch_ms > 0;
+    }
+
+    const currentDesc = document.getElementById('{{uid}}_current_desc');
+    const currentTime = document.getElementById('{{uid}}_current_time');
+    context.addSourceTarget((value) => {
+        if (!isValid(value)) {
+            currentDesc.style.display = 'none';
+            currentTime.style.display = 'none';
+            return;
+        }
+        currentDesc.style.display = '';
+        currentTime.style.display = '';
+        
+        currentDesc.textContent = "Current size: " + value.size;
+        currentTime.textContent = formatTime(value.epoch_ms);
+    }, context.source, 'active');
+
+    const nextDesc = document.getElementById('{{uid}}_next_desc');
+    const nextTime = document.getElementById('{{uid}}_next_time');
+    context.addSourceTarget((value) => {
+        if (!isValid(value)) {
+            nextDesc.style.display = 'none';
+            nextTime.style.display = 'none';
+            return;
+        }
+        nextDesc.style.display = '';
+        nextTime.style.display = '';
+        
+        nextDesc.textContent = "Next size: " + value.size;
+        nextTime.textContent = formatTime(value.epoch_ms);
+    }, context.source, 'next');
+})();
+</script>
+
+<style>
+#{{uid}} div.summary-content > div {
+    display: flex;
+}
+#{{uid}} span.description {
+    flex-grow: 1;
+}
+#{{uid}} span.time {
+    text-align: right;
+    font-family: monospace;
+}
+</style>

@@ -2,7 +2,9 @@ import typing
 from copy import deepcopy
 from forge.vis.mode import Mode, ModeGroup, VisibleModes
 from forge.vis.mode.viewlist import ViewList, Editing, Realtime
+from forge.vis.mode.acquisition import Acquisition
 from forge.vis.station.lookup import station_data
+from .acquisition import Acquisition as DefaultAcquisition
 
 
 def _construct_modes(modes: typing.List[Mode]) -> typing.Dict[str, Mode]:
@@ -76,6 +78,7 @@ aerosol_modes: typing.Dict[str, Mode] = _construct_modes([
         ViewList.Entry('aerosol-realtime-cpcstatus', "CPC Status"),
         ViewList.Entry('aerosol-realtime-umacstatus', "μMAC Status"),
     ]),
+    DefaultAcquisition(),
 ])
 ozone_modes: typing.Dict[str, Mode] = _construct_modes([
     ViewList('ozone-raw', "Raw", [
@@ -102,6 +105,7 @@ ozone_modes: typing.Dict[str, Mode] = _construct_modes([
         ViewList.Entry('ozone-realtime-cells', "Cells"),
         ViewList.Entry('ozone-realtime-wind', "Wind"),
     ]),
+    DefaultAcquisition(),
 ])
 met_modes: typing.Dict[str, Mode] = _construct_modes([
     ViewList('met-raw', "Raw", [
@@ -144,6 +148,7 @@ def get(station: str, mode_name: str) -> typing.Optional[Mode]:
 def visible(station: str, mode_name: typing.Optional[str] = None) -> VisibleModes:
     lookup: typing.Callable[[str, str], typing.Optional[Mode]] = station_data(station, 'mode', 'get')
     realtime_visible: typing.Callable[[str, str], typing.Optional[Mode]] = station_data(station, 'realtime', 'visible')
+    acquisition_visible: typing.Callable[[str, str], typing.Optional[Mode]] = station_data(station, 'acquisition', 'visible')
     visible_modes = VisibleModes()
 
     def _assemble_mode(display_name: str, mode_names: typing.List[str]):
@@ -155,6 +160,9 @@ def visible(station: str, mode_name: typing.Optional[str] = None) -> VisibleMode
 
             if isinstance(add, Realtime):
                 if not realtime_visible(station, mode):
+                    continue
+            if isinstance(add, Acquisition):
+                if not acquisition_visible(station, mode):
                     continue
 
             result.modes.append(add)
@@ -168,6 +176,7 @@ def visible(station: str, mode_name: typing.Optional[str] = None) -> VisibleMode
         'aerosol-clean',
         'aerosol-avgh',
         'aerosol-realtime',
+        'acquisition',
     ]),
     _assemble_mode("Ozone", [
         'ozone-raw',
@@ -175,6 +184,7 @@ def visible(station: str, mode_name: typing.Optional[str] = None) -> VisibleMode
         'ozone-clean',
         'ozone-avgh',
         'ozone-realtime',
+        'acquisition',
     ]),
     _assemble_mode("Metrological", [
         'met-raw',

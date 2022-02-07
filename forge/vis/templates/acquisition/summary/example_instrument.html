@@ -1,0 +1,41 @@
+{% set link_view='example-realtime-1' %}
+{% set link_mode='example-realtime' %}
+{% include 'acquisition/summary/block_open.html' %}
+
+<span class="summary-source format-source" instrument="Example Instrument"></span>
+<table class="summary-data">
+    <thead>
+        <tr>
+            <th></th>
+            <th>Mm⁻¹</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="scattering blue"><td>σ<sub>sp</sub> B (450 nm)</td><td class="value-formatted" field="BsB"></td></tr>
+        <tr class="scattering green"><td>σ<sub>sp</sub> G (550 nm)</td><td class="value-formatted" field="BsG"></td></tr>
+        <tr class="scattering red"><td>σ<sub>sp</sub> R (700 nm)</td><td class="value-formatted" field="BsR"></td></tr>
+        <tr class="scattering blue"><td>σ<sub>bsp</sub> B (450 nm)</td><td class="value-formatted" field="BbsB"></td></tr>
+        <tr class="scattering green"><td>σ<sub>bsp</sub> G (550 nm)</td><td class="value-formatted" field="BbsG"></td></tr>
+        <tr class="scattering red"><td>σ<sub>bsp</sub> R (700 nm)</td><td class="value-formatted" field="BbsR"></td></tr>
+    </tbody>
+</table>
+
+{% include 'acquisition/summary/block_close.html' %}
+
+<style>
+#{{uid}} table sub {
+    font-size: 10px;
+}
+#{{uid}} .blue { color: #00a; }
+#{{uid}} a.summary-link:hover .blue { color: #0af; }
+#{{uid}} .green { color: #0a0; }
+#{{uid}} a.summary-link:hover .green { color: #0f0; }
+#{{uid}} .red { color: #a00; }
+#{{uid}} a.summary-link:hover .red { color: #f00; }
+</style>
+
+<script>
+(function() {
+    document.getElementById('{{uid}}').context.standardMode();
+})();
+</script>

@@ -1,0 +1,44 @@
+<span class="topbar-text clock-display" id="clock_display"></span>
+
+<script>
+$(document).ready(function(e) {
+    const contents = document.getElementById("clock_display");
+
+    function updateClock() {
+        const date = new Date();
+        const now = date.getTime();
+
+        let text = date.getUTCFullYear().toString().padStart(4, '0') + '-' +
+            (date.getUTCMonth()+1).toString().padStart(2, '0') + '-' +
+            date.getUTCDate().toString().padStart(2, '0') + ' ' +
+            date.getUTCHours().toString().padStart(2, '0') + ':' +
+            date.getUTCMinutes().toString().padStart(2, '0') + ':' +
+            date.getUTCSeconds().toString().padStart(2, '0') + 'Z';
+
+        date.setUTCMilliseconds(0);
+        let next = date.getTime() + 1000;
+        if (now === next) {
+            next += 1000;
+        }
+
+        date.setUTCSeconds(0);
+        date.setUTCMinutes(0);
+        date.setUTCHours(0);
+        date.setUTCDate(1);
+        date.setUTCMonth(0);
+        const yearStart = date.getTime();
+        const doy = (now - yearStart) / (86400.0 * 1000) + 1;
+        text += ' (' + date.getUTCFullYear().toString().padStart(4, '0') + ':' +
+            doy.toFixed(5) + ')'
+
+        contents.textContent = text;
+
+        let delay = (next - now) + 10;
+        if (delay < 250) {
+            delay = 250;
+        }
+        setTimeout(updateClock, delay);
+    }
+    updateClock();
+});
+</script>

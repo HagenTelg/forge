@@ -1,0 +1,687 @@
+body {
+  min-width: 500px;
+  min-height: 500px;
+  margin: 0;
+  padding: 0;
+}
+
+span.clock-display {
+  font-family: monospace;
+}
+
+.center-content {
+  margin-top: 48px;
+  position: relative;
+  display: flex;
+  min-height: calc(100vh - 48px);
+}
+
+.disconnected-content {
+  position: fixed;
+  top: 48px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  align-items: center;
+  background-color: rgb(0,0,0);
+  background-color: rgba(0,0,0,0.3);
+  display: none;
+  text-align: center;
+}
+.disconnected-content.disconnected {
+  display: flex;
+}
+
+.connection-state.hide-on-disconnected.disconnected {
+  display: none;
+}
+
+
+.disconnected-content > div {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+.disconnected-content .disconnected-banner {
+  font-size: 20px;
+  font-weight: bold;
+  color: #b00;
+  text-align: center;
+}
+.disconnected-content .mdi-loading {
+  color: #f00;
+  font-size: 100px;
+  text-align: center;
+}
+.disconnected-content .disconnected-details {
+  font-size: 16px;
+  color: black;
+  text-align: center;
+}
+
+.sidebar ul {
+  margin: 0;
+  padding: 0;
+  width: 300px;
+  height: 100%;
+  list-style-type: none;
+  background-color: #f1f1f1;
+  color: #000;
+}
+.sidebar ul > li {
+  position: relative;
+  color: #000;
+}
+
+.cards  {
+  margin: 0;
+  padding: 0;
+  flex-grow: 1;
+  position: relative;
+}
+.cards > ul {
+  position: relative;
+  margin: 8px;
+  padding: 0;
+  list-style-type: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+}
+.cards > ul > li {
+  position: relative;
+  margin: 8px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.2);
+}
+
+
+.communication-state.hide-false.communication-false,
+.bypass-state.hide-false.bypass-false,
+.warning-state.hide-false.warning-false,
+.notification-state.hide-false.notification-false,
+.communication-state.hide-true.communication-true,
+.bypass-state.hide-true.bypass-true,
+.warning-state.hide-true.warning-true,
+.notification-state.hide-true.notification-true {
+  display: none;
+}
+
+
+a.summary-link, a.summary-link:visited, a.summary-link:active {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+a.summary-link:hover {
+  background-color: #555;
+  color: white;
+}
+
+div.summary-block {
+  display: block;
+}
+
+
+.summary-source {
+  display: inline-block;
+  font-size: 9px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 8px 0 0 16px;
+}
+
+table.summary-data {
+  border: none;
+  border-spacing: 0;
+  padding: 8px 0;
+}
+table.summary-data > thead > tr > th {
+  padding-bottom: 4px;
+}
+table.summary-data tr > td,
+table.summary-data tr > th {
+  padding: 1px 16px;
+}
+table.summary-data > thead > tr th:nth-child(1) {
+  text-align: center;
+  font-weight: normal;
+  font-size: 9px;
+}
+table.summary-data > thead > tr th:nth-child(2) {
+  font-weight: bold;
+  text-align: right;
+  font-size: 10px;
+}
+table.summary-data > thead:not(:first-child) > tr th {
+  padding-top: 4px;
+}
+table.summary-data > tbody > tr td:nth-child(1) {
+  margin: 0;
+  width: calc(300px - 32px - 75px);
+}
+table.summary-data > tbody > tr td:nth-child(2) {
+  margin: 0;
+  width: 75px;
+  text-align: right;
+  font-family: monospace;
+}
+:not(:hover) > table.summary-data > tbody > tr:not(:nth-child(odd)) {
+  background-color: #e9e9e9;
+}
+
+.summary-content {
+  padding: 8px 16px;
+}
+
+
+.bottom-buttons {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+  background-color: #333;
+  color: white;
+  display: flex;
+  font-size: 16px;
+  height: 24px
+}
+.bottom-buttons > :last-child {
+  padding-right: 4px;
+}
+.bottom-buttons > button,
+.bottom-buttons > ul > li > button {
+  border: none;
+  outline: none;
+  background-color: transparent;
+  padding: 2px 4px;
+  margin: 0;
+  color: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+.bottom-buttons > button:hover,
+.bottom-buttons > button.active,
+.bottom-buttons > ul > li > button:hover {
+  background-color: #555;
+}
+.bottom-buttons > button.hidden {
+  display: none;
+}
+
+.bottom-buttons > ul {
+  list-style-type: none;
+  display: flex;
+  padding: 0;
+  margin: 0;
+}
+.bottom-buttons > ul > li > button {
+  padding: 2px 2px;
+  margin: 0;
+}
+.bottom-buttons > ul > li:first-child > button {
+  padding-left: 4px;
+}
+
+
+@keyframes communication-attention {
+  0%   {color: #f00;}
+  50%  {color: #a00;}
+  100% {color: #f00;}
+}
+@keyframes communication-attention-bold {
+  0%   {font-weight: bold; color: #f00;}
+  50%  {font-weight: normal; color: #a00;}
+  100% {font-weight: bold; color: #f00;}
+}
+#communication_indicators button {
+  color: #3f3;
+  font-family: monospace;
+}
+#communication_indicators button.communication-false {
+  font-weight: bold;
+  color: #f00;
+  animation-name: communication-attention-bold;
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+}
+#communication_indicators button.communication-true.warning-true {
+  color: #f80;
+  font-weight: bold;
+}
+#communication_indicators button.communication-true.warning-false.bypass-true {
+  color: #888;
+}
+
+
+.bottom-expanded {
+  position: fixed;
+  bottom: 24px;
+  right: 0;
+  display: none;
+  flex-direction: column;
+  padding: 0;
+  margin: 0;
+  background-color: #333;
+  color: white;
+}
+.bottom-expanded.visible {
+  display: flex;
+}
+
+
+#event_log_display {
+  overflow: auto;
+  max-height: calc(min(300px, 50vh));
+}
+table.eventlog-tabel {
+  max-width: 50vw;
+  border: 0;
+  border-collapse: collapse;
+}
+table.eventlog-tabel > thead > tr > th:first-child,
+table.eventlog-tabel > tbody > tr > td:first-child {
+  padding-left: 8px;
+}
+table.eventlog-tabel > thead > tr > th:last-child,
+table.eventlog-tabel > tbody > tr > td:last-child {
+  padding-left: 8px;
+}
+
+table.eventlog-tabel > thead {
+  position: sticky;
+  top: 0;
+  background-color: #333;
+}
+table.eventlog-tabel > thead th {
+  padding-bottom: 2px;
+  padding-top: 4px;
+}
+
+table.eventlog-tabel > thead > tr > th {
+  font-weight: bold;
+  font-size: 10px;
+}
+table.eventlog-tabel > thead > tr > th:nth-child(1) {
+  text-align: right;
+  padding-right: 4px;
+}
+table.eventlog-tabel > thead > tr > th:nth-child(2) {
+  text-align: left;
+  padding-left: 4px;
+}
+table.eventlog-tabel > thead > tr > th:nth-child(3) {
+  text-align: left;
+}
+
+table.eventlog-tabel > tbody {
+  font-size: 12px;
+}
+table.eventlog-tabel > tbody td {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+table.eventlog-tabel > tbody > tr:not(:nth-child(odd)) {
+  background-color: #444;
+}
+table.eventlog-tabel > tbody > tr > td:nth-child(1) {
+  font-family: monospace;
+  text-align: right;
+  padding-right: 4px;
+}
+table.eventlog-tabel > tbody > tr > td:nth-child(2) {
+  font-family: monospace;
+  text-align: left;
+  padding-left: 4px;
+  padding-right: 8px;
+}
+table.eventlog-tabel > tbody > tr.error {
+  color: #f00;
+}
+
+
+div.chat-scroll {
+  min-height: calc(min(100px, 10vh));
+  max-height: calc(min(500px, 50vh));
+  width: 50vw;
+  overflow: auto;
+  margin: 4px 0 4px 4px;
+}
+table.chat-messages {
+  max-width: 50vw;
+  border: 0;
+  border-collapse: collapse;
+}
+
+.chat-entry {
+  display: flex;
+}
+#chat_name {
+  flex-grow: 0;
+  margin: 0 8px 10px 4px;
+  border: none;
+  color: inherit;
+  width: 60px;
+  background-color: transparent;
+  text-align: right;
+  font-size: 20px;
+  font-weight: bold;
+}
+#chat_name.invalid {
+  border: 1px solid #f00;
+}
+#chat_text {
+  flex-grow: 1;
+  margin: 0 0 4px 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  height: 20px;
+  border: 1px solid #ccc;
+  resize: none;
+  color: inherit;
+  background-color: transparent;
+}
+#chat_send {
+  flex-grow: 0;
+  margin: 0 4px 4px 4px;
+  padding: 8px 8px;
+  border: none;
+  outline: none;
+  color: inherit;
+  background-color: transparent;
+  font-weight: bold;
+  font-family: inherit;
+  cursor: pointer;
+}
+#chat_send[disabled] {
+  color: #999;
+  cursor: not-allowed;
+}
+#chat_send:hover:not([disabled]),
+#chat_send:focus:not([disabled]){
+  background-color: #555;
+  color: white;
+}
+
+table.chat-messages > tbody {
+  font-size: 12px;
+}
+table.chat-messages > tbody td {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+table.chat-messages > tbody > tr:not(:nth-child(odd)) {
+  background-color: #444;
+}
+table.chat-messages > tbody > tr > td:nth-child(1) {
+  text-align: right;
+  padding-right: 4px;
+  font-family: monospace;
+}
+table.chat-messages > tbody > tr > td:nth-child(2) {
+  text-align: left;
+  padding-left: 4px;
+  padding-right: 8px;
+  font-weight: bold;
+}
+table.chat-messages > tbody > tr > td:nth-child(3) {
+  width: 100%;
+  white-space: pre-line;
+}
+
+
+.display-container {
+  border: 1px solid black;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.display-container > .header {
+  background-color: #0080ff;
+  color: white;
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  padding-left: 18px;
+  white-space: nowrap;
+}
+.display-container > .header.warning-state.warning-true:not(.communication-false) {
+  color: #f80;
+}
+.display-container > .header.communication-state.communication-false {
+  color: #f00;
+  animation-name: communication-attention;
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+}
+
+.display-container:not(.menu) > .header {
+  padding-right: 4px;
+}
+.display-container.menu > .header {
+  padding-right: 26px;
+}
+
+.display-container.collapsable > .header {
+  cursor: pointer;
+}
+.display-container.collapsable > .header:hover {
+  cursor: pointer;
+  background-color: #4af;
+}
+
+.display-container > button.move-back {
+  position: absolute;
+  top: 10px;
+  left: 2px;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font-size: 11px;
+  color: white;
+}
+.display-container > button.move-forward  {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font-size: 11px;
+  color: white;
+}
+.display-container > button.move-back:hover,
+.display-container > button.move-forward:hover {
+  color: #333;
+}
+
+.display-container > .menu {
+  position: absolute;
+  top: 0;
+  right: 2px;
+}
+.display-container button.menu {
+  cursor: pointer;
+  color: white;
+  font-size: 20px;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  display: flex;
+}
+.display-container button.menu.mdi:hover {
+  color: #333;
+}
+.display-container button.menu > span {
+  flex-grow: 1;
+  text-indent: 0;
+  text-align: left;
+}
+.display-container button.menu > i.mdi {
+  padding-left: 6px;
+  flex-grow: 0;
+}
+.display-container ul.menu {
+  z-index: 1;
+  position: absolute;
+  padding: 0;
+  margin: 0;
+  display: none;
+  background-color: #eee;
+  box-shadow: 0 0 8px 0 rgba(0, 0, 0, 0.4);
+  list-style: none inside;
+  white-space: nowrap;
+}
+.display-container .menu:hover > ul.menu {
+  display: block;
+}
+.display-container ul.menu.menu-below {
+  top: 2px;
+  right: 2px;
+}
+.display-container ul.menu.menu-right {
+  top: 0;
+  left: calc(100% - 10px);
+}
+
+.display-container ul.menu > li {
+  position: relative;
+  background-color: transparent;
+  color: black;
+  margin: 0;
+  padding: 0;
+}
+.display-container ul.menu > li:hover {
+  color: white;
+  background-color: #555;
+}
+.display-container ul.menu > li > button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  margin: 0;
+  background-color: transparent;
+  color: inherit;
+  width: 100%;
+  font-size: 14px;
+  padding: 4px 10px;
+}
+
+
+.display-container.collapsed > .content {
+  display: none;
+}
+
+
+.display-container nav.display-tabs {
+  padding: 0;
+  margin: 0;
+  background-color: #333;
+}
+.display-container nav.display-tabs > ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  display: flex;
+}
+.display-container nav.display-tabs button {
+  border: none;
+  outline: none;
+  color: white;
+  padding: 8px 12px;
+  background-color: transparent;
+  font-family: inherit;
+  font-weight: bold;
+}
+.display-container nav.display-tabs button:hover:not(.active),
+.display-container nav.display-tabs button:focus:not(.active) {
+  color: #0080ff;
+  text-decoration: none;
+  cursor: pointer;
+}
+.display-container nav.display-tabs button.active {
+  background-color: #555;
+}
+
+
+.display-container > table.display-data {
+  width: 100%;
+}
+table.display-data {
+  border: none;
+  border-spacing: 0;
+  padding: 8px 0;
+  margin: 0;
+}
+table.display-data tr > th,
+table.display-data tr > td {
+  padding: 1px 6px;
+  margin: 0;
+}
+table.display-data > thead {
+  font-weight: bold;
+  text-align: center;
+  font-size: 10px;
+}
+table.display-data > thead > tr > th {
+  padding-bottom: 4px;
+}
+table.display-data > tbody > tr:not(:nth-child(odd)) {
+  background-color: #f8f8f8;
+}
+table.display-data.column-split > tbody > tr td:nth-child(1) {
+  min-width: 120px;
+  white-space: nowrap;
+}
+table.display-data.column-split > tbody > tr td:not(:nth-child(1)) {
+  text-align: right;
+  font-family: monospace;
+  min-width: 80px;
+}
+table.display-data:not(.column-split) > tbody > tr td:nth-child(odd) {
+  min-width: 120px;
+  white-space: nowrap;
+}
+table.display-data:not(.column-split) > tbody > tr td:not(:nth-child(odd)) {
+  text-align: right;
+  font-family: monospace;
+  min-width: 80px;
+  white-space: nowrap;
+}
+table.display-data:not(.column-split) > tbody > tr td:last-child {
+  width: 100%;
+}
+
+.display-container > div.display-data {
+  width: 100%;
+  padding: 4px 6px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.display-container > div.display-data.error-message {
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  color: #f00;
+  animation-name: communication-attention;
+  animation-duration: 1s;
+  animation-iteration-count: infinite;
+}
+.display-container > div.display-data.error-message > span {
+  padding-left: 10px;
+  padding-right: 10px;
+}

@@ -32,6 +32,7 @@ setup(
         "forge-vis-access = forge.vis.access.cli.__main__:main",
         "forge-vis-export-control = forge.vis.export.controller.server:main",
         "forge-vis-realtime-control = forge.vis.realtime.controller.server:main",
+        "forge-vis-acquisition-control = forge.vis.acquisition.controller.server:main",
 
         "forge-processing-control = forge.processing.control.cli.__main__:main",
 

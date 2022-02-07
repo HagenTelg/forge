@@ -1,0 +1,73 @@
+<div class="display-container collapsable collapsed">
+    <div class="header communication-state warning-state format-source" instrument="Teledyne T640"></div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <table class="content display-data column-split communication-state hide-false">
+        <thead>
+            <tr>
+                <th></th>
+                <th>PM1</th>
+                <th>PM2.5</th>
+                <th>PM10</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Mass concentration (μg/m³)</td>
+                <td class="value-formatted" field="X1" decimals="2"></td>
+                <td class="value-formatted" field="X25" decimals="2"></td>
+                <td class="value-formatted" field="X10" decimals="2"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data communication-state hide-false">
+        <tbody>
+            <tr> <td>Ambient pressure (hPa)</td>            <td class="value-formatted" field="Pambient" rightpad="1"></td> </tr>
+            <tr> <td>Ambient temperature (°C)</td>          <td class="value-formatted" field="Tambient" rightpad="1"></td> </tr>
+            <tr> <td>Sample temperature (°C)</td>           <td class="value-formatted" field="Tsample" rightpad="1"></td> </tr>
+            <tr> <td>ASC tube jacket temperature (°C)</td>  <td class="value-formatted" field="Tasc" rightpad="1"></td> </tr>
+            <tr> <td>LED temperature (°C)</td>              <td class="value-formatted" field="Tled" rightpad="1"></td> </tr>
+            <tr> <td>Box temperature (°C)</td>              <td class="value-formatted" field="Tbox" rightpad="1"></td> </tr>
+            <tr> <td>Sample RH (%)</td>                     <td class="value-formatted" field="Usample" rightpad="1"></td> </tr>
+            <tr> <td>Sample flow (lpm)</td>                 <td class="value-formatted" field="Qsample" decimals="2"></td> </tr>
+            <tr> <td>Bypass flow (lpm)</td>                 <td class="value-formatted" field="Qbypass" decimals="2"></td> </tr>
+            <tr> <td>Span deviation</td>                    <td class="value-formatted" field="spandev" rightpad="1"></td> </tr>
+            <tr> <td>Pump duty cycle (%)</td>               <td class="value-formatted" field="PCTpump" decimals="0" rightpad="3"></td> </tr>
+            <tr> <td>Proportional valve duty cycle (%)</td> <td class="value-formatted" field="PCTvalve" decimals="0" rightpad="3"></td> </tr>
+            <tr> <td>ACT heater duty cycle (%)</td>         <td class="value-formatted" field="PCTact" decimals="0" rightpad="3"></td> </tr>
+        </tbody>
+    </table>
+
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="sample_temperature_warning">Sample temperature warning active</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="box_temperature_warning">Box temperature warning active</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="temperature_alarm">Temperature alarm active</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="flow_alarm">Flow alarm active</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="system_fault_warning">Instrument system fault</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="opc_instrument_warning">OPC warning</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="system_service_warning">System service warning</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="system_reset_warning">Instrument reset warning</div>
+
+</div>
+
+<style>
+#{{uid}} .warning { color: #f80; }
+</style>
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+})();
+</script>

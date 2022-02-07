@@ -1,0 +1,7 @@
+{% if link_view %}
+{% with link_mode = link_mode|default('aerosol-realtime'), link_interval = link_interval|default('1h') %}
+<a class="summary-link communication-state hide-false" href="{{ request.url_for('mode', station=station, mode_name=link_mode) }}?view={{ link_view }}&interval={{ link_interval }}">
+{% endwith %}
+{% else %}
+<div class="summary-block communication-state hide-false">
+{% endif %}

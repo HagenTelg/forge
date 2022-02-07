@@ -48,6 +48,8 @@
         <li><a id="show_edit_directives" style="display: none" class="main-menu-item" href="{{ request.url_for('editing', station=station, mode_name=edit_directives_mode) }}" title="Show edit directives">Edit directives</a></li>
         {% endif %}
 
+        <li><a id="show_event_log" class="main-menu-item" href="{{ request.url_for('eventlog', station=station, mode_name=mode.mode_name) }}" title="Show the event log">Message Log</a></li>
+
         {% include 'mode/topbar/menuitems.html' %}
       </ul>
     </li>

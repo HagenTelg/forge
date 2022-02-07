@@ -1,0 +1,306 @@
+<div class="display-container collapsable collapsed{% if writable %} menu{% endif %}">
+    <div class="header communication-state warning-state format-source" instrument="TSI 3563"></div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% if writable %}
+    <div class="menu communication-state hide-false">
+        <button class="menu mdi mdi-menu" title="Instrument actions"></button>
+        <ul class="menu menu-below">
+            <li><button id="{{uid}}_start_zero" class="simple-command" command="start_zero"
+                        title="Start a zero offset adjustment">Start zero</button></li>
+            <li><button id="{{uid}}_start_spancheck" class="simple-command" command="start_spancheck"
+                        title="Start a span gas calibration check">Start spancheck</button></li>
+            <li><button id="{{uid}}_stop_spancheck" class="simple-command" command="stop_spancheck"
+                        title="Abort the current span gas calibration check">Stop spancheck</button></li>
+            <li><button id="{{uid}}_apply_spancheck_calibration"
+                        title="Apply the result of the last spancheck to the instrument calibration">Apply spancheck calibration</button></li>
+            <li><button id="{{uid}}_set_parameters"
+                        title="Change instrument parameters">Set parameters</button></li>
+        </ul>
+    </div>
+    {% endif %}
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <nav class="content display-tabs communication-state hide-false">
+        <ul>
+            <li><button display="#{{uid}} .tab-scattering">Scattering</button></li>
+            <li><button display="#{{uid}} .tab-counts">Counts</button></li>
+            <li><button display="#{{uid}} .tab-spancheck">Spancheck Results</button></li>
+        </ul>
+    </nav>
+
+    <table class="content display-data column-split communication-state hide-false tab-scattering">
+        <thead>
+            <tr>
+                <th></th>
+                <th class="blue">B (450 nm)</th>
+                <th class="green">G (550 nm)</th>
+                <th class="red">R (700 nm)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>σ<sub>sp</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BsB" decimals="2"></td>
+                <td class="green value-formatted" field="BsG" decimals="2"></td>
+                <td class="red value-formatted" field="BsR" decimals="2"></td>
+            </tr>
+            <tr>
+                <td>σ<sub>bsp</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BbsB" decimals="2"></td>
+                <td class="green value-formatted" field="BbsG" decimals="2"></td>
+                <td class="red value-formatted" field="BbsR" decimals="2"></td>
+            </tr>
+
+            <tr>
+                <td>σ<sub>sp wall</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BswB" decimals="2"></td>
+                <td class="green value-formatted" field="BswG" decimals="2"></td>
+                <td class="red value-formatted" field="BswR" decimals="2"></td>
+            </tr>
+            <tr>
+                <td>σ<sub>bsp wall</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BbswB" decimals="2"></td>
+                <td class="green value-formatted" field="BbswG" decimals="2"></td>
+                <td class="red value-formatted" field="BbswR" decimals="2"></td>
+            </tr>
+
+            <tr>
+                <td>σ<sub>sp wall shift</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BswdB" decimals="2"></td>
+                <td class="green value-formatted" field="BswdG" decimals="2"></td>
+                <td class="red value-formatted" field="BswdR" decimals="2"></td>
+            </tr>
+            <tr>
+                <td>σ<sub>bsp wall shift</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BbswdB" decimals="2"></td>
+                <td class="green value-formatted" field="BbswdG" decimals="2"></td>
+                <td class="red value-formatted" field="BbswdR" decimals="2"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data column-split communication-state hide-false tab-counts">
+        <thead>
+            <tr>
+                <th></th>
+                <th class="blue">B (450 nm)</th>
+                <th class="green">G (550 nm)</th>
+                <th class="red">R (700 nm)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>C<sub>total</sub> (Hz)</td>
+                <td class="blue value-formatted" field="CsB" decimals="0"></td>
+                <td class="green value-formatted" field="CsG" decimals="0"></td>
+                <td class="red value-formatted" field="CsR" decimals="0"></td>
+            </tr>
+            <tr>
+                <td>C<sub>back</sub> (Hz)</td>
+                <td class="blue value-formatted" field="CbsB" decimals="0"></td>
+                <td class="green value-formatted" field="CbsG" decimals="0"></td>
+                <td class="red value-formatted" field="CbsR" decimals="0"></td>
+            </tr>
+
+            <tr>
+                <td>Dark<sub>total</sub> (Hz)</td>
+                <td class="blue value-formatted" field="CdB" decimals="0"></td>
+                <td class="green value-formatted" field="CdG" decimals="0"></td>
+                <td class="red value-formatted" field="CdR" decimals="0"></td>
+            </tr>
+            <tr>
+                <td>Dark<sub>back</sub> (Hz)</td>
+                <td class="blue value-formatted" field="CbdB" decimals="0"></td>
+                <td class="green value-formatted" field="CbdG" decimals="0"></td>
+                <td class="red value-formatted" field="CbdR" decimals="0"></td>
+            </tr>
+
+            <tr>
+                <td>Reference (Hz)</td>
+                <td class="blue value-formatted" field="CfB" decimals="0"></td>
+                <td class="green value-formatted" field="CfG" decimals="0"></td>
+                <td class="red value-formatted" field="CfR" decimals="0"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data column-split communication-state hide-false tab-spancheck">
+        <thead>
+            <tr>
+                <th></th>
+                <th class="blue">B (450 nm)</th>
+                <th class="green">G (550 nm)</th>
+                <th class="red">R (700 nm)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td title="Percent error">Error<sub>total</sub> (%)</td>
+                <td class="blue value-spancheck" path="percent_error.total.B" decimals="2" rightpad="1"></td>
+                <td class="green value-spancheck" path="percent_error.total.G" decimals="2" rightpad="1"></td>
+                <td class="red value-spancheck" path="percent_error.total.R" decimals="2" rightpad="1"></td>
+            </tr>
+            <tr>
+                <td title="Percent error">Error<sub>back</sub> (Hz)</td>
+                <td class="blue value-spancheck" path="percent_error.back.B" decimals="2" rightpad="1"></td>
+                <td class="green value-spancheck" path="percent_error.back.G" decimals="2" rightpad="1"></td>
+                <td class="red value-spancheck" path="percent_error.back.R" decimals="2" rightpad="1"></td>
+            </tr>
+
+            <tr>
+                <td title="Spancheck sensitivity factor, defined as the photon count rate attributable to Rayleigh scattering by air at STP">Sensitivity<sub>total</sub> (Hz)</td>
+                <td class="blue value-spancheck" path="sensitivity_factor.total.B" decimals="1" rightpad="2"></td>
+                <td class="green value-spancheck" path="sensitivity_factor.total.G" decimals="1" rightpad="2"></td>
+                <td class="red value-spancheck" path="sensitivity_factor.total.R" decimals="1" rightpad="2"></td>
+            </tr>
+            <tr>
+                <td title="Spancheck backwards-hemispheric sensitivity factor, defined as the photon count rate attributable to Rayleigh backwards-hemispheric by air at STP">Sensitivity<sub>back</sub> (Hz)</td>
+                <td class="blue value-spancheck" path="sensitivity_factor.back.B" decimals="1" rightpad="2"></td>
+                <td class="green value-spancheck" path="sensitivity_factor.back.R" decimals="1" rightpad="2"></td>
+                <td class="red value-spancheck" path="sensitivity_factor.back.G" decimals="1" rightpad="2"></td>
+            </tr>
+
+            <tr>
+                <td title="K2 total calibration">k2 (m⁻¹)</td>
+                <td class="blue value-spancheck" path="calibration.k2.B" decimals="3" exponential></td>
+                <td class="green value-spancheck" path="calibration.k2.G" decimals="3" exponential></td>
+                <td class="red value-spancheck" path="calibration.k2.R" decimals="3" exponential></td>
+            </tr>
+            <tr>
+                <td title="K4 backscattering Rayleigh fraction">k4</td>
+                <td class="blue value-spancheck" path="calibration.k4.B" decimals="3"></td>
+                <td class="green value-spancheck" path="calibration.k4.G" decimals="3"></td>
+                <td class="red value-spancheck" path="calibration.k4.R" decimals="3"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data communication-state hide-false tab-scattering tab-counts">
+        <tbody>
+            <tr> <td>Inlet temperature (°C)</td>    <td class="value-formatted" field="Tinlet" rightpad="1"></td> </tr>
+            <tr> <td>Inlet RH (%)</td>              <td class="value-formatted" field="Uinlet" rightpad="1"></td> </tr>
+            <tr> <td>Sample temperature (°C)</td>   <td class="value-formatted" field="Tsample" rightpad="1"></td> </tr>
+            <tr> <td>Sample RH (%)</td>             <td class="value-formatted" field="Usample" rightpad="1"></td> </tr>
+            <tr> <td>Sample pressure (hPa)</td>     <td class="value-formatted" field="Psample" rightpad="1"></td> </tr>
+            <tr> <td>Lamp current (A)</td>          <td class="value-formatted" field="Al" rightpad="1"></td> </tr>
+            <tr> <td>Lamp voltage (V)</td>          <td class="value-formatted" field="Vl" rightpad="1"></td> </tr>
+            <tr> <td>Instrument mode</td>           <td class="value-raw" field="modestring" rightpad="3"></td> </tr>
+            <tr> <td>Mode time remaining (s)</td>   <td class="value-formatted" field="modetime" decimals="0" rightpad="3"></td> </tr>
+        </tbody>
+    </table>
+
+    <div class="content display-data communication-state notification-state hide-false" notification="blank">
+        <span class="mdi mdi-loading mdi-spin"></span>Filtered air blank in progress
+    </div>
+    <div class="content display-data communication-state notification-state hide-false" notification="zero">
+        <span class="mdi mdi-loading mdi-spin"></span>Zero in progress
+    </div>
+    <div class="content display-data communication-state notification-state hide-false" notification="spancheck">
+        <span class="mdi mdi-loading mdi-spin"></span>Spancheck in progress
+    </div>
+
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="backscatter_disabled">Backscattering measurement disabled</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="lamp_power_error">Lamp power not within 10 percent of the setpoint</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="valve_fault">Valve fault detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="chopper_fault">Chopper fault detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="shutter_fault">Shutter fault detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="heater_unstable">Heater active but not stable</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="pressure_out_of_range">Pressure out of range</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="sample_temperature_out_of_range">Sample temperature out of range</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="inlet_temperature_out_of_range">Inlet temperature out of range</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="rh_out_of_range">Relative humidity out of range</div>
+
+</div>
+
+
+<style>
+#{{uid}} table sub {
+    font-size: 10px;
+}
+#{{uid}} .blue { color: #00a; }
+#{{uid}} .green { color: #0a0; }
+#{{uid}} .red { color: #a00; }
+#{{uid}} .warning { color: #f80; }
+</style>
+
+<script>
+(function() {
+    {% include 'acquisition/display/tab_contents.js' %}
+})();
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+
+    $('.value-spancheck', context.root).each(function() {
+        const path = this.getAttribute('path').split('.');
+        const formatter = context.createNodeFormatter(this);
+
+        context.addSourceTarget((value) => {
+            for (const p of path) {
+                value = value[p];
+                if (value === undefined) {
+                    break;
+                }
+            }
+            return formatter(value);
+        }, context.source, 'spancheck_result');
+    });
+
+    $('#{{uid}}_apply_spancheck_calibration').click(function(event) {
+        event.preventDefault();
+    });
+    $('#{{uid}}_set_parameters').click(function(event) {
+        event.preventDefault();
+    });
+
+    function setVisible(id, visible) {
+        if (visible) {
+            $(id).css('display', '');
+        } else {
+            $(id).css('display', 'none');
+        }
+    }
+
+    let haveSpancheckResults = false;
+    let inSpancheck = false;
+    let inRunMode = true;
+
+    function updateVisibility() {
+        setVisible('#{{uid}}_start_zero', inRunMode);
+        setVisible('#{{uid}}_start_spancheck', inRunMode);
+        setVisible('#{{uid}}_stop_spancheck', inSpancheck);
+        setVisible('#{{uid}}_apply_spancheck_calibration', haveSpancheckResults && inRunMode);
+        setVisible('#{{uid}}_set_parameters', inRunMode);
+    }
+
+    context.addInstrumentState((source, state) => {
+        const notifications = state.notifications;
+        if (!notifications) {
+            inRunMode = true;
+            inSpancheck = false;
+        } else {
+            inSpancheck = notifications.includes('spancheck');
+            inRunMode = !inSpancheck && !notifications.includes('zero') && !notifications.includes('blank');
+        }
+        updateVisibility();
+    }, context.source);
+
+    context.addSourceTarget((value) => {
+        haveSpancheckResults = value && value.calibration && (value.calibration.k2 || value.calibration.k4);
+        updateVisibility();
+    }, context.source, 'spancheck_result');
+})();
+</script>

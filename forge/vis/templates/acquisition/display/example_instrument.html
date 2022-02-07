@@ -1,0 +1,67 @@
+<div class="display-container collapsable collapsed menu">
+    <div class="header communication-state warning-state format-source" instrument="Example Instrument"></div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    <div class="menu communication-state hide-false">
+        <button class="menu mdi mdi-menu" title="Instrument actions"></button>
+        <ul class="menu menu-below">
+            <li><button>Example Action 1</button></li>
+            <li><button>Example Action 2</button></li>
+            <li class="menu">
+                <button class="menu" title="Further actions"><span>Subaction 1</span><i class="mdi mdi-menu-right"></i></button>
+                <ul class="menu menu-right">
+                    <li><button>Example Action 3</button></li>
+                    <li><button>Example Action 4</button></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <table class="content display-data column-split communication-state hide-false">
+        <thead>
+            <tr>
+                <th></th>
+                <th class="blue">B (450 nm)</th>
+                <th class="green">G (550 nm)</th>
+                <th class="red">R (700 nm)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>σ<sub>sp</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BsB" decimals="2"></td>
+                <td class="green value-formatted" field="BsG" decimals="2"></td>
+                <td class="red value-formatted" field="BsR" decimals="2"></td>
+            </tr>
+            <tr>
+                <td>σ<sub>bsp</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BbsB" decimals="2"></td>
+                <td class="green value-formatted" field="BbsG" decimals="2"></td>
+                <td class="red value-formatted" field="BbsR" decimals="2"></td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="content display-data communication-state hide-false">
+        <span>State: </span><span class="value-raw" field="state"></span>
+    </div>
+</div>
+
+
+<style>
+#{{uid}} table sub {
+    font-size: 10px;
+}
+#{{uid}} .blue { color: #00a; }
+#{{uid}} .green { color: #0a0; }
+#{{uid}} .red { color: #a00; }
+</style>
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+})();
+</script>

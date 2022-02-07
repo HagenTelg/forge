@@ -165,11 +165,15 @@ function cycleSelected(offset) {
 }
 
 $(document).keydown(function(event) {
+    if (isModalActive()) {
+        return;
+    }
+    if (event.target.matches('input') || event.target.matches('textarea')) {
+        return;
+    }
+
     switch(event.code) {
     case 'KeyN':
-        if (isModalActive()) {
-            break;
-        }
         event.preventDefault();
 
         cycleSelected(1);
@@ -177,18 +181,12 @@ $(document).keydown(function(event) {
 
     case 'KeyP':
     case 'KeyB':
-        if (isModalActive()) {
-            break;
-        }
         event.preventDefault();
 
         cycleSelected(-1);
         break;
 
     case 'KeyR':
-        if (isModalActive()) {
-            break;
-        }
         event.preventDefault();
 
         //{% if not realtime %}
@@ -203,9 +201,6 @@ $(document).keydown(function(event) {
         break;
 
     case 'KeyA':
-        if (isModalActive()) {
-            break;
-        }
         event.preventDefault();
 
         //{% if not realtime %}
@@ -216,17 +211,11 @@ $(document).keydown(function(event) {
         break;
 
     case 'KeyZ':
-        if (isModalActive()) {
-            break;
-        }
         event.preventDefault();
 
         restoreSavedZoom();
         break;
     case 'KeyX':
-        if (isModalActive()) {
-            break;
-        }
         event.preventDefault();
 
         saveCurrentZoom();

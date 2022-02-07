@@ -1,0 +1,166 @@
+<div class="display-container collapsable collapsed{% if writable %} menu{% endif %}">
+    {% with instrument = instrument|default('GMD CLAP-3W') %}
+    <div class="header communication-state warning-state format-source" instrument="{{ instrument }}"></div>
+    {% endwith %}
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% if writable %}
+    <div class="menu communication-state hide-false">
+        <button class="menu mdi mdi-menu" title="Instrument actions"></button>
+        <ul class="menu menu-below">
+            <li><button id="{{uid}}_spot_advance" class="simple-command" command="spot_advance"
+                        title="Advance to the next spot.  This increments the active spot by one.">Advance spot</button></li>
+            <li><button id="{{uid}}_filter_change_start" class="simple-command" command="filter_change_start"
+                        title="Start a filter change.  This will disable flow and allow you to change the filter in the instrument.">Start filter change</button></li>
+            <li><button id="{{uid}}_filter_change_end" class="simple-command" command="filter_change_end"
+                        title="This tells the instrument you are done changing the filter and it should resume sampling.">End filter change</button></li>
+            <li><button id="{{uid}}_white_filter_change" class="simple-command" command="white_filter_change"
+                        title="Start a filter change to a known to be white filter.  You should double check to make sure that only a single filter is placed in the instrument.">Start white filter change</button></li>
+        </ul>
+    </div>
+    {% endif %}
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <table class="content display-data column-split communication-state hide-false">
+        <thead>
+            <tr>
+                <th></th>
+                <th class="blue">B (467 nm)</th>
+                <th class="green">G (528 nm)</th>
+                <th class="red">R (652 nm)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>σ<sub>ap</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BaB" decimals="2" rightpad="5"></td>
+                <td class="green value-formatted" field="BaG" decimals="2" rightpad="5"></td>
+                <td class="red value-formatted" field="BaR" decimals="2" rightpad="5"></td>
+            </tr>
+            <tr>
+                <td>Transmittance</td>
+                <td class="blue value-formatted" field="IrB" decimals="7"></td>
+                <td class="green value-formatted" field="IrG" decimals="7"></td>
+                <td class="red value-formatted" field="IrR" decimals="7"></td>
+            </tr>
+            <tr>
+                <td>I<sub>reference</sub></td>
+                <td class="blue value-formatted" field="IfB" decimals="2" rightpad="5"></td>
+                <td class="green value-formatted" field="IfG" decimals="2" rightpad="5"></td>
+                <td class="red value-formatted" field="IfR" decimals="2" rightpad="5"></td>
+            </tr>
+            <tr>
+                <td>I<sub>sample</sub></td>
+                <td class="blue value-formatted" field="IpB" decimals="2" rightpad="5"></td>
+                <td class="green value-formatted" field="IpG" decimals="2" rightpad="5"></td>
+                <td class="red value-formatted" field="IpR" decimals="2" rightpad="5"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data communication-state hide-false">
+        <tbody>
+            <tr> <td>Flow (lpm)</td>                <td class="value-formatted" field="Q" decimals="3" rightpad="1"></td> </tr>
+            <tr> <td>Flow voltage (V)</td>          <td class="value-formatted" field="Vflow" decimals="4"></td> </tr>
+            <tr> <td>Sample (°C)</td>               <td class="value-formatted" field="Tsample" rightpad="3"></td> </tr>
+            <tr> <td>Case (°C)</td>                 <td class="value-formatted" field="Tcase" rightpad="3"></td> </tr>
+            <tr> <td>Spot number</td>               <td class="value-formatted" field="Fn" decimals="0" rightpad="5"></td> </tr>
+        </tbody>
+    </table>
+
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="wait_spot_stability"><span class="mdi mdi-loading mdi-spin"></span>Waiting for spot stability</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="spot_advancing"><span class="mdi mdi-loading mdi-spin"></span>Advancing spot</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="filter_baseline"><span class="mdi mdi-loading mdi-spin"></span>Establishing filter baseline</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="filter_change"><span class="mdi mdi-loading mdi-spin"></span>Changing filter</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="white_filter_change"><span class="mdi mdi-loading mdi-spin"></span>Changing filter (white)</div>
+
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="bypass_wait_spot_stability">Bypass paused establishing filter baseline</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="bypass_filter_baseline">Bypass paused establishing filter baseline</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="bypass_filter_baseline"><span class="mdi mdi-loading mdi-spin"></span>Establishing filter baseline</div>
+
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="flow_error">Flow error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="led_error">LED error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="temperature_out_of_range">Temperature out of range</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="filter_was_not_white">Sampling started on an already exposed filter</div>
+
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="need_filter_change">Filter change required</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="need_white_filter_change">White filter change required</div>
+
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="case_temperature_control_error">Case temperature too far from setpoint</div>
+
+</div>
+
+<style>
+#{{uid}} table sub {
+    font-size: 10px;
+}
+#{{uid}} .blue { color: #00a; }
+#{{uid}} .green { color: #0a0; }
+#{{uid}} .red { color: #a00; }
+#{{uid}} .warning { color: #f80; }
+</style>
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+
+    let onLastSpot = false;
+    let filterChanging = false;
+    let whiteFilterChanging = false;
+
+    function setVisible(id, visible) {
+        if (visible) {
+            $(id).css('display', '');
+        } else {
+            $(id).css('display', 'none');
+        }
+    }
+
+    function updateVisibility() {
+        setVisible('#{{uid}}_spot_advance', !onLastSpot && !filterChanging && !whiteFilterChanging);
+        setVisible('#{{uid}}_filter_change_start', !filterChanging && !whiteFilterChanging);
+        setVisible('#{{uid}}_filter_change_end', filterChanging || whiteFilterChanging);
+        setVisible('#{{uid}}_white_filter_change', !whiteFilterChanging);
+    }
+
+    context.addInstrumentState((source, state) => {
+        const notifications = state.notifications;
+        if (!notifications) {
+            filterChanging = false;
+            whiteFilterChanging = false;
+        } else {
+            filterChanging = notifications.includes('filter_change');
+            whiteFilterChanging = notifications.includes('white_filter_change');
+        }
+        updateVisibility();
+    }, context.source);
+
+    context.addSourceTarget((value) => {
+        if (value === null || !isFinite(value)) {
+            onLastSpot = false;
+        } else {
+            onLastSpot = (value >= 8);
+        }
+
+        updateVisibility();
+    }, context.source, 'Fn');
+})();
+</script>

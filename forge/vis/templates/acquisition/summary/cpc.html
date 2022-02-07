@@ -1,0 +1,23 @@
+{% set link_view='aerosol-realtime-counts' %}
+{% include 'acquisition/summary/block_open.html' %}
+
+<span class="summary-source format-source" instrument="{{ instrument }}"></span>
+<table class="summary-data">
+    <thead>
+        <tr>
+            <th></th>
+            <th>cm⁻³</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>Concentration</td>      <td class="value-formatted" field="N"></td></tr>
+    </tbody>
+</table>
+
+{% include 'acquisition/summary/block_close.html' %}
+
+<script>
+(function() {
+    document.getElementById('{{uid}}').context.standardMode();
+})();
+</script>

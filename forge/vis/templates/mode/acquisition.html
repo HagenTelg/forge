@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ station|upper }}</title>
+  {% include 'global/header.html' %}
+  {% include 'global/plotly.html' %}
+
+  <script>
+  const ACQUISITION_SOCKET_URL = "{{ socket_url | default(request.url_for('acquisition_socket', station=station)) }}";
+  </script>
+  <script defer src="{{ request.url_for('static', path='/js/time.js') }}"></script>
+  <script defer src="{{ request.url_for('static', path='/js/acquisitionsocket.js') }}"></script>
+
+  <link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/acquisition.css') }}"/>
+  <link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/topbar.css') }}"/>
+</head>
+<body>
+
+<div class="center-content connection-state hide-on-disconnected">
+  <div class="sidebar" title="Parameter Summary">
+    <ul class="summary-list" id="summary_content"></ul>
+  </div>
+
+  <div class="cards">
+    <ul id="display_content"></ul>
+  </div>
+
+  <div class="bottom-buttons">
+    <ul id="communication_indicators"></ul>
+    <button id="show_event_log" class="mdi mdi-clipboard" title="System messages"></button>
+    {% if writable %}
+    <button id="show_chat" class="mdi mdi-chat" title="Station chat"></button>
+    {% endif %}
+  </div>
+
+  <div id="event_log_display" class="bottom-expanded">
+    {% include 'acquisition/event_log.html' %}
+  </div>
+
+  <div id="chat_display" class="bottom-expanded">
+    {% include 'acquisition/chat.html' %}
+  </div>
+</div>
+
+<div class="disconnected-content connection-state">
+  <div>
+    <div class="disconnected-banner">DISCONNECTED</div>
+    <div class="mdi mdi-loading mdi-spin"></div>
+    <div class="disconnected-details">Automatic reconnection in progress</div>
+  </div>
+</div>
+
+<nav class="topbar">
+  <ul>
+    <li class="topbar-left">
+      {% include 'mode/topbar/stations.html' %}
+    </li>
+    <li class="topbar-left">
+      {% include 'mode/topbar/modes.html' %}
+    </li>
+
+    <li class="topbar-center">
+      {% include 'mode/topbar/clock.html' %}
+    </li>
+
+    {% if writable %}
+    <li class="topbar-right">
+      <button id="add_message_log" class="topbar-button connection-state hide-on-disconnected mdi mdi-message-text-outline" title="Add a user message log entry"></button>
+    </li>
+    {% endif %}
+    <li class="topbar-right">
+      <button class="topbar-button dropdown-button mdi mdi-menu"></button>
+      <ul class="dropdown-content main-menu-list">
+        {% if writable %}
+        <li class="connection-state hide-on-disconnected"><a id="show_restart_acquisition" class="main-menu-item" href="#" title="Restart the acquisition system">Restart Acquisition</a></li>
+        {% endif %}
+
+        {% include 'mode/topbar/menuitems.html' %}
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+{% include 'modal.html' %}
+
+<script>
+var ACTION_PROMPT_DATA;
+const WRITABLE = {% if writable %}true{% else %}false{% endif %};
+
+{% include 'acquisition/define_summary.js' %}
+{% include 'acquisition/define_displays.js' %}
+{% include 'mode/acquisition.js' %}
+</script>
+</body>
+</html>

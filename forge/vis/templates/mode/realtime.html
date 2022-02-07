@@ -41,6 +41,7 @@
     <li class="topbar-right">
       <button class="topbar-button dropdown-button mdi mdi-menu"></button>
       <ul class="dropdown-content main-menu-list">
+        <li><a id="show_event_log" class="main-menu-item" href="{{ request.url_for('eventlog', station=station, mode_name=mode.mode_name) }}" title="Show the event log">Message Log</a></li>
         {% include 'mode/topbar/menuitems.html' %}
       </ul>
     </li>

@@ -1,0 +1,196 @@
+<style>
+.messagelog-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.messagelog-item {
+  position: relative;
+  display: flex;
+  margin: 0 16px 8px;
+  align-items: center;
+}
+.messagelog-item > label {
+  margin-right: 8px;
+}
+
+.messagelog-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 8px 0 0 16px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.messagelog-footer {
+  padding: 0;
+  margin: 0;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.messagelog-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 20px;
+  background-color: transparent;
+  font-weight: bold;
+  font-family: inherit;
+}
+
+.messagelog-footer button[disabled] {
+  background-color: #004099;
+  color: #999;
+  cursor: not-allowed;
+}
+.messagelog-footer button:hover:not([disabled]),
+.messagelog-footer button:focus:not([disabled]){
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+
+#messagelog-text {
+  margin: 48px 0 0 0;
+  padding: 12px 12px;
+  border: 1px solid #ccc;
+  height: 120px;
+  resize: none;
+  flex-grow: 1;
+}
+#messagelog-text.invalid {
+  border: 1px solid #f00;
+}
+
+#messagelog-author {
+  flex-grow: 1;
+  padding: 4px 12px;
+}
+#messagelog-author.invalid {
+  border-color: #f00;
+}
+
+</style>
+
+<form class="messagelog-entry">
+  <div class="messagelog-header">
+    Add a message to the acquisition log
+  </div>
+  <div class="messagelog-item">
+    <textarea id="messagelog-text" title="The message recorded in the log" placeholder="Enter the message to be logged." required></textarea>
+  </div>
+
+  <div class="messagelog-item">
+    <label for="messagelog-author"><b>Author</b></label>
+    <input type="text" id="messagelog-author" title="The author recorded along with the message" placeholder="Enter the author of the message log (initials)." required>
+  </div>
+
+  <div class="messagelog-footer">
+    <button id="messagelog-write" title="Add the message to the log">Ok</button>
+    <button id="messagelog-cancel" title="Cancel, discarding the message">Cancel</button>
+  </div>
+</form>
+
+<script>
+(function() {
+    let waitingForAck = false;
+    const messageText = document.getElementById("messagelog-text");
+    const messageAuthor = document.getElementById("messagelog-author");
+    const writeButton = document.getElementById("messagelog-write");
+
+    messageAuthor.value = sessionStorage.getItem('forge-acquisition-user-name');
+
+    function updateValid() {
+        if (waitingForAck) {
+            return;
+        }
+
+        let text = messageText.value;
+        if (text) {
+            text = text.trim();
+        }
+
+        let author = messageAuthor.value;
+        if (author) {
+            author = author.trim();
+        }
+
+        if (!text || text === '') {
+            messageText.classList.add('invalid');
+        } else {
+            messageText.classList.remove('invalid');
+        }
+
+        if (!author || author === '') {
+            messageAuthor.classList.add('invalid');
+        } else {
+            messageAuthor.classList.remove('invalid');
+        }
+
+        if (!text || !author || text === '' || author === '') {
+            writeButton.disabled = true;
+        } else {
+            writeButton.disabled = false;
+        }
+    }
+    $(messageText).change(updateValid);
+    $(messageText).on('input', updateValid);
+    $(messageAuthor).change(updateValid);
+    $(messageAuthor).on('input', updateValid);
+    updateValid();
+
+    $(writeButton).click(function(event) {
+        event.preventDefault();
+
+        let text = messageText.value;
+        if (text) {
+            text = text.trim();
+        }
+
+        let author = messageAuthor.value;
+        if (author) {
+            author = author.trim();
+        }
+
+        if (!text || !author || text === '' || author === '') {
+            hideModal();
+            return;
+        }
+
+        sessionStorage.setItem('forge-acquisition-user-name', author);
+
+        waitingForAck = true;
+        writeButton.disabled = true;
+        messageText.disabled = true;
+        messageAuthor.disabled = true;
+        AcquisitionSocket.writeMessageLog(author, text, (result) => {
+            if (!waitingForAck) {
+                return;
+            }
+            if (result !== 'ok') {
+                window.alert("Error writing message log");
+            }
+            hideModal();
+        });
+    });
+    $('#messagelog-cancel').click(function(event) {
+        event.preventDefault();
+        hideModal();
+    });
+
+    const modalWindow = document.getElementById('modal-container');
+    const originalHide = modalWindow.onmodalhide;
+    modalWindow.onmodalhide = function() {
+        waitingForAck = false;
+        if (originalHide) {
+            originalHide();
+        }
+    };
+})();
+</script>

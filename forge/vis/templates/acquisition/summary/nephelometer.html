@@ -1,0 +1,52 @@
+{% set link_view='aerosol-realtime-optical' %}
+{% include 'acquisition/summary/block_open.html' %}
+
+<span class="summary-source format-source" instrument="{{ instrument }}"></span>
+<table class="summary-data">
+    <thead>
+        <tr>
+            <th></th>
+            <th>Mm⁻¹</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="blue"><td>σ<sub>sp</sub> B (450 nm)</td><td class="value-formatted" field="BsB"></td></tr>
+        <tr class="green"><td>σ<sub>sp</sub> G (550 nm)</td><td class="value-formatted" field="BsG"></td></tr>
+        <tr class="red"><td>σ<sub>sp</sub> R (700 nm)</td><td class="value-formatted" field="BsR"></td></tr>
+        <tr class="blue"><td>σ<sub>bsp</sub> B (450 nm)</td><td class="value-formatted" field="BbsB"></td></tr>
+        <tr class="green"><td>σ<sub>bsp</sub> G (550 nm)</td><td class="value-formatted" field="BbsG"></td></tr>
+        <tr class="red"><td>σ<sub>bsp</sub> R (700 nm)</td><td class="value-formatted" field="BbsR"></td></tr>
+    </tbody>
+
+    <thead>
+        <tr>
+            <th>Sample Conditions</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>Temperature (°C)</td><td class="value-formatted" field="Tsample"></td></tr>
+        <tr><td>RH (%)</td><td class="value-formatted" field="Usample"></td></tr>
+        <tr><td>Pressure (hPa)</td><td class="value-formatted" field="Psample"></td></tr>
+    </tbody>
+</table>
+
+{% include 'acquisition/summary/block_close.html' %}
+
+<style>
+#{{uid}} table sub {
+    font-size: 10px;
+}
+#{{uid}} .blue { color: #00a; }
+#{{uid}} a.summary-link:hover .blue { color: #0af; }
+#{{uid}} .green { color: #0a0; }
+#{{uid}} a.summary-link:hover .green { color: #0f0; }
+#{{uid}} .red { color: #a00; }
+#{{uid}} a.summary-link:hover .red { color: #f00; }
+</style>
+
+<script>
+(function() {
+    document.getElementById('{{uid}}').context.standardMode();
+})();
+</script>

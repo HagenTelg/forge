@@ -1,0 +1,95 @@
+<style>
+.actionprompt-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.actionprompt-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 8px 0 0 16px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.actionprompt-info {
+  position: relative;
+  display: flex;
+  margin: 48px 16px 8px;
+  align-items: center;
+}
+
+.actionprompt-footer {
+  padding: 0;
+  margin: 0;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.actionprompt-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 20px;
+  background-color: transparent;
+  font-weight: bold;
+  font-family: inherit;
+  cursor: pointer;
+}
+.actionprompt-footer button:hover,
+.actionprompt-footer button:focus {
+  color: #000;
+  text-decoration: none;
+}
+
+
+</style>
+
+<form class="actionprompt-entry">
+  <div id="actionprompt-title" class="actionprompt-header">
+  </div>
+
+  <div id="actionprompt-details" class="actionprompt-info">
+  </div>
+
+  <div class="actionprompt-footer">
+    <button id="actionprompt-ok" title="Restart the acquisition system">Ok</button>
+    <button id="actionprompt-cancel">Cancel</button>
+  </div>
+</form>
+
+<script>
+var ACTION_PROMPT_DATA;
+(function() {
+    if (!ACTION_PROMPT_DATA) {
+        console.error("No action prompt data set");
+        return;
+    }
+    const data = ACTION_PROMPT_DATA;
+    ACTION_PROMPT_DATA = undefined;
+
+    if (data.title) {
+        document.getElementById("actionprompt-title").textContent = data.title;
+    }
+    if (data.details) {
+        document.getElementById("actionprompt-details").textContent = data.details;
+    }
+
+    $('#actionprompt-ok').click(function(event) {
+        event.preventDefault();
+        if (data.ok) {
+            data.ok();
+        }
+        hideModal();
+    });
+    $('#actionprompt-cancel').click(function(event) {
+        event.preventDefault();
+        hideModal();
+    });
+
+})();
+</script>

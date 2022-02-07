@@ -7,14 +7,14 @@ from starlette.routing import Route, WebSocketRoute
 from starlette.types import ASGIApp, Receive, Scope, Send
 from forge.processing.control.access import AccessInterface
 from . import CONFIGURATION
-from .socket import UplinkSocket
+from .downlink import DownlinkSocket
 
 
 _LOGGER = logging.getLogger(__name__)
 
 
 routes = [
-    WebSocketRoute('/{station}', UplinkSocket),
+    WebSocketRoute('/{station}', DownlinkSocket),
 ]
 
 middleware: typing.List[Middleware] = list()

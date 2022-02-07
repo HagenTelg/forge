@@ -1,0 +1,36 @@
+{% set link_view='aerosol-realtime-flow' %}
+{% include 'acquisition/summary/block_open.html' %}
+
+<table class="summary-data">
+    <thead>
+        <tr>
+            <th></th>
+            <th>lpm</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr> <td>Stack Pitot Flow</td>  <td id="{{uid}}_pitotflow"></td> </tr>
+    </tbody>
+</table>
+
+{% include 'acquisition/summary/block_close.html' %}
+
+<script>
+(function() {
+    // {{ '\n' }}{% include 'global/calculations/pitot_flow.js' %}
+
+    const context = document.getElementById('{{uid}}').context;
+    context.hide();
+
+    const formatter = context.createNodeFormatter(document.getElementById('{{uid}}_pitotflow'));
+    context.addSourceTarget((value) => {
+        if (value === null || !isFinite(value)) {
+            context.hide();
+            return;
+        }
+
+        context.show();
+        formatter(calculatePitotFlow(value, stackPitotArea, 273.15, 1013.25));
+    }, '_pitot', 'pitot');
+})();
+</script>

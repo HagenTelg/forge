@@ -207,6 +207,7 @@ class UplinkConnection:
         self._realtime_index_replace = 0
 
         self._unsmoothed_names: typing.Set[RealtimeName] = set()
+        self._persistent_names: typing.Set[RealtimeName] = set()
 
     async def _websocket_packet(self, data: bytes) -> None:
         packet_type = PacketToAcquisition(data[0])
@@ -243,6 +244,9 @@ class UplinkConnection:
         elif packet_type == PacketToAcquisition.SYSTEM_FLUSH:
             if self.acquisition:
                 await self.acquisition.system_flush((struct.unpack('<d', data))[0])
+        elif packet_type == PacketToAcquisition.RESTART_ACQUISITION_SYSTEM:
+            if self.acquisition:
+                await self.acquisition.restart_acquisition_system()
         else:
             raise ValueError(f"Invalid packet type {packet_type}")
 
@@ -421,13 +425,36 @@ class UplinkConnection:
 
         return False
 
+    def _metadata_enables_persistence(self, value: typing.Any) -> bool:
+        if isinstance(value, Metadata):
+            realtime_info = value.get('Realtime')
+            if realtime_info:
+                return bool(realtime_info.get('Persistent'))
+
+        if isinstance(value, MetadataChildren):
+            return self._metadata_enables_persistence(value.get('Children'))
+
+        return False
+
     def _inspect_value(self, name: RealtimeName, value: typing.Any) -> None:
-        if name.archive == 'raw_meta':
-            base_name = RealtimeName(name.station, 'raw', name.variable, name.flavors)
+        if name.archive == 'raw_meta' or name.archive == 'rt_instant_meta':
+            base_name = RealtimeName(name.station, name.archive[:-5], name.variable, name.flavors)
+
             if self._metadata_disables_smoothing(value):
                 self._unsmoothed_names.add(base_name)
             else:
                 self._unsmoothed_names.discard(base_name)
+
+            if self._metadata_enables_persistence(value):
+                self._persistent_names.add(base_name)
+            else:
+                self._persistent_names.discard(base_name)
+
+    def _instantaneous_as_raw(self, name: RealtimeName) -> bool:
+        # Persistent values do not update in raw averages immediately
+        if name in self._persistent_names:
+            return True
+        return False
 
     def _send_value_to_uplink(self, name: RealtimeName) -> bool:
         # Metadata explicitly excluded
@@ -439,8 +466,15 @@ class UplinkConnection:
             return True
         return False
 
-    async def realtime_value(self, name: RealtimeName, value: typing.Any) -> None:
-        self._inspect_value(name, value)
+    def _defer_value_flush(self,  name: RealtimeName) -> bool:
+        # if name.variable.startswith('ZSTATE_'):
+        #     return False
+        # Unsmoothed values get sent, but do not trigger the flush
+        if name in self._unsmoothed_names:
+            return True
+        return False
+
+    async def _dispatch_value(self, name: RealtimeName, value: typing.Any) -> None:
         if not self._send_value_to_uplink(name):
             return
         if not self.websocket:
@@ -448,13 +482,24 @@ class UplinkConnection:
 
         self._pending_values[name] = value
 
-        # Unsmoothed values get sent, but do not trigger the flush
-        if name in self._unsmoothed_names:
+        if self._defer_value_flush(name):
             return
-
         if self._value_flush_task:
             return
         self._value_flush_task = asyncio.get_event_loop().create_task(self._flush_values())
+
+    async def realtime_value(self, name: RealtimeName, value: typing.Any) -> None:
+        self._inspect_value(name, value)
+
+        if name.archive == 'rt_instant':
+            if self._instantaneous_as_raw(name):
+                await self._dispatch_value(RealtimeName(name.station, 'raw', name.variable, name.flavors), value)
+        elif name.archive == 'raw':
+            if self._instantaneous_as_raw(name):
+                # Received from rt_instant already
+                return
+
+        await self._dispatch_value(name, value)
 
     async def run(self):
         acquisition_task: typing.Optional[asyncio.Task] = None

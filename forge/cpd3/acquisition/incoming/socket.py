@@ -6,10 +6,6 @@ from starlette.websockets import WebSocket
 from forge.authsocket import WebsocketBinary as AuthSocket
 from forge.cpd3.identity import Name as RealtimeName
 from forge.cpd3.variant import deserialize as deserialize_variant, serialize as serialize_variant
-from forge.vis.station.cpd3 import RealtimeTranslator
-from forge.vis.realtime.translation import get_translator
-from forge.vis.realtime.controller.client import WriteData as RealtimeOutput
-from . import CONFIGURATION
 from .protocol import PROTOCOL_VERSION, PacketFromAcquisition, PacketToAcquisition, DataBlockType
 
 
@@ -179,6 +175,11 @@ class AcquisitionSocket(AuthSocket):
             duration = -1.0
         await self.websocket.send_bytes(struct.pack('<Bd', PacketToAcquisition.SYSTEM_FLUSH.value, duration))
 
+    async def restart_acquisition_system(self,) -> None:
+        if not self.websocket:
+            return
+        await self.websocket.send_bytes(struct.pack('<B', PacketToAcquisition.RESTART_ACQUISITION_SYSTEM.value))
+
     async def incoming_data(self, values: typing.Dict[RealtimeName, typing.Any]) -> None:
         pass
 
@@ -196,80 +197,3 @@ class AcquisitionSocket(AuthSocket):
                                       state: typing.Optional[typing.Dict[str, typing.Any]]) -> None:
         pass
 
-
-class UplinkSocket(AcquisitionSocket):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.station: str = None
-        self.realtime_translator: typing.Optional[RealtimeTranslator] = None
-        self.realtime_output: typing.Optional[RealtimeOutput] = None
-
-    async def handshake(self, websocket: WebSocket, data: bytes) -> bool:
-        self.station = websocket.path_params['station'].lower()
-        self.display_id = f"{self.display_id} - {self.station.upper()}"
-        if not await websocket.scope['processing'].acquisition_uplink_authorized(self.public_key, self.station):
-            _LOGGER.debug(f"Rejected CPD3 acquisition uplink for {self.display_id}")
-            return False
-
-        translator = get_translator(self.station)
-        if translator and isinstance(translator, RealtimeTranslator):
-            realtime_socket_name = CONFIGURATION.get('REALTIME.SOCKET', '/run/forge-vis-realtime.socket')
-            _LOGGER.debug(f"Connecting realtime translator for {self.display_id} to {realtime_socket_name}")
-            try:
-                _, writer = await asyncio.open_unix_connection(realtime_socket_name)
-                realtime_output = RealtimeOutput(writer)
-                await realtime_output.connect()
-
-                self.realtime_translator = translator
-                self.realtime_output = realtime_output
-            except OSError:
-                _LOGGER.debug(f"Failed to connect realtime data socket {realtime_socket_name}", exc_info=True)
-
-        _LOGGER.debug(f"Acquisition uplink connected for {self.display_id}")
-        return await super().handshake(websocket, data)
-
-    async def on_disconnect(self, websocket: WebSocket, close_code):
-        await super().on_disconnect(websocket, close_code)
-        if self.realtime_output:
-            try:
-                self.realtime_output.writer.close()
-            except OSError:
-                pass
-
-    async def _send_realtime_data(self, values: typing.Dict[RealtimeName, typing.Any]) -> None:
-        if not self.realtime_translator:
-            return
-        if not self.realtime_output:
-            return
-
-        data: typing.Dict[str, typing.Dict[str, typing.Optional[typing.Union[float, typing.List[float]]]]] = dict()
-        for name, value in values.items():
-            if name.archive != 'raw':
-                continue
-            targets = self.realtime_translator.realtime_targets(RealtimeTranslator.Key(name.variable, name.flavors))
-            for target in targets:
-                data_target = data.get(target.data_name)
-                if data_target is None:
-                    data_target: typing.Dict[str, typing.Optional[typing.Union[float, typing.List[float]]]] = dict()
-                    data[target.data_name] = data_target
-                data_target[target.field] = value
-
-        for data_name, record in data.items():
-            await self.realtime_output.send_data(self.station, data_name, record)
-
-    async def incoming_data(self, values: typing.Dict[RealtimeName, typing.Any]) -> None:
-        await self._send_realtime_data(values)
-
-    async def incoming_event(self, event: typing.Dict[str, typing.Any]) -> None:
-        pass
-
-    async def autoprobe_state_updated(self, state: typing.Dict[str, typing.Any]) -> None:
-        pass
-
-    async def interface_information_updated(self, interface_name: str,
-                                            information: typing.Optional[typing.Dict[str, typing.Any]]) -> None:
-        pass
-
-    async def interface_state_updated(self, interface_name: str,
-                                      state: typing.Optional[typing.Dict[str, typing.Any]]) -> None:
-        pass

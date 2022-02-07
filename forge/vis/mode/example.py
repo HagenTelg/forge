@@ -1,4 +1,6 @@
+from . import Request, Response
 from .viewlist import ViewList, Realtime, Editing
+from .acquisition import Acquisition
 
 
 class _ExampleViewList(ViewList):
@@ -42,7 +44,7 @@ example_solar = _ExampleSolar()
 
 
 class _ExampleRealtime(Realtime):
-    def __init__(self, suffix=''):
+    def __init__(self):
         super().__init__('example-realtime', "Example Realtime")
 
         self.views.append(ViewList.Entry('example-realtime-1', "First View"))
@@ -50,3 +52,27 @@ class _ExampleRealtime(Realtime):
 
 
 example_realtime = _ExampleRealtime()
+
+
+class _ExampleAcquisition(Acquisition):
+    def __init__(self):
+        super().__init__('example-acquisition', "Example Acquisition")
+
+        self.summary_instrument.append(Acquisition.SummaryInstrument('example-instrument', 'example_neph'))
+        self.summary_instrument.append(Acquisition.SummaryInstrument('example-instrument', 'example_neph', 'S11'))
+
+        item = Acquisition.SummaryStatic('example-static')
+        item.priority = -1000
+        self.summary_static.append(item)
+
+        self.display_instrument.append(Acquisition.DisplayInstrument('example-instrument', 'example_neph'))
+        self.display_instrument.append(Acquisition.DisplayInstrument('example-instrument', 'example_neph', 'S11'))
+
+    async def __call__(self, request: Request, **kwargs) -> Response:
+        return await super().__call__(
+            request,
+            socket_url=request.url_for('acquisition_example_socket', station=kwargs.get('station', 'nil')),
+            **kwargs)
+
+
+example_acquisition = _ExampleAcquisition()

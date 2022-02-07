@@ -5,11 +5,10 @@ import time
 import struct
 import logging
 import os
-from signal import SIGTERM
+import re
 from math import floor, ceil, isfinite
 from copy import deepcopy
 from pathlib import Path
-from starlette.responses import StreamingResponse
 from forge.const import __version__
 from forge.vis import CONFIGURATION
 from forge.vis.access import BaseAccessUser
@@ -19,10 +18,12 @@ from forge.vis.realtime.controller.block import DataBlock as RealtimeDataBlock
 from forge.vis.export import Export, ExportList
 from forge.vis.realtime import Translator as BaseRealtimeTranslator
 from forge.vis.realtime.translation import get_translator
+from forge.vis.acquisition import Translator as BaseAcquisitionTranslator
 from forge.cpd3.identity import Name, Identity
 from forge.cpd3.variant import serialize as variant_serialize, deserialize as variant_deserialize
 from forge.cpd3.datareader import StandardDataInput, RecordInput
 from forge.cpd3.timeinterval import TimeUnit, TimeInterval
+from forge.cpd3.acquisition.incoming.socket import AcquisitionSocket
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -1781,12 +1782,12 @@ class RealtimeTranslator(BaseRealtimeTranslator):
                               realtime_offset=self.realtime_offset)
 
     def __deepcopy__(self, memo):
-        y = type(self)(self.data, realtime_offset=self.realtime_offset)
+        y = type(self)(deepcopy(self.data), realtime_offset=self.realtime_offset)
         memo[id(self)] = y
         return y
 
     def detach(self):
-        return type(self)(self.data, realtime_offset=self.realtime_offset)
+        return deepcopy(self)
 
     class Data(dict):
         def __init__(self, profile: str, *args, archive: str = 'realtime', **kwargs):
@@ -1830,6 +1831,417 @@ class RealtimeTranslator(BaseRealtimeTranslator):
                     data_name = f'{profile_name}-{archive_name}-{record_name}'
                     data[data_name] = record_data
         return cls(data, realtime_offset=realtime_offset)
+
+
+class AcquisitionTranslator(BaseAcquisitionTranslator):
+    class Variable:
+        def __init__(self, variable: str, flavors: typing.Optional[typing.Set[str]] = None):
+            self.variable = variable
+            self.flavors: typing.Optional[typing.Set[str]] = {flavor.lower() for flavor in flavors} if flavors else None
+
+        def __eq__(self, other):
+            if not isinstance(other, AcquisitionTranslator.Variable):
+                return NotImplemented
+            return self.variable == other.variable and self.flavors == other.flavors
+
+        def __hash__(self):
+            flavors = None
+            if self.flavors is not None and len(self.flavors) == 1:
+                flavors = next(x for x in self.flavors)
+            return hash((self.variable, flavors))
+
+        def __repr__(self):
+            return f"Variable({self.variable}, {self.flavors})"
+
+    class Interface:
+        def __init__(self, display_type: str,
+                     variable_map: typing.Dict["AcquisitionTranslator.Variable", str] = None,
+                     command_map: typing.Dict[str, str] = None,
+                     zstate_notifications: typing.Dict[str, str] = None,
+                     zstate_set_warning: typing.Set[str] = None,
+                     flags_notifications: typing.Dict[str, str] = None,
+                     flags_set_warning: typing.Set[str] = None):
+            self.display_type = display_type
+
+            if variable_map is None:
+                variable_map = dict()
+            self.variable_map: typing.Dict["AcquisitionTranslator.Variable", str] = variable_map
+
+            if command_map is None:
+                command_map = dict()
+            self.command_map: typing.Dict[str, str] = command_map
+
+            if zstate_notifications is None:
+                zstate_notifications = dict()
+            self.zstate_notifications: typing.Dict[str, str] = zstate_notifications
+
+            if zstate_set_warning is None:
+                zstate_set_warning = set()
+            self.zstate_set_warning: typing.Set[str] = zstate_set_warning
+
+            if flags_notifications is None:
+                flags_notifications = dict()
+            self.flags_notifications: typing.Dict[str, str] = flags_notifications
+
+            if flags_set_warning is None:
+                flags_set_warning = set()
+            self.flags_set_warning: typing.Set[str] = flags_set_warning
+
+        def matches(self, interface_name: str, interface_info: typing.Dict[str, typing.Any]) -> bool:
+            return False
+
+        def display_information(self, interface_info: typing.Dict[str, typing.Any]) -> typing.Any:
+            source = interface_info.get('Source')
+            if source is None:
+                source = {}
+            serial_number = source.get('SerialNumber')
+            if serial_number is None:
+                display_string = str(interface_info.get('WindowTitle', '')).split('#', 2)
+                if len(display_string) < 1:
+                    display_string = str(interface_info.get('MenuEntry', '')).split('#', 2)
+                if len(display_string) > 1:
+                    serial_number = display_string[1]
+            return {
+                'type': self.display_type,
+                'serial_number': serial_number,
+                'display_id': source.get('Name'),
+                'display_letter': interface_info.get('MenuCharacter'),
+            }
+
+        def display_state(self, state: typing.Optional[typing.Dict[str, typing.Any]]) -> typing.Dict[str, typing.Any]:
+            if state is None:
+                return {}
+            return {
+                'communicating': (str(state.get('Status')).lower() != 'nocommunications'),
+                'bypassed': (len(state.get('BypassFlags')) > 0),
+            }
+
+        def translate_command(self, command: str, data: typing.Any) -> typing.Any:
+            target = self.command_map.get(command)
+            if not target:
+                return None
+            result = dict()
+            if callable(target):
+                target, value = target(data)
+                result[target] = value
+            else:
+                result[target] = True
+            return result
+
+        def value_translator(self, name: Name) -> typing.Tuple[
+                typing.Optional[str], typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
+            return None, None
+
+        def activate(self, source: str, info: typing.Optional[typing.Dict[str, typing.Any]]) -> "AcquisitionTranslator.ActiveInterface":
+            active = AcquisitionTranslator.ActiveInterface(self, source)
+            active.update_interface_information(info)
+            return active
+
+    class ActiveInterface:
+        def __init__(self, interface: "AcquisitionTranslator.Interface", source: str):
+            self.interface = interface
+            self.source = source
+
+        def matches(self, interface_info: typing.Dict[str, typing.Any]) -> bool:
+            return self.interface.matches(interface_info)
+
+        def display_information(self, interface_info: typing.Dict[str, typing.Any]) -> typing.Any:
+            return self.interface.display_information(interface_info)
+
+        def update_instrument_state(self, state: typing.Optional[typing.Dict[str, typing.Any]]) -> None:
+            pass
+
+        def update_interface_information(self, info: typing.Optional[typing.Dict[str, typing.Any]]) -> None:
+            pass
+
+        def display_state(self, state: typing.Optional[typing.Dict[str, typing.Any]]) -> typing.Dict[str, typing.Any]:
+            return self.interface.display_state(state)
+
+        def translate_command(self, command: str, data: typing.Any) -> typing.Any:
+            return self.interface.translate_command(command, data)
+
+        def value_translator(self, name: Name) -> typing.Tuple[typing.Optional[str], typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
+            return None, None
+
+        def translator_override(self, name: Name) -> typing.Optional[typing.Callable[[typing.Any, typing.Any], None]]:
+            return None
+
+    class Component(Interface):
+        def __init__(self, component_type: str, display_type: str, **kwargs):
+            super().__init__(display_type, **kwargs)
+            self.component_type = component_type
+
+        def matches(self, interface_name: str, interface_info: typing.Dict[str, typing.Any]) -> bool:
+            source_info = interface_info.get('Source')
+            if source_info is None:
+                return False
+            return source_info.get('Component') == self.component_type
+
+    class Nephelometer(Component):
+        def value_translator(self, name: Name) -> typing.Tuple[
+                typing.Optional[str], typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
+            if name.variable.startswith('ZSPANCHECK_'):
+                def translator(value: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
+                    if value is None:
+                        return {}
+
+                    result: typing.Dict[str, typing.Any] = dict()
+
+                    def select_angle(target, angle, index, angles) -> bool:
+                        delta_target = abs(angle - target)
+                        if delta_target > 10.0:
+                            return False
+                        if index is None:
+                            return True
+                        return delta_target < abs(angles[index] - target)
+
+                    angles = value.get('Angles', [0.0, 90.0])
+                    index_total = None
+                    index_back = None
+                    for i in range(len(angles)):
+                        angle = angles[i]
+                        if select_angle(0.0, angle, index_total, angles):
+                            index_total = i
+                        if select_angle(90.0, angle, index_back, angles):
+                            index_back = i
+
+                    def set_path(value: typing.Any, *path: str) -> None:
+                        target = result
+                        for i in range(len(path)-1):
+                            p = path[i]
+                            next_target = target.get(p)
+                            if next_target is None:
+                                next_target = dict()
+                                target[p] = next_target
+                            target = next_target
+                        target[path[-1]] = value
+
+                    for color_code in ('B', 'G', 'R'):
+                        color_data = result.get(color_code)
+                        if color_data is None:
+                            continue
+
+                        k2 = color_data.get('K2')
+                        if isfinite(k2):
+                            set_path(k2, 'calibration', 'k2', color_code)
+                        k4 = color_data.get('K4')
+                        if isfinite(k4):
+                            set_path(k4, 'calibration', 'k4', color_code)
+
+                        m = color_data.get('CalM')
+                        if isfinite(m):
+                            set_path(m, 'calibration', 'M', color_code)
+                        c = color_data.get('CalC')
+                        if isfinite(c):
+                            set_path(c, 'calibration', 'C', color_code)
+
+                        color_result = color_data.get('Results')
+                        if color_result is None or not isinstance(color_result, list):
+                            continue
+
+                        if index_total is not None and index_total < len(color_result):
+                            angle_data = color_result[index_total]
+                            set_path(angle_data.get('PCT'), 'percent_error', 'total', color_code)
+                            set_path(angle_data.get('Cc'), 'sensitivity_factor', 'total', color_code)
+                        if index_back is not None and index_back < len(color_result):
+                            angle_data = color_result[index_back]
+                            set_path(angle_data.get('PCT'), 'percent_error', 'back', color_code)
+                            set_path(angle_data.get('Cc'), 'sensitivity_factor', 'back', color_code)
+                    return result
+                return 'spancheck_result', translator
+            return super().value_translator(name)
+
+    class _LovePIDActive(ActiveInterface):
+        def __init__(self, interface: "AcquisitionTranslator.Interface", source: str):
+            super().__init__(interface, source)
+            self._value: typing.List[typing.Optional[float]] = list()
+            self._raw: typing.List[typing.Optional[float]] = list()
+            self._setpoint: typing.List[typing.Optional[float]] = list()
+            self._control: typing.List[typing.Optional[float]] = list()
+            self._address: typing.List[int] = list()
+            self._variable: typing.List[typing.Optional[str]] = list()
+
+        def update_interface_information(self, info: typing.Optional[typing.Dict[str, typing.Any]]) -> None:
+            source = info.get('Source')
+            if source is None:
+                return
+            self._address = source.get('AddressIndex', self._address)
+            self._variable = source.get('VariableIndex', self._variable)
+
+        def display_information(self, interface_info: typing.Dict[str, typing.Any]) -> typing.Any:
+            result = super().display_information(interface_info)
+            result['address'] = self._address
+            result['variable'] = self._variable
+            return result
+
+        _CHANNEL_MATCH = re.compile(r'^(ZIN|ZSP|ZPCT)([A-Fa-f0-9]{1,2})$')
+
+        def translator_override(self, name: Name) -> typing.Optional[typing.Callable[[typing.Any, typing.Any], None]]:
+            try:
+                index = self._variable.index(name.variable)
+                while index >= len(self._variable):
+                    self._variable.append(None)
+
+                def update(result, value) -> None:
+                    self._variable[index] = value
+                    result[self.source]['value'] = self._variable
+
+                return update
+            except ValueError:
+                pass
+
+            variable_split = name.variable.split('_', 2)
+            if len(variable_split) < 2:
+                return None
+            variable_source = variable_split[0]
+            interface_source = variable_split[1]
+
+            if interface_source != self.source:
+                return None
+
+            channel_matched = self._CHANNEL_MATCH.match(variable_source)
+            if not channel_matched:
+                return None
+
+            address = int(channel_matched.group(2), 16)
+            try:
+                index = self._address.index(address)
+            except ValueError:
+                return None
+
+            input_code = channel_matched.group(1)
+            if input_code == 'ZIN':
+                target = self._raw
+                field = 'raw'
+            elif input_code == 'ZSP':
+                target = self._setpoint
+                field = 'setpoint'
+            elif input_code == 'ZPCT':
+                target = self._control
+                field = 'control'
+            else:
+                return None
+
+            while index >= len(target):
+                target.append(None)
+
+            def update(result, value) -> None:
+                target[index] = value
+                result[self.source][field] = target
+
+            return update
+
+    class LovePID(Component):
+        def activate(self, source: str,
+                     info: typing.Optional[typing.Dict[str, typing.Any]]) -> "AcquisitionTranslator.ActiveInterface":
+            active = AcquisitionTranslator._LovePIDActive(self, source)
+            active.update_interface_information(info)
+            return active
+
+    class _AnalogInputActive(ActiveInterface):
+        def __init__(self, interface: "AcquisitionTranslator.Interface", source: str):
+            super().__init__(interface, source)
+            self._value: typing.List[typing.Optional[float]] = list()
+            self._variable: typing.List[typing.Optional[str]] = list()
+
+        def update_interface_information(self, info: typing.Optional[typing.Dict[str, typing.Any]]) -> None:
+            source = info.get('Source')
+            if source is None:
+                return
+            self._variable = source.get('VariableIndex', self._variable)
+
+        def display_information(self, interface_info: typing.Dict[str, typing.Any]) -> typing.Any:
+            result = super().display_information(interface_info)
+            result['variable'] = self._variable
+            return result
+
+        def translator_override(self, name: Name) -> typing.Optional[typing.Callable[[typing.Any, typing.Any], None]]:
+            try:
+                index = self._variable.index(name.variable)
+                while index >= len(self._variable):
+                    self._variable.append(None)
+
+                def update(result, value) -> None:
+                    self._variable[index] = value
+                    result[self.source]['value'] = self._variable
+
+                return update
+            except ValueError:
+                pass
+
+            return None
+
+    class AnalogInput(Component):
+        def activate(self, source: str,
+                     info: typing.Optional[typing.Dict[str, typing.Any]]) -> "AcquisitionTranslator.ActiveInterface":
+            active = AcquisitionTranslator._AnalogInputActive(self, source)
+            active.update_interface_information(info)
+            return active
+
+    class ImpactorCycle(Component):
+        def matches(self, interface_name: str, interface_info: typing.Dict[str, typing.Any]) -> bool:
+            if interface_name != 'IMPACTOR':
+                return False
+            return super().matches(interface_name, interface_info)
+
+        @staticmethod
+        def to_size(flags) -> str:
+            if 'pm1' in flags:
+                return 'PM1'
+            elif 'pm25' in flags:
+                return 'PM2.5'
+            elif 'pm10' in flags:
+                return 'PM10'
+            return 'Whole'
+
+        def value_translator(self, name: Name) -> typing.Tuple[
+                typing.Optional[str], typing.Optional[typing.Callable[[typing.Any], typing.Any]]]:
+            if name.variable.startswith('ZLAST'):
+                def translator(value: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
+                    if value is None:
+                        return {}
+
+                    return {
+                        'size': self.to_size(value.get('Flavors')),
+                        'epoch_ms': round(value.get('Time', 0) * 1000.0)
+                    }
+                return 'active', translator
+            elif name.variable.startswith('ZNEXT'):
+                def translator(value: typing.Dict[str, typing.Any]) -> typing.Dict[str, typing.Any]:
+                    if value is None:
+                        return {}
+
+                    return {
+                        'size': self.to_size(value.get('Flavors')),
+                        'epoch_ms': round(value.get('Time', 0) * 1000.0)
+                    }
+                return 'next', translator
+            return super().value_translator(name)
+
+    def __init__(self, interfaces: typing.List["AcquisitionTranslator.Interface"] = None):
+        if interfaces is None:
+            interfaces = []
+        self.interfaces: typing.List["AcquisitionTranslator.Interface"] = interfaces
+
+    def __deepcopy__(self, memo):
+        y = type(self)(interfaces=deepcopy(self.interfaces))
+        memo[id(self)] = y
+        return y
+
+    @staticmethod
+    def pitot_shim(target: typing.Callable[[typing.Any, typing.Any], None]) -> typing.Callable[[typing.Any, typing.Any], None]:
+        def shim(result, value):
+            result['_pitot']['pitot'] = value
+            return target(result, value)
+        return shim
+
+    def translator_shim(self, name: Name, target: typing.Callable[[typing.Any, typing.Any], None]) -> typing.Callable[[typing.Any, typing.Any], None]:
+        if name.variable == 'Pd_P01':
+            return self.pitot_shim(target)
+        return target
+
+    def detach(self):
+        return deepcopy(self)
 
 
 def editing_get(station: str, mode_name: str, start_epoch_ms: int, end_epoch_ms: int,
@@ -2328,6 +2740,306 @@ profile_export: typing.Dict[str, typing.Dict[str, DataExportList]] = {
     'ozone': ozone_export,
     'met': met_export,    
 }
+
+
+acquisition_translator = AcquisitionTranslator(interfaces=[
+    AcquisitionTranslator.AnalogInput('acquire_azonix_umac1050', 'azonixumac1050', variable_map={
+        AcquisitionTranslator.Variable('T'): 'T',
+        AcquisitionTranslator.Variable('V'): 'V',
+        AcquisitionTranslator.Variable('ZINPUTS'): 'raw',
+    }),
+
+    AcquisitionTranslator.AnalogInput('acquire_campbell_cr1000gmd', 'campbellcr1000gmd', variable_map={
+        AcquisitionTranslator.Variable('T'): 'T',
+        AcquisitionTranslator.Variable('V'): 'V',
+        AcquisitionTranslator.Variable('ZINPUTS'): 'raw',
+    }),
+
+    AcquisitionTranslator.Component('acquire_csd_pops', 'csdpops', variable_map={
+        AcquisitionTranslator.Variable('Nb'): 'dN',
+        AcquisitionTranslator.Variable('Ns'): 'Dp',
+        AcquisitionTranslator.Variable('N'): 'N',
+        AcquisitionTranslator.Variable('C'): 'C',
+        AcquisitionTranslator.Variable('Q'): 'Q',
+        AcquisitionTranslator.Variable('P'): 'P',
+        AcquisitionTranslator.Variable('T1'): 'Tpressure',
+        AcquisitionTranslator.Variable('T2'): 'Tlaser',
+        AcquisitionTranslator.Variable('T3'): 'Tinternal',
+        AcquisitionTranslator.Variable('I'): 'baseline',
+        AcquisitionTranslator.Variable('Ig'): 'baseline_stddev',
+        AcquisitionTranslator.Variable('Im'): 'baseline_threshold',
+        AcquisitionTranslator.Variable('Igm'): 'baseline_stddevmax',
+        AcquisitionTranslator.Variable('A'): 'Alaser',
+        AcquisitionTranslator.Variable('V'): 'Vsupply',
+        AcquisitionTranslator.Variable('ZMEANWIDTH'): 'peak_width',
+        AcquisitionTranslator.Variable('ZLASERMON'): 'laser_monitor',
+        AcquisitionTranslator.Variable('ZLASERFB'): 'laser_feedback',
+        AcquisitionTranslator.Variable('ZPUMPFB'): 'pump_feedback',
+        AcquisitionTranslator.Variable('ZPUMPTIME'): 'pump_on_time',
+    }, flags_notifications={
+        'TooManyParticles': 'too_many_particles',
+        'TimingUncertainty': 'timing_uncertainty',
+    }, flags_set_warning={
+        'TooManyParticles', 'TimingUncertainty',
+    }),
+
+    AcquisitionTranslator.Component('acquire_gmd_cpcpulse', 'tsi3760cpc', variable_map={
+        AcquisitionTranslator.Variable('N'): 'N',
+        AcquisitionTranslator.Variable('C'): 'C',
+    }),
+
+    AcquisitionTranslator.Component('acquire_gmd_clap3w', 'clap', variable_map={
+        AcquisitionTranslator.Variable('BaB'): 'BaB',
+        AcquisitionTranslator.Variable('BaG'): 'BaG',
+        AcquisitionTranslator.Variable('BaR'): 'BaR',
+        AcquisitionTranslator.Variable('IrB'): 'IrB',
+        AcquisitionTranslator.Variable('IrG'): 'IrG',
+        AcquisitionTranslator.Variable('IrR'): 'IrR',
+        AcquisitionTranslator.Variable('IfB'): 'IfB',
+        AcquisitionTranslator.Variable('IfG'): 'IfG',
+        AcquisitionTranslator.Variable('IfR'): 'IfR',
+        AcquisitionTranslator.Variable('IpB'): 'IpB',
+        AcquisitionTranslator.Variable('IpG'): 'IpG',
+        AcquisitionTranslator.Variable('IpR'): 'IpR',
+        AcquisitionTranslator.Variable('Q'): 'Q',
+        AcquisitionTranslator.Variable('VQ'): 'Vflow',
+        AcquisitionTranslator.Variable('T1'): 'Tsample',
+        AcquisitionTranslator.Variable('T2'): 'Tcase',
+        AcquisitionTranslator.Variable('Fn'): 'Fn',
+    }, flags_notifications={
+        'FlowError': 'flow_error',
+        'LampError': 'led_error',
+        'TemperatureOutOfRange': 'temperature_out_of_range',
+        'CaseTemperatureUnstable': 'case_temperature_control_error',
+        'NonWhiteFilter': 'filter_was_not_white',
+    }, flags_set_warning={
+        'FlowError', 'LampError', 'TemperatureOutOfRange', 'NonWhiteFilter',
+    }, zstate_notifications={
+        'Normalize': 'wait_spot_stability',
+        'SpotAdvance': 'spot_advancing',
+        'FilterBaselineStart': 'filter_baseline',
+        'FilterBaseline': 'filter_baseline',
+        'FilterChangeStart': 'filter_change',
+        'FilterChange': 'filter_change',
+        'WhiteFilterBaselineStart': 'filter_baseline',
+        'WhiteFilterBaseline': 'filter_baseline',
+        'WhiteFilterChangeStart': 'white_filter_change',
+        'WhiteFilterChange': 'white_filter_change',
+        'BypassedNormalize': 'bypass_wait_spot_stability',
+        'BypassedFilterBaselineStart': 'bypass_filter_baseline',
+        'BypassedFilterBaseline': 'bypass_filter_baseline',
+        'BypassedFilterChangeStart': 'filter_change',
+        'BypassedFilterChange': 'filter_change',
+        'BypassedWhiteFilterBaselineStart': 'bypass_filter_baseline',
+        'BypassedWhiteFilterBaseline': 'bypass_filter_baseline',
+        'BypassedWhiteFilterChangeStart': 'white_filter_change',
+        'BypassedWhiteFilterChange': 'white_filter_change',
+        'RequireFilterChange': 'need_filter_change',
+        'RequireWhiteFilterChange': 'need_white_filter_change',
+        'BypassedRequireFilterChange': 'need_filter_change',
+        'BypassedRequireWhiteFilterChange': 'need_white_filter_change',
+    }, zstate_set_warning={
+        'FilterChangeStart', 'FilterChange', 'WhiteFilterChangeStart', 'WhiteFilterChange',
+        'BypassedFilterChangeStart', 'BypassedFilterChange',
+        'BypassedWhiteFilterChangeStart', 'BypassedWhiteFilterChange',
+        'RequireFilterChange', 'RequireWhiteFilterChange',
+        'BypassedRequireFilterChange', 'BypassedRequireWhiteFilterChange'
+    }, command_map={
+        'spot_advance': 'AdvanceSpot',
+        'filter_change_start': 'StartFilterChange',
+        'filter_change_end': 'StopFilterChange',
+        'white_filter_change': 'StartWhiteFilterChange',
+    }),
+
+    AcquisitionTranslator.LovePID('acquire_love_pid', 'lovepid'),
+
+    AcquisitionTranslator.Component('acquire_magee_aethalometer33', 'mageeae33', variable_map=dict(
+        [(AcquisitionTranslator.Variable(f'X{i+1}'), f'X{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'ZFACTOR{i+1}'), f'k{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'Ba{i+1}'), f'Ba{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'Bas{i+1}'), f'Bas{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'Ir{i+1}'), f'Ir{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'Irs{i+1}'), f'Irs{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'If{i+1}'), f'If{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'Ip{i+1}'), f'Ip{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'Ips{i+1}'), f'Ips{i+1}') for i in range(7)] +
+        [
+            (AcquisitionTranslator.Variable('Q1'), 'Q1'),
+            (AcquisitionTranslator.Variable('Q2'), 'Q2'),
+            (AcquisitionTranslator.Variable('T1'), 'Tcontroller'),
+            (AcquisitionTranslator.Variable('T2'), 'Tsupply'),
+            (AcquisitionTranslator.Variable('T3'), 'Tled'),
+        ]
+    ), flags_notifications={
+        'SpotAdvanced': 'spot_advancing',
+        'NotMeasuring': 'not_measuring',
+        'Calibrating': 'calibrating',
+        'Stopped': 'stopped',
+        'FlowOutOfRange': 'flow_out_of_range',
+        'FlowCheckHistory': 'flow_check_history',
+        'LEDCalibration': 'led_calibration',
+        'LEDCalibrationError': 'led_calibration_error',
+        'LEDError': 'led_error',
+        'ChamberError': 'chamber_error',
+        'TapeLow': 'tape_low',
+        'TapeCritical': 'tape_critical',
+        'TapeError': 'tape_error',
+        'StabilityTest': 'stability_test',
+        'CleanAirTest': 'clear_air_test',
+        'ChangeTapeTest': 'change_tape_test',
+        'ControllerNotReady': 'controller_not_ready',
+        'ControllerBusy': 'controller_busy',
+        'DetectorInitializationError': 'detector_initialization_error',
+        'DetectorStopped': 'detector_stopped',
+        'DetectorLEDCalibration': 'detector_led_calibration',
+        'DetectorFastLEDCalibration': 'detector_fast_led_calibration',
+        'DetectorReadNDF0': 'detector_read_ndf0',
+        'DetectorReadNDF1': 'detector_read_ndf1',
+        'DetectorReadNDF2': 'detector_read_ndf2',
+        'DetectorReadNDF3': 'detector_read_ndf3',
+        'DetectorReadNDFError': 'detector_read_ndf_error',
+    }, flags_set_warning={
+        'NotMeasuring', 'Calibrating', 'Stopped', 'FlowOutOfRange', 'LEDCalibration', 'LEDCalibrationError',
+        'LEDError', 'ChamberError', 'TapeError', 'ControllerNotReady', 'ControllerBusy', 'DetectorInitializationError',
+        'DetectorStopped', 'DetectorLEDCalibration', 'DetectorFastLEDCalibration', 'DetectorReadNDF0',
+        'DetectorReadNDF1', 'DetectorReadNDF2', 'DetectorReadNDF3', 'DetectorReadNDFError',
+    }, command_map={
+        'spot_advance': 'AdvanceSpot',
+    }),
+
+    AcquisitionTranslator.Component('acquire_teledyne_t640', 'teledynet640', variable_map={
+        AcquisitionTranslator.Variable('ZXPM1'): 'X1',
+        AcquisitionTranslator.Variable('ZXPM10'): 'X10',
+        AcquisitionTranslator.Variable('ZXPM25'): 'X25',
+        AcquisitionTranslator.Variable('U1'): 'Usample',
+        AcquisitionTranslator.Variable('T1'): 'Tsample',
+        AcquisitionTranslator.Variable('T2'): 'Tambient',
+        AcquisitionTranslator.Variable('T3'): 'Tasc',
+        AcquisitionTranslator.Variable('T4'): 'Tled',
+        AcquisitionTranslator.Variable('T5'): 'Tbox',
+        AcquisitionTranslator.Variable('P'): 'Pambient',
+        AcquisitionTranslator.Variable('Q1'): 'Qsample',
+        AcquisitionTranslator.Variable('Q2'): 'Qbypass',
+        AcquisitionTranslator.Variable('ZSPAN'): 'spandev',
+        AcquisitionTranslator.Variable('PCT1'): 'PCTpump',
+        AcquisitionTranslator.Variable('PCT2'): 'PCTvalve',
+        AcquisitionTranslator.Variable('PCT3'): 'PCTact',
+    }, flags_notifications={
+        'BoxTemperatureWarning': 'box_temperature_warning',
+        'FlowAlarm': 'flow_alarm',
+        'SystemFaultWarning': 'system_fault_warning',
+        'SystemResetWarning': 'system_reset_warning',
+        'TemperatureAlarm': 'temperature_alarm',
+        'SystemServiceWarning': 'system_service_warning',
+        'OPCInstrumentWarning': 'opc_instrument_warning',
+        'SampleTemperatureWarning': 'sample_temperature_warning',
+    }, flags_set_warning={
+        'BoxTemperatureWarning', 'FlowAlarm', 'SystemFaultWarning', 'TemperatureAlarm', 'SystemServiceWarning',
+        'OPCInstrumentWarning', 'SampleTemperatureWarning',
+    }),
+
+    AcquisitionTranslator.Component('acquire_thermo_ozone49', 'thermo49', variable_map={
+        AcquisitionTranslator.Variable('ZX'): 'X',
+        AcquisitionTranslator.Variable('T1'): 'Tsample',
+        AcquisitionTranslator.Variable('T2'): 'Tlamp',
+        AcquisitionTranslator.Variable('T3'): 'Tozonator',
+        AcquisitionTranslator.Variable('P'): 'Psample',
+        AcquisitionTranslator.Variable('ZINSTFLAGS'): 'bitflags',
+        AcquisitionTranslator.Variable('Q1'): 'Qa',
+        AcquisitionTranslator.Variable('Q2'): 'Qb',
+        AcquisitionTranslator.Variable('Q3'): 'Qozonator',
+        AcquisitionTranslator.Variable('C1'): 'Ca',
+        AcquisitionTranslator.Variable('C2'): 'Cb',
+    }, flags_notifications={
+        'SampleTemperatureLowAlarm': 'alarm_sample_temperature_low',
+        'SampleTemperatureHighAlarm': 'alarm_sample_temperature_high',
+        'LampTemperatureLowAlarm': 'alarm_lamp_temperature_low',
+        'LampTemperatureHighAlarm': 'alarm_lamp_temperature_high',
+        'OzonatorTemperatureLowAlarm': 'alarm_ozonator_temperature_low',
+        'OzonatorTemperatureHighAlarm': 'alarm_ozonator_temperature_high',
+        'PressureLowAlarm': 'alarm_pressure_low',
+        'PressureHighAlarm': 'alarm_pressure_high',
+        'FlowALowAlarm': 'alarm_flow_a_low',
+        'FlowAHighAlarm': 'alarm_flow_a_high',
+        'FlowBLowAlarm': 'alarm_flow_b_low',
+        'FlowBHighAlarm': 'alarm_flow_b_high',
+        'IntensityALowAlarm': 'alarm_intensity_a_low',
+        'IntensityAHighAlarm': 'alarm_intensity_a_high',
+        'IntensityBLowAlarm': 'alarm_intensity_b_low',
+        'IntensityBHighAlarm': 'alarm_intensity_b_high',
+        'OzoneLowAlarm': 'alarm_ozone_low',
+        'OzoneHighAlarm': 'alarm_ozone_high',
+    }),
+
+    AcquisitionTranslator.Nephelometer('acquire_tsi_neph3563', 'tsi3563nephelometer', variable_map={
+        AcquisitionTranslator.Variable('ZBsB'): 'BsB',
+        AcquisitionTranslator.Variable('ZBsG'): 'BsG',
+        AcquisitionTranslator.Variable('ZBsR'): 'BsR',
+        AcquisitionTranslator.Variable('ZBbsB'): 'BbsB',
+        AcquisitionTranslator.Variable('ZBbsG'): 'BbsG',
+        AcquisitionTranslator.Variable('ZBbsR'): 'BbsR',
+        AcquisitionTranslator.Variable('BswB'): 'BswB',
+        AcquisitionTranslator.Variable('BswG'): 'BswG',
+        AcquisitionTranslator.Variable('BswR'): 'BswR',
+        AcquisitionTranslator.Variable('BbswB'): 'BbswB',
+        AcquisitionTranslator.Variable('BbswG'): 'BbswG',
+        AcquisitionTranslator.Variable('BbswR'): 'BbswR',
+        AcquisitionTranslator.Variable('BswdB'): 'BswdB',
+        AcquisitionTranslator.Variable('BswdG'): 'BswdG',
+        AcquisitionTranslator.Variable('BswdR'): 'BswdR',
+        AcquisitionTranslator.Variable('BbswdB'): 'BbswdB',
+        AcquisitionTranslator.Variable('BbswdG'): 'BbswdG',
+        AcquisitionTranslator.Variable('BbswdR'): 'BbswdR',
+        AcquisitionTranslator.Variable('CsB'): 'CsB',
+        AcquisitionTranslator.Variable('CsG'): 'CsG',
+        AcquisitionTranslator.Variable('CsR'): 'CsR',
+        AcquisitionTranslator.Variable('CbsB'): 'CbsB',
+        AcquisitionTranslator.Variable('CbsG'): 'CbsG',
+        AcquisitionTranslator.Variable('CbsR'): 'CbsR',
+        AcquisitionTranslator.Variable('CdB'): 'CdB',
+        AcquisitionTranslator.Variable('CdG'): 'CdG',
+        AcquisitionTranslator.Variable('CdR'): 'CdR',
+        AcquisitionTranslator.Variable('CbdB'): 'CbdB',
+        AcquisitionTranslator.Variable('CbdG'): 'CbdG',
+        AcquisitionTranslator.Variable('CbdR'): 'CbdR',
+        AcquisitionTranslator.Variable('CfB'): 'CfB',
+        AcquisitionTranslator.Variable('CfG'): 'CfG',
+        AcquisitionTranslator.Variable('CfR'): 'CfR',
+        AcquisitionTranslator.Variable('T'): 'Tsample',
+        AcquisitionTranslator.Variable('U'): 'Usample',
+        AcquisitionTranslator.Variable('P'): 'Psample',
+        AcquisitionTranslator.Variable('Tu'): 'Tinlet',
+        AcquisitionTranslator.Variable('Uu'): 'Uinlet',
+        AcquisitionTranslator.Variable('Al'): 'Al',
+        AcquisitionTranslator.Variable('Vl'): 'Vl',
+        AcquisitionTranslator.Variable('F2'): 'modestring',
+        AcquisitionTranslator.Variable('ZRTIME'): 'modetime',
+    }, flags_notifications={
+        'BackscatterDisabled': 'backscatter_disabled',
+        'LampPowerError': 'lamp_power_error',
+        'ValveFault': 'valve_fault',
+        'ChopperFault': 'chopper_fault',
+        'ShutterFault': 'shutter_fault',
+        'HeaterUnstable': 'heater_unstable',
+        'PressureOutOfRange': 'pressure_out_of_range',
+        'TemperatureOutOfRange': 'sample_temperature_out_of_range',
+        'InletTemperatureOutOfRange': 'inlet_temperature_out_of_range',
+        'RHOutOfRange': 'rh_out_of_range',
+    }, flags_set_warning={
+        'LampPowerError', 'ChopperFault', 'ShutterFault', 'HeaterUnstable', 'PressureOutOfRange',
+        'TemperatureOutOfRange', 'InletTemperatureOutOfRange',
+    }, zstate_notifications={
+        'Blank': 'blank',
+        'Zero': 'zero',
+        'Spancheck': 'spancheck',
+    }, command_map={
+        'start_zero': 'StartZero',
+        'start_spancheck': 'StartSpancheck',
+        'stop_spancheck': 'StopSpancheck',
+    }),
+
+    AcquisitionTranslator.ImpactorCycle('control_cycle', 'impactor_cycle'),
+])
 
 
 aerosol_data = {

@@ -1,0 +1,198 @@
+<div class="display-container collapsable collapsed{% if writable %} menu{% endif %}">
+    <div class="header communication-state warning-state format-source" instrument="Magee AE33"></div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% if writable %}
+    <div class="menu communication-state hide-false">
+        <button class="menu mdi mdi-menu" title="Instrument actions"></button>
+        <ul class="menu menu-below">
+            <li><button id="{{uid}}_spot_advance" class="simple-command" command="spot_advance"
+                        title="Advance the filter tape to the next sampling spot">Advance spot</button></li>
+        </ul>
+    </div>
+    {% endif %}
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <table class="content display-data column-split communication-state hide-false">
+        <thead>
+            <tr>
+                <th></th>
+                <th>370 nm</th>
+                <th>470 nm</th>
+                <th>520 nm</th>
+                <th>590 nm</th>
+                <th>660 nm</th>
+                <th>880 nm</th>
+                <th>950 nm</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>EBC (μg/m³)</td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="X{{wavelength+1}}" decimals="3" rightpad="3"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>k</td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="k{{wavelength+1}}" decimals="6"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>σ<sub>ap 1</sub> (Mm⁻¹)</td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="Ba{{wavelength+1}}" decimals="2" rightpad="4"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>σ<sub>ap 2</sub> (Mm⁻¹)</td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="Bas{{wavelength+1}}" decimals="2" rightpad="4"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>Transmittance<sub>1</sub></td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="Ir{{wavelength+1}}" decimals="6"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>Transmittance<sub>2</sub></td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="Irs{{wavelength+1}}" decimals="6"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>I<sub>reference</sub></td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="If{{wavelength+1}}" decimals="0" rightpad="7"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>I<sub>sample 1</sub></td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="Ip{{wavelength+1}}" decimals="0" rightpad="7"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>I<sub>sample 2</sub></td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="Ips{{wavelength+1}}" decimals="0" rightpad="7"></td>
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data communication-state hide-false">
+        <tbody>
+            <tr> <td>Flow<sub>1</sub> (lpm)</td>        <td class="value-formatted" field="Q1" decimals="3"></td> </tr>
+            <tr> <td>Flow<sub>2</sub> (lpm)</td>        <td class="value-formatted" field="Q2" decimals="3"></td> </tr>
+            <tr> <td>Controller (°C)</td>               <td class="value-formatted" field="Tcontroller" decimals="0" rightpad="4"></td> </tr>
+            <tr> <td>Power supply (°C)</td>             <td class="value-formatted" field="Tsupply" decimals="0" rightpad="4"></td> </tr>
+            <tr> <td>LED (°C)</td>                      <td class="value-formatted" field="Tled" decimals="0" rightpad="4"></td> </tr>
+        </tbody>
+    </table>
+
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="spot_advancing"><span class="mdi mdi-loading mdi-spin"></span>Advancing spot</div>
+
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="flow_check_history">Flow check status history</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="stability_test">Stability test in progress</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="clear_air_test">Clean air test in progress</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="change_tape_test">Tape change test in progress</div>
+
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="tape_low">Less than 10 spots remaining</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="tape_critical">Less than five spots remaining</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="tape_error">Out of tape or tape not moving</div>
+
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="not_measuring">Not measuring due to tap advance or fast calibration</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="calibrating">Calibration of LED, flow, and/or tape sensors in progress</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="stopped">Instrument in stop mode</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="flow_out_of_range">Flow above or below target by more than 0.25 lpm</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="led_calibration">LED calibration in progress</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="led_calibration_error">LED calibration error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="led_error">All channels failed calibration or no communications with the LED module</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="chamber_error">Chamber error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="controller_not_ready">Controller reset and not ready (no date set)</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="controller_busy">Controller busy</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="detector_initialization_error">Detector initialization error reported</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="detector_stopped">Detector in stop state</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="detector_led_calibration">Detector in LED calibration state</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="detector_fast_led_calibration">Detector in fast LED calibration state</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="detector_read_ndf0">Detector in read NDF0 state</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="detector_read_ndf1">Detector in read NDF1 state</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="detector_read_ndf2">Detector in read NDF2 state</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="detector_read_ndf3">Detector in read NDF3 state</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="detector_read_ndf_error">Detector NDF error</div>
+
+</div>
+
+<style>
+#{{uid}} table sub {
+    font-size: 10px;
+}
+#{{uid}} .blue { color: #00a; }
+#{{uid}} .green { color: #0a0; }
+#{{uid}} .red { color: #a00; }
+#{{uid}} .warning { color: #f80; }
+</style>
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+
+    let spotAdvancing = false;
+
+    function setVisible(id, visible) {
+        if (visible) {
+            $(id).css('display', '');
+        } else {
+            $(id).css('display', 'none');
+        }
+    }
+
+    function updateVisibility() {
+        setVisible('#{{uid}}_spot_advance', !spotAdvancing);
+    }
+
+    context.addInstrumentState((source, state) => {
+        const notifications = state.notifications;
+        if (!notifications) {
+            spotAdvancing = false;
+        } else {
+            spotAdvancing = notifications.includes('spot_advancing');
+        }
+        updateVisibility();
+    }, context.source);
+})();
+</script>

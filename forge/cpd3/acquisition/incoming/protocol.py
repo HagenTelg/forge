@@ -23,6 +23,7 @@ class PacketToAcquisition(IntEnum):
     SYSTEM_FLAG_CLEAR = 6
     SYSTEM_FLAGS_CLEAR_ALL = 7
     SYSTEM_FLUSH = 8
+    RESTART_ACQUISITION_SYSTEM = 9
 
 
 class DataBlockType(IntEnum):

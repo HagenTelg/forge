@@ -1,0 +1,104 @@
+<div class="display-container collapsable collapsed{% if writable %} menu{% endif %}">
+    <div class="header communication-state warning-state format-source" instrument="Azonix μMAC"></div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% if writable %}
+    <div class="menu communication-state hide-false">
+        <button class="menu mdi mdi-menu" title="Instrument actions"></button>
+        <ul class="menu menu-below">
+            <li><button id="{{uid}}_set_digital">Change digital output</button></li>
+            <li><button id="{{uid}}_set_analog">Change analog output</button></li>
+        </ul>
+    </div>
+    {% endif %}
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <table class="content display-data communication-state hide-false">
+        <tbody>
+            <tr> <td>Board temperature (°C)</td>    <td class="value-formatted" field="T" rightpad="2"></td> </tr>
+            <tr> <td>Supply voltage (V)</td>        <td class="value-formatted" field="V" decimals="3"></td> </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data column-split communication-state hide-false">
+        <thead>
+            <tr>
+                <th></th>
+                <th></th>
+                <th>Value</th>
+                <th>Raw (V)</th>
+            </tr>
+        </thead>
+        <tbody id="{{uid}}_channels">
+        </tbody>
+    </table>
+
+</div>
+
+<style>
+#{{uid}}_channels > tr td:nth-child(1) {
+  min-width: 0;
+  text-align: right;
+  font-family: monospace;
+}
+#{{uid}}_channels > tr td:nth-child(2) {
+  text-align: left;
+  min-width: 0;
+}
+</style>
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+
+    const channelDisplay = document.getElementById('{{uid}}_channels');
+
+    function getRow(index) {
+        if (index < channelDisplay.children.length) {
+            return channelDisplay.children[index];
+        }
+
+        const tr = channelDisplay.insertRow();
+        for (let i=0; i<4; i++) {
+            tr.insertCell();
+        }
+        tr.children[0].textContent = index.toString();
+        return tr;
+    }
+
+    context.addInstrumentPresent((source, info) => {
+        const variable = info.variable;
+        for (let i=0; i<variable.length; i++)  {
+            getRow(i).children[1].textContent = variable[i] || '';
+        }
+    }, context.source);
+
+    context.addSourceTarget((value) => {
+        if (!value || !value.length) {
+            return;
+        }
+        for (let i=0; i<value.length; i++)  {
+            const v = value[i];
+            if (v === null || !isFinite(v)) {
+                continue;
+            }
+            getRow(i).children[2].textContent = (v * 1.0).toFixed(3);
+        }
+    }, context.source, 'value');
+    context.addSourceTarget((value) => {
+        if (!value || !value.length) {
+            return;
+        }
+        for (let i=0; i<value.length; i++)  {
+            const v = value[i];
+            if (v === null || !isFinite(v)) {
+                continue;
+            }
+            getRow(i).children[3].textContent = (v * 1.0).toFixed(3);
+        }
+    }, context.source, 'raw');
+})();
+</script>

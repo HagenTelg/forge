@@ -1,0 +1,39 @@
+{% set link_view='aerosol-realtime-optical' %}
+{% include 'acquisition/summary/block_open.html' %}
+
+{% with instrument = instrument|default('GMD CLAP-3W') %}
+<span class="summary-source format-source" instrument="{{ instrument }}"></span>
+{% endwith %}
+<table class="summary-data">
+    <thead>
+        <tr>
+            <th></th>
+            <th>Mm⁻¹</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="blue"><td>σ<sub>ap</sub> B (467 nm)</td><td class="value-formatted" field="BaB"></td></tr>
+        <tr class="green"><td>σ<sub>ap</sub> G (528 nm)</td><td class="value-formatted" field="BaG"></td></tr>
+        <tr class="red"><td>σ<sub>ap</sub> R (652 nm)</td><td class="value-formatted" field="BaR"></td></tr>
+    </tbody>
+</table>
+
+{% include 'acquisition/summary/block_close.html' %}
+
+<style>
+#{{uid}} table sub {
+    font-size: 10px;
+}
+#{{uid}} .blue { color: #00a; }
+#{{uid}} a.summary-link:hover .blue { color: #0af; }
+#{{uid}} .green { color: #0a0; }
+#{{uid}} a.summary-link:hover .green { color: #0f0; }
+#{{uid}} .red { color: #a00; }
+#{{uid}} a.summary-link:hover .red { color: #f00; }
+</style>
+
+<script>
+(function() {
+    document.getElementById('{{uid}}').context.standardMode();
+})();
+</script>
