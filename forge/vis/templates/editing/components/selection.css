@@ -29,6 +29,7 @@ table.details-selection-list > tbody > tr.selected:not(:nth-child(odd)) {
 }
 
 nav.details-selection-options {
+  flex-grow: 0;
   display: flex;
   margin: 0;
   padding: 0 0 4px;
@@ -48,4 +49,13 @@ nav.details-selection-options > ul {
   font-family: monospace;
   white-space: nowrap;
   min-width: 100px;
+}
+
+span.details-selection-summary {
+  margin: 0;
+  padding: 13px 8px;
+  font-family: monospace;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }

@@ -1,19 +1,22 @@
 <div class="details-selection details-vertical">
-  <nav class="details-selection-options">
-    <ul>
-      <li>
-        <button class="details-dropdown" title="Quick selection options">Selection <i class="mdi mdi-menu-down"></i></button>
-        <ul class="details-dropdown-content" id="details_{{ instance|default('Selection') }}_shortcut">
-          <li>
-            <button class="details-menu-right" title="Instrument selection">Instrument <i class="mdi mdi-menu-right"></i></button>
-            <ul class="details-menu-content" id="details_{{ instance|default('Selection') }}_instrument">
+  <div class="details-horizontal">
+    <nav class="details-selection-options">
+      <ul>
+        <li>
+          <button class="details-dropdown" title="Quick selection options"><span>Selection</span><i class="mdi mdi-menu-down"></i></button>
+          <ul class="details-dropdown-content" id="details_{{ instance|default('Selection') }}_shortcut">
+            <li>
+              <button class="details-menu-right" title="Instrument selection"><span>Instrument</span><i class="mdi mdi-menu-right"></i></button>
+              <ul class="details-menu-content" id="details_{{ instance|default('Selection') }}_instrument">
 
-            </ul>
-          </li>
-        </ul>
-      </li>
-    </ul>
-  </nav>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+    <span class="details-selection-summary" id="details_{{ instance|default('Selection') }}_summary"></span>
+  </div>
 
   <div class="details-selection-scroll">
     <table class="details-selection-list">
@@ -28,6 +31,7 @@ var {{ instance|default('Selection') }} = {};
 {{ instance|default('Selection') }}.list = document.getElementById('details_{{ instance|default("Selection") }}_list');
 {{ instance|default('Selection') }}.shortcut_menu = document.getElementById('details_{{ instance|default("Selection") }}_shortcut');
 {{ instance|default('Selection') }}.instrument_menu = document.getElementById('details_{{ instance|default("Selection") }}_instrument');
+{{ instance|default('Selection') }}.summary_text = document.getElementById('details_{{ instance|default("Selection") }}_summary');
 (function(Selection) {
 {% include 'editing/components/selection.js' %}
 })({{ instance|default('Selection') }});

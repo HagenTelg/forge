@@ -2,6 +2,27 @@ Selection.target = [];
 Selection.changed = function(selected) {}
 
 
+function updateSummary(selected) {
+    if (selected.length === 0) {
+        Selection.summary_text.textContent = "";
+        return;
+    }
+
+    const variables = [];
+    for (let i=0; i<selected.length; i++) {
+        const item = selected[i];
+        if (item.type === 'variable') {
+            variables.push(item.variable);
+        }
+    }
+    if (variables.length === 0) {
+        Selection.summary_text.textContent = "";
+        return;
+    }
+
+    Selection.summary_text.textContent = variables.join(", ");
+}
+
 function updateTarget() {
     Selection.target.length = 0;
 
@@ -18,6 +39,7 @@ function updateTarget() {
         }
     }
 
+    updateSummary(Selection.target);
     Selection.changed(Selection.target);
 }
 
@@ -120,6 +142,7 @@ class SelectionShortcut {
 
     activate() {
         let allAlreadySelected = true;
+        let lastRowSelected = undefined;
         for (let i=0; i<Selection.list.rows.length; i++) {
             const tr = Selection.list.rows[i];
             if (!this.matchesRow(tr)) {
@@ -129,6 +152,7 @@ class SelectionShortcut {
             if (!tr.classList.contains('selected')) {
                 tr.classList.add('selected');
                 allAlreadySelected = false;
+                lastRowSelected = tr;
             }
         }
         if (allAlreadySelected) {
@@ -140,6 +164,8 @@ class SelectionShortcut {
 
                 tr.classList.remove('selected');
             }
+        } else if (lastRowSelected) {
+            lastRowSelected.scrollIntoView();
         }
         updateTarget();
     }
@@ -251,6 +277,7 @@ class InstrumentSelectionShortcut {
 
     activate(instrument) {
         let allAlreadySelected = true;
+        let lastRowSelected = undefined;
         for (let i=0; i<Selection.list.rows.length; i++) {
             const tr = Selection.list.rows[i];
             if (!this.matchesRow(instrument, tr)) {
@@ -260,6 +287,7 @@ class InstrumentSelectionShortcut {
             if (!tr.classList.contains('selected')) {
                 tr.classList.add('selected');
                 allAlreadySelected = false;
+                lastRowSelected = tr;
             }
         }
         if (allAlreadySelected) {
@@ -271,6 +299,8 @@ class InstrumentSelectionShortcut {
 
                 tr.classList.remove('selected');
             }
+        } else if (lastRowSelected) {
+            lastRowSelected.scrollIntoView();
         }
         updateTarget();
     }
@@ -317,7 +347,7 @@ EditDirectiveAvailable.ready(() => {
 
         const button = document.createElement('button');
         button.classList.add('details-menu-right');
-        button.textContent = text;
+        button.textContent = text + " ";
         li.appendChild(button);
         const mdi = document.createElement('i');
         mdi.classList.add('mdi', 'mdi-menu-right');
@@ -427,5 +457,6 @@ Selection.configure = function(directive, field) {
 
     sortList();
 
+    updateSummary(Selection.target);
     Selection.changed(Selection.target);
 };
