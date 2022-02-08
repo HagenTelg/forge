@@ -2,6 +2,13 @@ const PlotInteraction = (function() {
     const timeSelectedCallbacks = new Map();
     const ROOT_URL = "{{ request.url_for('root') }}";
 
+    function sendMessageToPlot(message) {
+        if (!window.opener) {
+            return;
+        }
+        window.opener.postMessage(message, ROOT_URL);
+    }
+
     const Interaction = {
         timeSelected: function(key, cb) {
             timeSelectedCallbacks.set(key, cb);
@@ -11,22 +18,16 @@ const PlotInteraction = (function() {
         end_ms: undefined,
 
         notifyDirectiveSelected: function(directive) {
-            if (!window.opener) {
-                return;
-            }
-            window.opener.postMessage({
+            sendMessageToPlot({
                 type: "EditDirectiveSelected",
                 directive: directive,
-            }, ROOT_URL);
+            });
         },
 
         notifyDirectivesChanged: function() {
-            if (!window.opener) {
-                return;
-            }
-            window.opener.postMessage({
+            sendMessageToPlot({
                 type: "EditDirectivesChanged",
-            }, ROOT_URL);
+            });
         },
     };
 
@@ -47,6 +48,10 @@ const PlotInteraction = (function() {
                     cb(data.start_ms, data.end_ms);
                 })
             }
+        });
+
+        sendMessageToPlot({
+            type: "EditDirectivesInitialize",
         });
     });
 
