@@ -347,8 +347,11 @@ EditDirectiveAvailable.ready(() => {
 
         const button = document.createElement('button');
         button.classList.add('details-menu-right');
-        button.textContent = text + " ";
         li.appendChild(button);
+
+        const span = document.createElement('span');
+        span.textContent = text;
+        button.appendChild(span);
         const mdi = document.createElement('i');
         mdi.classList.add('mdi', 'mdi-menu-right');
         button.appendChild(mdi);

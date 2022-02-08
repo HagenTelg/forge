@@ -1,5 +1,5 @@
 {% if available_modes.enable_selection %}
-<button class="topbar-button dropdown-button" title="Change display mode">{{ mode.header_name }} <i class="mdi mdi-menu-down"></i></button>
+<button class="topbar-button dropdown-button" title="Change display mode"><span>{{ mode.header_name }}</span><i class="mdi mdi-menu-down"></i></button>
 <ul class="dropdown-content mode-list">
   {% set active_group = available_modes.active_group(mode.mode_name) %}
   {% if active_group %}
@@ -13,7 +13,7 @@
   {% for group in available_modes.groups %}
     {% if group != active_group and group.is_displayed(request, station) %}
     <li class="menu">
-      <button class="menu-button">{{ group.display_name }} <i class="mdi mdi-menu-right"></i></button>
+      <button class="menu-button"><span>{{ group.display_name }}</span><i class="mdi mdi-menu-right"></i></button>
       <ul class="menu-content">
         {% for add in group.modes %}
           {% if request.user.allow_mode(station, add.mode_name) %}

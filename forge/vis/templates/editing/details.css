@@ -59,6 +59,14 @@ li:hover > .details-menu-content {
   text-align: left;
   background: none;
 }
+button.details-menu-right {
+  width: 100%;
+  display: flex;
+  padding: 8px 4px 8px 20px;
+}
+button.details-menu-right > span {
+  flex-grow: 1;
+}
 
 
 .details-modal-footer {
@@ -194,8 +202,6 @@ nav.details-category-select button.active {
 
 select.details-combobox,
 button.details-dropdown {
-  padding: 12px 20px;
-  display: block;
   border: none;
   box-sizing: border-box;
   min-width: 150px;
@@ -207,9 +213,22 @@ button.details-dropdown {
   flex-shrink: 0;
   text-align: left;
 }
+select.details-combobox {
+  padding: 12px 20px;
+  display: block;
+}
+button.details-dropdown {
+  padding: 12px 4px 12px 20px;
+  display: flex;
+}
+button.details-dropdown > span,
+button.details-menu-right > span {
+  flex-grow: 1;
+}
 button.details-dropdown > .mdi-menu-down,
 button.details-menu-right > .mdi-menu-right {
-  float: right;
+  flex-grow: 0;
+  padding-left: 4px;
 }
 
 
