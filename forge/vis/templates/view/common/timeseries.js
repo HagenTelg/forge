@@ -273,6 +273,7 @@ var TimeSeriesCommon = {};
             this.epoch_ms = [];
             this.x = undefined;
             this.y = undefined;
+            this.x_epoch = this.epoch_ms;
 
             this.contaminationSegments = [];
             if (contaminationRecord && contaminationRecord !== '') {
@@ -311,6 +312,7 @@ var TimeSeriesCommon = {};
             this.epoch_ms.length = 0;
             this.y = undefined;
             this.x = undefined;
+            this.x_epoch = this.epoch_ms;
             this.contaminationSegments.length = 0;
             $('button.contamination-toggle').addClass('hidden');
         }
@@ -323,12 +325,15 @@ var TimeSeriesCommon = {};
             return averagingMode !== AVERAGE_NONE;
         }
 
+        needToApplyZoom() {
+            return TimeSelect.isZoomed();
+        }
+
         filterDataContamination(data) {
-            data.y.length = 0;
             let segmentIndex = 0;
             let i;
-            for (i=0; i<this.epoch_ms.length; i++) {
-                const epoch_ms = this.epoch_ms[i];
+            for (i=0; i<this.x_epoch.length; i++) {
+                const epoch_ms = this.x_epoch[i];
 
                 for (; segmentIndex < this.contaminationSegments.length; segmentIndex++) {
                     const segment = this.contaminationSegments[segmentIndex];
@@ -342,15 +347,31 @@ var TimeSeriesCommon = {};
                 }
 
                 const segment = this.contaminationSegments[segmentIndex];
-                if (epoch_ms < segment.start_ms) {
-                    data.y.push(this.y[i]);
+                if (epoch_ms >= segment.start_ms) {
+                    data.y[i] = undefined;
+                }
+            }
+        }
+
+        filterDataZoom(data) {
+            const zoomStart = TimeSelect.zoom_start_ms;
+            const zoomEnd = TimeSelect.zoom_end_ms;
+            let i;
+            for (i=0; i<this.x_epoch.length; i++) {
+                const epoch_ms = this.x_epoch[i];
+                if (epoch_ms < zoomStart) {
+                    data.y[i] = undefined;
                 } else {
-                    data.y.push(undefined);
+                    break;
                 }
             }
 
-            for (; i<this.epoch_ms.length; i++) {
-                data.y.push(this.y[i]);
+            for (let j=this.x_epoch.length-1; j > i; j--) {
+                const epoch_ms = this.x_epoch[j];
+                if (epoch_ms < zoomEnd) {
+                    break;
+                }
+                data.y[j] = undefined;
             }
         }
 
@@ -404,6 +425,7 @@ var TimeSeriesCommon = {};
 
             let outputX = [];
             let outputY = [];
+            let outputEpoch = [];
 
             let averageBegin = toAverageBegin(this.epoch_ms[0]);
             let averageEnd = toAverageEnd(averageBegin);
@@ -437,6 +459,7 @@ var TimeSeriesCommon = {};
                     averageEnd = toAverageEnd(averageBegin);
                 }
 
+                outputEpoch.push(averageBegin);
                 outputX.push(DataSocket.toPlotTime(averageBegin));
                 if (isFinite(data.y[i])) {
                     sumY += data.y[i];
@@ -451,13 +474,15 @@ var TimeSeriesCommon = {};
 
             data.x = outputX;
             data.y = outputY;
+            this.x_epoch = outputEpoch;
         }
 
         apply(data) {
             const applyContamination = this.needToApplyContamination();
             const applyAveraging = this.needToApplyAveraging();
+            const applyZoom = this.needToApplyZoom();
 
-            if (!applyContamination && !applyAveraging) {
+            if (!applyContamination && !applyAveraging && !applyZoom) {
                 if (this.y) {
                     data.y = this.y;
                     this.y = undefined;
@@ -466,25 +491,29 @@ var TimeSeriesCommon = {};
                     data.x = this.x;
                     this.x = undefined;
                 }
+                this.x_epoch = this.epoch_ms;
                 return;
             }
             if (!this.y) {
                 this.y = data.y.slice();
             }
 
+            this.x_epoch = this.epoch_ms;
             data.y.length = 0;
             for (let i=0; i<this.y.length; i++) {
                 data.y.push(this.y[i]);
             }
 
-            if (applyContamination) {
+            if (applyContamination || applyZoom) {
                 if (this.x) {
                     data.x.length = 0;
                     for (let i=0; i<this.x.length; i++) {
                         data.x.push(this.x[i]);
                     }
                 }
+            }
 
+            if (applyContamination) {
                 this.filterDataContamination(data);
             }
 
@@ -493,6 +522,10 @@ var TimeSeriesCommon = {};
                     this.x = data.x.slice();
                 }
                 this.averageData(data);
+            }
+
+             if (applyZoom) {
+                this.filterDataZoom(data);
             }
         }
 
@@ -529,6 +562,10 @@ var TimeSeriesCommon = {};
             this.config = config;
             this._queuedDisplayUpdate = undefined;
             this._dataFilters = new Map();
+
+            TimeSelect.onZoom('TimeSeriesTraces', () => {
+                this.updateDisplay(true);
+            });
         }
 
         applyUpdate() {
