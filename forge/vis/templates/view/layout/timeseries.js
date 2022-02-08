@@ -8,10 +8,6 @@ let layout = {
     //{% endif %}
 
     autosize : true,
-
-    modebar: {
-        add: ['togglespikelines'],
-    },
     hovermode: 'x',
 
     xaxis: TimeSeriesCommon.getXAxis(),

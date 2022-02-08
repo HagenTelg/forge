@@ -9,10 +9,6 @@ let layout = {
     hovermode: 'x',
     xaxis: TimeSeriesCommon.getXAxis(),
 
-    modebar: {
-        add: ['togglespikelines'],
-    },
-
     grid: {
         columns: 1,
         rows: 2,

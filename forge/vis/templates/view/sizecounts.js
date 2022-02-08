@@ -2,6 +2,7 @@ shapeHandler.generators.push(TimeSeriesCommon.getTimeHighlights);
 TimeSeriesCommon.updateShapes = function() { shapeHandler.update(); }
 
 TimeSeriesCommon.addSymbolToggleButton(traces);
+TimeSeriesCommon.addHoverControlButton(traces);
 //{% if not realtime %}
 TimeSeriesCommon.addContaminationToggleButton(traces);
 //{% endif %}
@@ -113,4 +114,3 @@ TimeSeriesCommon.installZoomHandler(div);
 //{% else %}
 TimeSeriesCommon.installZoomHandler(div, true);
 //{% endif %}
-TimeSeriesCommon.installSpikeToggleHandler(div);

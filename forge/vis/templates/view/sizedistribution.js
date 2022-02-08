@@ -3,6 +3,7 @@ TimeSeriesCommon.updateShapes = function() { shapeHandler.update(); }
 
 
 TimeSeriesCommon.addSymbolToggleButton(traces);
+TimeSeriesCommon.addHoverControlButton(traces);
 
 
 DataSocket.resetLoadedRecords();
@@ -177,4 +178,3 @@ TimeSeriesCommon.installZoomHandler(div);
 //{% else %}
 TimeSeriesCommon.installZoomHandler(div, true);
 //{% endif %}
-TimeSeriesCommon.installSpikeToggleHandler(div);

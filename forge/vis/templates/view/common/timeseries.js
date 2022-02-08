@@ -218,6 +218,75 @@ var TimeSeriesCommon = {};
         });
     }
 
+    const HOVER_SEPARATE = 0;
+    const HOVER_SINGLE_POINT = 1;
+    const HOVER_COMBINED = 2;
+    const HOVER_OFF = 3;
+    let hoverMode = HOVER_SEPARATE;
+    TimeSeriesCommon.addHoverControlButton = function(traces) {
+        const button = document.createElement('button');
+        document.getElementById('control_bar').appendChild(button);
+        button.classList.add('mdi', 'mdi-format-list-text');
+        button.title = 'Cycle data hover mode (current: separate labels)';
+
+        function setYSpikes(enable) {
+            for (const parameter of Object.keys(traces.layout)) {
+                if (!parameter.startsWith('yaxis')) {
+                    continue;
+                }
+                const axis = traces.layout[parameter];
+                axis.showspikes = enable;
+            }
+        }
+
+        traces.layout.hovermode = 'x';
+        traces.layout.xaxis.showspikes  = false
+        setYSpikes(false);
+
+        $(button).click(function(event) {
+            event.preventDefault();
+            switch (hoverMode) {
+            case HOVER_SEPARATE:
+                hoverMode = HOVER_SINGLE_POINT;
+                button.classList.remove('mdi-format-list-text', 'mdi-near-me', 'mdi-tooltip-text-outline', 'mdi-tooltip-outline');
+                button.classList.add('mdi-near-me');
+                button.title = 'Cycle data hover mode (current: single point)';
+                traces.layout.hovermode = 'closest';
+                traces.layout.xaxis.showspikes  = true;
+                setYSpikes(true);
+                break;
+            case HOVER_SINGLE_POINT:
+                hoverMode = HOVER_COMBINED;
+                button.classList.remove('mdi-format-list-text', 'mdi-near-me', 'mdi-tooltip-text-outline', 'mdi-tooltip-outline');
+                button.classList.add('mdi-tooltip-text-outline');
+                button.title = 'Cycle data hover mode (current: combined information)';
+                traces.layout.hovermode = 'x unified';
+                traces.layout.xaxis.showspikes  = true;
+                setYSpikes(false);
+                break;
+            case HOVER_COMBINED:
+                hoverMode = HOVER_OFF;
+                button.classList.remove('mdi-format-list-text', 'mdi-near-me', 'mdi-tooltip-text-outline', 'mdi-sine-wave');
+                button.classList.add('mdi-tooltip-outline');
+                button.title = 'Cycle data hover mode (current: disabled)';
+                traces.layout.hovermode = false;
+                traces.layout.xaxis.showspikes  = false;
+                setYSpikes(false);
+                break;
+            default:
+                hoverMode = HOVER_SEPARATE;
+                button.classList.remove('mdi-format-list-text', 'mdi-near-me', 'mdi-tooltip-text-outline', 'mdi-tooltip-outline');
+                button.classList.add('mdi-format-list-text');
+                button.title = 'Cycle data hover mode (current: separate labels)';
+                traces.layout.hovermode = 'x';
+                traces.layout.xaxis.showspikes  = false;
+                setYSpikes(false);
+                break;
+            }
+            traces.updateDisplay(true);
+        });
+    }
+
     TimeSeriesCommon.installZoomHandler = function(div, realtime) {
         div.on('plotly_relayout', function(data) {
             const start_time = data['xaxis.range[0]'];
@@ -248,24 +317,6 @@ var TimeSeriesCommon = {};
                 'xaxis.range[1]': DataSocket.toPlotTime(end_ms),
             });
         }
-    }
-
-    TimeSeriesCommon.installSpikeToggleHandler = function(div) {
-        div.on('plotly_relayout', function(data) {
-            const showspikes = data['xaxis.showspikes'];
-            if (showspikes === undefined) {
-                return;
-            }
-            if (showspikes) {
-                Plotly.relayout(div, {
-                    hovermode: 'closest',
-                });
-            } else {
-                Plotly.relayout(div, {
-                    hovermode: 'x',
-                });
-            }
-        });
     }
 
     class DataFilter {

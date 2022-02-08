@@ -105,4 +105,3 @@ TimeSelect.onIntervalHeartbeat = function() {
 DataSocket.onRecordReload();
 
 TimeSeriesCommon.installZoomHandler(div);
-TimeSeriesCommon.installSpikeToggleHandler(div);
