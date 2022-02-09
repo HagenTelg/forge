@@ -669,7 +669,7 @@ def _modify_directive(user: BaseAccessUser, station: str, profile: str,
             'Type': 'CommentChanged',
             'OriginalComment': existing.get('Comment'),
         })
-        existing['Comment'] = modification.get('author')
+        existing['Comment'] = modification.get('comment')
 
     was_enabled = not existing.get('Disabled')
     is_enabled = not modification.get('deleted')
