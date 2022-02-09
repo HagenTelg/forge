@@ -46,7 +46,7 @@ let TimeParse = {};
         if (reference) {
             return (new Date(Math.round(reference))).getUTCFullYear();
         } else {
-            return (new Date.now()).getUTCFullYear();
+            return (new Date()).getUTCFullYear();
         }
     }
 
