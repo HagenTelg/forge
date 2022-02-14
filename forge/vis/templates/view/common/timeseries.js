@@ -49,8 +49,8 @@ var TimeSeriesCommon = {};
                 y1: 1,
                 opacity: 0.6,
                 line: {
-                    width: 1,
-                    color: '#000000',
+                    width: 2,
+                    color: '#44aaff',
                 }
             });
         } else {
@@ -62,10 +62,11 @@ var TimeSeriesCommon = {};
                 y0: 0,
                 x1: DataSocket.toPlotTime(end_ms),
                 y1: 1,
-                fillcolor: '#d3d3d3',
-                opacity: 0.2,
+                fillcolor: '#44aaff',
+                opacity: 0.4,
                 line: {
-                    width: 0
+                    width: 2,
+                    color: '#44aaff',
                 }
             });
         }
