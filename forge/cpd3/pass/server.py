@@ -63,7 +63,7 @@ class _PassOperation:
 
         _LOGGER.info(f"Flagged passed data for {self.station} {self.profile} {self.start_epoch} {self.end_epoch}")
 
-    async def is_blocking(self, station: str):
+    def is_blocking(self, station: str):
         return self.station == station
 
     async def wait_for_done(self):
@@ -71,7 +71,7 @@ class _PassOperation:
 
 
 _queued_updates: typing.List[_PassOperation] = list()
-_new_queued_update = asyncio.Event()
+_new_queued_update: asyncio.Event = None
 
 
 async def _process_queue() -> typing.NoReturn:
@@ -169,6 +169,10 @@ class Server(UnixServer):
 
 def main():
     asyncio.set_event_loop(asyncio.new_event_loop())
+
+    global _new_queued_update
+    _new_queued_update = asyncio.Event()
+
     server = Server()
     background_task(_process_queue())
     server.run()
