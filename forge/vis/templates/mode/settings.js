@@ -13,6 +13,11 @@ if (localStorage.getItem('forge-settings-time-format') === 'doy') {
     useDOY.checked = true;
 }
 
+const alwaysShowEditDirectives = document.getElementById('always_show_edits');
+if (localStorage.getItem('forge-always-show-edit-directives')) {
+    alwaysShowEditDirectives.checked = true;
+}
+
 $('#apply_settings').click(function(event) {
     event.preventDefault();
 
@@ -30,6 +35,11 @@ $('#apply_settings').click(function(event) {
         localStorage.setItem('forge-settings-time-format', 'doy');
     } else {
         localStorage.removeItem('forge-settings-time-format');
+    }
+    if (alwaysShowEditDirectives.checked) {
+        localStorage.setItem('forge-always-show-edit-directives', '1');
+    } else {
+        localStorage.removeItem('forge-always-show-edit-directives');
     }
 
     this.blur();

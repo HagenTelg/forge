@@ -17,6 +17,10 @@ class Mode(ABC):
     def header_name(self):
         return self.display_name
 
+    @property
+    def display_edit_directives(self):
+        return False
+
 
 class ModeGroup:
     def __init__(self, display_name: str, modes: typing.Optional[typing.List[Mode]] = None):
@@ -42,6 +46,13 @@ class ModeGroup:
                 return True
         return False
 
+    @property
+    def display_edit_directives(self) -> typing.Optional[str]:
+        for mode in self.modes:
+            if mode.display_edit_directives:
+                return mode.mode_name
+        return None
+
 
 class VisibleModes:
     def __init__(self, groups: typing.Optional[typing.List[ModeGroup]] = None):
@@ -65,4 +76,12 @@ class VisibleModes:
         for group in self.groups:
             if group.contains_mode(mode_name):
                 return group
+        return None
+
+    def display_edit_directives(self, mode_name: str) -> typing.Optional[str]:
+        for group in self.groups:
+            if group.contains_mode(mode_name):
+                directives = group.display_edit_directives
+                if directives:
+                    return directives
         return None

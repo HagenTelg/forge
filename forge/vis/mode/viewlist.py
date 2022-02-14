@@ -61,6 +61,10 @@ class ViewList(Mode):
 
 
 class Editing(ViewList):
+    @property
+    def display_edit_directives(self):
+        return True
+
     async def __call__(self, request: Request, **kwargs) -> Response:
         return HTMLResponse(await package_template('mode', 'editing.html').render_async(
             mode=self,

@@ -10,6 +10,8 @@
 </head>
 <body>
 
+{% set edit_directives_mode = mode.mode_name %}
+
 <div class="center-content">
   <nav class="sidebar" title="Available displays">
     <ul>
@@ -54,6 +56,8 @@
 {% include 'mode/viewlist.js' %}
 })();
 (function() {
+{% include 'mode/edit_directives.js' %}
+
 {% include 'mode/editing.js' %}
 })();
 </script>
