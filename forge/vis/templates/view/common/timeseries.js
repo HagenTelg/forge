@@ -693,10 +693,6 @@ var TimeSeriesCommon = {};
     }
 
     TimeSeriesCommon.RealtimeTraces = class extends TimeSeriesCommon.Traces {
-        constructor(div, data, layout, config) {
-            super(div, data, layout, config);
-        }
-
         updateTimeBounds() {
             TimeSelect.setIntervalBounds();
             super.updateTimeBounds();

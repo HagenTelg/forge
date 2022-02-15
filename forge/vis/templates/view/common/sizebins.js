@@ -45,6 +45,7 @@ var SizeBins = {};
                     xaxis: this.xaxis,
                     yaxis: this.yaxis,
                     boxpoints: false,
+                    orientation: 'v',
                     line: {
                         color: '#000',
                         width: 1,
@@ -65,7 +66,9 @@ var SizeBins = {};
             return changed;
         }
 
-        updateFit(index, averageBin) {
+        updateBin(index) {
+            const averageBin = this._getAverageBin(index);
+
             function fitMean(y) {
                 let sum = 0.0;
                 let count = 0;
@@ -79,18 +82,70 @@ var SizeBins = {};
                 return sum / count;
             }
 
-            this._getAverageFitPoint(index).y[index] = fitMean(averageBin.y);
+            function quantile(sorted, q) {
+                if (sorted.length === 0) {
+                    return undefined;
+                }
+                if (sorted.length === 1) {
+                    return sorted[0];
+                }
+                let center = q * (sorted.length - 1);
+                const upper = Math.ceil(center);
+                const lower = Math.floor(center);
+                if (upper === lower) {
+                    return sorted[lower];
+                }
+
+                center -= lower;
+                return sorted[upper] * (center) + sorted[lower] * (1.0 - center);
+            }
+
+            const sorted = averageBin.y.slice();
+            for (let i=0; i<sorted.length; ) {
+                if (!isFinite(sorted[i])) {
+                    sorted.splice(i, 1);
+                } else {
+                    i++;
+                }
+            }
+            sorted.sort((a, b) => {
+                if (a < b) {
+                    return -1;
+                } else if (a > b) {
+                    return 1;
+                }
+                return 0;
+            });
+
+            if (sorted.length === 0) {
+                this._getAverageFitPoint(index).y[index] = undefined;
+                averageBin.visible = false;
+                return;
+            }
+
+            averageBin.visible = true;
+            averageBin.median = [quantile(sorted, 0.5)];
+            averageBin.q1 = [quantile(sorted, 0.25)];
+            averageBin.q3 = [quantile(sorted, 0.75)];
+            averageBin.lowerfence = [quantile(sorted, 0.05)];
+            averageBin.upperfence = [quantile(sorted, 0.95)];
+
+            this._getAverageFitPoint(index).y[index] = fitMean(sorted);
         }
 
         addPoint(index, v, epoch_ms) {
             if (!isFinite(v)) {
-                return undefined;
+                return;
             }
 
             const averageBin = this._getAverageBin(index);
             averageBin.y.push(v);
-            this.updateFit(index, averageBin);
-            return averageBin;
+        }
+
+        recalculateBins() {
+            for (let i=this._startIndex; i<this.data.length; i++) {
+                this.updateBin(i - this._startIndex);
+            }
         }
     }
 
@@ -109,10 +164,8 @@ var SizeBins = {};
         }
 
         addPoint(index, v, epoch_ms) {
-            const averageBin = super.addPoint(index, v, epoch_ms);
-            if (!averageBin) {
-                return;
-            }
+            const averageBin = this._getAverageBin(index);
+            averageBin.y.push(v);
 
             const times = this._getDataTime(index);
             times.push(epoch_ms);
@@ -129,13 +182,10 @@ var SizeBins = {};
                     break;
                 }
             }
-            if (countDiscard <= 0) {
-                return;
+            if (countDiscard > 0) {
+                times.slice(0, countDiscard);
+                averageBin.y.slice(0, countDiscard);
             }
-
-            times.slice(0, countDiscard);
-            averageBin.y.slice(0, countDiscard);
-            this.updateFit(index, averageBin);
         }
     }
 })();

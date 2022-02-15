@@ -146,8 +146,15 @@ Plotly.newPlot(div, data, layout, config);
 const shapeHandler = new ShapeHandler(div);
 
 // {% if not realtime %}
-const traces = new TimeSeriesCommon.Traces(div, data, layout, config);
+const TracesBase = TimeSeriesCommon.Traces;
 // {% else %}
-const traces = new TimeSeriesCommon.RealtimeTraces(div, data, layout, config);
+const TracesBase = TimeSeriesCommon.RealtimeTraces;
 // {% endif %}
 
+
+const traces = new (class extends TracesBase {
+    applyUpdate() {
+        bins.recalculateBins();
+        super.applyUpdate();
+    }
+})(div, data, layout, config);
