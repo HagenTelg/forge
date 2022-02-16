@@ -172,7 +172,7 @@ displayEditDirectiveDetails = function(originalDirective, onsave) {
         directive = {
             start_epoch_ms: PlotInteraction.start_ms,
             end_epoch_ms: PlotInteraction.end_ms,
-            author: "{{ request.user.initials }}",
+            author: "{{ request.user.initials|e }}",
             action: 'invalidate',
             condition: { type: 'none' },
             comment: "",
