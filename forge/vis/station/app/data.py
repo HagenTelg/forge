@@ -128,7 +128,7 @@ station_profile_data['aerosol']['raw']['nephstatus2'] = lambda station, start_ep
         Name(station, 'raw', 'Al_S12', {'pm25'}): 'Al',
     }, send
 )
-station_profile_data['aerosol']['raw']['nephzero2'] = {
+station_profile_data['aerosol']['realtime']['nephzero2'] = {
     RealtimeTranslator.Key('BswB_S12'): 'BswB',
     RealtimeTranslator.Key('BswG_S12'): 'BswG',
     RealtimeTranslator.Key('BswR_S12'): 'BswR',
@@ -136,7 +136,7 @@ station_profile_data['aerosol']['raw']['nephzero2'] = {
     RealtimeTranslator.Key('BbswG_S12'): 'BbswG',
     RealtimeTranslator.Key('BbswR_S12'): 'BbswR',
 }
-station_profile_data['aerosol']['raw']['nephstatus2'] = {
+station_profile_data['aerosol']['realtime']['nephstatus2'] = {
     RealtimeTranslator.Key('CfG_S12'): 'CfG',
     RealtimeTranslator.Key('CfG_S12', {'pm10'}): 'CfG',
     RealtimeTranslator.Key('CfG_S12', {'pm1'}): 'CfG',

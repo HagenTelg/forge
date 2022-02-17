@@ -82,7 +82,7 @@ station_profile_data['aerosol']['raw']['grimm'] = lambda station, start_epoch_ms
         Name(station, 'raw', 'Nb_N11'): 'dN',
     }, send
 )
-station_profile_data['aerosol']['raw']['grimm'] = {
+station_profile_data['aerosol']['realtime']['grimm'] = {
     RealtimeTranslator.Key('Ns_N11'): 'Dp',
     RealtimeTranslator.Key('Nn_N11'): 'dNdlogDp',
     RealtimeTranslator.Key('Nb_N11'): 'dN',
@@ -126,7 +126,7 @@ station_profile_data['aerosol']['raw']['grimmstatus'] = lambda station, start_ep
         Name(station, 'raw', 'Q_N11'): 'Qsample',
     }, send
 )
-station_profile_data['aerosol']['raw']['grimmstatus'] = {
+station_profile_data['aerosol']['realtime']['grimmstatus'] = {
     RealtimeTranslator.Key('Q_N11'): 'Qsample',
 }
 

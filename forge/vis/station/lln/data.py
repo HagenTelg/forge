@@ -459,7 +459,7 @@ station_profile_data['aerosol']['raw']['tcastatus'] = lambda station, start_epoc
         Name(station, 'raw', 'Q2_M81'): 'Qanalytic',
     }, send
 )
-station_profile_data['aerosol']['raw']['tcastatus'] = {
+station_profile_data['aerosol']['realtime']['tcastatus'] = {
     RealtimeTranslator.Key('X2_M81'): 'CO2',
     RealtimeTranslator.Key('T1_M81'): 'Tchamber1',
     RealtimeTranslator.Key('T2_M81'): 'Tchamber2',

@@ -318,7 +318,7 @@ station_profile_data['aerosol']['raw']['hurricane'] = lambda station, start_epoc
         Name(station, 'raw', 'Bs_S81'): 'Bs',
     }, send
 )
-station_profile_data['aerosol']['raw']['hurricane'] = {
+station_profile_data['aerosol']['realtime']['hurricane'] = {
     RealtimeTranslator.Key('WI_XM3'): 'precipitation',
     RealtimeTranslator.Key('WS_XM3'): 'WS',
     RealtimeTranslator.Key('P_XM3'): 'pressure',

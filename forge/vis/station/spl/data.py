@@ -95,7 +95,7 @@ station_profile_data['aerosol']['raw']['ccnstatus'] = lambda station, start_epoc
         Name(station, 'raw', 'Uc_N73'): 'SScalc',
     }, send
 )
-station_profile_data['aerosol']['raw']['ccnstatus'] = {
+station_profile_data['aerosol']['realtime']['ccnstatus'] = {
     RealtimeTranslator.Key('Tu_N73'): 'Tinlet',
     RealtimeTranslator.Key('T1_N73'): 'Ttec1',
     RealtimeTranslator.Key('T2_N73'): 'Ttec2',

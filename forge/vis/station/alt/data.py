@@ -236,7 +236,7 @@ station_profile_data['aerosol']['raw']['clapstatus2'] = lambda station, start_ep
         Name(station, 'raw', 'Fn_A12'): 'spot',
     }, send
 )
-station_profile_data['aerosol']['raw']['clapstatus2'] = {
+station_profile_data['aerosol']['realtime']['clapstatus2'] = {
     RealtimeTranslator.Key('IrG_A12'): 'IrG',
     RealtimeTranslator.Key('IrG_A12', {'pm10'}): 'IrG',
     RealtimeTranslator.Key('IrG_A12', {'pm1'}): 'IrG',

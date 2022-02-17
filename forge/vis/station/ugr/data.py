@@ -206,19 +206,19 @@ station_profile_data['aerosol']['raw']['samplepressure-pm1'] = lambda station, s
         Name(station, 'raw', 'P_S12', {'pm1'}): 'neph2',
     }, send
 )
-station_profile_data['aerosol']['raw']['samplepressure-whole'] = {
+station_profile_data['aerosol']['realtime']['samplepressure-whole'] = {
     RealtimeTranslator.Key('P_S11'): 'neph',
     RealtimeTranslator.Key('P_S12'): 'neph2',
 }
-station_profile_data['aerosol']['raw']['samplepressure-pm10'] = {
+station_profile_data['aerosol']['realtime']['samplepressure-pm10'] = {
     RealtimeTranslator.Key('P_S11', {'pm10'}): 'neph',
     RealtimeTranslator.Key('P_S12', {'pm10'}): 'neph2',
 }
-station_profile_data['aerosol']['raw']['samplepressure-pm25'] = {
+station_profile_data['aerosol']['realtime']['samplepressure-pm25'] = {
     RealtimeTranslator.Key('P_S11', {'pm25'}): 'neph',
     RealtimeTranslator.Key('P_S12', {'pm25'}): 'neph2',
 }
-station_profile_data['aerosol']['raw']['samplepressure-pm1'] = {
+station_profile_data['aerosol']['realtime']['samplepressure-pm1'] = {
     RealtimeTranslator.Key('P_S11', {'pm1'}): 'neph',
     RealtimeTranslator.Key('P_S12', {'pm1'}): 'neph2',
 }
@@ -238,7 +238,7 @@ station_profile_data['aerosol']['raw']['ccnstatus'] = lambda station, start_epoc
         Name(station, 'raw', 'Uc_N21'): 'SScalc',
     }, send
 )
-station_profile_data['aerosol']['raw']['ccnstatus'] = {
+station_profile_data['aerosol']['realtime']['ccnstatus'] = {
     RealtimeTranslator.Key('Tu_N21'): 'Tinlet',
     RealtimeTranslator.Key('T1_N21'): 'Ttec1',
     RealtimeTranslator.Key('T2_N21'): 'Ttec2',
