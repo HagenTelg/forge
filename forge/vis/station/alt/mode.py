@@ -110,7 +110,7 @@ station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-smps', "SMPS")
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-grimm', "Grimm OPC"),
                                     'aerosol-raw-smps')
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-grimm', "Grimm OPC"),
-                                         'aerosol-realtime-smps')
+                                         'aerosol-realtime-ae33')
 station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-grimm', "Grimm OPC"),
                                         'aerosol-editing-smps')
 station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-grimm', "Grimm OPC"),
