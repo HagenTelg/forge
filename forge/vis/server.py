@@ -15,6 +15,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from forge.const import STATIONS
 from . import CONFIGURATION
 from .util import package_data, package_template, TEMPLATE_ENV
+from forge.vis.mode.assemble import default_mode
 import forge.vis.access.authentication
 import forge.vis.view.server
 import forge.vis.mode.server
@@ -55,6 +56,11 @@ async def _root(request: Request) -> Response:
         default_station = default_station.lower()
         if default_station not in visible_stations:
             default_station = None
+    if not default_station:
+        for station in visible_stations:
+            if default_mode(request, station) is not None:
+                default_station = station
+                break
     if not default_station:
         default_station = visible_stations[0]
     return HTMLResponse(await package_template('index.html').render_async(
