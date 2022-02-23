@@ -10,9 +10,12 @@ from ..default.met.editing.wind import EditingWindDirection as MetEditingWindDir
 from ..default.met.editing.temperature import EditingTemperature as MetEditingTemperature
 from ..default.met.editing.precipitation import EditingPrecipitation as MetEditingPrecipitation
 from ..default.met.editing.tower import EditingTowerTemperatureDifference as MetEditingTowerTemperatureDifference
+from .contamination import EditingContaminationDetails
 
 
 station_views = detach(aerosol_views, ozone_views, met_views)
+
+station_views['aerosol-editing-contaminationdetails'] = EditingContaminationDetails()
 
 measurements = OrderedDict([
     ('{code}ambient', '{type} at 2m'),
