@@ -631,6 +631,10 @@ let TimeParse = {};
     TimeSelect.resetTimeRange = function() {
         TimeSelect.change(original_start_ms, original_end_ms);
     }
+    TimeSelect.updateResetRange = function() {
+        original_start_ms = TimeSelect.start_ms;
+        original_end_ms = TimeSelect.end_ms;
+    }
 
     let original_interval_ms = TimeSelect.interval_ms;
     TimeSelect.resetInterval = function() {

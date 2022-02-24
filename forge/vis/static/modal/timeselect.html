@@ -110,6 +110,8 @@
     const endTimeEntry = document.getElementById('input-end-time');
     const endTimeDisplay = document.getElementById('parsed-end-time');
 
+    let updateResetOnApply = false;
+
     $('#timeselect-apply').click(function(event) {
         event.preventDefault();
         hideModal();
@@ -123,15 +125,20 @@
         }
 
         TimeSelect.change(parsedStart, parsedEnd);
+        if (updateResetOnApply) {
+            TimeSelect.updateResetRange();
+        }
     });
     $('#timeselect-reset').click(function(event) {
         event.preventDefault();
         hideModal();
+        updateResetOnApply = false;
         TimeSelect.resetTimeRange();
     });
     $('#timeselect-default').click(function(event) {
         event.preventDefault();
         hideModal();
+        updateResetOnApply = false;
         TimeSelect.setDefaultTimeRange();
     });
 
@@ -140,6 +147,7 @@
 
     function startTimeEdited() {
         haveEditedStart = true;
+        updateResetOnApply = false;
 
         const parsedEnd = TimeParse.parseTime(endTimeEntry.value, TimeSelect.start_ms, 1);
         const parsedStart = TimeParse.parseTime(startTimeEntry.value, parsedEnd, -1);
@@ -173,6 +181,7 @@
 
     function endTimeEdited() {
         haveEditedEnd = true;
+        updateResetOnApply = false;
 
         const parsedStart = TimeParse.parseTime(startTimeEntry.value, TimeSelect.end_ms, -1);
         const parsedEnd = TimeParse.parseTime(endTimeEntry.value, parsedStart, 1);
@@ -238,6 +247,7 @@
         endTimeDisplay.classList.remove('invalid');
 
         unzoomButton.style.display = 'none';
+        updateResetOnApply = false;
     });
 
     const unpassedButton = document.getElementById('timeselect-unpassed');
@@ -275,6 +285,8 @@
               startTimeEntry.value = startTimeDisplay.textContent = TimeParse.toDisplayTime(startUnpassed);
               endTimeEntry.value = "1w";
               endTimeDisplay.textContent = TimeParse.toDisplayTime(startUnpassed + 7 * 86400 * 1000);
+
+              updateResetOnApply = true;
           }).always(function() {
               unpassedButton.style.display = 'none';
           });
