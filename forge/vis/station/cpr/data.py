@@ -174,18 +174,22 @@ station_profile_data['aerosol']['avgh']['clouds'] = lambda station, start_epoch_
 
 station_profile_data['aerosol']['raw']['hurricane'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
-        Name(station, 'raw', 'WI_XM3'): 'precipitation',
         Name(station, 'raw', 'WS_XM3'): 'WS',
-        Name(station, 'raw', 'P_XM3'): 'pressure',
+        Name(station, 'raw', 'WD_XM3'): 'WD',
+        Name(station, 'raw', 'P_S81'): 'P',
+        Name(station, 'raw', 'T_S81'): 'T',
+        Name(station, 'raw', 'U_S81'): 'U',
         Name(station, 'raw', 'Ipa_S81'): 'IBsa',
         Name(station, 'raw', 'Ipb_S81'): 'IBsb',
         Name(station, 'raw', 'Bs_S81'): 'Bs',
     }, send
 )
 station_profile_data['aerosol']['realtime']['hurricane'] = {
-    RealtimeTranslator.Key('WI_XM3'): 'precipitation',
     RealtimeTranslator.Key('WS_XM3'): 'WS',
-    RealtimeTranslator.Key('P_XM3'): 'pressure',
+    RealtimeTranslator.Key('WD_XM3'): 'WD',
+    RealtimeTranslator.Key('P_S81'): 'P',
+    RealtimeTranslator.Key('U_S81'): 'U',
+    RealtimeTranslator.Key('T_S81'): 'T',
     RealtimeTranslator.Key('Ipa_S81'): 'IBsa',
     RealtimeTranslator.Key('Ipb_S81'): 'IBsb',
     RealtimeTranslator.Key('Bs_S81'): 'Bs',

@@ -24,7 +24,7 @@ station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-cpcsta
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-hurricane', "Hurricane Hardened"),
                                     'aerosol-raw-umacstatus')
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-raw-hurricane', "Hurricane Hardened"),
-                                         'aerosol-raw-umacstatus')
+                                         'aerosol-realtime-umacstatus')
 
 
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:
