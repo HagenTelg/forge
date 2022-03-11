@@ -136,85 +136,147 @@ var TimeSeriesCommon = {};
     }
 
     let hideContaminatedData = false;
-    TimeSeriesCommon.addContaminationToggleButton = function(traces) {
-        const button = document.createElement('button');
-        document.getElementById('control_bar').appendChild(button);
-        button.classList.add('mdi', 'mdi-filter');
-        button.classList.add('contamination-toggle');
-        button.classList.add('hidden');
-        button.title = 'Toggle displaying contaminated data';
-        $(button).click(function(event) {
-            event.preventDefault();
-            hideContaminatedData = !hideContaminatedData;
-            $(this).toggleClass('mdi-filter mdi-filter-off');
-            traces.updateDisplay(true);
-        });
-    }
-
-    TimeSeriesCommon.addSymbolToggleButton = function(traces) {
-        const button = document.createElement('button');
-        document.getElementById('control_bar').appendChild(button);
-        button.classList.add('mdi', 'mdi-chart-line-variant');
-        button.title = 'Toggle data point symbol display';
-        $(button).click(function(event) {
-            event.preventDefault();
-            $(this).toggleClass('mdi-chart-bubble mdi-chart-line-variant');
-            traces.data.forEach((trace) => {
-                if (trace.mode === 'lines') {
-                    trace.mode = 'lines+markers';
-                } else if (trace.mode === 'lines+markers') {
-                    trace.mode = 'lines';
-                }
-            });
-            traces.updateDisplay(true);
-        });
-    }
 
     const AVERAGE_NONE = 0;
     const AVERAGE_HOUR = 1;
     const AVERAGE_DAY = 2;
     const AVERAGE_MONTH = 3;
-    let averagingMode = AVERAGE_NONE;
+    let averagingMode = sessionStorage.getItem('forge-plot-average-mode') || AVERAGE_NONE;
+    averagingMode = averagingMode * 1;
+    if (averagingMode !== AVERAGE_NONE) {
+        hideContaminatedData = true;
+    }
+    if (sessionStorage.getItem('forge-plot-hide-contamination') !== null) {
+        hideContaminatedData = sessionStorage.getItem('forge-plot-hide-contamination') === "1";
+    }
+
+    TimeSeriesCommon.addContaminationToggleButton = function(traces) {
+        const button = document.createElement('button');
+        document.getElementById('control_bar').appendChild(button);
+        button.classList.add('mdi', 'contamination-toggle', 'hidden');
+        button.title = 'Toggle displaying contaminated data';
+
+        function apply() {
+            if (hideContaminatedData) {
+                button.classList.remove('mdi-filter');
+                button.classList.add('mdi-filter-off');
+            } else {
+                button.classList.remove('mdi-filter-off');
+                button.classList.add('mdi-filter');
+            }
+        }
+        apply();
+
+        $(button).click(function(event) {
+            event.preventDefault();
+            hideContaminatedData = !hideContaminatedData;
+            sessionStorage.setItem('forge-plot-hide-contamination', hideContaminatedData && "1" || "0");
+            apply();
+            traces.updateDisplay(true);
+        });
+    }
+
+    let showSymbols = false;
+    if (sessionStorage.getItem('forge-plot-show-symbols') !== null) {
+        showSymbols = sessionStorage.getItem('forge-plot-show-symbols') === "1";
+    }
+    TimeSeriesCommon.addSymbolToggleButton = function(traces) {
+        const button = document.createElement('button');
+        document.getElementById('control_bar').appendChild(button);
+        button.classList.add('mdi', 'mdi-chart-line-variant');
+        button.title = 'Toggle data point symbol display';
+
+        function apply() {
+            if (showSymbols) {
+                button.classList.remove('mdi-chart-line-variant');
+                button.classList.add('mdi-chart-bubble');
+                traces.data.forEach((trace) => {
+                    if (trace.mode === 'lines') {
+                        trace.mode = 'lines+markers';
+                    }
+                });
+            } else {
+                button.classList.remove('mdi-chart-bubble');
+                button.classList.add('mdi-chart-line-variant');
+                traces.data.forEach((trace) => {
+                    if (trace.mode === 'lines+markers') {
+                        trace.mode = 'lines';
+                    }
+                });
+            }
+        }
+        apply();
+
+        $(button).click(function(event) {
+            event.preventDefault();
+            showSymbols = !showSymbols;
+            sessionStorage.setItem('forge-plot-show-symbols', showSymbols && "1" || "0");
+            apply();
+            traces.updateDisplay(true);
+        });
+    }
+
     TimeSeriesCommon.addAveragingButton = function(traces) {
         const button = document.createElement('button');
         document.getElementById('control_bar').appendChild(button);
-        button.classList.add('mdi', 'mdi-sine-wave');
-        button.title = 'Cycle data averaging modes (current: no averaging)';
-        $(button).click(function(event) {
-            event.preventDefault();
+        button.classList.add('mdi');
+
+        function apply() {
             switch (averagingMode) {
-            case AVERAGE_NONE:
-                if (!hideContaminatedData) {
-                    $('button.contamination-toggle').click();
-                }
-                averagingMode = AVERAGE_HOUR;
-                button.classList.remove('mdi', 'mdi-sine-wave');
-                button.classList.add('character-icon');
-                button.textContent = "H";
-                button.title = 'Cycle data averaging modes (current: one hour average)';
-                break;
-            case AVERAGE_HOUR:
-                averagingMode = AVERAGE_DAY;
-                button.classList.remove('mdi', 'mdi-sine-wave');
-                button.classList.add('character-icon');
-                button.textContent = "D";
-                button.title = 'Cycle data averaging modes (current: one day average)';
-                break;
-            case AVERAGE_DAY:
-                averagingMode = AVERAGE_MONTH;
-                button.classList.remove('mdi', 'mdi-sine-wave');
-                button.classList.add('character-icon');
-                button.textContent = "M";
-                button.title = 'Cycle data averaging modes (current: monthly average)';
-                break;
             default:
-                averagingMode = AVERAGE_NONE;
                 button.classList.add('mdi', 'mdi-sine-wave');
                 button.classList.remove('character-icon');
                 button.textContent = "";
                 button.title = 'Cycle data averaging modes (current: no averaging)';
                 break;
+            case AVERAGE_HOUR:
+                button.classList.remove('mdi', 'mdi-sine-wave');
+                button.classList.add('character-icon');
+                button.textContent = "H";
+                button.title = 'Cycle data averaging modes (current: one hour average)';
+                break;
+            case AVERAGE_DAY:
+                 button.classList.remove('mdi', 'mdi-sine-wave');
+                button.classList.add('character-icon');
+                button.textContent = "D";
+                button.title = 'Cycle data averaging modes (current: one day average)';
+                break;
+            case AVERAGE_MONTH:
+                button.classList.remove('mdi', 'mdi-sine-wave');
+                button.classList.add('character-icon');
+                button.textContent = "M";
+                button.title = 'Cycle data averaging modes (current: monthly average)';
+                break;
             }
+        }
+        apply();
+
+        $(button).click(function(event) {
+            event.preventDefault();
+            switch (averagingMode) {
+            case AVERAGE_NONE:
+                if (!hideContaminatedData && sessionStorage.getItem('forge-plot-hide-contamination') === null) {
+                    $('button.contamination-toggle').click();
+                    sessionStorage.removeItem('forge-plot-hide-contamination');
+                }
+                averagingMode = AVERAGE_HOUR;
+                break;
+            case AVERAGE_HOUR:
+                averagingMode = AVERAGE_DAY;
+                break;
+            case AVERAGE_DAY:
+                averagingMode = AVERAGE_MONTH;
+                break;
+            default:
+                if (hideContaminatedData && sessionStorage.getItem('forge-plot-hide-contamination') === null) {
+                    $('button.contamination-toggle').click();
+                    sessionStorage.removeItem('forge-plot-hide-contamination');
+                }
+                averagingMode = AVERAGE_NONE;
+                break;
+            }
+            sessionStorage.setItem('forge-plot-average-mode', averagingMode.toString())
+            apply();
             traces.updateDisplay(true);
         });
     }
@@ -223,12 +285,12 @@ var TimeSeriesCommon = {};
     const HOVER_SINGLE_POINT = 1;
     const HOVER_COMBINED = 2;
     const HOVER_OFF = 3;
-    let hoverMode = HOVER_SEPARATE;
+    let hoverMode = sessionStorage.getItem('forge-plot-hover-mode') || HOVER_SEPARATE;
+    hoverMode = hoverMode * 1;
     TimeSeriesCommon.addHoverControlButton = function(traces) {
         const button = document.createElement('button');
         document.getElementById('control_bar').appendChild(button);
-        button.classList.add('mdi', 'mdi-format-list-text');
-        button.title = 'Cycle data hover mode (current: separate labels)';
+        button.classList.add('mdi');
 
         function setYSpikes(enable) {
             for (const parameter of Object.keys(traces.layout)) {
@@ -240,15 +302,17 @@ var TimeSeriesCommon = {};
             }
         }
 
-        traces.layout.hovermode = 'x';
-        traces.layout.xaxis.showspikes  = false
-        setYSpikes(false);
-
-        $(button).click(function(event) {
-            event.preventDefault();
+        function apply() {
             switch (hoverMode) {
-            case HOVER_SEPARATE:
-                hoverMode = HOVER_SINGLE_POINT;
+            default:
+                button.classList.remove('mdi-format-list-text', 'mdi-near-me', 'mdi-tooltip-text-outline', 'mdi-tooltip-outline');
+                button.classList.add('mdi-format-list-text');
+                button.title = 'Cycle data hover mode (current: separate labels)';
+                traces.layout.hovermode = 'x';
+                traces.layout.xaxis.showspikes  = false
+                setYSpikes(false);
+                break;
+            case HOVER_SINGLE_POINT:
                 button.classList.remove('mdi-format-list-text', 'mdi-near-me', 'mdi-tooltip-text-outline', 'mdi-tooltip-outline');
                 button.classList.add('mdi-near-me');
                 button.title = 'Cycle data hover mode (current: single point)';
@@ -256,8 +320,7 @@ var TimeSeriesCommon = {};
                 traces.layout.xaxis.showspikes  = true;
                 setYSpikes(true);
                 break;
-            case HOVER_SINGLE_POINT:
-                hoverMode = HOVER_COMBINED;
+            case HOVER_COMBINED:
                 button.classList.remove('mdi-format-list-text', 'mdi-near-me', 'mdi-tooltip-text-outline', 'mdi-tooltip-outline');
                 button.classList.add('mdi-tooltip-text-outline');
                 button.title = 'Cycle data hover mode (current: combined information)';
@@ -265,8 +328,7 @@ var TimeSeriesCommon = {};
                 traces.layout.xaxis.showspikes  = true;
                 setYSpikes(false);
                 break;
-            case HOVER_COMBINED:
-                hoverMode = HOVER_OFF;
+            case HOVER_OFF:
                 button.classList.remove('mdi-format-list-text', 'mdi-near-me', 'mdi-tooltip-text-outline', 'mdi-sine-wave');
                 button.classList.add('mdi-tooltip-outline');
                 button.title = 'Cycle data hover mode (current: disabled)';
@@ -274,16 +336,28 @@ var TimeSeriesCommon = {};
                 traces.layout.xaxis.showspikes  = false;
                 setYSpikes(false);
                 break;
+            }
+        }
+        apply();
+
+        $(button).click(function(event) {
+            event.preventDefault();
+            switch (hoverMode) {
+            case HOVER_SEPARATE:
+                hoverMode = HOVER_SINGLE_POINT;
+                break;
+            case HOVER_SINGLE_POINT:
+                hoverMode = HOVER_COMBINED;
+                break;
+            case HOVER_COMBINED:
+                hoverMode = HOVER_OFF;
+                break;
             default:
                 hoverMode = HOVER_SEPARATE;
-                button.classList.remove('mdi-format-list-text', 'mdi-near-me', 'mdi-tooltip-text-outline', 'mdi-tooltip-outline');
-                button.classList.add('mdi-format-list-text');
-                button.title = 'Cycle data hover mode (current: separate labels)';
-                traces.layout.hovermode = 'x';
-                traces.layout.xaxis.showspikes  = false;
-                setYSpikes(false);
                 break;
             }
+            sessionStorage.setItem('forge-plot-hover-mode', hoverMode.toString())
+            apply();
             traces.updateDisplay(true);
         });
     }

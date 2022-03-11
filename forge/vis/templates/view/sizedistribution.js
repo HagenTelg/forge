@@ -2,10 +2,6 @@ shapeHandler.generators.push(TimeSeriesCommon.getTimeHighlights);
 TimeSeriesCommon.updateShapes = function() { shapeHandler.update(); }
 
 
-TimeSeriesCommon.addSymbolToggleButton(traces);
-TimeSeriesCommon.addHoverControlButton(traces);
-
-
 DataSocket.resetLoadedRecords();
 
 //{% if view.contamination %}
@@ -178,3 +174,6 @@ TimeSeriesCommon.installZoomHandler(div);
 //{% else %}
 TimeSeriesCommon.installZoomHandler(div, true);
 //{% endif %}
+
+TimeSeriesCommon.addSymbolToggleButton(traces);
+TimeSeriesCommon.addHoverControlButton(traces);
