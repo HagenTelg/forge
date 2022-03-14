@@ -120,9 +120,7 @@ function startTimeEdited() {
         exportButton.disabled = true;
         return;
     }
-    if (parsedEnd) {
-        exportButton.disabled = (exportSocket.readyState === 1);
-    }
+    exportButton.disabled = !(parsedEnd && parsedStart < parsedEnd && (exportSocket.readyState === 1));
 
     startTimeEntry.classList.remove('invalid');
     startTimeDisplay.classList.remove('invalid');
@@ -157,9 +155,7 @@ function endTimeEdited() {
         exportButton.disabled = true;
         return;
     }
-    if (parsedStart) {
-        exportButton.disabled = (exportSocket.readyState === 1);
-    }
+    exportButton.disabled = !(parsedStart && parsedStart < parsedEnd && (exportSocket.readyState === 1));
 
     endTimeEntry.classList.remove('invalid');
     endTimeDisplay.classList.remove('invalid');

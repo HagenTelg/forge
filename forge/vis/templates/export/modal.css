@@ -1,5 +1,5 @@
 .export-footer {
-  padding: 2px 16px;
+  padding: 0 16px;
   background-color: #0080ff;
   color: white;
   height: 45px;
@@ -15,20 +15,21 @@
   font-weight: bold;
   float: right;
 }
-.export-footer button[disabled] {
-  background-color: #004099;
-  color: #999;
-  cursor: not-allowed;
-}
 .export-footer button.hidden {
   display: none;
 }
 
-.export-footer button:hover,
-.export-footer button:focus {
+.export-footer button:hover:not([disabled]),
+.export-footer button:focus:not([disabled]) {
   color: #000;
   text-decoration: none;
   cursor: pointer;
+}
+
+.export-footer button[disabled] {
+  background-color: #004099;
+  color: #999;
+  cursor: not-allowed;
 }
 
 .export-entry > .hidden {
