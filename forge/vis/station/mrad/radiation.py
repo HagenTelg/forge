@@ -379,6 +379,7 @@ function calc(direct, diffuse, global, zsa) {
         ratio = SolarTimeSeries.Axis()
         ratio.title = "Total/Global"
         ratio.format_code = '.3f'
+        ratio.range = [0.0, 5.0]
         raw.axes.append(ratio)
 
         for site in sites:
@@ -401,6 +402,7 @@ function calc(direct, diffuse, global, zsa) {
         ratio = SolarTimeSeries.Axis()
         ratio.title = "Total/Global"
         ratio.format_code = '.3f'
+        ratio.range = [0.0, 5.0]
         edited.axes.append(ratio)
 
         for site in sites:
