@@ -1,6 +1,6 @@
 var PitotFlow = {};
 (function() {
-    // {{ '\n' }}{% include 'global/calculations/size_distribution.js' %}
+    // {{ '\n' }}{% include 'global/calculations/pitot_flow.js' %}
 
     PitotFlow.CalculateDispatch = class extends DataSocket.RecordDispatch {
         constructor(dataName, inputPressure, outputFlow) {
