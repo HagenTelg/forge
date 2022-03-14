@@ -198,7 +198,7 @@ class _AcquisitionSocket(WebSocketEndpoint):
         await websocket.accept()
 
         self._client = client
-        self._client_run = asyncio.create_task(self._execute_client())
+        self._client_run = asyncio.ensure_future(self._execute_client())
 
     @requires('authenticated')
     async def on_receive(self, websocket: WebSocket, data: typing.Dict[str, typing.Any]):
