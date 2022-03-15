@@ -22,7 +22,7 @@ class Metadata(dict):
     pass
 
 
-class MetadataChildren(dict):
+class MetadataChildren(Metadata):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.children: typing.Dict[str, typing.Any] = dict()
