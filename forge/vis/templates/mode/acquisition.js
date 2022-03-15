@@ -41,6 +41,7 @@ $(document).ready(function() {
             super();
             this.source = source;
             this.root = undefined;
+            this._activeTimeouts = new Set();
 
             if (source) {
                 this.addInstrumentRemove(() => {
@@ -62,6 +63,11 @@ $(document).ready(function() {
 
         detach() {
             super.detach();
+
+            for (const id of this._activeTimeouts) {
+                clearTimeout(id);
+            }
+            this._activeTimeouts.clear();
 
             if (!this.root) {
                 return;
@@ -279,6 +285,113 @@ $(document).ready(function() {
                 return;
             }
             this.root.style.display = '';
+        }
+
+        tickIn(call, delay_ms) {
+            if (!delay_ms) {
+                delay_ms = 0;
+            }
+
+            let id = setTimeout(() => {
+                if (!this.root) {
+                    return;
+                }
+                this._activeTimeouts.delete(id);
+                id = undefined;
+
+                call();
+            }, delay_ms);
+            this._activeTimeouts.add(id);
+
+            return () => {
+                if (!id) {
+                    return;
+                }
+                clearTimeout(id);
+            }
+        }
+
+        tickAt(call, epoch_ms) {
+            function delayToTarget() {
+                const now = Date.now();
+                if (now >= epoch_ms) {
+                    return 0;
+                }
+                const delay = epoch_ms - now;
+                if (delay < 100) {
+                    return 100;
+                }
+                return delay;
+            }
+
+            let id = undefined;
+            const process = () => {
+                if (!this.root) {
+                    return;
+                }
+                this._activeTimeouts.delete(id);
+                id = undefined;
+
+                const delay = delayToTarget();
+                if (delay > 0) {
+                    id = setTimeout(process, delay);
+                    this._activeTimeouts.add(id);
+                    return;
+                }
+                id = undefined;
+                call();
+            }
+
+            id = setTimeout(process, delayToTarget());
+            this._activeTimeouts.add(id);
+            return () => {
+                if (!id) {
+                    return;
+                }
+                clearTimeout(id);
+            }
+        }
+
+        tickOnSecond(call, epoch_ms) {
+            function delayToNext() {
+                const now = Date.now();
+                if (now >= epoch_ms) {
+                    return 0;
+                }
+                let delay = epoch_ms - now;
+                if (delay < 100) {
+                    return 100;
+                }
+
+                delay = delay % 1000;
+                delay += 10;
+                return delay;
+            }
+
+            let id = undefined;
+            const process = () => {
+                if (!this.root) {
+                    return;
+                }
+                this._activeTimeouts.delete(id);
+                id = undefined;
+
+                const delay = delayToNext();
+                if (delay > 0) {
+                    id =  setTimeout(process, delay);
+                    this._activeTimeouts.add(id);
+                }
+                call();
+            }
+
+            id = setTimeout(process, delayToNext());
+            this._activeTimeouts.add(id);
+            return () => {
+                if (!id) {
+                    return;
+                }
+                clearTimeout(id);
+            }
         }
     }
 

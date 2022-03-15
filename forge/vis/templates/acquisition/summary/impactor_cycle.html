@@ -10,6 +10,7 @@
 <script>
 (function() {
     const context = document.getElementById('{{uid}}').context;
+    context.hide();
 
     function formatTime(epoch_ms) {
         epoch_ms = Math.floor(epoch_ms);
@@ -38,6 +39,7 @@
             currentTime.style.display = 'none';
             return;
         }
+        context.show();
         currentDesc.style.display = '';
         currentTime.style.display = '';
         
@@ -47,17 +49,47 @@
 
     const nextDesc = document.getElementById('{{uid}}_next_desc');
     const nextTime = document.getElementById('{{uid}}_next_time');
+    let nextSizeTimePoint = undefined;
+    let stopSizeTimeUpdate = () => {};
+    function updateRemainingTime() {
+        const now = Date.now();
+        const remaining = nextSizeTimePoint - now;
+        if (remaining < 250) {
+            nextTime.textContent = formatTime(nextSizeTimePoint);
+            stopSizeTimeUpdate();
+            return;
+        }
+
+        let seconds = Math.round(remaining / 1000);
+        if (seconds < 1) {
+            seconds = 1;
+        }
+        let minutes = Math.floor(seconds / 60);
+        seconds = seconds % 60;
+        if (minutes > 99) {
+            nextTime.textContent = "(--:" + seconds.toString().padStart(2, '0') + ") "+
+                formatTime(nextSizeTimePoint);
+        } else {
+            nextTime.textContent = "(" +
+                minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0') + ") "+
+                formatTime(nextSizeTimePoint);
+        }
+    }
     context.addSourceTarget((value) => {
+        stopSizeTimeUpdate();
         if (!isValid(value)) {
             nextDesc.style.display = 'none';
             nextTime.style.display = 'none';
             return;
         }
+        context.show();
         nextDesc.style.display = '';
         nextTime.style.display = '';
         
         nextDesc.textContent = "Next size: " + value.size;
-        nextTime.textContent = formatTime(value.epoch_ms);
+        nextSizeTimePoint = value.epoch_ms;
+        stopSizeTimeUpdate = context.tickOnSecond(updateRemainingTime, nextSizeTimePoint);
+        updateRemainingTime();
     }, context.source, 'next');
 })();
 </script>
