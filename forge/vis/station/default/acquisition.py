@@ -31,6 +31,8 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('azonixumac1050'))
         self.display_instrument.append(self.DisplayInstrumentSimple('campbellcr1000gmd'))
 
+        self.display_static.append(BaseAcquisition.DisplayStatic('spancheck'))
+
 
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3760cpc', priority=3000))
 

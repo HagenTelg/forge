@@ -2235,9 +2235,57 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
             return target(result, value)
         return shim
 
+    @staticmethod
+    def spancheck_state_shim(target: typing.Callable[[typing.Any, typing.Any], None]) -> typing.Callable[[typing.Any, typing.Any], None]:
+        def shim(result, value):
+            if isinstance(value, dict):
+                current_state = value.get('Current')
+                state: typing.Dict[str, typing.Any] = dict()
+                if current_state == 'GasAirFlush':
+                    state['id'] = 'gas_air_flush'
+                elif current_state == 'GasFlush':
+                    state['id'] = 'gas_flush'
+                elif current_state == 'GasSample':
+                    state['id'] = 'gas_sample'
+                elif current_state == 'AirFlush':
+                    state['id'] = 'air_flush'
+                elif current_state == 'AirSample':
+                    state['id'] = 'air_sample'
+                else:
+                    state['id'] = 'inactive'
+
+                next_time = value.get('EndTime')
+                if isfinite(next_time):
+                    state['next_epoch_ms'] = round(next_time * 1000)
+
+                result['_spancheck']['state'] = state
+            return target(result, value)
+        return shim
+
+    @staticmethod
+    def spancheck_results_shim(name: Name, target: typing.Callable[[typing.Any, typing.Any], None]) -> typing.Callable[[typing.Any, typing.Any], None]:
+        variable_split = name.variable.split('_', 2)
+        if len(variable_split) < 2:
+            return target
+        interface_source = variable_split[1]
+
+        def shim(result, value):
+            if isinstance(value, dict):
+                results = result['_spancheck'].get('percent_error')
+                if results is None:
+                    results = dict()
+                    result['_spancheck']['percent_error'] = results
+                results[interface_source] = value.get('PCT')
+            return target(result, value)
+        return shim
+
     def translator_shim(self, name: Name, target: typing.Callable[[typing.Any, typing.Any], None]) -> typing.Callable[[typing.Any, typing.Any], None]:
         if name.variable == 'Pd_P01':
             return self.pitot_shim(target)
+        elif name.variable.startswith('ZSPANCHECKSTATE_'):
+            return self.spancheck_state_shim(target)
+        elif name.variable.startswith('ZSPANCHECK_'):
+            return self.spancheck_results_shim(name, target)
         return target
 
     def detach(self):

@@ -1,0 +1,204 @@
+<div class="display-container menu">
+    <div class="header">Spancheck Status</div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    <div class="menu">
+        <button class="menu mdi mdi-close-box-outline" title="Close spancheck display" id="{{uid}}_close"></button>
+    </div>
+
+    <div class="content display-data spancheck-state" state="gas_air_flush">
+        The nephelometer is now being flushed with filtered air.
+        If you haven't  already opened the CO<sub>2</sub> tank valve, please do so NOW.
+        Please make a log entry with the tank pressure.
+        <br>
+        <br>
+        The CO<sub>2</sub> span check will begin at <span class="next-phase"></span>
+    </div>
+
+    <div class="content display-data spancheck-state" state="gas_flush">
+        CO<sub>2</sub> is now flowing through the nephelometer.
+        Please set the regulator output to 25 psi, and verify the flow is 4-5 lpm (8-10 lpm for two neph systems).
+        Please make a log entry with the CO<sub>2</sub> flowrate and pressure.
+        <br>
+        <br>
+        CO<sub>2</sub> will be flushed until <span class="next-phase"></span>
+    </div>
+
+    <div class="content display-data spancheck-state" state="gas_sample">
+        CO<sub>2</sub> is now being sampled.
+        Please set the regulator output to 25 psi, and verify the flow is 5-6 lpm (8-10 lpm for two neph systems).
+        Please make a log entry with the CO<sub>2</sub> flow rate and pressure.
+        <br>
+        <br>
+        CO<sub>2</sub> will be sampled until <span class="next-phase"></span>
+    </div>
+
+    <div class="content display-data spancheck-state" state="air_flush">
+        The CO<sub>2</sub> portion of the spancheck is finished.
+        Please turn off the main valve on the tank.
+        The nephelometer is now flushing with filtered air.
+        <br>
+        <br>
+        Air will be flushed until <span class="next-phase"></span>
+    </div>
+
+    <div class="content display-data spancheck-state" state="air_sample">
+        The CO<sub>2</sub> portion of the spancheck is finished.
+        Please turn off the main valve on the tank.
+        The nephelometer is now sampling filtered air.
+        <br>
+        <br>
+        Air will be sampled until <span class="next-phase"></span>
+    </div>
+
+    <div class="content display-data spancheck-state" state="inactive">
+        Spancheck inactive.
+    </div>
+
+    <div class="content display-data spancheck-state" state="results">
+        The spancheck has ended.
+        The nephelometer will return to normal sampling after a regular zero.
+        <br>
+        <br>
+        Average percent error: <span id="{{uid}}_percent_error"></span>
+    </div>
+
+</div>
+
+
+<style>
+#{{uid}} div sub {
+    font-size: 10px;
+}
+#{{uid}} span.next-phase {
+    font-family: monospace;
+    font-weight: bold;
+}
+#{{uid}} div.spancheck-state {
+    width: 600px;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+</style>
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.hide();
+
+    const closeButton = document.getElementById('{{uid}}_close');
+    closeButton.style.display = 'none';
+    $(closeButton).click(function(event) {
+        event.preventDefault();
+        context.hide();
+    });
+
+    let activeState = undefined;
+    let percentErrorResult = new Map();
+
+    function updateVisibility() {
+        $('.spancheck-state', context.root).css('display', 'none');
+
+        if (activeState && activeState !== 'inactive') {
+            $('.spancheck-state', context.root).filter(function() {
+                return $(this).attr('state') === activeState;
+            }).css('display', '');
+        } else {
+            if (percentErrorResult.size > 0) {
+                $('.spancheck-state', context.root).filter(function() {
+                    return $(this).attr('state') === 'results';
+                }).css('display', '');
+
+                const displayText = document.getElementById('{{uid}}_percent_error');
+                if (percentErrorResult.size === 1) {
+                    displayText.textContent = percentErrorResult.values().next().value.toFixed(1) + "%";
+                } else {
+                    let contents = '';
+                    percentErrorResult.forEach((pct, source) => {
+                        if (contents.length === 0) {
+                            contents = source + ": " + pct.toFixed(1) + "%";
+                        } else {
+                            contents += ", " + source + ": " + pct.toFixed(1) + "%";
+                        }
+                    });
+                    displayText.textContent = contents;
+                }
+            } else {
+                $('.spancheck-state', context.root).filter(function() {
+                    return $(this).attr('state') === 'inactive';
+                }).css('display', '');
+            }
+        }
+    }
+
+    context.addSourceTarget((value) => {
+        for (const source of Object.keys(value)) {
+            percentErrorResult.set(source, value[source]);
+        }
+
+        updateVisibility();
+    }, '_spancheck', 'percent_error');
+
+
+    let stopNextPhaseUpdate = () => {};
+    let nextPhaseTime = undefined;
+    function formatTime(epoch_ms) {
+        epoch_ms = Math.floor(epoch_ms);
+        let date = new Date(epoch_ms);
+
+        return date.getUTCHours().toString().padStart(2, '0') + ':' +
+            date.getUTCMinutes().toString().padStart(2, '0') + ':' +
+            date.getUTCSeconds().toString().padStart(2, '0');
+    }
+    function setNextPhaseText(contents) {
+        $('.next-phase', context.root).text(contents);
+    }
+    function updateNextPhaseTime() {
+        if (!isFinite(nextPhaseTime)) {
+            return;
+        }
+
+        const now = Date.now();
+        const remaining = nextPhaseTime - now;
+        if (remaining < 250) {
+            setNextPhaseText(formatTime(nextPhaseTime));
+            stopNextPhaseUpdate();
+            return;
+        }
+
+        let seconds = Math.round(remaining / 1000);
+        if (seconds < 1) {
+            seconds = 1;
+        }
+        let minutes = Math.floor(seconds / 60);
+        seconds = seconds % 60;
+        if (minutes > 99) {
+            setNextPhaseText(formatTime(nextPhaseTime) + " (--:" + seconds.toString().padStart(2, '0') + ")");
+        } else {
+            setNextPhaseText(formatTime(nextPhaseTime) + " (" +
+                minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0') + ")");
+        }
+    }
+    context.addSourceTarget((value) => {
+        stopNextPhaseUpdate();
+        activeState = value.id;
+        context.show();
+
+        if (activeState !== 'inactive') {
+            percentErrorResult.clear();
+            nextPhaseTime = value.next_epoch_ms;
+            closeButton.style.display = 'none';
+        } else {
+            nextPhaseTime = undefined;
+            closeButton.style.display = '';
+        }
+
+        if (nextPhaseTime !== null && isFinite(nextPhaseTime)) {
+            stopNextPhaseUpdate = context.tickOnSecond(updateNextPhaseTime, nextPhaseTime);
+            updateNextPhaseTime();
+        }
+        updateVisibility();
+    }, '_spancheck', 'state');
+})();
+</script>

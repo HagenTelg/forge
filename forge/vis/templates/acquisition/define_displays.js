@@ -23,7 +23,7 @@ var ACQUISITION_DISPLAY_INSTRUMENT = [];
     (function() {
         let item = new StaticItem("{{ request.url_for('acquisition_display', station=station, type=item.display_type) }}");
 
-        // {% if item.restore_key is not None %}
+        // {% if item.restore_key %}
         item.restore_key = '{{ item.restore_key }}';
         // { %else %}
         item.restore_key = '{{ item.display_type }}';

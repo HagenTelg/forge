@@ -67,6 +67,7 @@ class _ExampleAcquisition(Acquisition):
 
         self.display_instrument.append(Acquisition.DisplayInstrument('example-instrument', 'example_neph'))
         self.display_instrument.append(Acquisition.DisplayInstrument('example-instrument', 'example_neph', 'S11'))
+        self.display_static.append(Acquisition.DisplayStatic('example-spancheck'))
 
     async def __call__(self, request: Request, **kwargs) -> Response:
         return await super().__call__(

@@ -287,6 +287,7 @@ class _ExampleSocket(WebSocketEndpoint):
         super().__init__(*args, **kwargs)
         self.station: str = None
         self.generate_tasks: typing.List[asyncio.Task] = list()
+        self._spancheck_started = False
 
     @requires('authenticated')
     async def on_connect(self, websocket: WebSocket):
@@ -372,6 +373,11 @@ class _ExampleSocket(WebSocketEndpoint):
             })
         elif action == 'restart_acquisition':
             await websocket.close()
+        elif action == 'command':
+            command = data['command']
+            if command == 'start_spancheck' and not self._spancheck_started:
+                self._spancheck_started = True
+                self.generate_tasks.append(asyncio.ensure_future(self._spancheck_sequence(websocket)))
         elif action == 'chat':
             await websocket.send_json({
                 'type': 'chat',
@@ -456,6 +462,45 @@ class _ExampleSocket(WebSocketEndpoint):
                 })
         except:
             _LOGGER.debug("Error generating example chat", exc_info=True)
+
+    @staticmethod
+    async def _spancheck_sequence(websocket: WebSocket) -> None:
+        import time
+
+        async def send_spancheck_state(state: str, delay: float) -> None:
+            await websocket.send_json({
+                'type': 'data',
+                'source': '_spancheck',
+                'values': {
+                    'state': {
+                        'id': state,
+                        'next_epoch_ms': int((time.time() + delay) * 1000),
+                    },
+                },
+            })
+            await asyncio.sleep(delay)
+
+        try:
+            await send_spancheck_state('gas_air_flush', 30.0)
+            await send_spancheck_state('gas_flush', 60.0)
+            await send_spancheck_state('gas_sample', 60.0)
+            await send_spancheck_state('air_flush', 30.0)
+            await send_spancheck_state('air_sample', 60.0)
+
+            await websocket.send_json({
+                'type': 'data',
+                'source': '_spancheck',
+                'values': {
+                    'state': {
+                        'id': 'inactive',
+                    },
+                    'percent_error': {
+                        'S11': 1.25,
+                    },
+                },
+            })
+        except:
+            _LOGGER.debug("Error generating example spancheck", exc_info=True)
 
 
 sockets: typing.List[BaseRoute] = [

@@ -40,3 +40,16 @@ class _ExampleDisplayInstrument(Display):
 
 
 example_display_instrument = _ExampleDisplayInstrument()
+
+
+
+class _ExampleSpancheck(Display):
+    async def __call__(self, request: Request, **kwargs) -> Response:
+        return HTMLResponse(await package_template('acquisition', 'display', 'spancheck.html').render_async(
+            request=request,
+            display=self,
+            **kwargs
+        ))
+
+
+example_display_spancheck = _ExampleSpancheck()

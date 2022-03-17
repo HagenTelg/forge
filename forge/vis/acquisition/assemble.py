@@ -17,6 +17,9 @@ def _lookup_display(request: Request, station: str, display_type: str, source: t
         if display_type == 'example-instrument':
             from .example import example_display_instrument
             return example_display_instrument
+        elif display_type == 'example-spancheck':
+            from .example import example_display_spancheck
+            return example_display_spancheck
         return None
 
     return station_data(station, 'acquisition', 'display')(station, display_type, source)
