@@ -4,6 +4,9 @@ let AcquisitionSocket = {};
     let socketReopenTimer = undefined;
 
     let messageLogDone = undefined;
+    const sourceDataCache = new Map();
+    const instrumentsPresent = new Map();
+    const instrumentsState = new Map();
 
     function callContextOnWeakSet(set, call) {
          set.forEach((ref) => {
@@ -52,6 +55,10 @@ let AcquisitionSocket = {};
             messageLogDone();
         }
         messageLogDone = undefined;
+
+        sourceDataCache.clear();
+        instrumentsState.clear();
+        instrumentsPresent.clear();
     }
 
     function socketClose(event) {
@@ -161,7 +168,6 @@ let AcquisitionSocket = {};
     }
 
 
-    const sourceDataCache = new Map();
     const dataTargetContexts = new Set();
     function dispatchData(source, values) {
         if (source) {
@@ -188,7 +194,6 @@ let AcquisitionSocket = {};
     }
 
 
-    const instrumentsPresent = new Map();
     const instrumentContexts = new Set();
     function dispatchInstrumentAdd(source, info) {
         instrumentsPresent.set(source, info);
@@ -201,7 +206,6 @@ let AcquisitionSocket = {};
             context._incomingInstrumentRemove(source);
         });
     }
-    const instrumentsState = new Map();
     function dispatchInstrumentState(source, state) {
         instrumentsState.set(source, state);
         callContextOnWeakSet(instrumentContexts, (context) => {
