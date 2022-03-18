@@ -63,6 +63,35 @@ station_profile_data['aerosol']['realtime']['cpcstatus2'] = {
     RealtimeTranslator.Key('Qu_N72'): 'Qinlet',
 }
 
+station_profile_data['aerosol']['raw']['wind'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'WS_XM1'): 'WS',
+        Name(station, 'raw', 'WD_XM1'): 'WD',
+    }, send
+)
+station_profile_data['aerosol']['realtime']['wind'] = {
+    RealtimeTranslator.Key('WS_XM1'): 'WS',
+    RealtimeTranslator.Key('WD_XM1'): 'WD',
+}
+station_profile_data['aerosol']['clean']['wind'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'clean', 'WS_XM1'): 'WS',
+        Name(station, 'clean', 'WD_XM1'): 'WD',
+    }, send
+)
+station_profile_data['aerosol']['avgh']['wind'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'avgh', 'WS_XM1'): 'WS',
+        Name(station, 'avgh', 'WD_XM1'): 'WD',
+    }, send
+)
+station_profile_data['aerosol']['editing']['wind'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+    start_epoch_ms, end_epoch_ms, station, 'aerosol', {
+        Name(station, 'clean', 'WS_XM1'): 'WS',
+        Name(station, 'clean', 'WD_XM1'): 'WD',
+    }, send
+)
+
 station_profile_data['aerosol']['raw']['flow'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'Q_Q11'): 'sample',
