@@ -522,7 +522,8 @@ table.chat-messages > tbody > tr > td:nth-child(3) {
   margin: 0;
   display: flex;
 }
-.display-container button.menu.mdi:hover {
+.display-container button.menu.mdi:hover,
+.display-container button.menu.mdi:focus {
   color: #333;
 }
 .display-container button.menu > span {
@@ -545,7 +546,8 @@ table.chat-messages > tbody > tr > td:nth-child(3) {
   list-style: none inside;
   white-space: nowrap;
 }
-.display-container .menu:hover > ul.menu {
+.display-container .menu:hover > ul.menu,
+.display-container .menu:focus > ul.menu {
   display: block;
 }
 .display-container ul.menu.menu-below {

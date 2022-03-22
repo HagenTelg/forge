@@ -699,7 +699,30 @@ $(document).ready(function() {
                 if (!command) {
                     return;
                 }
-                AcquisitionSocket.sendCommand(context.source, command);
+
+                if (this.hasAttribute('noprompt')) {
+                    AcquisitionSocket.sendCommand(context.source, command);
+                    return;
+                }
+
+                let prompt = $(this).attr('prompt');
+                if (!prompt) {
+                    prompt = this.title;
+                }
+
+                let title = $(this).attr('prompttitle');
+                if (title === undefined) {
+                    title = this.textContent;
+                }
+
+                ACTION_PROMPT_DATA = {
+                    'ok': function() {
+                        AcquisitionSocket.sendCommand(context.source, command);
+                    },
+                    'title': title,
+                    'details': prompt,
+                };
+                showModal("{{ request.url_for('static', path='/modal/actionprompt.html') }}");
             });
         }
 

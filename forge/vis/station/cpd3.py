@@ -2023,10 +2023,10 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
 
                         k2 = color_data.get('K2')
                         if isfinite(k2):
-                            set_path(k2, 'calibration', 'k2', color_code)
+                            set_path(k2, 'calibration', 'K2', color_code)
                         k4 = color_data.get('K4')
                         if isfinite(k4):
-                            set_path(k4, 'calibration', 'k4', color_code)
+                            set_path(k4, 'calibration', 'K4', color_code)
 
                         m = color_data.get('CalM')
                         if isfinite(m):
@@ -2050,6 +2050,48 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
                     return result
                 return 'spancheck_result', translator
             return super().value_translator(name)
+
+    class TSI3563Nephelometer(Nephelometer):
+        def translate_command(self, command: str, data: typing.Any) -> typing.Any:
+            if command == 'set_parameters':
+                parameters: typing.Dict[str, typing.Any] = dict()
+
+                for name in ('SKB', 'SKG', 'SKR'):
+                    base = data.get(name)
+                    if base is None:
+                        continue
+                    for k in ('K2', 'K4'):
+                        value = base.get(k)
+                        try:
+                            value = float(value)
+                        except (ValueError, TypeError):
+                            continue
+                        parameters[name + k.upper()] = value
+
+                for name in ('B', 'SMZ', 'SP', 'STB', 'STZ', 'SVB', 'SVG', 'SVR'):
+                    value = data.get(name)
+                    try:
+                        value = int(value)
+                    except (ValueError, TypeError):
+                        continue
+                    parameters[name] = value
+
+                for name in ('SMB', 'H'):
+                    value = data.get(name)
+                    if not isinstance(value, bool):
+                        continue
+                    parameters[name] = value
+
+                # for name in ('V'):
+                #     value = data.get(name)
+                #     if not isinstance(value, str):
+                #         continue
+                #     if len(value) == 0:
+                #         continue
+                #     parameters[name] = value.lower()
+
+                return {'SetParameters': parameters}
+            return super().translate_command(command, data)
 
     class _LovePIDActive(ActiveInterface):
         def __init__(self, interface: "AcquisitionTranslator.Interface", source: str):
@@ -3019,7 +3061,7 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'OzoneHighAlarm': 'alarm_ozone_high',
     }),
 
-    AcquisitionTranslator.Nephelometer('acquire_tsi_neph3563', 'tsi3563nephelometer', variable_map={
+    AcquisitionTranslator.TSI3563Nephelometer('acquire_tsi_neph3563', 'tsi3563nephelometer', variable_map={
         AcquisitionTranslator.Variable('ZBsB'): 'BsB',
         AcquisitionTranslator.Variable('ZBsG'): 'BsG',
         AcquisitionTranslator.Variable('ZBsR'): 'BsR',
@@ -3062,6 +3104,7 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         AcquisitionTranslator.Variable('Vl'): 'Vl',
         AcquisitionTranslator.Variable('F2'): 'modestring',
         AcquisitionTranslator.Variable('ZRTIME'): 'modetime',
+        AcquisitionTranslator.Variable('ZPARAMETERS'): 'parameters',
     }, flags_notifications={
         'BackscatterDisabled': 'backscatter_disabled',
         'LampPowerError': 'lamp_power_error',

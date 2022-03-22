@@ -1,0 +1,433 @@
+<style>
+.tsi3563params-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.tsi3563params-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 8px 0 0 16px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.tsi3563params-footer {
+  padding: 0;
+  margin: 0;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.tsi3563params-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 20px;
+  background-color: transparent;
+  font-weight: bold;
+  font-family: inherit;
+  cursor: pointer;
+}
+.tsi3563params-footer button:hover,
+.tsi3563params-footer button:focus {
+  color: #000;
+  text-decoration: none;
+}
+.tsi3563params-footer button[disabled] {
+  background-color: #004099;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.tsi3563params-entry .blue { color: #00a; }
+.tsi3563params-entry .green { color: #0a0; }
+.tsi3563params-entry .red { color: #a00; }
+
+
+table.tsi3563params-info {
+  display: flex;
+  position: relative;
+  margin: 48px 16px 8px;
+  align-items: center;
+  border: none;
+  border-spacing: 0;
+}
+table.tsi3563params-info > tbody > tr > td {
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+table.tsi3563params-info > tbody > tr > td:nth-child(1) {
+  display: flex;
+  flex-direction: row-reverse;
+  padding-right: 4px;
+}
+table.tsi3563params-info > tbody > tr > td:nth-child(3) {
+  padding-left: 10px;
+}
+
+.tsi3563params-info input[type="text"] {
+  border: none;
+  border-bottom: 2px solid black;
+  padding: 2px 10px;
+  margin: 0;
+  box-sizing: border-box;
+  width: 100%;
+}
+.tsi3563params-info input[type="text"].invalid {
+  border-bottom: 2px solid red;
+}
+
+
+</style>
+
+<form class="tsi3563params-entry">
+  <div id="tsi3563params-title" class="tsi3563params-header">Set Nephelometer Parameters</div>
+
+  <table class="tsi3563params-info">
+    <tbody>
+      <tr>
+        <td><label for="tsi3563params_SP">SP</label></td>
+        <td><input id="tsi3563params_SP" type="text"></td>
+        <td><label for="tsi3563params_SP">Lamp power (W)</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="tsi3563params_SKBK2" class="blue">SKB<sub>K2</sub></label></td>
+        <td><input id="tsi3563params_SKBK2" type="text"></td>
+        <td><label for="tsi3563params_SKBK2" class="blue">Blue total calibration (m⁻¹)</label></td>
+      </tr>
+      <tr>
+        <td><label for="tsi3563params_SKBK4" class="blue">SKB<sub>K4</sub></label></td>
+        <td><input id="tsi3563params_SKBK4" type="text"></td>
+        <td><label for="tsi3563params_SKBK4" class="blue">Blue backscatter fraction</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="tsi3563params_SKGK2" class="green">SKG<sub>K2</sub></label></td>
+        <td><input id="tsi3563params_SKGK2" type="text"></td>
+        <td><label for="tsi3563params_SKGK2" class="green">Green total calibration (m⁻¹)</label></td>
+      </tr>
+      <tr>
+        <td><label for="tsi3563params_SKGK4" class="green">SKG<sub>K4</sub></label></td>
+        <td><input id="tsi3563params_SKGK4" type="text"></td>
+        <td><label for="tsi3563params_SKGK4" class="green">Green backscatter fraction</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="tsi3563params_SKRK2" class="red">SKR<sub>K2</sub></label></td>
+        <td><input id="tsi3563params_SKRK2" type="text"></td>
+        <td><label for="tsi3563params_SKRK2" class="red">Red total calibration (m⁻¹)</label></td>
+      </tr>
+      <tr>
+        <td><label for="tsi3563params_SKRK4" class="red">SKR<sub>K4</sub></label></td>
+        <td><input id="tsi3563params_SKRK4" type="text"></td>
+        <td><label for="tsi3563params_SKRK4" class="red">Red backscatter fraction</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="tsi3563params_SVB" class="blue">SVB</label></td>
+        <td><input id="tsi3563params_SVB" type="text"></td>
+        <td><label for="tsi3563params_SVB" class="blue">Blue PMT voltage (V)</label></td>
+      </tr>
+      <tr>
+        <td><label for="tsi3563params_SVG" class="green">SVG</label></td>
+        <td><input id="tsi3563params_SVG" type="text"></td>
+        <td><label for="tsi3563params_SVG" class="green">Green PMT voltage (V)</label></td>
+      </tr>
+      <tr>
+        <td><label for="tsi3563params_SVR" class="red">SVR</label></td>
+        <td><input id="tsi3563params_SVR" type="text"></td>
+        <td><label for="tsi3563params_SVR" class="red">Red PMT voltage (V)</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="tsi3563params_B">B</label></td>
+        <td><input id="tsi3563params_B" type="text"></td>
+        <td><label for="tsi3563params_B">Blower power (0-255)</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="tsi3563params_SMZ">SMZ</label></td>
+        <td><input id="tsi3563params_SMZ" type="text"></td>
+        <td><label for="tsi3563params_SMZ">Zero mode</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="tsi3563params_SMB">SMB</label></td>
+        <td><input id="tsi3563params_SMB" type="checkbox"></td>
+        <td><label for="tsi3563params_SMB">Enable backscatter</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="tsi3563params_STB">STB</label></td>
+        <td><input id="tsi3563params_STB" type="checkbox"></td>
+        <td><label for="tsi3563params_STB">Blank time (s)</label></td>
+      </tr>
+      <tr>
+        <td><label for="tsi3563params_STZ">STZ</label></td>
+        <td><input id="tsi3563params_STZ" type="checkbox"></td>
+        <td><label for="tsi3563params_STZ">Zero length (s)</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="tsi3563params_H">H</label></td>
+        <td><input id="tsi3563params_H" type="checkbox"></td>
+        <td><label for="tsi3563params_H">Enable sample heater</label></td>
+      </tr>
+
+      <!--<tr>
+        <td><label for="tsi3563params_V">V</label></td>
+        <td>
+          <select id="tsi3563params_V">
+            <option value="" title="Do not change the control state">Unchanged</option>
+            <option value="automatic" title="Allow instrument control of the valve">Automatic</option>
+            <option value="zero" title="Set the valve to zero state">Zero</option>
+            <option value="normal" title="Set the valve to sampling state">Normal</option>
+          </select>
+        </td>
+        <td><label for="tsi3563params_V">Zero valve state</label></td>
+      </tr>-->
+
+    </tbody>
+  </table>
+
+  <div class="tsi3563params-footer">
+    <button id="tsi3563params-ok" title="Apply parameters changes">Ok</button>
+    <button id="tsi3563params-cancel">Cancel</button>
+  </div>
+</form>
+
+<script>
+var ACTION_PROMPT_DATA;
+(function() {
+    if (!ACTION_PROMPT_DATA) {
+        console.error("No action prompt data set");
+        return;
+    }
+    const data = ACTION_PROMPT_DATA;
+    ACTION_PROMPT_DATA = undefined;
+
+    const okButton = document.getElementById('tsi3563params-ok');
+
+    let buildResult = [];
+    let validators = [];
+
+    let displayDefaults = data.parameters;
+    if (!displayDefaults) {
+        displayDefaults = {};
+    }
+    let applyValues = data.apply;
+    if (!applyValues) {
+        applyValues = {};
+    }
+
+    function updateTotalValidity() {
+        let allValid = true;
+        for (const v of validators) {
+            if (!v()) {
+                allValid = false;
+                break;
+            }
+        }
+        okButton.disabled = !allValid;
+    }
+
+    function installNumberValidation(field, requireInteger) {
+        function isValid() {
+            let v = field.value.trim();
+            if (v === '') {
+                return true;
+            }
+            v = v * 1.0;
+            if (!isFinite(v)) {
+                return false;
+            }
+            if (requireInteger && !Number.isInteger(v)) {
+                return false;
+            }
+            return true;
+        }
+        validators.push(isValid);
+
+        function updateValidity() {
+            if (isValid()) {
+                field.classList.remove('invalid');
+            } else {
+                field.classList.add('invalid');
+            }
+            updateTotalValidity();
+        }
+        $(field).change(updateValidity);
+        $(field).on('input', updateValidity);
+        updateValidity();
+    }
+
+    for (const name of ['SKB', 'SKG', 'SKR']) {
+        let parameterDefaults = displayDefaults[name];
+        if (!parameterDefaults) {
+            parameterDefaults = {};
+        }
+        let parameterApply = applyValues[name];
+        if (!parameterApply) {
+            parameterApply = {};
+        }
+
+        for (const k of ['K2', 'K4']) {
+            const field = document.getElementById('tsi3563params_' + name + k);
+
+            let def = parameterDefaults[k];
+            if (isFinite(def)) {
+                if (k === 'K2') {
+                    def = def.toExponential(3);
+                } else {
+                    def = def.toFixed(3);
+                }
+            } else {
+                def = '';
+            }
+            field.placeholder = def;
+
+            let apply = parameterApply[k];
+            if (isFinite(apply)) {
+                if (k === 'K2') {
+                    apply = apply.toExponential(3);
+                } else {
+                    apply = apply.toFixed(3);
+                }
+            } else {
+                apply = '';
+            }
+            field.value = apply;
+
+            buildResult.push((data) => {
+                let value = field.value.trim();
+                if (value === '') {
+                    return;
+                }
+                value = value * 1.0;
+                if (!isFinite(value)) {
+                    return;
+                }
+
+                let target = data[name];
+                if (!target) {
+                    target = {};
+                    data[name] = target;
+                }
+                target[k] = value;
+            });
+
+            installNumberValidation(field);
+        }
+    }
+
+    for (const name of ['B', 'SMZ', 'SP', 'STB', 'STZ', 'SVB', 'SVG', 'SVR']) {
+        const field = document.getElementById('tsi3563params_' + name);
+
+        const def = displayDefaults[name];
+        if (isFinite(def)) {
+            field.placeholder = def.toFixed(0);
+        } else {
+            field.placeholder = '';
+        }
+
+        const apply = applyValues[name];
+        if (isFinite(apply)) {
+            field.value = apply.toFixed(0);
+        } else {
+            field.value = '';
+        }
+
+        buildResult.push((data) => {
+            let value = field.value.trim();
+            if (value === '') {
+                return;
+            }
+            value = value * 1.0;
+            if (!isFinite(value)) {
+                return;
+            }
+            value = Math.floor(value);
+
+            data[name] = value;
+        });
+
+        installNumberValidation(field, true);
+    }
+
+    for (const name of ['SMB', 'H']) {
+        const field = document.getElementById('tsi3563params_' + name);
+        field.intermediate = true;
+
+        const def = displayDefaults[name];
+        if (def !== undefined) {
+            field.checked = !!def;
+            field.intermediate = false;
+        }
+        field.intermediate = true;
+
+        const apply = applyValues[name];
+        if (apply !== undefined) {
+            field.checked = !!apply;
+            field.intermediate = false;
+        }
+
+        let changed = false;
+        $(field).change(function() {
+            changed = true;
+            field.intermediate = false;
+        });
+
+        buildResult.push((data) => {
+            if (!changed) {
+                return;
+            }
+            data[name] = field.checked;
+        });
+    }
+
+    /*for (const name of ['V']) {
+        const field = document.getElementById('tsi3563params_' + name);
+
+        const apply = applyValues[name];
+        if (apply !== undefined) {
+            field.value = apply.toLowerCase();
+        } else {
+            field.value = '';
+        }
+
+        buildResult.push((data) => {
+            const selected = field.value;
+            if (selected === '') {
+                return;
+            }
+            data[name] = selected;
+        });
+    }*/
+
+
+    $(okButton).click(function(event) {
+        event.preventDefault();
+
+        const data = {};
+        for (const b of buildResult) {
+            b(data);
+        }
+
+        if (Object.keys(data).length !== 0) {
+            AcquisitionSocket.sendCommand(data.source, 'set_parameters', data);
+        }
+        hideModal();
+    });
+    $('#tsi3563params-cancel').click(function(event) {
+        event.preventDefault();
+        hideModal();
+    });
+
+})();
+</script>

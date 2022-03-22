@@ -10,13 +10,13 @@
         <button class="menu mdi mdi-menu" title="Instrument actions"></button>
         <ul class="menu menu-below">
             <li><button id="{{uid}}_spot_advance" class="simple-command" command="spot_advance"
-                        title="Advance to the next spot.  This increments the active spot by one.">Advance spot</button></li>
+                        title="Advance to the next spot.  This increments the active spot by one.  Measurements will be interrupted while the spot advances.">Advance Spot</button></li>
             <li><button id="{{uid}}_filter_change_start" class="simple-command" command="filter_change_start"
-                        title="Start a filter change.  This will disable flow and allow you to change the filter in the instrument.">Start filter change</button></li>
+                        title="Start a filter change.  This will disable flow and allow you to change the filter in the instrument.  Measurements will be disabled during the filter change.">Start Filter Change</button></li>
             <li><button id="{{uid}}_filter_change_end" class="simple-command" command="filter_change_end"
-                        title="This tells the instrument you are done changing the filter and it should resume sampling.">End filter change</button></li>
+                        title="Tell the instrument you are done changing the filter and it should resume sampling.  Measurements will resume once the filter and spot stabilize.">End Filter Change</button></li>
             <li><button id="{{uid}}_white_filter_change" class="simple-command" command="white_filter_change"
-                        title="Start a filter change to a known to be white filter.  You should double check to make sure that only a single filter is placed in the instrument.">Start white filter change</button></li>
+                        title="Start a filter change to a known to be white filter.  You should double check to make sure that only a single filter is placed in the instrument.  Measurements will be disabled during the filter change.  A white filter change must be manually ended, it will not end automatically.">Start White Filter Change</button></li>
         </ul>
     </div>
     {% endif %}

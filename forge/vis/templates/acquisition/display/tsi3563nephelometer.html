@@ -8,15 +8,15 @@
         <button class="menu mdi mdi-menu" title="Instrument actions"></button>
         <ul class="menu menu-below">
             <li><button id="{{uid}}_start_zero" class="simple-command" command="start_zero"
-                        title="Start a zero offset adjustment">Start zero</button></li>
+                        title="Start a zero offset adjustment.  Measurements will be disabled while the instrument zeros.">Start Zero</button></li>
             <li><button id="{{uid}}_start_spancheck" class="simple-command" command="start_spancheck"
-                        title="Start a span gas calibration check">Start spancheck</button></li>
+                        title="Start a span gas calibration check.  This will compare the CO₂ scattering to that of filtered air to generate a percentage error and calibration factors.  Measurements are disabled during the span check.">Start Spancheck</button></li>
             <li><button id="{{uid}}_stop_spancheck" class="simple-command" command="stop_spancheck"
-                        title="Abort the current span gas calibration check">Stop spancheck</button></li>
+                        title="Abort the current span gas calibration check.  The instrument will return to normal sampling after the spancheck finishes aborting.">Stop Spancheck</button></li>
             <li><button id="{{uid}}_apply_spancheck_calibration"
-                        title="Apply the result of the last spancheck to the instrument calibration">Apply spancheck calibration</button></li>
+                        title="Apply the result of the last spancheck to the instrument calibration.">Apply Spancheck Calibration</button></li>
             <li><button id="{{uid}}_set_parameters"
-                        title="Change instrument parameters">Set parameters</button></li>
+                        title="Change instrument parameters.">Set Parameters</button></li>
         </ul>
     </div>
     {% endif %}
@@ -138,13 +138,13 @@
         </thead>
         <tbody>
             <tr>
-                <td title="Percent error">Error<sub>total</sub> (%)</td>
+                <td title="Percent error">Percent Error<sub>total</sub> (%)</td>
                 <td class="blue value-spancheck" path="percent_error.total.B" decimals="2" rightpad="1"></td>
                 <td class="green value-spancheck" path="percent_error.total.G" decimals="2" rightpad="1"></td>
                 <td class="red value-spancheck" path="percent_error.total.R" decimals="2" rightpad="1"></td>
             </tr>
             <tr>
-                <td title="Percent error">Error<sub>back</sub> (Hz)</td>
+                <td title="Percent error">Percent Error<sub>back</sub> (Hz)</td>
                 <td class="blue value-spancheck" path="percent_error.back.B" decimals="2" rightpad="1"></td>
                 <td class="green value-spancheck" path="percent_error.back.G" decimals="2" rightpad="1"></td>
                 <td class="red value-spancheck" path="percent_error.back.R" decimals="2" rightpad="1"></td>
@@ -164,16 +164,16 @@
             </tr>
 
             <tr>
-                <td title="K2 total calibration">k2 (m⁻¹)</td>
-                <td class="blue value-spancheck" path="calibration.k2.B" decimals="3" exponential></td>
-                <td class="green value-spancheck" path="calibration.k2.G" decimals="3" exponential></td>
-                <td class="red value-spancheck" path="calibration.k2.R" decimals="3" exponential></td>
+                <td title="K2 total calibration">k2 total calibration (m⁻¹)</td>
+                <td class="blue value-spancheck" path="calibration.K2.B" decimals="3" exponential></td>
+                <td class="green value-spancheck" path="calibration.K2.G" decimals="3" exponential></td>
+                <td class="red value-spancheck" path="calibration.K2.R" decimals="3" exponential></td>
             </tr>
             <tr>
-                <td title="K4 backscattering Rayleigh fraction">k4</td>
-                <td class="blue value-spancheck" path="calibration.k4.B" decimals="3"></td>
-                <td class="green value-spancheck" path="calibration.k4.G" decimals="3"></td>
-                <td class="red value-spancheck" path="calibration.k4.R" decimals="3"></td>
+                <td title="K4 backscattering Rayleigh fraction">k4 backscatter fraction</td>
+                <td class="blue value-spancheck" path="calibration.K4.B" decimals="3"></td>
+                <td class="green value-spancheck" path="calibration.K4.G" decimals="3"></td>
+                <td class="red value-spancheck" path="calibration.K4.R" decimals="3"></td>
             </tr>
         </tbody>
     </table>
@@ -259,11 +259,27 @@
         }, context.source, 'spancheck_result');
     });
 
+    let currentParameters = {};
+    let spancheckParameters = {};
+
     $('#{{uid}}_apply_spancheck_calibration').click(function(event) {
         event.preventDefault();
+
+        ACTION_PROMPT_DATA = {
+            source: context.source,
+            parameters: currentParameters,
+            apply: spancheckParameters,
+        };
+        showModal("{{ request.url_for('static', path='/modal/tsi3563params.html') }}");
     });
     $('#{{uid}}_set_parameters').click(function(event) {
         event.preventDefault();
+
+        ACTION_PROMPT_DATA = {
+            source: context.source,
+            parameters: currentParameters,
+        };
+        showModal("{{ request.url_for('static', path='/modal/tsi3563params.html') }}");
     });
 
     function setVisible(id, visible) {
@@ -299,8 +315,29 @@
     }, context.source);
 
     context.addSourceTarget((value) => {
-        haveSpancheckResults = value && value.calibration && (value.calibration.k2 || value.calibration.k4);
+        haveSpancheckResults = value && value.calibration && (value.calibration.K2 || value.calibration.K4);
+        if (haveSpancheckResults) {
+            spancheckParameters = {
+                'SKB': {
+                    'K2': value.calibration.K2 && value.calibration.K2.B || undefined,
+                    'K4': value.calibration.K4 && value.calibration.K4.B || undefined,
+                },
+                'SKG': {
+                    'K2': value.calibration.K2 && value.calibration.K2.G || undefined,
+                    'K4': value.calibration.K4 && value.calibration.K4.G || undefined,
+                },
+                'SKR': {
+                    'K2': value.calibration.K2 && value.calibration.K2.R || undefined,
+                    'K4': value.calibration.K4 && value.calibration.K4.R || undefined,
+                },
+            }
+        }
         updateVisibility();
     }, context.source, 'spancheck_result');
+
+
+    context.addSourceTarget((value) => {
+        currentParameters = value;
+    }, context.source, 'parameters');
 })();
 </script>
