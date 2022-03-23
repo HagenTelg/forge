@@ -69,6 +69,7 @@
         for (let i=0; i<Math.max(address.length, variable.length); i++)  {
             const tr = getRow(i);
             if (address[i] !== null && isFinite(address[i])) {
+                tr.address = address[i];
                 tr.children[0].textContent = (address[i] * 1).toString(16).toUpperCase();
             }
             tr.children[1].textContent = variable[i] || '';
@@ -123,5 +124,38 @@
             getRow(i).children[5].textContent = (v * 1.0).toFixed(0);
         }
     }, context.source, 'control');
+
+    $('#{{uid}}_change_setpoint').click(function(event) {
+        event.preventDefault();
+
+        const channelData = [];
+        for (let index=0; index<controllerDisplay.children.length; index++) {
+            const tr = controllerDisplay.children[index];
+            if (!tr.address) {
+                continue;
+            }
+
+            let name = (tr.address * 1).toString(16).toUpperCase();
+            if (tr.children[1].textContent) {
+                name = name + " (" + tr.children[1].textContent + ")";
+            }
+
+            channelData.push({
+                channel: tr.address,
+                display: name,
+                placeholder: tr.children[4].textContent,
+            });
+        }
+
+        if (channelData.length === 0) {
+            return;
+        }
+
+        ACTION_PROMPT_DATA = {
+            source: context.source,
+            channels: channelData,
+        };
+        showModal("{{ request.url_for('static', path='/modal/setanalogchannel.html') }}");
+    });
 })();
 </script>

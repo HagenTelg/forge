@@ -2180,6 +2180,16 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
             active.update_interface_information(info)
             return active
 
+        def translate_command(self, command: str, data: typing.Any) -> typing.Any:
+            if command == 'set_analog_chanel':
+                return {
+                    'SetAnalog': {
+                        'Channel': data.get('channel'),
+                        'Value': data.get('value'),
+                    }
+                }
+            return super().translate_command(command, data)
+
     class _AnalogInputActive(ActiveInterface):
         def __init__(self, interface: "AcquisitionTranslator.Interface", source: str):
             super().__init__(interface, source)
@@ -2187,6 +2197,7 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
             self._variable: typing.List[typing.Optional[str]] = list()
 
         def update_interface_information(self, info: typing.Optional[typing.Dict[str, typing.Any]]) -> None:
+            super().update_interface_information(info)
             source = info.get('Source')
             if source is None:
                 return
@@ -2219,6 +2230,40 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
             active = AcquisitionTranslator._AnalogInputActive(self, source)
             active.update_interface_information(info)
             return active
+
+    class _AnalogInputOutputActive(_AnalogInputActive):
+        def __init__(self, interface: "AcquisitionTranslator.Interface", source: str):
+            super().__init__(interface, source)
+            self._output: typing.List[typing.Optional[str]] = list()
+
+        def update_interface_information(self, info: typing.Optional[typing.Dict[str, typing.Any]]) -> None:
+            super().update_interface_information(info)
+            source = info.get('Source')
+            if source is None:
+                return
+            self._output = source.get('OutputIndex', self._output)
+
+        def display_information(self, interface_info: typing.Dict[str, typing.Any]) -> typing.Any:
+            result = super().display_information(interface_info)
+            result['output'] = self._output
+            return result
+
+    class AnalogInputOutput(AnalogInput):
+        def activate(self, source: str,
+                     info: typing.Optional[typing.Dict[str, typing.Any]]) -> "AcquisitionTranslator.ActiveInterface":
+            active = AcquisitionTranslator._AnalogInputOutputActive(self, source)
+            active.update_interface_information(info)
+            return active
+
+        def translate_command(self, command: str, data: typing.Any) -> typing.Any:
+            if command == 'set_analog_chanel':
+                return {
+                    'SetAnalog': {
+                        'Channel': data.get('channel'),
+                        'Value': data.get('value'),
+                    }
+                }
+            return super().translate_command(command, data)
 
     class ImpactorCycle(Component):
         def matches(self, interface_name: str, interface_info: typing.Dict[str, typing.Any]) -> bool:
@@ -2833,16 +2878,18 @@ profile_export: typing.Dict[str, typing.Dict[str, DataExportList]] = {
 
 
 acquisition_translator = AcquisitionTranslator(interfaces=[
-    AcquisitionTranslator.AnalogInput('acquire_azonix_umac1050', 'azonixumac1050', variable_map={
+    AcquisitionTranslator.AnalogInputOutput('acquire_azonix_umac1050', 'azonixumac1050', variable_map={
         AcquisitionTranslator.Variable('T'): 'T',
         AcquisitionTranslator.Variable('V'): 'V',
         AcquisitionTranslator.Variable('ZINPUTS'): 'raw',
+        AcquisitionTranslator.Variable('ZOUTPUTS'): 'output',
     }),
 
-    AcquisitionTranslator.AnalogInput('acquire_campbell_cr1000gmd', 'campbellcr1000gmd', variable_map={
+    AcquisitionTranslator.AnalogInputOutput('acquire_campbell_cr1000gmd', 'campbellcr1000gmd', variable_map={
         AcquisitionTranslator.Variable('T'): 'T',
         AcquisitionTranslator.Variable('V'): 'V',
         AcquisitionTranslator.Variable('ZINPUTS'): 'raw',
+        AcquisitionTranslator.Variable('ZOUTPUTS'): 'output',
     }),
 
     AcquisitionTranslator.Component('acquire_csd_pops', 'csdpops', variable_map={

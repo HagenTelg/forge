@@ -1,0 +1,185 @@
+<style>
+.setanalogchannel-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.setanalogchannel-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 8px 0 0 16px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.setanalogchannel-footer {
+  padding: 0;
+  margin: 0;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.setanalogchannel-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 20px;
+  background-color: transparent;
+  font-weight: bold;
+  font-family: inherit;
+  cursor: pointer;
+}
+.setanalogchannel-footer button:hover,
+.setanalogchannel-footer button:focus {
+  color: #000;
+  text-decoration: none;
+}
+.setanalogchannel-footer button[disabled] {
+  background-color: #004099;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.setanalogchannel-info {
+  display: flex;
+  position: relative;
+  margin: 48px 16px 8px;
+  align-items: center;
+}
+
+.setanalogchannel-info select {
+  border: none;
+  box-sizing: border-box;
+  min-width: 150px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #0080ff;
+  color: white;
+  cursor: pointer;
+  flex-shrink: 0;
+  text-align: left;
+  padding: 12px 20px;
+  display: block;
+}
+.setanalogchannel-info select[disabled] {
+  cursor: default;
+}
+.setanalogchannel-info input {
+  border: none;
+  border-bottom: 2px solid black;
+  padding: 12px 20px;
+  margin: 8px 0 8px 16px;
+  box-sizing: border-box;
+  width: 100%;
+}
+.setanalogchannel-info input.invalid {
+  border-bottom: 2px solid red;
+}
+
+</style>
+
+<form class="setanalogchannel-entry">
+  <div id="setanalogchannel-title" class="setanalogchannel-header">Set Output</div>
+
+  <div class="setanalogchannel-info">
+    <select id="setanalogchannel-channel" title="Select output channel to change"></select>
+    <input id="setanalogchannel-value" type="text" title="Output channel value"></select>
+  </div>
+
+  <div class="setanalogchannel-footer">
+    <button id="setanalogchannel-ok" title="Apply analog output changes">Ok</button>
+    <button id="setanalogchannel-cancel">Cancel</button>
+  </div>
+</form>
+
+<script>
+var ACTION_PROMPT_DATA;
+(function() {
+    if (!ACTION_PROMPT_DATA) {
+        console.error("No action prompt data set");
+        return;
+    }
+    const data = ACTION_PROMPT_DATA;
+    ACTION_PROMPT_DATA = undefined;
+
+    const channelSelect = document.getElementById('setanalogchannel-channel');
+    const channelValue = document.getElementById('setanalogchannel-value');
+    const okButton = document.getElementById('setanalogchannel-ok');
+
+    while (channelSelect.firstChild) {
+        channelSelect.removeChild(channelSelect.firstChild);
+    }
+    for (const channel of data.channels) {
+        const item = document.createElement('option');
+        channelSelect.appendChild(item);
+        item.textContent = channel.display;
+        item.channel = channel;
+    }
+
+    function valueIsValid() {
+        let v = channelValue.value.trim();
+        if (v === '') {
+            return false;
+        }
+        v = v * 1.0;
+        return isFinite(v);
+    }
+
+    function updateValidity() {
+        if (valueIsValid()) {
+            okButton.disabled = false;
+            channelValue.classList.remove('invalid');
+        } else {
+            okButton.disabled = true;
+            channelValue.classList.add('invalid');
+        }
+    }
+
+    $(channelSelect).change(function(event) {
+        const selectedChannel = this.options[this.selectedIndex];
+        if (selectedChannel.channel.placeholder !== undefined) {
+            channelValue.placeholder = selectedChannel.channel.placeholder;
+        } else {
+            channelValue.placeholder = '';
+        }
+        channelValue.value = '';
+        updateValidity();
+    });
+    channelSelect.selectedIndex = 0;
+    $(channelSelect).change();
+    channelSelect.disabled = (channelSelect.options.length <= 1);
+
+    $(channelValue).change(updateValidity);
+    $(channelValue).on('input', updateValidity);
+    updateValidity();
+
+    $(okButton).click(function(event) {
+        event.preventDefault();
+
+        const selectedChannel = channelSelect.options[channelSelect.selectedIndex].channel;
+        let v = channelValue.value.trim();
+        if (v !== '') {
+            v = v * 1.0;
+        } else {
+            v = undefined;
+        }
+        if (selectedChannel && isFinite(v)) {
+            AcquisitionSocket.sendCommand(data.source, 'set_analog_chanel', {
+              channel: selectedChannel.channel,
+              value: v,
+            });
+        }
+
+        hideModal();
+    });
+    $('#setanalogchannel-cancel').click(function(event) {
+        event.preventDefault();
+        hideModal();
+    });
+
+})();
+</script>

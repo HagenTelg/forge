@@ -55,6 +55,8 @@
     context.standardMode();
 
     const channelDisplay = document.getElementById('{{uid}}_channels');
+    let outputNames = undefined;
+    let outputValues = undefined;
 
     function getRow(index) {
         if (index < channelDisplay.children.length) {
@@ -70,6 +72,7 @@
     }
 
     context.addInstrumentPresent((source, info) => {
+        outputNames = info.output;
         const variable = info.variable;
         for (let i=0; i<variable.length; i++)  {
             getRow(i).children[1].textContent = variable[i] || '';
@@ -100,5 +103,46 @@
             getRow(i).children[3].textContent = (v * 1.0).toFixed(3);
         }
     }, context.source, 'raw');
+    context.addSourceTarget((value) => {
+        console.log(value);
+        if (!value || !value.length) {
+            return;
+        }
+        outputValues = value;
+    }, context.source, 'output');
+
+    $('#{{uid}}_set_analog').click(function(event) {
+        event.preventDefault();
+
+        const channelData = [];
+        for (let index=0; index<10; index++) {
+            let name = index.toFixed();
+            if (outputNames && outputNames[index]) {
+                name = name + "(" + outputNames[index] + ")";
+            }
+
+            let value = undefined;
+            if (outputValues) {
+                value = outputValues[index];
+                if (value === null || !isFinite(value)) {
+                    value = undefined;
+                } else {
+                    value = (value * 1).toFixed(3);
+                }
+            }
+
+            channelData.push({
+                channel: index,
+                display: name,
+                placeholder: value,
+            });
+        }
+
+        ACTION_PROMPT_DATA = {
+            source: context.source,
+            channels: channelData,
+        };
+        showModal("{{ request.url_for('static', path='/modal/setanalogchannel.html') }}");
+    });
 })();
 </script>
