@@ -640,7 +640,17 @@ $(document).ready(function() {
                 return;
             }
 
-            let displayEntries = Array.from(displayContent.childNodes);
+            let displayEntries = [];
+            let hiddenEntries = [];
+            for (let i=0; i<displayContent.childNodes.length; i++) {
+                let r = displayContent.childNodes[i];
+                if (r.style.display === 'none') {
+                    hiddenEntries.push(r);
+                } else {
+                    displayEntries.push(r);
+                }
+            }
+
             let targetIndex = -1;
             for (let i=0; i<displayEntries.length; i++) {
                 const display = displayEntries[i];
@@ -664,7 +674,7 @@ $(document).ready(function() {
             }
             displayEntries.splice(targetIndex, 0, this.root);
 
-            displayEntries.forEach(display => displayContent.appendChild(display));
+            hiddenEntries.concat(displayEntries).forEach(display => displayContent.appendChild(display));
         }
 
         attachMove() {
