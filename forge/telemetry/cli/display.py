@@ -111,6 +111,8 @@ def _display_log_text(events: typing.List[typing.Dict[str, typing.Any]], include
 def _prefix_output(output: str, prefix) -> None:
     if not output:
         return
+    if isinstance(output, list):
+        output = "\n".join(output)
     output = output.replace('\r\n', '\n')
     output = output.replace('\n\r', '\n')
     output = output.replace('\r', '\n')

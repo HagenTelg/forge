@@ -160,7 +160,7 @@ async def add_network_configuration(telemetry: typing.Dict[str, typing.Any]) -> 
         if len(fields) < 3:
             continue
         uuid = fields[-3].strip()
-        connection_info = await command_lines('nmcli', 'connection', 'show', uuid, silent=True, check_exit=True)
+        connection_info = await command_output('nmcli', 'connection', 'show', uuid, silent=True, check_exit=True)
         if not connection_info:
             continue
         telemetry['network_configuration']['nm_connections'].append(connection_info)
