@@ -2265,6 +2265,44 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
                 }
             return super().translate_command(command, data)
 
+    class _AnalogInputOutputDigitalActive(_AnalogInputOutputActive):
+        def __init__(self, interface: "AcquisitionTranslator.Interface", source: str):
+            super().__init__(interface, source)
+            self._digital: typing.List[typing.Optional[str]] = list()
+
+        def update_interface_information(self, info: typing.Optional[typing.Dict[str, typing.Any]]) -> None:
+            super().update_interface_information(info)
+            source = info.get('Source')
+            if source is None:
+                return
+            self._digital = source.get('DigitalIndex', self._output)
+
+        def display_information(self, interface_info: typing.Dict[str, typing.Any]) -> typing.Any:
+            result = super().display_information(interface_info)
+            result['digital'] = self._digital
+            return result
+
+    class AnalogInputOutputDigital(AnalogInputOutput):
+        def activate(self, source: str,
+                     info: typing.Optional[typing.Dict[str, typing.Any]]) -> "AcquisitionTranslator.ActiveInterface":
+            active = AcquisitionTranslator._AnalogInputOutputDigitalActive(self, source)
+            active.update_interface_information(info)
+            return active
+
+        def translate_command(self, command: str, data: typing.Any) -> typing.Any:
+            if command == 'set_digital_output':
+                try:
+                    data = int(data)
+                except:
+                    return None
+                return {
+                    'SetDigital': {
+                        'Mask': 0xFFFF_FFFF,
+                        'Value': data,
+                    }
+                }
+            return super().translate_command(command, data)
+
     class ImpactorCycle(Component):
         def matches(self, interface_name: str, interface_info: typing.Dict[str, typing.Any]) -> bool:
             if interface_name != 'IMPACTOR':
@@ -2878,18 +2916,20 @@ profile_export: typing.Dict[str, typing.Dict[str, DataExportList]] = {
 
 
 acquisition_translator = AcquisitionTranslator(interfaces=[
-    AcquisitionTranslator.AnalogInputOutput('acquire_azonix_umac1050', 'azonixumac1050', variable_map={
+    AcquisitionTranslator.AnalogInputOutputDigital('acquire_azonix_umac1050', 'azonixumac1050', variable_map={
         AcquisitionTranslator.Variable('T'): 'T',
         AcquisitionTranslator.Variable('V'): 'V',
         AcquisitionTranslator.Variable('ZINPUTS'): 'raw',
         AcquisitionTranslator.Variable('ZOUTPUTS'): 'output',
+        AcquisitionTranslator.Variable('ZDIGITAL'): 'digital',
     }),
 
-    AcquisitionTranslator.AnalogInputOutput('acquire_campbell_cr1000gmd', 'campbellcr1000gmd', variable_map={
+    AcquisitionTranslator.AnalogInputOutputDigital('acquire_campbell_cr1000gmd', 'campbellcr1000gmd', variable_map={
         AcquisitionTranslator.Variable('T'): 'T',
         AcquisitionTranslator.Variable('V'): 'V',
         AcquisitionTranslator.Variable('ZINPUTS'): 'raw',
         AcquisitionTranslator.Variable('ZOUTPUTS'): 'output',
+        AcquisitionTranslator.Variable('ZDIGITAL'): 'digital',
     }),
 
     AcquisitionTranslator.Component('acquire_csd_pops', 'csdpops', variable_map={

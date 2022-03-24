@@ -19,6 +19,7 @@
         <tbody>
             <tr> <td>Board temperature (°C)</td>    <td class="value-formatted" field="T" rightpad="2"></td> </tr>
             <tr> <td>Supply voltage (V)</td>        <td class="value-formatted" field="V" decimals="3"></td> </tr>
+            <tr> <td>Digital state</td>             <td class="value-hex" field="digital" rightpad="4"></td> </tr></td> </tr>
         </tbody>
     </table>
 
@@ -56,7 +57,9 @@
 
     const channelDisplay = document.getElementById('{{uid}}_channels');
     let outputNames = undefined;
+    let digitalNames = undefined;
     let outputValues = undefined;
+    let digitalState = undefined;
 
     function getRow(index) {
         if (index < channelDisplay.children.length) {
@@ -73,6 +76,7 @@
 
     context.addInstrumentPresent((source, info) => {
         outputNames = info.output;
+        digitalNames = info.digital;
         const variable = info.variable;
         for (let i=0; i<variable.length; i++)  {
             getRow(i).children[1].textContent = variable[i] || '';
@@ -104,12 +108,14 @@
         }
     }, context.source, 'raw');
     context.addSourceTarget((value) => {
-        console.log(value);
         if (!value || !value.length) {
             return;
         }
         outputValues = value;
     }, context.source, 'output');
+    context.addSourceTarget((value) => {
+        digitalState = value;
+    }, context.source, 'digital');
 
     $('#{{uid}}_set_analog').click(function(event) {
         event.preventDefault();
@@ -143,6 +149,17 @@
             channels: channelData,
         };
         showModal("{{ request.url_for('static', path='/modal/setanalogchannel.html') }}");
+    });
+    $('#{{uid}}_set_digital').click(function(event) {
+        event.preventDefault();
+
+        ACTION_PROMPT_DATA = {
+            source: context.source,
+            bits: 16,
+            value: digitalState,
+            channels: digitalNames,
+        };
+        showModal("{{ request.url_for('static', path='/modal/setdigitaloutput.html') }}");
     });
 })();
 </script>

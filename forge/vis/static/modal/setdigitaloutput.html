@@ -1,0 +1,258 @@
+<style>
+.setdigitaloutput-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.setdigitaloutput-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 8px 0 0 16px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.setdigitaloutput-footer {
+  padding: 0;
+  margin: 0;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.setdigitaloutput-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 20px;
+  background-color: transparent;
+  font-weight: bold;
+  font-family: inherit;
+  cursor: pointer;
+}
+.setdigitaloutput-footer button:hover,
+.setdigitaloutput-footer button:focus {
+  color: #000;
+  text-decoration: none;
+}
+.setdigitaloutput-footer button[disabled] {
+  background-color: #004099;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.setdigitaloutput-info {
+  display: flex;
+  position: relative;
+  margin: 48px 16px 8px;
+  align-items: center;
+}
+
+.setdigitaloutput-info > div {
+  display: flex;
+  flex-direction: column;
+}
+.setdigitaloutput-info > div > div {
+  display: flex;
+}
+
+.setdigitaloutput-info input {
+  border: none;
+  border-bottom: 2px solid black;
+  padding: 12px 20px;
+  margin: 8px 0 8px 16px;
+  box-sizing: border-box;
+  width: 100%;
+  font-family: monospace;
+}
+.setdigitaloutput-info input.invalid {
+  border-bottom: 2px solid red;
+}
+
+.setdigitaloutput-info label {
+  white-space: nowrap;
+  align-self: end;
+  margin-bottom: 20px;
+}
+
+.setdigitaloutput-info table > tbody > tr {
+  cursor: pointer;
+}
+.setdigitaloutput-info table > tbody > tr:nth-child(1) {
+  font-family: monospace;
+  text-align: center;
+  font-size: 16px;
+}
+.setdigitaloutput-info table > tbody > tr:nth-child(1) > td {
+  width: 20px;
+  height: 20px;
+}
+.setdigitaloutput-info table > tbody > tr:nth-child(2) {
+  writing-mode: vertical-rl;
+  text-align: center;
+  vertical-align: top;
+}
+
+</style>
+
+<form class="setdigitaloutput-entry">
+  <div id="setdigitaloutput-title" class="setdigitaloutput-header">Set Output</div>
+
+  <div class="setdigitaloutput-info">
+    <div>
+        <div>
+          <label for="setdigitaloutput-value">Digital value:</label>
+          <input id="setdigitaloutput-value" type="text" title="Output channel value"></select>
+        </div>
+        <table>
+          <tbody id="setdigitaloutput-breakdown">
+            <tr></tr>
+            <tr></tr>
+          </tbody>
+        </table>
+    </div>
+  </div>
+
+  <div class="setdigitaloutput-footer">
+    <button id="setdigitaloutput-ok" title="Apply analog output changes">Ok</button>
+    <button id="setdigitaloutput-cancel">Cancel</button>
+  </div>
+</form>
+
+<script>
+var ACTION_PROMPT_DATA;
+(function() {
+    if (!ACTION_PROMPT_DATA) {
+        console.error("No action prompt data set");
+        return;
+    }
+    const data = ACTION_PROMPT_DATA;
+    ACTION_PROMPT_DATA = undefined;
+
+    const channelValue = document.getElementById('setdigitaloutput-value');
+    const breakdownData = document.getElementById('setdigitaloutput-breakdown');
+    const okButton = document.getElementById('setdigitaloutput-ok');
+
+    const originalBits = data.value;
+    let bitCount = data.bits;
+    if (bitCount > 31) {
+      bitCount = 31;
+    }
+    const bitMask = (1<<bitCount) - 1;
+    const bitUpdates = [];
+    let currentBits = 0;
+
+    if (isFinite(originalBits) && Number.isInteger(originalBits)) {
+        currentBits = originalBits & bitMask;
+    }
+
+    function valueIsValid() {
+        let v = channelValue.value.trim();
+        if (v === '') {
+            return false;
+        }
+        if (!/^(0[xX])?[0-9A-Fa-f]+$/.test(v)) {
+            return false;
+        }
+        try {
+            v = parseInt(v, 16);
+        } catch(e) {
+            return false;
+        }
+        return isFinite(v) && v >= 0;
+    }
+
+    function updateValidity() {
+        if (valueIsValid()) {
+            okButton.disabled = false;
+            channelValue.classList.remove('invalid');
+            return true;
+        } else {
+            okButton.disabled = true;
+            channelValue.classList.add('invalid');
+            return false;
+        }
+    }
+
+    function setBitsValue() {
+        channelValue.value = currentBits.toString(16).toUpperCase();
+        updateValidity();
+    }
+    setBitsValue();
+
+    let channelData = data.channels && data.channels || [];
+    for (let bit=bitCount-1; bit>=0; bit--) {
+        const bitRow = breakdownData.rows[0];
+        const bitElement = document.createElement('td');
+        bitRow.appendChild(bitElement);
+
+        const channelRow = breakdownData.rows[1];
+        const channelElement = document.createElement('td');
+        channelRow.appendChild(channelElement);
+        if (channelData[bit]) {
+            channelElement.textContent = channelData[bit];
+        }
+
+        function updateBitDisplay() {
+            if (currentBits & (1<<bit)) {
+                bitElement.textContent = '1';
+            } else {
+                bitElement.textContent = '0';
+            }
+        }
+        bitUpdates.push(updateBitDisplay);
+        updateBitDisplay();
+
+        function toggleBit(event) {
+            event.preventDefault();
+            currentBits ^= (1<<bit);
+            currentBits &= bitMask;
+            updateBitDisplay();
+            setBitsValue();
+        }
+        $(bitElement).click(toggleBit);
+        $(channelElement).click(toggleBit);
+    }
+
+    function hexValueChanged() {
+        if (!updateValidity()) {
+            return;
+        }
+        currentBits = parseInt(channelValue.value.trim(), 16);
+        for (const b of bitUpdates) {
+            b();
+        }
+    }
+    $(channelValue).change(hexValueChanged);
+    $(channelValue).on('input', hexValueChanged);
+
+
+
+    $(okButton).click(function(event) {
+        event.preventDefault();
+
+        let v = channelValue.value.trim();
+        if (v === '') {
+            hideModal();
+            return;
+        }
+        try {
+            v = parseInt(v, 16);
+        } catch(e) {
+            hideModal();
+            return;
+        }
+
+        AcquisitionSocket.sendCommand(data.source, 'set_digital_output', v);
+        hideModal();
+    });
+    $('#setdigitaloutput-cancel').click(function(event) {
+        event.preventDefault();
+        hideModal();
+    });
+
+})();
+</script>
