@@ -99,9 +99,12 @@ class Acquisition(Mode):
         return y
 
     async def __call__(self, request: Request, **kwargs) -> Response:
+        writable = kwargs.pop('writable', None)
+        if writable is None:
+            writable = is_writable(request, request.path_params['station'].lower())
         return HTMLResponse(await package_template('mode', 'acquisition.html').render_async(
             mode=self,
             request=request,
-            writable=is_writable(request, request.path_params['station'].lower()),
+            writable=writable,
             **kwargs
         ))

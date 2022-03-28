@@ -73,6 +73,7 @@ class _ExampleAcquisition(Acquisition):
         return await super().__call__(
             request,
             socket_url=request.url_for('acquisition_example_socket', station=kwargs.get('station', 'nil')),
+            writable=True,
             **kwargs)
 
 
