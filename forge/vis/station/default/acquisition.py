@@ -19,6 +19,7 @@ class Acquisition(BaseAcquisition):
         super().__init__(mode_name, display_name, **kwargs)
 
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3760cpc'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('admagiccpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('clap'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tap'))
         self.display_instrument.append(self.DisplayInstrumentSimple('mageeae33'))
@@ -35,6 +36,7 @@ class Acquisition(BaseAcquisition):
 
 
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3760cpc', priority=3000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('admagiccpc', priority=3000))
 
         self.summary_instrument.append(self.SummaryInstrumentSimple('clap', priority=2000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('tap', priority=2000))
@@ -61,6 +63,7 @@ _type_display: typing.Dict[str, Display] = {
 _default_summary = BasicSummary()
 _type_summary: typing.Dict[str, SummaryItem] = {
     'tsi3760cpc': InstrumentSummary('cpc', "TSI 3760"),
+    'admagiccpc': InstrumentSummary('cpc', "Magic"),
     'tap': InstrumentSummary('clap', "BMI TAP"),
     'tsi3563nephelometer': InstrumentSummary('nephelometer', "TSI 3563"),
 }
