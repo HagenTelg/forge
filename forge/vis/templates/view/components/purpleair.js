@@ -1,6 +1,6 @@
 var PurpleAir = {};
 (function() {
-    const scatteringEfficiency = 0.015;
+    // {{ '\n' }}{% include 'global/calculations/purpleair.js' %}
 
     PurpleAir.CalculateDispatch = class extends DataSocket.RecordDispatch {
         constructor(dataName, inputA, inputB, outputScattering) {
@@ -33,9 +33,7 @@ var PurpleAir = {};
                 if (isFinite(outputScattering[timeIndex])) {
                     continue;
                 }
-                const A = inputA[timeIndex];
-                const B = inputB[timeIndex];
-                outputScattering[timeIndex] = (A + B) / 2.0 * scatteringEfficiency;
+                outputScattering[timeIndex] = calculatePurpleAirScattering(inputA[timeIndex], inputB[timeIndex]);
             }
         }
     }

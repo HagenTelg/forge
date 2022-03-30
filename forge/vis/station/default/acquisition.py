@@ -29,6 +29,7 @@ class Acquisition(BaseAcquisition):
                                                                          match_type='thermo49'))
         self.display_instrument.append(self.DisplayInstrumentSimple('csdpops'))
         self.display_instrument.append(self.DisplayInstrumentSimple('lovepid'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('purpleair'))
         self.display_instrument.append(self.DisplayInstrumentSimple('azonixumac1050'))
         self.display_instrument.append(self.DisplayInstrumentSimple('campbellcr1000gmd'))
 

@@ -3130,6 +3130,16 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'spot_advance': 'AdvanceSpot',
     }),
 
+    AcquisitionTranslator.Component('acquire_purpleair_pa2', 'purpleair', variable_map={
+        AcquisitionTranslator.Variable('Ipa'): 'IBsa',
+        AcquisitionTranslator.Variable('Ipb'): 'IBsb',
+        AcquisitionTranslator.Variable('ZXa'): 'Xa',
+        AcquisitionTranslator.Variable('ZXb'): 'Xb',
+        AcquisitionTranslator.Variable('T'): 'T',
+        AcquisitionTranslator.Variable('U'): 'U',
+        AcquisitionTranslator.Variable('P'): 'P',
+    }),
+
     AcquisitionTranslator.Component('acquire_teledyne_t640', 'teledynet640', variable_map={
         AcquisitionTranslator.Variable('ZXPM1'): 'X1',
         AcquisitionTranslator.Variable('ZXPM10'): 'X10',
