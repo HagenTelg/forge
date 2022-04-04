@@ -456,14 +456,14 @@ class Interface:
                 if orm_session.query(_AccessStation).filter_by(public_key=from_key, station='*').one_or_none():
                     host = orm_session.query(_Host).filter_by(
                         station=station
-                    ).order_by(_Host.last_seen.desc()).one_or_none()
+                    ).order_by(_Host.last_seen.desc()).first()
                 else:
                     query = orm_session.query(_Host)
                     query = query.join(_AccessStation, _AccessStation.station == _Host.station)
                     query = query.filter(_AccessStation.public_key == from_key)
                     query = query.filter(_Host.station == station)
                     query = query.order_by(_Host.last_seen.desc())
-                    host = query.one_or_none()
+                    host = query.first()
                 if host:
                     return PublicKey.from_public_bytes(b64decode(host.public_key))
             return None
@@ -525,7 +525,7 @@ class ControlInterface:
             with Session(engine) as orm_session:
                 host = orm_session.query(_Host).filter_by(
                     station=station
-                ).order_by(_Host.last_seen.desc()).one_or_none()
+                ).order_by(_Host.last_seen.desc()).first()
                 if host:
                     return PublicKey.from_public_bytes(b64decode(host.public_key))
             return None
