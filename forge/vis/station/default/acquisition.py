@@ -30,19 +30,22 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('csdpops'))
         self.display_instrument.append(self.DisplayInstrumentSimple('lovepid'))
         self.display_instrument.append(self.DisplayInstrumentSimple('purpleair'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('vaisalawxt5xx'))
         self.display_instrument.append(self.DisplayInstrumentSimple('azonixumac1050'))
         self.display_instrument.append(self.DisplayInstrumentSimple('campbellcr1000gmd'))
 
         self.display_static.append(BaseAcquisition.DisplayStatic('spancheck'))
 
 
-        self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3760cpc', priority=3000))
-        self.summary_instrument.append(self.SummaryInstrumentSimple('admagiccpc', priority=3000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3760cpc', priority=4000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('admagiccpc', priority=4000))
 
-        self.summary_instrument.append(self.SummaryInstrumentSimple('clap', priority=2000))
-        self.summary_instrument.append(self.SummaryInstrumentSimple('tap', priority=2000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('clap', priority=3000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('tap', priority=3000))
 
-        self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3563nephelometer', priority=1000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3563nephelometer', priority=2000))
+
+        self.summary_instrument.append(self.SummaryInstrumentSimple('vaisalawxt5xx', priority=1000))
 
         self.summary_static.append(BaseAcquisition.SummaryStatic(summary_type='pitot_flow', priority=-2000))
 
@@ -67,6 +70,7 @@ _type_summary: typing.Dict[str, SummaryItem] = {
     'admagiccpc': InstrumentSummary('cpc', "Magic"),
     'tap': InstrumentSummary('clap', "BMI TAP"),
     'tsi3563nephelometer': InstrumentSummary('nephelometer', "TSI 3563"),
+    'vaisalawxt5xx': InstrumentSummary('wind', "Vaisala WXT"),
 }
 
 

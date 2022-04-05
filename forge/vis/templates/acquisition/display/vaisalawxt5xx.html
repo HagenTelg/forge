@@ -1,0 +1,57 @@
+<div class="display-container collapsable collapsed">
+    <div class="header communication-state warning-state format-source" instrument="Aerosol Dynamics Magic"></div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <table class="content display-data communication-state hide-false">
+        <thead>
+            <tr> <th colspan="2">Wind</th> </tr>
+        </thead>
+        <tbody>
+            <tr> <td>Direction (degrees)</td>           <td class="value-formatted" field="WD" rightpad="1"></td> </tr>
+            <tr> <td>Speed (m/s)</td>                   <td class="value-formatted" field="WS" rightpad="1"></td> </tr>
+            <tr> <td>Gust speed (m/s)</td>              <td class="value-formatted" field="WSgust" rightpad="1"></td> </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data communication-state hide-false">
+        <thead>
+            <tr> <th colspan="2">Conditions</th> </tr>
+        </thead>
+        <tbody>
+            <tr> <td>Ambient temperature (°C)</td>      <td class="value-formatted" field="Tambient" rightpad="1"></td> </tr>
+            <tr> <td>Ambient humidity (%)</td>          <td class="value-formatted" field="Uambient" rightpad="1"></td> </tr>
+            <tr> <td>Ambient pressure (hPa)</td>        <td class="value-formatted" field="P" rightpad="1"></td> </tr>
+            <tr> <td>Internal (°C)</td>                 <td class="value-formatted" field="Tinternal" rightpad="1"></td> </tr>
+            <tr> <td>Heater (°C)</td>                   <td class="value-formatted" field="Theater" rightpad="1"></td> </tr>
+            <tr class="value-exists hide-false" field="Taux"> <td>Auxilary (°C)</td> <td class="value-formatted" field="Taux" rightpad="1"></td> </tr>
+            <tr> <td>Precipitation (mm/h)</td>          <td class="value-formatted" field="WI" decimals="2"></td> </tr>
+            <tr class="value-exists hide-false" field="R"> <td>Solar radiation (W/m²)</td> <td class="value-formatted" field="R" decimals="2"></td> </tr>
+            <tr class="value-exists hide-false" field="Ld"> <td>Level sensor (m)</td> <td class="value-formatted" field="Ld" decimals="2"></td> </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data communication-state hide-false">
+        <thead>
+            <tr> <th colspan="2">Voltage</th> </tr>
+        </thead>
+        <tbody>
+            <tr> <td>Supply (V)</td>                    <td class="value-formatted" field="Vsupply" rightpad="1"></td> </tr>
+            <tr> <td>Reference (V)</td>                 <td class="value-formatted" field="Vreference" rightpad="1"></td> </tr>
+            <tr> <td>Heater (V)</td>                    <td class="value-formatted" field="Vheater" rightpad="1"></td> </tr>
+        </tbody>
+    </table>
+
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="heater_on">Heater on</div>
+</div>
+
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+})();
+</script>

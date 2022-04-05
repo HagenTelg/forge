@@ -99,10 +99,12 @@ span.clock-display {
 .bypass-state.hide-false.bypass-false,
 .warning-state.hide-false.warning-false,
 .notification-state.hide-false.notification-false,
+.value-exists.hide-false.exists-false,
 .communication-state.hide-true.communication-true,
 .bypass-state.hide-true.bypass-true,
 .warning-state.hide-true.warning-true,
-.notification-state.hide-true.notification-true {
+.notification-state.hide-true.notification-true,
+.value-exists.hide-true.exists-true {
   display: none;
 }
 

@@ -167,6 +167,30 @@ $(document).ready(function() {
                     target.textContent = applyPadding(prefix + formatted, rightPad, totalLength);
                 }, context.source, field);
             });
+
+            $('.value-exists', context.root).each(function() {
+                const target = this;
+                const field = this.getAttribute('field') || undefined;
+                if (!field) {
+                    return;
+                }
+
+                target.classList.add('exists-false');
+                target.classList.remove('exists-true');
+
+                context.addSourceTarget((value) => {
+                    if (value === null || value === undefined) {
+                        return;
+                    }
+                    if (typeof value === 'number') {
+                        if (!isFinite(value)) {
+                            return;
+                        }
+                    }
+                    target.classList.add('exists-true');
+                    target.classList.remove('exists-false');
+                }, context.source, field);
+            });
         }
 
         attachState() {

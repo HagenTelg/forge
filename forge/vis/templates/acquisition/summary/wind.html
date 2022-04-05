@@ -1,0 +1,24 @@
+{% set link_view='aerosol-realtime-wind' %}
+{% include 'acquisition/summary/block_open.html' %}
+
+<span class="summary-source format-source" instrument="{{ instrument }}"></span>
+<table class="summary-data">
+    <thead>
+        <tr>
+            <th>Wind</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td>Speed (m/s)</td>            <td class="value-formatted" field="WS"></td></tr>
+        <tr><td>Direction (degrees)</td>    <td class="value-formatted" field="WD"></td></tr>
+    </tbody>
+</table>
+
+{% include 'acquisition/summary/block_close.html' %}
+
+<script>
+(function() {
+    document.getElementById('{{uid}}').context.standardMode();
+})();
+</script>

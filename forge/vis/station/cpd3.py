@@ -3272,6 +3272,25 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'stop_spancheck': 'StopSpancheck',
     }),
 
+    AcquisitionTranslator.Component('acquire_vaisala_wxt5xx', 'vaisalawxt5xx', variable_map={
+        AcquisitionTranslator.Variable('WS'): 'WS',
+        AcquisitionTranslator.Variable('WD'): 'WD',
+        AcquisitionTranslator.Variable('WI'): 'WI',
+        AcquisitionTranslator.Variable('T1'): 'Tambient',
+        AcquisitionTranslator.Variable('T2'): 'Tinternal',
+        AcquisitionTranslator.Variable('T3'): 'Theater',
+        AcquisitionTranslator.Variable('T4'): 'Taux',
+        AcquisitionTranslator.Variable('U1'): 'Uambient',
+        AcquisitionTranslator.Variable('P'): 'P',
+        AcquisitionTranslator.Variable('VA'): 'R',
+        AcquisitionTranslator.Variable('Ld'): 'Ld',
+        AcquisitionTranslator.Variable('V1'): 'Vsupply',
+        AcquisitionTranslator.Variable('V2'): 'Vreference',
+        AcquisitionTranslator.Variable('V3'): 'Vheater',
+    }, flags_notifications={
+        'HeaterOn': 'heater_on',
+    }),
+
     AcquisitionTranslator.ImpactorCycle('control_cycle', 'impactor_cycle'),
 ])
 
