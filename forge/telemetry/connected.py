@@ -3,6 +3,7 @@ import asyncio
 import logging
 import ipaddress
 import time
+import random
 from starlette.websockets import WebSocket
 from forge.authsocket import WebsocketJSON as AuthSocket
 from .storage import Interface as TelemetryInterface
@@ -61,7 +62,22 @@ class TelemetrySocket(AuthSocket):
                 'server_time': round(time.time()),
             })
 
+    async def on_disconnect(self, websocket: WebSocket, close_code):
+        if self._ping_task:
+            t = self._ping_task
+            self._ping_task = None
+            try:
+                t.cancel()
+            except:
+                pass
+            try:
+                await t
+            except:
+                pass
+        await super().on_disconnect(websocket, close_code)
+
     async def _ping(self):
+        await asyncio.sleep(random.uniform(1, 60))
         while True:
             await asyncio.sleep(60)
             await self.telemetry.ping_host(self.public_key, self.origin, self.station)

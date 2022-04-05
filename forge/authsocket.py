@@ -206,6 +206,9 @@ class WebsocketJSON(WebSocketEndpoint):
         self._handshake_timeout_task = None
         try:
             t.cancel()
+        except:
+            pass
+        try:
             await t
         except:
             pass
