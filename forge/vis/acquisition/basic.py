@@ -14,16 +14,19 @@ class BasicDisplay(Display):
         ))
 
 
-class InstrumentDisplay(Display):
-    def __init__(self, base_type: str, instrument: str):
+class ParameterDisplay(Display):
+    def __init__(self, base_type: str, parameters: typing.Dict[str, typing.Any]):
         self.base_type = base_type
-        self.instrument = instrument
+        self.parameters = parameters
 
     async def __call__(self, request: Request, summary_type: str = None, **kwargs) -> Response:
+        for key, value in self.parameters.items():
+            if key in kwargs:
+                continue
+            kwargs[key] = value
         return HTMLResponse(await package_template('acquisition', 'display', self.base_type + '.html').render_async(
             request=request,
             display=self,
-            instrument=self.instrument,
             **kwargs
         ))
 
@@ -37,15 +40,18 @@ class BasicSummary(SummaryItem):
         ))
 
 
-class InstrumentSummary(SummaryItem):
-    def __init__(self, base_type: str, instrument: str):
+class ParameterSummary(SummaryItem):
+    def __init__(self, base_type: str, parameters: typing.Dict[str, typing.Any]):
         self.base_type = base_type
-        self.instrument = instrument
+        self.parameters = parameters
 
     async def __call__(self, request: Request, summary_type: str = None, **kwargs) -> Response:
+        for key, value in self.parameters.items():
+            if key in kwargs:
+                continue
+            kwargs[key] = value
         return HTMLResponse(await package_template('acquisition', 'summary', self.base_type + '.html').render_async(
             request=request,
             summary=self,
-            instrument=self.instrument,
             **kwargs
         ))

@@ -2028,13 +2028,6 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
                         if isfinite(k4):
                             set_path(k4, 'calibration', 'K4', color_code)
 
-                        m = color_data.get('CalM')
-                        if isfinite(m):
-                            set_path(m, 'calibration', 'M', color_code)
-                        c = color_data.get('CalC')
-                        if isfinite(c):
-                            set_path(c, 'calibration', 'C', color_code)
-
                         color_result = color_data.get('Results')
                         if color_result is None or not isinstance(color_result, list):
                             continue
@@ -2043,10 +2036,24 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
                             angle_data = color_result[index_total]
                             set_path(angle_data.get('PCT'), 'percent_error', 'total', color_code)
                             set_path(angle_data.get('Cc'), 'sensitivity_factor', 'total', color_code)
+
+                            m = angle_data.get('CalM')
+                            if isfinite(m):
+                                set_path(m, 'calibration', 'M', 'total', color_code)
+                            c = angle_data.get('CalC')
+                            if isfinite(c):
+                                set_path(c, 'calibration', 'C', 'total', color_code)
                         if index_back is not None and index_back < len(color_result):
                             angle_data = color_result[index_back]
                             set_path(angle_data.get('PCT'), 'percent_error', 'back', color_code)
                             set_path(angle_data.get('Cc'), 'sensitivity_factor', 'back', color_code)
+
+                            m = angle_data.get('CalM')
+                            if isfinite(m):
+                                set_path(m, 'calibration', 'M', 'back', color_code)
+                            c = angle_data.get('CalC')
+                            if isfinite(c):
+                                set_path(c, 'calibration', 'C', 'back', color_code)
                     return result
                 return 'spancheck_result', translator
             return super().value_translator(name)
@@ -3004,6 +3011,89 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'TimingUncertainty': 'timing_uncertainty',
     }, flags_set_warning={
         'TooManyParticles', 'TimingUncertainty',
+    }),
+
+    AcquisitionTranslator.Nephelometer('acquire_ecotech_nephaurora', 'ecotechnephelometer', variable_map={
+        AcquisitionTranslator.Variable('ZBsB'): 'BsB',
+        AcquisitionTranslator.Variable('ZBsG'): 'BsG',
+        AcquisitionTranslator.Variable('ZBsR'): 'BsR',
+        AcquisitionTranslator.Variable('ZBbsB'): 'BbsB',
+        AcquisitionTranslator.Variable('ZBbsG'): 'BbsG',
+        AcquisitionTranslator.Variable('ZBbsR'): 'BbsR',
+        AcquisitionTranslator.Variable('BswB'): 'BswB',
+        AcquisitionTranslator.Variable('BswG'): 'BswG',
+        AcquisitionTranslator.Variable('BswR'): 'BswR',
+        AcquisitionTranslator.Variable('BbswB'): 'BbswB',
+        AcquisitionTranslator.Variable('BbswG'): 'BbswG',
+        AcquisitionTranslator.Variable('BbswR'): 'BbswR',
+        AcquisitionTranslator.Variable('BswdB'): 'BswdB',
+        AcquisitionTranslator.Variable('BswdG'): 'BswdG',
+        AcquisitionTranslator.Variable('BswdR'): 'BswdR',
+        AcquisitionTranslator.Variable('BbswdB'): 'BbswdB',
+        AcquisitionTranslator.Variable('BbswdG'): 'BbswdG',
+        AcquisitionTranslator.Variable('BbswdR'): 'BbswdR',
+        AcquisitionTranslator.Variable('CsB'): 'CsB',
+        AcquisitionTranslator.Variable('CsG'): 'CsG',
+        AcquisitionTranslator.Variable('CsR'): 'CsR',
+        AcquisitionTranslator.Variable('CbsB'): 'CbsB',
+        AcquisitionTranslator.Variable('CbsG'): 'CbsG',
+        AcquisitionTranslator.Variable('CbsR'): 'CbsR',
+        AcquisitionTranslator.Variable('CfB'): 'CfB',
+        AcquisitionTranslator.Variable('CfG'): 'CfG',
+        AcquisitionTranslator.Variable('CfR'): 'CfR',
+        AcquisitionTranslator.Variable('CrB'): 'CrB',
+        AcquisitionTranslator.Variable('CrG'): 'CrG',
+        AcquisitionTranslator.Variable('CrR'): 'CrR',
+        AcquisitionTranslator.Variable('CbrB'): 'CbrB',
+        AcquisitionTranslator.Variable('CbrG'): 'CbrG',
+        AcquisitionTranslator.Variable('CbrR'): 'CbrR',
+        AcquisitionTranslator.Variable('Cd'): 'Cd',
+        AcquisitionTranslator.Variable('T'): 'Tsample',
+        AcquisitionTranslator.Variable('U'): 'Usample',
+        AcquisitionTranslator.Variable('P'): 'Psample',
+        AcquisitionTranslator.Variable('Tx'): 'Tcell',
+    }, flags_notifications={
+        'InconsistentZero': 'inconsistent_zero',
+        'BackscatterFault': 'backscatter_fault',
+        'BackscatterDigitalFault': 'backscatter_digital_fault',
+        'ShutterFault': 'shutter_fault',
+        'LightSourceFault': 'light_source_fault',
+        'PressureFault': 'pressure_sensor_fault',
+        'EnclosureTemperatureFault': 'enclosure_temperature_fault',
+        'SampleTemperatureFault': 'sample_temperature_fault',
+        'RHFault': 'rh_fault',
+        'PMTFault': 'pmt_fault',
+        'WarmupFault': 'warmup_fault',
+        'BackscattterHighWarning': 'backscatter_high_warning',
+        'SystemFault': 'system_fault',
+    }, flags_set_warning={
+        'InconsistentZero',
+        'BackscatterFault',
+        'BackscatterDigitalFault',
+        'ShutterFault',
+        'LightSourceFault',
+        'PressureFault',
+        'EnclosureTemperatureFault',
+        'SampleTemperatureFault',
+        'RHFault',
+        'PMTFault',
+        'WarmupFault',
+        'BackscattterHighWarning',
+        'SystemFault',
+    }, zstate_notifications={
+        'Blank': 'blank',
+        'Zero': 'zero',
+        'Spancheck': 'spancheck',
+        'Calibration': 'calibration',
+        'Warmup': 'warmup',
+    }, zstate_set_warning={
+        'Warmup',
+    }, command_map={
+        'start_zero': 'StartZero',
+        'start_spancheck': 'StartSpancheck',
+        'stop_spancheck': 'StopSpancheck',
+        'apply_spancheck_calibration': 'ApplySpancheckCalibration',
+        'reboot': 'Reboot',
     }),
 
     AcquisitionTranslator.Component('acquire_gmd_cpcpulse', 'tsi3760cpc', variable_map={

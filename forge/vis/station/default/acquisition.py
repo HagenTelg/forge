@@ -2,7 +2,7 @@ import typing
 from forge.vis.acquisition import Translator
 from forge.vis import CONFIGURATION
 from forge.vis.acquisition import SummaryItem, Display
-from forge.vis.acquisition.basic import BasicDisplay, BasicSummary, InstrumentSummary, InstrumentDisplay
+from forge.vis.acquisition.basic import BasicDisplay, BasicSummary, ParameterSummary, ParameterDisplay
 from forge.vis.mode.acquisition import Acquisition as BaseAcquisition
 
 
@@ -25,6 +25,7 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('mageeae33'))
         self.display_instrument.append(self.DisplayInstrumentSimple('teledynet640'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3563nephelometer'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('ecotechnephelometer'))
         self.display_instrument.append(BaseAcquisition.DisplayInstrument(display_type='thermo49i',
                                                                          match_type='thermo49'))
         self.display_instrument.append(self.DisplayInstrumentSimple('csdpops'))
@@ -61,16 +62,22 @@ def visible(station: str, mode_name: typing.Optional[str] = None) -> bool:
 
 _default_display = BasicDisplay()
 _type_display: typing.Dict[str, Display] = {
-    'tap': InstrumentDisplay('clap', "BMI TAP"),
+    'tap': ParameterDisplay('clap', {'instrument': "BMI TAP"}),
 }
 
 _default_summary = BasicSummary()
 _type_summary: typing.Dict[str, SummaryItem] = {
-    'tsi3760cpc': InstrumentSummary('cpc', "TSI 3760"),
-    'admagiccpc': InstrumentSummary('cpc', "Magic"),
-    'tap': InstrumentSummary('clap', "BMI TAP"),
-    'tsi3563nephelometer': InstrumentSummary('nephelometer', "TSI 3563"),
-    'vaisalawxt5xx': InstrumentSummary('wind', "Vaisala WXT"),
+    'tsi3760cpc': ParameterSummary('cpc', {'instrument': "TSI 3760"}),
+    'admagiccpc': ParameterSummary('cpc', {'instrument': "Magic"}),
+    'tap': ParameterSummary('clap', {'instrument': "BMI TAP"}),
+    'tsi3563nephelometer': ParameterSummary('nephelometer', {'instrument': "TSI 3563"}),
+    'ecotechnephelometer': ParameterSummary('nephelometer', {
+        'instrument': "Ecotech Aurora",
+        'blue': 450,
+        'green': 525,
+        'red': 635,
+    }),
+    'vaisalawxt5xx': ParameterSummary('wind', {'instrument': "Vaisala WXT"}),
 }
 
 
