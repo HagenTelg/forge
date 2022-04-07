@@ -26,41 +26,168 @@ class _CacheEntry:
     _MAXIMUM_AGE = CONFIGURATION.get('CPD3.CACHE.ENTRYAGE', 15 * 60)
     _CACHE_DIRECTORY = CONFIGURATION.get('CPD3.CACHE.DIRECTORY', '/var/tmp')
 
+    class _WriteTarget:
+        def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+            self.reader = reader
+            self.writer = writer
+            self.closed = False
+            self._closed_monitor: typing.Optional[asyncio.Task] = background_task(self._monitor_read())
+
+        def _close_writer(self) -> None:
+            if not self.writer:
+                return
+            try:
+                self.writer.close()
+            except OSError:
+                pass
+            self.writer = None
+
+        async def _monitor_read(self) -> None:
+            while not self.closed:
+                data = await self.reader.read(4096)
+                if not data:
+                    _LOGGER.debug("Connection remote close detected")
+                    break
+            self.closed = True
+            self._closed_monitor = None
+            self._close_writer()
+
+        def write(self, data) -> bool:
+            if self.closed:
+                return False
+            try:
+                self.writer.write(data)
+            except OSError:
+                return False
+            return True
+
+        async def drain(self) -> bool:
+            if self.closed:
+                return False
+            try:
+                await self.writer.drain()
+            except OSError:
+                return False
+            return not self.closed
+
+        def close(self) -> None:
+            if self.closed:
+                return
+            self.closed = True
+            t = self._closed_monitor
+            self._closed_monitor = None
+            if t:
+                try:
+                    t.cancel()
+                except:
+                    pass
+            self._close_writer()
+
     def __init__(self, args: typing.List[str]):
         self.created = time.monotonic()
         self.args = args
         self._file = TemporaryFile(dir=self._CACHE_DIRECTORY, buffering=0)
-        self._direct_targets: typing.Set[asyncio.StreamWriter] = set()
-        self._queued_targets: typing.List[asyncio.StreamWriter] = list()
+        self._direct_targets: typing.Set[_CacheEntry._WriteTarget] = set()
+        self._queued_targets: typing.List[_CacheEntry._WriteTarget] = list()
         self.reader_in_progress = False
         self.reader_complete = False
         self.total_size = 0
 
-    async def _start_reader(self):
-        return await asyncio.create_subprocess_exec(self._INTERFACE, *self.args,
-                                                    stdout=asyncio.subprocess.PIPE,
-                                                    stdin=asyncio.subprocess.DEVNULL)
+    class _MonitoredReader:
+        _READ_TIMEOUT = CONFIGURATION.get('CPD3.CACHE.READTIMEOUT', 2 * 60 * 60)
 
-    async def _read_process(self, writer: asyncio.StreamWriter) -> None:
+        def __init__(self, reader):
+            self.reader = reader
+            self._aborted = False
+            self._timeout: typing.Optional[asyncio.Task] = background_task(self._run_timeout())
+
+        def _run_termination(self) -> None:
+            if not self.reader:
+                return
+            reader = self.reader
+            self.reader = None
+
+            try:
+                reader.terminate()
+            except:
+                pass
+
+            async def _run_kill():
+                await asyncio.sleep(60)
+                if not reader:
+                    return
+                try:
+                    reader.kill()
+                except:
+                    pass
+
+            async def _wait_process():
+                nonlocal reader
+                try:
+                    await reader.wait()
+                except:
+                    pass
+                reader = None
+
+            background_task(_wait_process())
+            background_task(_run_kill())
+
+        async def _run_timeout(self) -> None:
+            await asyncio.sleep(self._READ_TIMEOUT)
+            self._aborted = True
+            self._timeout = None
+            self._run_termination()
+
+        def _cancel_timeout(self) -> None:
+            t = self._timeout
+            self._timeout = None
+            if t is None:
+                return
+            try:
+                t.cancel()
+            except:
+                pass
+
+        async def read(self) -> bytes:
+            if self._aborted or self.reader is None:
+                return bytes()
+            return await self.reader.stdout.read(65536)
+
+        async def wait(self) -> None:
+            if self._aborted or self.reader is None:
+                return
+            await self.reader.wait()
+            self.reader = None
+            self._cancel_timeout()
+
+        def abort(self):
+            if self._aborted:
+                return
+            self._aborted = True
+            self._cancel_timeout()
+            self._run_termination()
+
+    async def _start_reader(self) -> "_CacheEntry._MonitoredReader":
+        reader = await asyncio.create_subprocess_exec(self._INTERFACE, *self.args,
+                                                      stdout=asyncio.subprocess.PIPE,
+                                                      stdin=asyncio.subprocess.DEVNULL)
+        return self._MonitoredReader(reader)
+
+    async def _read_process(self, writer: "_CacheEntry._WriteTarget") -> None:
         _LOGGER.debug(f"Reading process for {self.args}")
         reader = await self._start_reader()
         while True:
-            data = await reader.stdout.read(65536)
+            data = await reader.read()
             if not data:
                 break
-            try:
-                writer.write(data)
-                await writer.drain()
-            except OSError:
-                try:
-                    reader.terminate()
-                except:
-                    pass
-                break
+            if not writer.write(data) or not await writer.drain():
+                reader.abort()
+                _LOGGER.debug(f"Aborted process read for {self.args}")
+                return
         await reader.wait()
         _LOGGER.debug(f"Completed process read for {self.args}")
 
-    async def _read_file(self, writer: asyncio.StreamWriter) -> None:
+    async def _read_file(self, writer: "_CacheEntry._WriteTarget") -> None:
         if not self._file:
             return await self._read_process(writer)
         _LOGGER.debug(f"Reading file for {self.args}")
@@ -82,10 +209,7 @@ class _CacheEntry:
                     yield data
 
             async for chunk in reader():
-                try:
-                    writer.write(chunk)
-                    await writer.drain()
-                except OSError:
+                if not writer.write(chunk) or not await writer.drain():
                     break
         finally:
             try:
@@ -95,12 +219,9 @@ class _CacheEntry:
 
         _LOGGER.debug(f"Completed file read for {self.args}")
 
-    async def _send_to_target(self, writer: asyncio.StreamWriter) -> None:
+    async def _send_to_target(self, writer: "_CacheEntry._WriteTarget") -> None:
         await self._read_file(writer)
-        try:
-            writer.close()
-        except OSError:
-            pass
+        writer.close()
 
     async def start(self) -> None:
         _LOGGER.debug(f"Starting initial read for {self.args}")
@@ -110,7 +231,7 @@ class _CacheEntry:
         async def run():
             initial_buffer = bytearray()
             while True:
-                data = await reader.stdout.read(65536)
+                data = await reader.read()
                 self.reader_in_progress = True
                 if not data:
                     break
@@ -118,13 +239,8 @@ class _CacheEntry:
                 if initial_buffer is not None:
                     initial_buffer += data
                     for t in self._queued_targets:
-                        try:
-                            t.write(bytes(initial_buffer))
-                        except OSError:
-                            try:
-                                t.close()
-                            except OSError:
-                                pass
+                        if not t.write(bytes(initial_buffer)):
+                            t.close()
                             continue
                         self._direct_targets.add(t)
                     self._queued_targets.clear()
@@ -141,33 +257,21 @@ class _CacheEntry:
                         self._file.write(data)
 
                 for t in list(self._direct_targets):
-                    try:
-                        t.write(data)
-                    except OSError:
-                        try:
-                            t.close()
-                        except OSError:
-                            pass
+                    if not t.write(data):
+                        t.close()
                         self._direct_targets.remove(t)
-                        continue
                 for t in list(self._direct_targets):
-                    try:
-                        await t.drain()
-                    except OSError:
-                        try:
-                            t.close()
-                        except OSError:
-                            pass
+                    if not await t.drain():
                         self._direct_targets.remove(t)
                         continue
 
                 if not self._file and len(self._direct_targets) == 0 and (len(self._queued_targets) == 0 or
                                                                           initial_buffer is None):
                     _LOGGER.debug(f"Aborting canceled read for {self.args}")
-                    try:
-                        reader.terminate()
-                    except:
-                        pass
+                    reader.abort()
+                    if self._file:
+                        self._file.close()
+                        self._file = None
                     break
 
             self.reader_complete = True
@@ -175,10 +279,7 @@ class _CacheEntry:
 
             await reader.wait()
             for t in self._direct_targets:
-                try:
-                    t.close()
-                except OSError:
-                    pass
+                t.close()
             self._direct_targets.clear()
 
             if self._file:
@@ -190,20 +291,21 @@ class _CacheEntry:
 
         background_task(run())
 
-    async def attach(self, writer: asyncio.StreamWriter) -> None:
+    def attach(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        target = self._WriteTarget(reader, writer)
         if not self._file:
             async def send():
-                await self._read_process(writer)
+                await self._read_process(target)
                 writer.close()
             background_task(send())
             return
         if not self.reader_in_progress:
-            self._direct_targets.add(writer)
+            self._direct_targets.add(target)
             return
         if self.reader_complete:
-            background_task(self._send_to_target(writer))
+            background_task(self._send_to_target(target))
             return
-        self._queued_targets.append(writer)
+        self._queued_targets.append(target)
 
     def is_expired(self) -> bool:
         if not self._file:
@@ -241,7 +343,7 @@ class _CacheKey:
 _cache: typing.Dict[_CacheKey, _CacheEntry] = OrderedDict()
 
 
-async def _cached_read(writer: asyncio.StreamWriter, args: typing.List[str]) -> None:
+async def _cached_read(reader: asyncio.StreamReader, writer: asyncio.StreamWriter, args: typing.List[str]) -> None:
     key = _CacheKey(args)
     entry = _cache.get(key)
     to_start = None
@@ -249,7 +351,7 @@ async def _cached_read(writer: asyncio.StreamWriter, args: typing.List[str]) -> 
         entry = _CacheEntry(args)
         _cache[key] = entry
         to_start = entry
-    await entry.attach(writer)
+    entry.attach(reader, writer)
     if to_start:
         await to_start.start()
 
@@ -330,7 +432,7 @@ class Server(UnixServer):
             return
         operation = args[0]
         if operation == "archive_read" or operation == "edited_read":
-            await _cached_read(writer, args)
+            await _cached_read(reader, writer, args)
             return
         elif operation == "directive_create" or operation == "directive_rmw" or operation == "update_passed":
             await _empty_cache()

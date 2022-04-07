@@ -14,7 +14,7 @@ CONFIGURATION = Dynaconf(
 )
 
 
-async def connect(args: typing.List[str]) -> asyncio.StreamReader:
+async def connect(args: typing.List[str]) -> typing.Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
     reader, writer = await asyncio.open_unix_connection(
         CONFIGURATION.get('CPD3.CACHE.SOCKET', '/run/forge-cpd3-cache.socket'))
     header = struct.pack('<I', len(args))
@@ -24,7 +24,7 @@ async def connect(args: typing.List[str]) -> asyncio.StreamReader:
         header += raw
     writer.write(header)
     await writer.drain()
-    return reader
+    return reader, writer
 
 
 def main():
@@ -33,7 +33,7 @@ def main():
     async def run():
         operation = args[0]
 
-        reader = await connect(args)
+        reader, writer = await connect(args)
         if operation == "archive_read" or operation == "edited_read":
             sys.stdin.close()
             while True:
@@ -42,7 +42,9 @@ def main():
                     break
                 sys.stdout.buffer.write(data)
             sys.stdout.close()
+            writer.close()
         else:
+            writer.close()
             interface = CONFIGURATION.get('CPD3.CACHE.INTERFACE', 'cpd3_forge_interface')
             os.execvp(interface, [interface] + args)
             exit(1)

@@ -6,11 +6,13 @@ import struct
 import logging
 import os
 import re
+from abc import ABC, abstractmethod
 from math import floor, ceil, isfinite
 from copy import deepcopy
 from pathlib import Path
 from forge.const import __version__
 from forge.vis import CONFIGURATION
+from forge.tasks import background_task
 from forge.vis.access import BaseAccessUser
 from forge.vis.data.stream import DataStream, RecordStream
 from forge.vis.realtime.controller.client import ReadData as RealtimeRead
@@ -23,11 +25,11 @@ from forge.cpd3.identity import Name, Identity
 from forge.cpd3.variant import serialize as variant_serialize, deserialize as variant_deserialize
 from forge.cpd3.datareader import StandardDataInput, RecordInput
 from forge.cpd3.timeinterval import TimeUnit, TimeInterval
-from forge.cpd3.acquisition.incoming.socket import AcquisitionSocket
 
 
 _LOGGER = logging.getLogger(__name__)
 _interface = CONFIGURATION.get('CPD3.INTERFACE', 'cpd3_forge_interface')
+_read_timeout = CONFIGURATION.get('CPD3.READTIMEOUT', 2 * 60 * 60)
 
 
 def _to_cpd3_selection(selection: typing.List[typing.Dict[str, str]]) -> typing.List[typing.Any]:
@@ -1051,6 +1053,169 @@ async def _get_latest_passed(station: str, profile: str) -> typing.Optional[int]
     return None
 
 
+class _ControlledReader(ABC):
+    @abstractmethod
+    async def readexactly(self, n: int) -> bytes:
+        pass
+
+    @abstractmethod
+    async def read(self) -> bytes:
+        pass
+
+    @abstractmethod
+    async def wait(self) -> None:
+        pass
+
+    @abstractmethod
+    def terminate(self) -> None:
+        pass
+
+
+class _ProcessReader(_ControlledReader):
+    def __init__(self, process):
+        self.process = process
+        self._terminated = False
+        self._timeout = background_task(self._run_timeout())
+
+    def _run_termination(self) -> None:
+        if not self.process:
+            return
+        process = self.process
+        self.process = None
+
+        try:
+            process.terminate()
+        except:
+            pass
+
+        async def _run_kill():
+            await asyncio.sleep(60)
+            if not process:
+                return
+            try:
+                process.kill()
+            except:
+                pass
+
+        async def _wait_process():
+            nonlocal process
+            try:
+                await process.wait()
+            except:
+                pass
+            process = None
+
+        background_task(_wait_process())
+        background_task(_run_kill())
+
+    async def _run_timeout(self):
+        await asyncio.sleep(_read_timeout)
+        self._terminated = True
+        self._timeout = None
+        self._run_termination()
+
+    def _cancel_timeout(self) -> None:
+        if self._timeout is None:
+            return
+        try:
+            self._timeout.cancel()
+        except:
+            pass
+        self._timeout = None
+
+    async def readexactly(self, n: int) -> bytes:
+        if self._terminated or not self.process:
+            raise asyncio.IncompleteReadError(bytes(), n)
+        return await self.process.stdout.readexactly(n)
+
+    async def read(self) -> bytes:
+        if self._terminated or not self.process:
+            return bytes()
+        return await self.process.stdout.read(65536)
+
+    async def wait(self) -> None:
+        if self._terminated or not self.process:
+            return
+        await self.process.wait()
+        self.process = None
+        self._cancel_timeout()
+
+    def terminate(self) -> None:
+        if self._terminated:
+            return
+        _LOGGER.debug("Terminating reader process")
+        self._terminated = True
+        self._cancel_timeout()
+        self._run_termination()
+
+
+class _FilteredReader(_ProcessReader):
+    def __init__(self, reader, filter):
+        super().__init__(filter)
+        self.origin = reader
+
+    def _run_termination(self) -> None:
+        if not self.process:
+            return
+        process = self.process
+        self.process = None
+        origin = self.origin
+        self.origin = None
+
+        try:
+            process.terminate()
+        except:
+            pass
+        try:
+            origin.terminate()
+        except:
+            pass
+
+        async def _run_kill():
+            await asyncio.sleep(60)
+            if process:
+                try:
+                    process.kill()
+                except:
+                    pass
+            if origin:
+                try:
+                    origin.kill()
+                except:
+                    pass
+
+        async def _wait_process():
+            nonlocal process
+            try:
+                await process.wait()
+            except:
+                pass
+            process = None
+
+        async def _wait_origin():
+            nonlocal origin
+            try:
+                await origin.wait()
+            except:
+                pass
+            origin = None
+
+        background_task(_wait_process())
+        background_task(_wait_origin())
+        background_task(_run_kill())
+
+    async def wait(self) -> None:
+        if self._terminated:
+            return
+        if self.process and not self._terminated:
+            await self.process.wait()
+            self.process = None
+        if self.origin and not self._terminated:
+            await self.origin.wait()
+            self.origin = None
+        self._cancel_timeout()
+
+
 class DataReader(RecordStream):
     PASS_STALL_ARCHIVES = frozenset({"clean", "avgh"})
 
@@ -1130,7 +1295,7 @@ class DataReader(RecordStream):
             selections.append(arg)
         return selections
 
-    async def create_reader(self) -> typing.Tuple[asyncio.StreamReader, typing.Callable[[bool], typing.Awaitable[None]]]:
+    async def create_reader(self) -> _ControlledReader:
         selections = self.selection_arguments()
         _LOGGER.debug(f"Starting data read for {self.start_epoch},{self.end_epoch} with {len(selections)} selections")
 
@@ -1140,13 +1305,7 @@ class DataReader(RecordStream):
                                                        stdout=asyncio.subprocess.PIPE,
                                                        stdin=asyncio.subprocess.DEVNULL)
 
-        async def shutdown(terminate: bool) -> None:
-            if terminate:
-                process.terminate()
-                return
-            await process.wait()
-
-        return process.stdout, shutdown
+        return _ProcessReader(process)
 
     class CleanReadyStall(RecordStream.Stall):
         def __init__(self, readers: typing.List[asyncio.StreamReader], writers: typing.List[asyncio.StreamWriter]):
@@ -1204,16 +1363,16 @@ class DataReader(RecordStream):
         return self.CleanReadyStall(readers, writers)
 
     async def run(self) -> None:
-        data_in, data_shutdown = await self.create_reader()
+        reader = await self.create_reader()
 
         try:
-            await data_in.readexactly(3)
+            await reader.readexactly(3)
 
             buffer: typing.List[typing.Tuple[int, typing.Dict[Name, typing.Any]]] = list()
             converter = self.Input(self, buffer)
 
             while True:
-                data = await data_in.read(65536)
+                data = await reader.read()
                 if not data:
                     break
                 converter.incoming_raw(data)
@@ -1225,12 +1384,9 @@ class DataReader(RecordStream):
             for r in buffer:
                 await self._convert(r[0], r[1])
             await self.flush()
-            await data_shutdown(False)
+            await reader.wait()
         except asyncio.CancelledError:
-            try:
-                await data_shutdown(True)
-            except:
-                pass
+            reader.terminate()
             raise
 
 
@@ -1247,7 +1403,7 @@ class EditedReader(DataReader):
         self.profile = profile
         self._generator: typing.Optional[asyncio.subprocess.Process] = None
 
-    async def create_reader(self) -> typing.Tuple[asyncio.StreamReader, typing.Callable[[bool], typing.Awaitable[None]]]:
+    async def create_reader(self) -> _ControlledReader:
         selections = self.selection_arguments()
         _LOGGER.debug(f"Starting edited read for {self.station}-{self.profile} {self.start_epoch},{self.end_epoch} with {len(selections)} selections")
 
@@ -1266,15 +1422,7 @@ class EditedReader(DataReader):
                                                       stdin=read)
         os.close(read)
 
-        async def shutdown(terminate: bool) -> None:
-            if terminate:
-                filter.terminate()
-                reader.terminate()
-                return
-            await filter.wait()
-            await reader.wait()
-
-        return filter.stdout, shutdown
+        return _FilteredReader(reader, filter)
 
     async def stall(self) -> typing.Optional["DataStream.Stall"]:
         return None
@@ -1544,7 +1692,7 @@ class ContaminationReader(DataStream):
             selections.append(f'{sel.station}:{sel.archive}:{sel.variable}:-cover:-stats')
         return selections
 
-    async def create_reader(self) -> typing.Tuple[asyncio.StreamReader, typing.Callable[[bool], typing.Awaitable[None]]]:
+    async def create_reader(self) -> _ControlledReader:
         selections = self.selection_arguments()            
         _LOGGER.debug(f"Starting contamination read for {self.start_epoch},{self.end_epoch} with {len(selections)} selections")
 
@@ -1553,14 +1701,7 @@ class ContaminationReader(DataStream):
                                                        *selections,
                                                        stdout=asyncio.subprocess.PIPE,
                                                        stdin=asyncio.subprocess.DEVNULL)
-
-        async def shutdown(terminate: bool) -> None:
-            if terminate:
-                process.terminate()
-                return
-            await process.wait()
-
-        return process.stdout, shutdown
+        return _ProcessReader(process)
 
     PASS_STALL_ARCHIVES = DataReader.PASS_STALL_ARCHIVES
     CleanReadyStall = DataReader.CleanReadyStall
@@ -1574,16 +1715,16 @@ class ContaminationReader(DataStream):
         return blocking_stations
 
     async def run(self) -> None:
-        data_in, data_shutdown = await self.create_reader()
+        reader = await self.create_reader()
 
         try:
-            await data_in.readexactly(3)
+            await reader.readexactly(3)
 
             state = self._State()
             converter = self.Input(self, state)
 
             while True:
-                data = await data_in.read(65536)
+                data = await reader.read()
                 if not data:
                     break
                 converter.incoming_raw(data)
@@ -1592,12 +1733,9 @@ class ContaminationReader(DataStream):
             converter.flush()
             state.complete(self.clip_end_ms)
             await state.flush(self.send)
-            await data_shutdown(False)
+            await reader.wait()
         except asyncio.CancelledError:
-            try:
-                await data_shutdown(True)
-            except:
-                pass
+            reader.terminate()
             raise
 
 
@@ -1622,7 +1760,7 @@ class EditedContaminationReader(ContaminationReader):
         self.station = station
         self.profile = profile
 
-    async def create_reader(self) -> typing.Tuple[asyncio.StreamReader, typing.Callable[[bool], typing.Awaitable[None]]]:
+    async def create_reader(self) -> _ControlledReader:
         selections = self.selection_arguments()
         _LOGGER.debug(
             f"Starting edited contamination read for {self.station}-{self.profile} {self.start_epoch},{self.end_epoch} with {len(selections)} selections")
@@ -1642,15 +1780,7 @@ class EditedContaminationReader(ContaminationReader):
                                                       stdin=read)
         os.close(read)
 
-        async def shutdown(terminate: bool) -> None:
-            if terminate:
-                filter.terminate()
-                reader.terminate()
-                return
-            await filter.wait()
-            await reader.wait()
-
-        return filter.stdout, shutdown
+        return _FilteredReader(reader, filter)
 
     async def stall(self) -> typing.Optional["DataStream.Stall"]:
         return None
