@@ -19,6 +19,7 @@ class Acquisition(BaseAcquisition):
         super().__init__(mode_name, display_name, **kwargs)
 
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3760cpc'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('tsi377xcpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('admagiccpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('clap'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tap'))
@@ -39,6 +40,7 @@ class Acquisition(BaseAcquisition):
 
 
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3760cpc', priority=4000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('tsi377xcpc', priority=4000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('admagiccpc', priority=4000))
 
         self.summary_instrument.append(self.SummaryInstrumentSimple('clap', priority=3000))
@@ -68,6 +70,7 @@ _type_display: typing.Dict[str, Display] = {
 _default_summary = BasicSummary()
 _type_summary: typing.Dict[str, SummaryItem] = {
     'tsi3760cpc': ParameterSummary('cpc', {'instrument': "TSI 3760"}),
+    'tsi377xcpc': ParameterSummary('cpc', {'instrument': "TSI 377x"}),
     'admagiccpc': ParameterSummary('cpc', {'instrument': "Magic"}),
     'tap': ParameterSummary('clap', {'instrument': "BMI TAP"}),
     'tsi3563nephelometer': ParameterSummary('nephelometer', {'instrument': "TSI 3563"}),
