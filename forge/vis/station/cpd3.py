@@ -3527,6 +3527,35 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'stop_spancheck': 'StopSpancheck',
     }),
 
+    AcquisitionTranslator.Component('acquire_vaisala_wmt700', 'vaisalawmt700', variable_map={
+        AcquisitionTranslator.Variable('WS'): 'WS',
+        AcquisitionTranslator.Variable('WD'): 'WD',
+        AcquisitionTranslator.Variable('T1'): 'Tsonic',
+        AcquisitionTranslator.Variable('T2'): 'Ttransducer',
+        AcquisitionTranslator.Variable('V1'): 'Vsupply',
+        AcquisitionTranslator.Variable('V2'): 'Vheater',
+    }, flags_notifications={
+        'TemperatureSensor1Failure': 'temperature_sensor_1_failure',
+        'TemperatureSensor2Failure': 'temperature_sensor_2_failure',
+        'TemperatureSensor3Failure': 'temperature_sensor_3_failure',
+        'HeaterFailure': 'heater_failure',
+        'HighSupplyVoltage': 'supply_voltage_high',
+        'LowSupplyVoltage': 'supply_voltage_low',
+        'WindSpeedHigh': 'wind_speed_high',
+        'SonicTemperatureOutOfRange': 'sonic_temperature_out_of_range',
+        'WindMeasurementSuspect': 'low_wind_validity',
+        'BlockedSensor': 'blocked_sensor',
+        'HighNoise': 'high_noise_level',
+    }, flags_set_warning={
+        'TemperatureSensor1Failure',
+        'TemperatureSensor3Failure',
+        'HeaterFailure',
+        'HighSupplyVoltage',
+        'LowSupplyVoltage',
+        'SonicTemperatureOutOfRange',
+        'BlockedSensor',
+    }),
+
     AcquisitionTranslator.Component('acquire_vaisala_wxt5xx', 'vaisalawxt5xx', variable_map={
         AcquisitionTranslator.Variable('WS'): 'WS',
         AcquisitionTranslator.Variable('WD'): 'WD',

@@ -32,6 +32,7 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('csdpops'))
         self.display_instrument.append(self.DisplayInstrumentSimple('lovepid'))
         self.display_instrument.append(self.DisplayInstrumentSimple('purpleair'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('vaisalawmt700'))
         self.display_instrument.append(self.DisplayInstrumentSimple('vaisalawxt5xx'))
         self.display_instrument.append(self.DisplayInstrumentSimple('azonixumac1050'))
         self.display_instrument.append(self.DisplayInstrumentSimple('campbellcr1000gmd'))
@@ -48,6 +49,7 @@ class Acquisition(BaseAcquisition):
 
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3563nephelometer', priority=2000))
 
+        self.summary_instrument.append(self.SummaryInstrumentSimple('vaisalawmt700', priority=1000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('vaisalawxt5xx', priority=1000))
 
         self.summary_static.append(BaseAcquisition.SummaryStatic(summary_type='pitot_flow', priority=-2000))
@@ -80,6 +82,7 @@ _type_summary: typing.Dict[str, SummaryItem] = {
         'green': 525,
         'red': 635,
     }),
+    'vaisalawmt700': ParameterSummary('wind', {'instrument': "Vaisala WMT 700"}),
     'vaisalawxt5xx': ParameterSummary('wind', {'instrument': "Vaisala WXT"}),
 }
 
