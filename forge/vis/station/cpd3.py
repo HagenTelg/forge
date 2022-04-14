@@ -3456,7 +3456,23 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'SampleFlowError',
         'LaserPowerError',
         'LiquidLow',
+    }),
+
+    AcquisitionTranslator.Component('acquire_tsi_cpc3010', 'tsi3010cpc', variable_map={
+        AcquisitionTranslator.Variable('N'): 'N',
+        AcquisitionTranslator.Variable('C'): 'C',
+        AcquisitionTranslator.Variable('T1'): 'Tsaturator',
+        AcquisitionTranslator.Variable('T2'): 'Tcondenser',
+    }, flags_notifications={
+        'LiquidLow': 'liquid_low',
+        'LowVacuum': 'vacuum_low',
+        'InstrumentNotReady': 'not_ready',
+    }, flags_set_warning={
         'LiquidLow',
+        'LowVacuum',
+        'InstrumentNotReady',
+    }, command_map={
+        'fill': 'Fill',
     }),
 
     AcquisitionTranslator.TSI3563Nephelometer('acquire_tsi_neph3563', 'tsi3563nephelometer', variable_map={

@@ -1,0 +1,46 @@
+<div class="display-container collapsable collapsed{% if writable %} menu{% endif %}">
+    <div class="header communication-state warning-state format-source" instrument="TSI 3010"></div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% if writable %}
+    <div class="menu communication-state hide-false">
+        <button class="menu mdi mdi-menu" title="Instrument actions"></button>
+        <ul class="menu menu-below">
+            <li><button class="simple-command" command="fill"
+                        title="Execute a fill command as if the fill button was pressed on the instrument.">Fill Liquid</button></li>
+        </ul>
+    </div>
+    {% endif %}
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <table class="content display-data communication-state hide-false">
+        <tbody>
+            <tr> <td>Concentration (cm⁻³)</td>      <td class="value-formatted" field="N" rightpad="2"></td> </tr>
+            <tr> <td>Count rate (Hz)</td>           <td class="value-formatted" field="C" decimals="0" rightpad="4"></td> </tr>
+            <tr> <td>Saturator (°C)</td>            <td class="value-formatted" field="Tsaturator" rightpad="2"></td> </tr>
+            <tr> <td>Condenser (°C)</td>            <td class="value-formatted" field="Tcondenser" rightpad="2"></td> </tr>
+        </tbody>
+    </table>
+
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="liquid_low">Low butanol level</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="vacuum_low">Low vacuum pressure</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="not_ready">Laser, temperature, flow, or liquid level out of range</div>
+
+</div>
+
+<style>
+#{{uid}} .warning { color: #f80; }
+</style>
+
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+})();
+</script>
