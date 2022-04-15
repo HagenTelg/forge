@@ -22,6 +22,8 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi377xcpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3010cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('admagiccpc'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('bmi1710cpc'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('bmi1720cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('clap'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tap'))
         self.display_instrument.append(self.DisplayInstrumentSimple('mageeae33'))
@@ -70,6 +72,8 @@ def visible(station: str, mode_name: typing.Optional[str] = None) -> bool:
 _default_display = BasicDisplay()
 _type_display: typing.Dict[str, Display] = {
     'tap': ParameterDisplay('clap', {'instrument': "BMI TAP"}),
+    'bmi1710cpc': ParameterDisplay('bmi17x0cpc', {'instrument': "BMI 1710"}),
+    'bmi1720cpc': ParameterDisplay('bmi17x0cpc', {'instrument': "BMI 1720"}),
 }
 
 _default_summary = BasicSummary()

@@ -1,0 +1,117 @@
+<div class="display-container collapsable collapsed">
+    <div class="header communication-state warning-state format-source" instrument="{{ instrument|default('BMI 17x0') }}"></div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <table class="content display-data communication-state hide-false">
+        <tbody>
+            <tr> <td>Concentration (cm⁻³)</td>              <td class="value-formatted" field="N" rightpad="2"></td> </tr>
+            <tr> <td>Count rate (Hz)</td>                   <td class="value-formatted" field="C" decimals="0" rightpad="4"></td> </tr>
+            <tr class="value-exists hide-false" field="P">
+                 <td>Sample pressure (hPa)</td>             <td class="value-formatted" field="P" rightpad="2"></td>
+            </tr>
+            <tr> <td>Sample flow (lpm)</td>                 <td class="value-formatted" field="Qsample" decimals="3"></td> </tr>
+            <tr> <td>Saturator flow (lpm)</td>              <td class="value-formatted" field="Qsaturator" decimals="3"></td> </tr>
+            <tr> <td>Saturator pump power (%)</td>          <td class="value-formatted" field="PCTsaturatorpump" rightpad="2"></td> </tr>
+
+            <tr class="value-exists hide-false" field="RAWP">
+                 <td>Raw pressure ADC)</td>                 <td class="value-formatted" field="RAWP" decimals="0" rightpad="4"></td>
+            </tr>
+            <tr class="value-exists hide-false" field="RAWQsample">
+                 <td>Raw pressure ADC)</td>                 <td class="value-formatted" field="RAWQsample" decimals="0" rightpad="4"></td>
+            </tr>
+            <tr class="value-exists hide-false" field="RAWQsaturator">
+                 <td>Raw pressure ADC)</td>                 <td class="value-formatted" field="RAWQsaturator" decimals="0" rightpad="4"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data column-split communication-state hide-false">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Temperature (°C)</th>
+                <th>Heater (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Inlet</td>
+                <td class="value-formatted" field="Tinlet"></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Saturator bottom</td>
+                <td class="value-formatted" field="Tsaturatorbottom"></td>
+                <td class="value-formatted" field="PCTsaturatorbottom" rightpad="2"></td>
+            </tr>
+            <tr>
+                <td>Saturator bottom</td>
+                <td class="value-formatted" field="Tsaturatortop"></td>
+                <td class="value-formatted" field="PCTsaturatortop" rightpad="2"></td>
+            </tr>
+            <tr>
+                <td>Condenser</td>
+                <td class="value-formatted" field="Tcondenser"></td>
+                <td class="value-formatted" field="PCTcondenser" rightpad="2"></td>
+            </tr>
+            <tr>
+                <td>Optics</td>
+                <td class="value-formatted" field="Toptics"></td>
+                <td class="value-formatted" field="PCToptics" rightpad="2"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="liquid_low">Low butanol level</div>
+
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="eeprom_error">Unable to read or write to EEPROM</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="configuration_error">Onboard saved configuration value out of range</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="saturator_pump_warning">Saturator pump at maximum power</div>
+
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="temperature_control_error">Condenser temperature greater than inlet temperature (check condenser fan)</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="overheating">Condenser temperature greater than 45 °C</div>
+
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="optics_thermistor_error">Optics thermistor malfunctioning or out of range</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="condenser_thermistor_error">Condenser thermistor malfunctioning or out of range</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="saturator_top_thermistor_error">Saturator top thermistor malfunctioning or out of range</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="saturator_bottom_thermistor_error">Saturator bottom thermistor malfunctioning or out of range</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="inlet_thermistor_error">Inlet thermistor malfunctioning or out of range</div>
+
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="rtc_reset">Internal RTC time has been reset (check RTC battery)</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="rtc_error">Unable to communicate with RTC chip</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="sdcard_error">SD card error</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="sdcard_format_error">SD card filesystem is not FAT32</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="sdcard_full">SD card is full</div>
+
+</div>
+
+<style>
+#{{uid}} .warning { color: #f80; }
+</style>
+
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+})();
+</script>
