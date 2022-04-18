@@ -31,6 +31,7 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3563nephelometer'))
         self.display_instrument.append(self.DisplayInstrumentSimple('ecotechnephelometer'))
         self.display_instrument.append(self.DisplayInstrumentSimple('thermo49'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('thermo49iq'))
         self.display_instrument.append(self.DisplayInstrumentSimple('csdpops'))
         self.display_instrument.append(self.DisplayInstrumentSimple('lovepid'))
         self.display_instrument.append(self.DisplayInstrumentSimple('purpleair'))
