@@ -35,6 +35,7 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('csdpops'))
         self.display_instrument.append(self.DisplayInstrumentSimple('lovepid'))
         self.display_instrument.append(self.DisplayInstrumentSimple('purpleair'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('tsimfm'))
         self.display_instrument.append(self.DisplayInstrumentSimple('vaisalapwdx2'))
         self.display_instrument.append(self.DisplayInstrumentSimple('vaisalawmt700'))
         self.display_instrument.append(self.DisplayInstrumentSimple('vaisalawxt5xx'))

@@ -3571,6 +3571,13 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'fill': 'Fill',
     }),
 
+    AcquisitionTranslator.Component('acquire_tsi_mfm4xxx', 'tsimfm', variable_map={
+        AcquisitionTranslator.Variable('Q'): 'Q',
+        AcquisitionTranslator.Variable('T'): 'T',
+        AcquisitionTranslator.Variable('U'): 'U',
+        AcquisitionTranslator.Variable('P'): 'P',
+    }),
+
     AcquisitionTranslator.TSI3563Nephelometer('acquire_tsi_neph3563', 'tsi3563nephelometer', variable_map={
         AcquisitionTranslator.Variable('ZBsB'): 'BsB',
         AcquisitionTranslator.Variable('ZBsG'): 'BsG',
