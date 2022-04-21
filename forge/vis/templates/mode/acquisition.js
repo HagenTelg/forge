@@ -178,18 +178,24 @@ $(document).ready(function() {
                 target.classList.add('exists-false');
                 target.classList.remove('exists-true');
 
-                context.addSourceTarget((value) => {
-                    if (value === null || value === undefined) {
-                        return;
+                for (let f of field.split(/(\s+)/)) {
+                    f = f.trim();
+                    if (f.length === 0) {
+                        continue;
                     }
-                    if (typeof value === 'number') {
-                        if (!isFinite(value)) {
+                    context.addSourceTarget((value) => {
+                        if (value === null || value === undefined) {
                             return;
                         }
-                    }
-                    target.classList.add('exists-true');
-                    target.classList.remove('exists-false');
-                }, context.source, field);
+                        if (typeof value === 'number') {
+                            if (!isFinite(value)) {
+                                return;
+                            }
+                        }
+                        target.classList.add('exists-true');
+                        target.classList.remove('exists-false');
+                    }, context.source, f);
+                }
             });
         }
 
