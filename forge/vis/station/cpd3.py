@@ -3390,6 +3390,35 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'white_filter_change': 'StartWhiteFilterChange',
     }),
 
+    AcquisitionTranslator.Component('acquire_grimm_opc110x', 'grimm110xopc', variable_map={
+        AcquisitionTranslator.Variable('Nb'): 'dN',
+        AcquisitionTranslator.Variable('Ns'): 'Dp',
+        AcquisitionTranslator.Variable('N'): 'N',
+        AcquisitionTranslator.Variable('Q'): 'Q',
+        AcquisitionTranslator.Variable('ZXPM1'): 'X1',
+        AcquisitionTranslator.Variable('ZXPM10'): 'X10',
+        AcquisitionTranslator.Variable('ZXPM25'): 'X25',
+        AcquisitionTranslator.Variable('PCT1'): 'PCTbattery',
+        AcquisitionTranslator.Variable('PCT2'): 'PCTpump',
+    }, zstate_notifications={
+        'SelfTestFault': 'self_test_failure',
+        'MemoryCardFault': 'memory_card_fault',
+        'NozzleFault': 'nozzle_fault',
+        'BatteryDrained': 'battery_drained',
+        'BatteryLow': 'battery_low',
+        'PumpCurrentHigh': 'pump_current_high',
+        'FlowError': 'flow_error',
+        'PumpLow': 'pump_low',
+        'PumpHigh': 'pump_high',
+    }, zstate_set_warning={
+        'SelfTestFault',
+        'NozzleFault',
+        'PumpCurrentHigh',
+        'FlowError',
+        'PumpLow',
+        'PumpHigh',
+    }),
+
     AcquisitionTranslator.LovePID('acquire_love_pid', 'lovepid'),
 
     AcquisitionTranslator.Component('acquire_magee_aethalometer33', 'mageeae33', variable_map=dict(
