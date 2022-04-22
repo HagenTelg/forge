@@ -34,6 +34,7 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('thermo49iq'))
         self.display_instrument.append(self.DisplayInstrumentSimple('csdpops'))
         self.display_instrument.append(self.DisplayInstrumentSimple('grimm110xopc'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('dmtccn'))
         self.display_instrument.append(self.DisplayInstrumentSimple('lovepid'))
         self.display_instrument.append(self.DisplayInstrumentSimple('purpleair'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsimfm'))

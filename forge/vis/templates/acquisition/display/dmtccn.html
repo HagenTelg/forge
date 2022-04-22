@@ -1,0 +1,95 @@
+<div class="display-container collapsable collapsed">
+    <div class="header communication-state warning-state format-source" instrument="DMT CCN"></div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <nav class="content display-tabs communication-state hide-false">
+        <ul>
+            <li><button display="#{{uid}} .tab-status">Status</button></li>
+            <li><button display="#{{uid}} .tab-bins">Bins</button></li>
+        </ul>
+    </nav>
+
+    <table class="content display-data communication-state hide-false tab-status">
+        <tbody>
+            <tr> <td>Concentration (cm⁻³)</td>              <td class="value-formatted" field="N" rightpad="2"></td> </tr>
+            <tr> <td>Super saturation<sub>calculated</sub> (%)</td> <td class="value-formatted" field="SScalc" decimals="3"></td> </tr>
+            <tr> <td>Super saturation<sub>setpoint</sub> (%)</td> <td class="value-formatted" field="SSset" decimals="3"></td> </tr>
+            <tr> <td>Sample flow (%)</td>                   <td class="value-formatted" field="Qsample" decimals="2" rightpad="1"></td> </tr>
+            <tr> <td>Sheath flow (%)</td>                   <td class="value-formatted" field="Qsheath" decimals="2" rightpad="1"></td> </tr>
+            <tr> <td>Sample pressure (hPa)</td>             <td class="value-formatted" field="P" decimals="1" rightpad="2"></td> </tr>
+            <tr> <td>First stage monitor (V)</td>           <td class="value-formatted" field="Vmonitor" decimals="2" rightpad="1"></td> </tr>
+            <tr> <td>Proportional valve (V)</td>            <td class="value-formatted" field="Vvalve" decimals="2" rightpad="1"></td> </tr>
+            <tr> <td>Laser current (mA)</td>                <td class="value-formatted" field="Alaser" decimals="2" rightpad="1"></td> </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data communication-state hide-false tab-status">
+        <thead>
+            <tr> <th colspan="2">Temperature</th> </tr>
+        </thead>
+        <tbody>
+            <tr> <td>TEC 1 (°C)</td>                        <td class="value-formatted" field="Ttec1" rightpad="2"></td> </tr>
+            <tr> <td>TEC 2 (°C)</td>                        <td class="value-formatted" field="Ttec2" rightpad="2"></td> </tr>
+            <tr> <td>TEC 3 (°C)</td>                        <td class="value-formatted" field="Ttec3" rightpad="2"></td> </tr>
+            <tr> <td>Inlet (°C)</td>                        <td class="value-formatted" field="Tinlet" rightpad="2"></td> </tr>
+            <tr> <td>Sample (°C)</td>                       <td class="value-formatted" field="Tsample" rightpad="2"></td> </tr>
+            <tr> <td>OPC (°C)</td>                          <td class="value-formatted" field="Topc" rightpad="2"></td> </tr>
+            <tr> <td>Nafion (°C)</td>                       <td class="value-formatted" field="Tnafion" rightpad="2"></td> </tr>
+            <tr> <td>Gradient setpoint (°C)</td>            <td class="value-formatted" field="DTsetpoint" decimals="2" rightpad="1"></td> </tr>
+            <tr> <td>Gradient stddev (°C)</td>              <td class="value-formatted" field="DTstddev" decimals="2" rightpad="1"></td> </tr>
+        </tbody>
+    </table>
+
+    <div class="content display-data communication-state hide-false tab-bins">
+        <div id="{{uid}}_bins"></div>
+    </div>
+
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="laser_over_current">Laser current too high</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="first_stage_monitor_over_voltage">First stage monitor voltage greater than 4.7V</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="flow_out_of_range">Flow deviation greater than 20% or flow ratio outside of 5-15</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="temperature_out_of_range">Any temperature setpoint more than 10C from the target</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="sample_temperature_out_of_range">Sample temperature outside of 0-50C</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="opc_error">OPC Error: first stage monitor greater than 4.7V and CCN counts too low</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="opc_error">OPC not communicating with CCN control computer</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="safe_mode_active">The CCN control program has entered safe mode due to a serious alarm</div>
+
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="ccn_counts_low">CCN counts too low</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="column_temperature_unstable">Column temperature unstable</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="duplicate_file">A duplicate file was detected on the CCN computer</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="instrument_temperature_instability">The temperature difference setpoint is unstable as calculated by the instrument</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="calculated_temperature_instability">The temperature difference setpoint is unstable as calculated by the acquisition system</div>
+
+</div>
+
+<style>
+#{{uid}} .warning { color: #f80; }
+</style>
+
+<script>
+(function() {
+    {% include 'acquisition/display/tab_contents.js' %}
+})();
+(function() {
+
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+
+    // {{ '\n' }}{% include 'acquisition/display/ccn.js' %}
+})();
+</script>
