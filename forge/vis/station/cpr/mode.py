@@ -1,5 +1,6 @@
 import typing
 from ..default.mode import Mode, ViewList, detach, aerosol_modes
+from .acquisition import Acquisition
 
 
 station_modes = detach(aerosol_modes)
@@ -25,6 +26,8 @@ station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-hurricane', "Hur
                                     'aerosol-raw-umacstatus')
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-raw-hurricane', "Hurricane Hardened"),
                                          'aerosol-realtime-umacstatus')
+
+station_modes['acquisition'] = Acquisition()
 
 
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:

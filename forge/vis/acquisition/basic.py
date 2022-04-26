@@ -31,6 +31,31 @@ class ParameterDisplay(Display):
         ))
 
 
+class GenericDisplay(Display):
+    class Row:
+        def __init__(self, title: str, field: str, decimals: int = 1):
+            self.title = title
+            self.field = field
+            self.decimals = 1
+
+    def __init__(self, instrument: str, rows: typing.List[Row]):
+        self.instrument = instrument
+        self.rows = rows
+
+        self.decimal_width = 0
+        for r in rows:
+            self.decimal_width = max(self.decimal_width, r.decimals)
+
+    async def __call__(self, request: Request, summary_type: str = None, **kwargs) -> Response:
+        return HTMLResponse(await package_template('acquisition', 'display', 'generic.html').render_async(
+            request=request,
+            display=self,
+            rows=self.rows,
+            decimal_width=self.decimal_width,
+            **kwargs
+        ))
+
+
 class BasicSummary(SummaryItem):
     async def __call__(self, request: Request, summary_type: str = None, **kwargs) -> Response:
         return HTMLResponse(await package_template('acquisition', 'summary', summary_type + '.html').render_async(
