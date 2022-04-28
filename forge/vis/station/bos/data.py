@@ -125,6 +125,126 @@ station_profile_data['aerosol']['realtime']['popsstatus'] = {
 }
 
 
+station_profile_data['aerosol']['raw']['t640-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'X_M11'): 'X',
+    }, send
+)
+station_profile_data['aerosol']['raw']['t640-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'X_M11', {'pm10'}): 'X',
+    }, send
+)
+station_profile_data['aerosol']['raw']['t640-pm25'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'X_M11', {'pm25'}): 'X',
+    }, send
+)
+station_profile_data['aerosol']['raw']['t640-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'X_M11', {'pm1'}): 'X',
+    }, send
+)
+station_profile_data['aerosol']['realtime']['t640-whole'] = {
+    RealtimeTranslator.Key('X_M11'): 'X',
+}
+station_profile_data['aerosol']['realtime']['t640-pm10'] ={
+    RealtimeTranslator.Key('X_M11', {'pm10'}): 'X',
+}
+station_profile_data['aerosol']['realtime']['t640-pm25'] = {
+    RealtimeTranslator.Key('X_M11', {'pm25'}): 'X',
+}
+station_profile_data['aerosol']['realtime']['t640-pm1'] = {
+    RealtimeTranslator.Key('X_M11', {'pm1'}): 'X',
+}
+station_profile_data['aerosol']['editing']['t640-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+    start_epoch_ms, end_epoch_ms, station, 'aerosol', {
+        Name(station, 'clean', 'X_M11'): 'X',
+    }, send
+)
+station_profile_data['aerosol']['editing']['t640-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+    start_epoch_ms, end_epoch_ms, station, 'aerosol', {
+        Name(station, 'clean', 'X_M11', {'pm10'}): 'X',
+    }, send
+)
+station_profile_data['aerosol']['editing']['t640-pm25'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+    start_epoch_ms, end_epoch_ms, station, 'aerosol', {
+        Name(station, 'clean', 'X_M11', {'pm25'}): 'X',
+    }, send
+)
+station_profile_data['aerosol']['editing']['t640-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+    start_epoch_ms, end_epoch_ms, station, 'aerosol', {
+        Name(station, 'clean', 'X_M11', {'pm1'}): 'X',
+    }, send
+)
+station_profile_data['aerosol']['clean']['t640-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'clean', 'X_M11'): 'X',
+    }, send
+)
+station_profile_data['aerosol']['clean']['t640-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'clean', 'X_M11', {'pm10'}): 'X',
+    }, send
+)
+station_profile_data['aerosol']['clean']['t640-pm25'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'clean', 'X_M11', {'pm25'}): 'X',
+    }, send
+)
+station_profile_data['aerosol']['clean']['t640-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'clean', 'X_M11', {'pm1'}): 'X',
+    }, send
+)
+station_profile_data['aerosol']['avgh']['t640-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'avgh', 'X_M11'): 'X',
+    }, send
+)
+station_profile_data['aerosol']['avgh']['t640-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'avgh', 'X_M11', {'pm10'}): 'X',
+    }, send
+)
+station_profile_data['aerosol']['avgh']['t640-pm25'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'avgh', 'X_M11', {'pm25'}): 'X',
+    }, send
+)
+station_profile_data['aerosol']['avgh']['t640-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'avgh', 'X_M11', {'pm1'}): 'X',
+    }, send
+)
+
+station_profile_data['aerosol']['raw']['t640status'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'T1_M11'): 'Tsample',
+        Name(station, 'raw', 'T2_M11'): 'Tambient',
+        Name(station, 'raw', 'T3_M11'): 'Tasc',
+        Name(station, 'raw', 'T4_M11'): 'Tled',
+        Name(station, 'raw', 'T5_M11'): 'Tbox',
+        Name(station, 'raw', 'U1_M11'): 'Usample',
+        Name(station, 'raw', 'P_M11'): 'Psample',
+        Name(station, 'raw', 'Q1_M11'): 'Qsample',
+        Name(station, 'raw', 'Q2_M11'): 'Qbypass',
+    }, send
+)
+station_profile_data['aerosol']['realtime']['t640status'] = {
+    RealtimeTranslator.Key('T1_M11'): 'Tsample',
+    RealtimeTranslator.Key('T2_M11'): 'Tambient',
+    RealtimeTranslator.Key('T3_M11'): 'Tasc',
+    RealtimeTranslator.Key('T4_M11'): 'Tled',
+    RealtimeTranslator.Key('T5_M11'): 'Tbox',
+    RealtimeTranslator.Key('U1_M11'): 'Usample',
+    RealtimeTranslator.Key('P_M11'): 'Psample',
+    RealtimeTranslator.Key('Q1_M11'): 'Qsample',
+    RealtimeTranslator.Key('Q2_M11'): 'Qbypass',
+
+}
+
+
 def get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
         send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
     return data_profile_get(station, data_name, start_epoch_ms, end_epoch_ms, send, station_profile_data)

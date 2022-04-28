@@ -3,7 +3,7 @@ from collections import OrderedDict
 from ..default.view import detach, View, aerosol_views
 from ..default.aerosol.temperature import Temperature
 from ..default.aerosol.maap import MAAP5012Optical, MAAP5012Status
-from ..default.aerosol.editing.maap import EditingMAA5012P
+from ..default.aerosol.editing.maap import EditingMAA5012
 from .optical import OpticalScatteringSecondary, EditingScatteringSecondary, EditingBackScatteringSecondary
 from .green import Green
 from .ecotechnephelometer import NephelometerZeroSecondary, NephelometerStatusSecondary
@@ -26,7 +26,7 @@ station_views['aerosol-realtime-nephelometerstatus2'] = NephelometerStatusSecond
 
 station_views['aerosol-raw-maap'] = MAAP5012Optical('aerosol-raw')
 station_views['aerosol-realtime-maap'] = MAAP5012Optical('aerosol-realtime', realtime=True)
-station_views['aerosol-editing-maap'] = EditingMAA5012P('aerosol')
+station_views['aerosol-editing-maap'] = EditingMAA5012('aerosol')
 station_views['aerosol-clean-maap'] = MAAP5012Optical('aerosol-clean')
 station_views['aerosol-avgh-maap'] = MAAP5012Optical('aerosol-avgh')
 station_views['aerosol-raw-maapstatus'] = MAAP5012Status('aerosol-raw')

@@ -1,6 +1,8 @@
 import typing
 from ..default.view import detach, View, aerosol_views, ozone_views
 from ..default.aerosol.pops import POPSStatus, POPSDistribution
+from ..default.aerosol.t640 import T640MassAethalometer, T640Status
+from ..default.aerosol.editing.t640 import EditingT640
 from .dmps import DMPSStatus, DMPSDistribution, DMPSCounts
 from .counts import RealtimeParticleConcentration
 
@@ -11,6 +13,14 @@ station_views['aerosol-raw-counts'] = DMPSCounts('aerosol-raw')
 station_views['aerosol-clean-counts'] = DMPSCounts('aerosol-clean')
 station_views['aerosol-avgh-counts'] = DMPSCounts('aerosol-avgh')
 station_views['aerosol-realtime-counts'] = RealtimeParticleConcentration('aerosol-realtime')
+
+station_views['aerosol-raw-mass'] = T640MassAethalometer('aerosol-raw')
+station_views['aerosol-raw-t640status'] = T640Status('aerosol-raw')
+station_views['aerosol-editing-mass'] = EditingT640('aerosol')
+station_views['aerosol-clean-mass'] = T640MassAethalometer('aerosol-clean')
+station_views['aerosol-avgh-mass'] = T640MassAethalometer('aerosol-avgh')
+station_views['aerosol-realtime-mass'] = T640MassAethalometer('aerosol-realtime', realtime=True)
+station_views['aerosol-realtime-t640status'] = T640Status('aerosol-realtime', realtime=True)
 
 station_views['aerosol-raw-dmps'] = DMPSDistribution('aerosol-raw')
 station_views['aerosol-raw-dmpsstatus'] = DMPSStatus('aerosol-raw')

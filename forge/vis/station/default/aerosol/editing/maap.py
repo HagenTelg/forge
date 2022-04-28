@@ -2,7 +2,7 @@ import typing
 from forge.vis.view.timeseries import TimeSeries
 
 
-class EditingMAA5012P(TimeSeries):
+class EditingMAA5012(TimeSeries):
     def __init__(self, profile: str = 'aerosol', **kwargs):
         super().__init__(**kwargs)
         self.title = "MAAP"
