@@ -1,0 +1,73 @@
+<div class="display-container collapsable collapsed">
+    <div class="header communication-state warning-state format-source" instrument="TSI 3781"></div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <table class="content display-data communication-state hide-false">
+        <tbody>
+            <tr> <td>Concentration (cm⁻³)</td>              <td class="value-formatted" field="N" rightpad="2"></td> </tr>
+            <tr> <td>Count rate (Hz)</td>                   <td class="value-formatted" field="C" decimals="0" rightpad="4"></td> </tr>
+            <tr> <td>Absolute pressure (hPa)</td>           <td class="value-formatted" field="P" rightpad="2"></td> </tr>
+            <tr> <td>Sample flow (lpm)</td>                 <td class="value-formatted" field="Q" decimals="3"></td> </tr>
+            <tr> <td>Laser current (mA)</td>                <td class="value-formatted" field="Alaser" decimals="0" rightpad="4"></td> </tr>
+            <tr> <td>Nozzle pressure drop (%)</td>          <td class="value-formatted" field="PCTnozzle" decimals="0" rightpad="4"></td> </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data communication-state hide-false">
+        <thead>
+            <tr> <th colspan="2">Temperature</th> </tr>
+        </thead>
+        <tbody>
+            <tr> <td>Saturator (°C)</td>        <td class="value-formatted" field="Tsaturator" rightpad="2"></td> </tr>
+            <tr> <td>Growth tube (°C)</td>      <td class="value-formatted" field="Tgrowth" rightpad="2"></td> </tr>
+            <tr> <td>Optics (°C)</td>           <td class="value-formatted" field="Toptics" rightpad="2"></td> </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data communication-state hide-false">
+        <thead>
+            <tr> <th colspan="2">Instrument display</th> </tr>
+        </thead>
+        <tbody>
+            <tr> <td>Concentration (cm⁻³)</td>  <td class="value-formatted" field="Ndisplay" rightpad="2"></td> </tr>
+            <tr> <td>Flow (lpm)</td>            <td class="value-formatted" field="Qdisplay" decimals="3"></td> </tr>
+        </tbody>
+    </table>
+
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="sample_flow_error">Sample flow error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="nozzle_flow_error">Nozzle flow error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="pressure_out_of_range">Absolute pressure out of range</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="temperature_out_of_range">Saturator, growth tube, or optics temperature out of range</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="tilt_error">Instrument tilted beyond 45 degrees</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="laser_current_error">Laser current error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="liquid_low">Out of water</div>
+
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="concentration_out_of_range">Concentration out of range</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="warmup"><span class="mdi mdi-loading mdi-spin"></span>Warm-up in progress</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="water_valve_open">Water fill valve open</div>
+</div>
+
+<style>
+#{{uid}} .warning { color: #f80; }
+</style>
+
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+})();
+</script>

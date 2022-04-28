@@ -21,6 +21,7 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3760cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi377xcpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3010cpc'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('tsi3781cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('admagiccpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('bmi1710cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('bmi1720cpc'))
