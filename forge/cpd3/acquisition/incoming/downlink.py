@@ -314,6 +314,11 @@ class DownlinkSocket(AcquisitionSocket):
         self.acquisition_client: typing.Optional[_AcquisitionTranslatorClient] = None
         self._acquisition_run: typing.Optional[asyncio.Task] = None
 
+    async def _check_connection_allowed(self, websocket: WebSocket) -> bool:
+        if CONFIGURATION.get('CPD3.ACQUISITION.DISABLE_ACCESS_CONTROL', False):
+            return True
+        return await websocket.scope['processing'].acquisition_uplink_authorized(self.public_key, self.station)
+
     async def handshake(self, websocket: WebSocket, data: bytes) -> bool:
         self.station = websocket.path_params['station'].lower()
         if self.station not in STATIONS:
@@ -321,7 +326,7 @@ class DownlinkSocket(AcquisitionSocket):
             return False
 
         self.display_id = f"{self.display_id} - {self.station.upper()}"
-        if not await websocket.scope['processing'].acquisition_uplink_authorized(self.public_key, self.station):
+        if not await self._check_connection_allowed(websocket):
             _LOGGER.debug(f"Rejected CPD3 acquisition uplink for {self.display_id}")
             return False
 
