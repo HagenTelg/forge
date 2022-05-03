@@ -183,12 +183,12 @@
     context.addSourceTarget((value) => {
         stopNextPhaseUpdate();
         activeState = value.id;
-        context.show();
 
         if (activeState !== 'inactive') {
             percentErrorResult.clear();
             nextPhaseTime = value.next_epoch_ms;
             closeButton.style.display = 'none';
+            context.show();
         } else {
             nextPhaseTime = undefined;
             closeButton.style.display = '';
