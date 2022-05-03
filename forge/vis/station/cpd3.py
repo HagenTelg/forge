@@ -2147,15 +2147,15 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
                         target[path[-1]] = value
 
                     for color_code in ('B', 'G', 'R'):
-                        color_data = result.get(color_code)
+                        color_data = value.get(color_code)
                         if color_data is None:
                             continue
 
                         k2 = color_data.get('K2')
-                        if isfinite(k2):
+                        if k2 is not None and isfinite(k2):
                             set_path(k2, 'calibration', 'K2', color_code)
                         k4 = color_data.get('K4')
-                        if isfinite(k4):
+                        if k2 is not None and isfinite(k4):
                             set_path(k4, 'calibration', 'K4', color_code)
 
                         color_result = color_data.get('Results')
@@ -2168,10 +2168,10 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
                             set_path(angle_data.get('Cc'), 'sensitivity_factor', 'total', color_code)
 
                             m = angle_data.get('CalM')
-                            if isfinite(m):
+                            if m is not None and isfinite(m):
                                 set_path(m, 'calibration', 'M', 'total', color_code)
                             c = angle_data.get('CalC')
-                            if isfinite(c):
+                            if m is not None and isfinite(c):
                                 set_path(c, 'calibration', 'C', 'total', color_code)
                         if index_back is not None and index_back < len(color_result):
                             angle_data = color_result[index_back]
@@ -2179,10 +2179,10 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
                             set_path(angle_data.get('Cc'), 'sensitivity_factor', 'back', color_code)
 
                             m = angle_data.get('CalM')
-                            if isfinite(m):
+                            if m is not None and isfinite(m):
                                 set_path(m, 'calibration', 'M', 'back', color_code)
                             c = angle_data.get('CalC')
-                            if isfinite(c):
+                            if m is not None and isfinite(c):
                                 set_path(c, 'calibration', 'C', 'back', color_code)
                     return result
                 return 'spancheck_result', translator
