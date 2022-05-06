@@ -3060,7 +3060,7 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         AcquisitionTranslator.Variable('Q'): 'Q',
         AcquisitionTranslator.Variable('ZQ'): 'Qinstrument',
         AcquisitionTranslator.Variable('P'): 'P',
-        AcquisitionTranslator.Variable('Pd'): 'Pd',
+        AcquisitionTranslator.Variable('Pd'): 'PD',
         AcquisitionTranslator.Variable('V'): 'V',
         AcquisitionTranslator.Variable('Tu'): 'Tinlet',
         AcquisitionTranslator.Variable('T1'): 'Tconditioner',

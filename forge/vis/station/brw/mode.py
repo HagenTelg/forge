@@ -10,5 +10,9 @@ station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-filter
                                          'aerosol-realtime-pressure')
 
 
+station_modes['met-raw'].insert(ViewList.Entry('met-raw-tower', "Tower dT"))
+station_modes['met-editing'].insert(ViewList.Entry('met-editing-tower', "Tower dT"))
+
+
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:
     return station_modes.get(mode_name)

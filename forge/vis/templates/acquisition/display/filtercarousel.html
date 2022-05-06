@@ -1,0 +1,204 @@
+{% with carousel_size = carousel_size|default(8) %}
+
+<div class="display-container collapsable collapsed menu">
+    <div class="header warning-state">{{ header|default("Filter Carousel") }}</div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% if writable %}
+    <div class="menu communication-state hide-false">
+        <button class="menu mdi mdi-menu" title="Carousel actions"></button>
+        <ul class="menu menu-below">
+            <li><button id="{{uid}}_start_change" class="simple-command" command="start_change"
+                        title="Start a carousel change.  Flow will be disabled while the change is in progress.">Start Carousel Change</button></li>
+            <li><button id="{{uid}}_end_change" class="simple-command" command="end_change"
+                        title="End the active carousel change.  The filter carousel will start sampling from the first filter.">End Carousel Change</button></li>
+            <li><button id="{{uid}}_advance" class="simple-command" command="advance_filter"
+                        title="Advance the currently sampling filter to the next one in the carousel.">Advance the Active Filter</button></li>
+        </ul>
+    </div>
+    {% endif %}
+
+    <table class="content display-data column-split">
+        <thead>
+            <tr>
+                <th></th>
+                <th>dP (hPa)</th>
+                <th>Volume (m³)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in range(1, carousel_size+1) %}
+            <tr class="filter-status" filter="{{i}}">
+                <td>Filter {{i}}</td>
+                <td class="value-formatted" field="PD{{i}}"></td>
+                <td class="value-formatted" field="Qt{{i}}" decimals="3"></td>
+            </tr>
+            {% endfor %}
+
+            <tr class="filter-status" filter="0">
+                <td>Bypass</td>
+                <td class="value-formatted" field="PD0"></td>
+                <td class="value-formatted" field="Qt0" decimals="3"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data">
+        <tbody>
+            <tr> <td>Sample humidity (%)</td>       <td class="value-formatted" field="Usample"></td> </tr>
+            <tr> <td>Sample temperature (°C)</td>   <td class="value-formatted" field="Tsample"></td> </tr>
+            <tr> <td>Rack temperature (°C)</td>     <td class="value-formatted" field="Track"></td> </tr>
+            <tr> <td>Active filter number</td>      <td class="value-formatted" field="Fn" decimals="0" rightpad="2"></td> </tr>
+        </tbody>
+    </table>
+
+    <div class="content display-data" id="{{uid}}_next_state">Advance at <span id="{{uid}}_advance_time"></span></div>
+
+    <div class="content display-data bypass-state hide-false">Bypassed</div>
+
+    <div class="content display-data notification-state hide-false"
+         notification="carousel_complete">Carousel complete</div>
+    <div class="content display-data notification-state hide-false"
+         notification="carousel_change"><span class="mdi mdi-loading mdi-spin"></span>Changing carousel</div>
+    <div class="content display-data notification-state hide-false"
+         notification="initial_blank"><span class="mdi mdi-loading mdi-spin"></span>Initial blanking</div>
+</div>
+
+
+<style>
+#{{uid}} tr.filter-status.active {
+  background-color: #555;
+  color: white;
+}
+#{{uid}}_advance_time {
+  font-family: monospace;
+}
+</style>
+
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+
+    function setVisible(id, visible) {
+        if (visible) {
+            $(id).css('display', '');
+        } else {
+            $(id).css('display', 'none');
+        }
+    }
+
+    const carouselSize = '{{ carousel_size }}' * 1;
+    let onLastFilter = false;
+    let carouselChanging = false;
+
+    function updateVisibility() {
+        setVisible('#{{uid}}_start_change', !carouselChanging);
+        setVisible('#{{uid}}_end_change', carouselChanging);
+        setVisible('#{{uid}}_advance', !onLastFilter && !carouselChanging);
+    }
+
+    context.addSourceTarget((value) => {
+        if (value === null || !isFinite(value)) {
+            onLastFilter = false;
+        } else {
+            onLastFilter = (value >= carouselSize);
+        }
+
+        updateVisibility();
+    }, context.source, 'Fn');
+    context.addInstrumentState((source, state) => {
+        const notifications = state.notifications;
+        if (!notifications) {
+            carouselChanging = false;
+        } else {
+            carouselChanging = notifications.includes('carousel_change');
+        }
+        updateVisibility();
+    }, context.source);
+
+    $('.filter-status', context.root).each(function() {
+        const target = this;
+        let filterIndex = this.getAttribute('filter');
+        if (filterIndex === '' || filterIndex === undefined) {
+            return;
+        }
+        filterIndex = filterIndex * 1;
+
+        context.addSourceTarget((value) => {
+            if (value === null || !isFinite(value) || value !== filterIndex) {
+                target.classList.remove('active');
+            } else {
+                target.classList.add('active');
+            }
+        }, context.source, 'Fn');
+    });
+
+    function formatTime(epoch_ms) {
+        epoch_ms = Math.floor(epoch_ms);
+        let date = new Date(epoch_ms);
+
+        return date.getUTCFullYear().toString().padStart(4, '0') + '-' +
+            (date.getUTCMonth()+1).toString().padStart(2, '0') + '-' +
+            date.getUTCDate().toString().padStart(2, '0') + ' ' +
+            date.getUTCHours().toString().padStart(2, '0') + ':' +
+            date.getUTCMinutes().toString().padStart(2, '0') + ':' +
+            date.getUTCSeconds().toString().padStart(2, '0');
+    }
+
+    function isValid(value) {
+        if (!value) {
+            return false;
+        }
+        return value.epoch_ms !== null && isFinite(value.epoch_ms) && value.epoch_ms > 0;
+    }
+
+    const nextState = document.getElementById('{{uid}}_next_state');
+    const advanceTime = document.getElementById('{{uid}}_advance_time');
+    let advanceTimePoint = undefined;
+    let stopAdvanceTimeUpdate = () => {};
+    function updateRemainingTime() {
+        const now = Date.now();
+        const remaining = advanceTimePoint - now;
+        if (remaining < 250) {
+            advanceTime.textContent = formatTime(advanceTimePoint);
+            stopAdvanceTimeUpdate();
+            return;
+        }
+
+        let seconds = Math.round(remaining / 1000);
+        if (seconds < 1) {
+            seconds = 1;
+        }
+        let minutes = Math.floor(seconds / 60);
+        seconds = seconds % 60;
+        let hours = Math.floor(minutes / 60);
+        if (hours > 99) {
+            advanceTime.textContent = formatTime(advanceTimePoint);
+        } else if (minutes > 99) {
+            advanceTime.textContent = formatTime(advanceTimePoint) +
+                " (" + hours + "H)";
+        } else {
+            advanceTime.textContent = formatTime(advanceTimePoint) + " (" +
+                minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0') + ")";
+        }
+    }
+
+    context.addSourceTarget((value) => {
+        stopAdvanceTimeUpdate();
+        if (!isValid(value)) {
+            nextState.style.display = 'none';
+            return;
+        }
+        nextState.style.display = '';
+
+        advanceTimePoint = value.epoch_ms;
+        stopAdvanceTimeUpdate = context.tickOnSecond(updateRemainingTime, advanceTimePoint);
+        updateRemainingTime();
+    }, context.source, 'next');
+})();
+</script>
+
+{% endwith %}
