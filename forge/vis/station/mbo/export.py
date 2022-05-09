@@ -29,6 +29,34 @@ station_profile_export['aerosol']['raw'].insert(
         },
     )),
 )
+station_profile_export['aerosol']['raw'].insert(
+    DataExportList.Entry('combined', "Combined Summary", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'basic', {
+            Name(station, 'raw', 'BsG_S11'),
+            Name(station, 'raw', 'BaG_A11'),
+            Name(station, 'raw', 'T1_XM1'),
+            Name(station, 'raw', 'U1_XM1'),
+            Name(station, 'raw', 'X_G81'),
+            Name(station, 'raw', 'X_G82'),
+            Name(station, 'raw', 'X1_G71'),
+            Name(station, 'raw', 'X2_G71'),
+        },
+    )),
+)
+station_profile_export['aerosol']['clean'].insert(
+    DataExportList.Entry('combined', "Combined Summary", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'basic', {
+            Name(station, 'clean', 'BsG_S11'),
+            Name(station, 'clean', 'BaG_A11'),
+            Name(station, 'raw', 'T1_XM1'),
+            Name(station, 'raw', 'U1_XM1'),
+            Name(station, 'raw', 'X_G81'),
+            Name(station, 'raw', 'X_G82'),
+            Name(station, 'raw', 'X1_G71'),
+            Name(station, 'raw', 'X2_G71'),
+        },
+    )),
+)
 
 
 def get(station: str, mode_name: str, export_key: str,
