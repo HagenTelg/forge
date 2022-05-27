@@ -17,7 +17,7 @@ class Acquisition(BaseAcquisition):
 
 _source_display: typing.Dict[str, Display] = {
     'F21': ParameterDisplay('filtercarousel', {'header': 'PMEL Filter Carousel'}),
-    'F31': ParameterDisplay('filtercarousel', {'header': 'Second Filter Carousel'}),
+    'F31': ParameterDisplay('filtercarousel', {'header': 'SCRIPPS Filter Carousel'}),
 }
 
 
@@ -98,13 +98,13 @@ class PMELFilterCarousel(_FilterCarouselInterface):
         return interface_name == 'F21'
 
 
-class SecondFilterCarousel(_FilterCarouselInterface):
+class SCRIPPSFilterCarousel(_FilterCarouselInterface):
     def matches(self, interface_name: str, interface_info: typing.Dict[str, typing.Any]) -> bool:
         return interface_name == 'F31'
 
 
 station_acquisition_translator.interfaces.append(PMELFilterCarousel())
-station_acquisition_translator.interfaces.append(SecondFilterCarousel())
+station_acquisition_translator.interfaces.append(SCRIPPSFilterCarousel())
 
 
 def display(station: str, display_type: str, source: typing.Optional[str]) -> typing.Optional[Display]:

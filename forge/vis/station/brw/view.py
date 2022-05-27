@@ -11,7 +11,7 @@ from ..default.met.editing.wind import EditingWindDirection as MetEditingWindDir
 from ..default.met.tower import TowerTemperatureDifference as MetTowerTemperatureDifference
 from ..default.met.editing.tower import EditingTowerTemperatureDifference as MetEditingTowerTemperatureDifference
 from .flow import Flow
-from .filter import FilterStatus
+from .filter import FilterStatus, SecondFilterStatus
 from .umac import UMACStatus
 
 
@@ -45,8 +45,10 @@ station_views['aerosol-realtime-temperature'] = Temperature('aerosol-realtime', 
 ]), omit_traces={'TDnephinlet', 'TDfilterrack', 'Ufilterrack'}, realtime=True)
 
 station_views['aerosol-raw-filterstatus'] = FilterStatus('aerosol-raw')
+station_views['aerosol-raw-filterstatus2'] = SecondFilterStatus('aerosol-raw')
 station_views['aerosol-raw-umacstatus'] = UMACStatus('aerosol-raw')
 station_views['aerosol-realtime-filterstatus'] = FilterStatus('aerosol-realtime', realtime=True)
+station_views['aerosol-realtime-filterstatus2'] = SecondFilterStatus('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-umacstatus'] = UMACStatus('aerosol-realtime', realtime=True)
 
 

@@ -32,3 +32,13 @@ class FilterStatus(TimeSeries):
             dP.data_record = f'{mode}-filterstatus'
             dP.data_field = f'Pd{i+1}'
             status.traces.append(dP)
+
+
+class SecondFilterStatus(FilterStatus):
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(**kwargs)
+        self.title = "SCRIPPS Filter Carousel Status"
+
+        for g in self.graphs:
+            for t in g.traces:
+                t.data_record += '2'
