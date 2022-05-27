@@ -4,6 +4,11 @@ from ..default.mode import Mode, ViewList, detach, aerosol_modes, ozone_modes, m
 
 station_modes = detach(aerosol_modes, ozone_modes, met_modes)
 
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-cpcstatus2', "Second CPC Status"),
+                                    'aerosol-raw-cpcstatus')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-cpcstatus2', "Second CPC Status"),
+                                         'aerosol-realtime-cpcstatus')
+
 station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-contaminationdetails', "Contamination Details"),
                                         'aerosol-editing-wind')
 
