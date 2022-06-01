@@ -36,7 +36,7 @@ class FilterStatus(TimeSeries):
 
 class SecondFilterStatus(FilterStatus):
     def __init__(self, mode: str, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(mode, **kwargs)
         self.title = "SCRIPPS Filter Carousel Status"
 
         for g in self.graphs:
