@@ -11,6 +11,7 @@ from math import floor, ceil, isfinite
 from copy import deepcopy
 from pathlib import Path
 from forge.const import __version__
+from forge.formattime import format_export_time
 from forge.vis import CONFIGURATION
 from forge.tasks import background_task
 from forge.vis.access import BaseAccessUser
@@ -692,8 +693,7 @@ def _convert_history(history: typing.List[typing.Dict[str, typing.Any]]) -> typi
     def format_time(ts: float) -> str:
         if not ts or not isfinite(ts):
             return "∞"
-        ts = time.gmtime(ts)
-        return f"{ts.tm_year:04}-{ts.tm_mon:02}-{ts.tm_mday:02}T{ts.tm_hour:02}:{ts.tm_min:02}:{ts.tm_sec:02}Z"
+        return format_export_time(ts)
 
     result: typing.List[typing.Dict[str, typing.Any]] = list()
     for entry in history:
@@ -2033,6 +2033,9 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
                     serial_number = display_string[1]
             return {
                 'type': self.display_type,
+                'manufacturer': source.get('Manufacturer'),
+                'model': source.get('Model'),
+                'firmware_version': source.get('FirmwareVersion'),
                 'serial_number': serial_number,
                 'display_id': source.get('Name'),
                 'display_letter': interface_info.get('MenuCharacter'),

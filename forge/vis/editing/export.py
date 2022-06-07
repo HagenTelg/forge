@@ -8,6 +8,7 @@ from starlette.responses import Response, StreamingResponse
 from starlette.requests import Request
 from starlette.exceptions import HTTPException
 from forge.const import STATIONS
+from forge.formattime import format_export_time
 from forge.vis.data.stream import DataStream
 from forge.vis.station.lookup import station_data
 from .permissions import is_available
@@ -52,8 +53,7 @@ async def export_csv(request: Request) -> Response:
     def format_time(ts: int) -> str:
         if not ts:
             return ""
-        ts = time.gmtime(ts / 1000.0)
-        return f"{ts.tm_year:04}-{ts.tm_mon:02}-{ts.tm_mday:02} {ts.tm_hour:02}:{ts.tm_min:02}:{ts.tm_sec:02}"
+        return format_export_time(ts / 1000.0)
 
     def sanitize_field(s: str) -> str:
         if not s:

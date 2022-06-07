@@ -1,0 +1,461 @@
+import typing
+import time
+import sys
+import numpy as np
+import forge.cpd3.variant as cpd3_variant
+import re
+from math import isfinite, nan, ceil
+from netCDF4 import Dataset, Group, Variable
+from forge.const import __version__
+from forge.timeparse import parse_iso8601_time, parse_iso8601_duration
+from forge.cpd3.identity import Name, Identity
+from ..lookup import instrument_data
+from .flags import CPD3Flag, lookup as flag_lookup
+from .units import units as unit_lookup
+
+
+_CUT_WHOLE = set()
+_CUT_PM1 = {"pm1"}
+_CUT_PM25 = {"pm25"}
+_CUT_PM10 = {"pm10"}
+
+_FLAGS_EMPTY = set()
+
+
+_FORMAT_FLOAT = re.compile(
+    r'%[0# +-]*(\d*)(?:\.(\d*))L?[fF]'
+)
+
+
+def convert_format_code(code: str) -> typing.Optional[str]:
+    m = _FORMAT_FLOAT.fullmatch(code)
+    if m:
+        total_width = m.group(1)
+        if total_width:
+            total_width = int(total_width)
+        else:
+            total_width = 0
+        decimals = m.group(2)
+        if decimals:
+            decimals = int(decimals)
+        else:
+            decimals = 0
+
+        if not total_width and not decimals:
+            return None
+
+        fmt = "0" * total_width
+        if decimals:
+            fmt = fmt[:-(decimals+1)] + "." + "0" * decimals
+        if not fmt:
+            return None
+        if fmt[0] != "0":
+            fmt = "0" + fmt
+        return fmt
+    return None
+
+
+class Converter:
+    def __init__(self, station: str, root: Dataset):
+        self.station = station
+        self.root = root
+        self.instrument: str = root.instrument
+        self.source: str = root.instrument_id
+
+        self.flag_lookup: typing.Dict[str, CPD3Flag] = dict()
+        if self.instrument:
+            instrument_flags = instrument_data(self.instrument, 'flags', 'lookup')
+            if instrument_flags:
+                self.flag_lookup.update(instrument_flags)
+
+        self.source_metadata: typing.Dict[str, typing.Any] = {
+            "ForgeInstrument": self.instrument,
+            "Name": self.source,
+        }
+        inst_group = self.root.groups.get("instrument")
+        if inst_group is not None:
+            manufacturer = inst_group.variables.get("manufacturer")
+            if manufacturer is not None:
+                self.source_metadata["Manufacturer"] = str(manufacturer[0])
+            model = inst_group.variables.get("model")
+            if model is not None:
+                self.source_metadata["Model"] = str(model[0])
+            serial_number = inst_group.variables.get("serial_number")
+            if serial_number is not None:
+                self.source_metadata["SerialNumber"] = str(serial_number[0])
+            firmware_version = inst_group.variables.get("firmware_version")
+            if firmware_version is not None:
+                self.source_metadata["FirmwareVersion"] = str(firmware_version[0])
+
+        self.expected_record_interval: typing.Optional[float] = None
+        time_coverage_resolution = getattr(self.root, "time_coverage_resolution", None)
+        if time_coverage_resolution is not None:
+            self.expected_record_interval = parse_iso8601_duration(str(time_coverage_resolution))
+
+        self.file_start_time: typing.Optional[float] = None
+        time_coverage_start = getattr(self.root, "time_coverage_start", None)
+        if time_coverage_start is not None:
+            self.file_start_time = parse_iso8601_time(str(time_coverage_start)).timestamp()
+
+        self.file_end_time: typing.Optional[float] = None
+        time_coverage_end = getattr(self.root, "time_coverage_end", None)
+        if time_coverage_end is not None:
+            self.file_end_time = parse_iso8601_time(str(time_coverage_end)).timestamp()
+
+        self.system_start_time: typing.Optional[float] = None
+        acquisition_start_time = getattr(self.root, "acquisition_start_time", None)
+        if acquisition_start_time is not None:
+            self.system_start_time = parse_iso8601_time(str(acquisition_start_time)).timestamp()
+
+        self.processing_metadata: typing.List[typing.Dict[str, typing.Any]] = list()
+        history = getattr(self.root, "history", None)
+        if history is not None:
+            for item in str(history).split('\n'):
+                processed_at, processed_by, processed_version, command = item.split(',', 4)
+                processed_at = parse_iso8601_time(processed_at).timestamp()
+                self.processing_metadata.append({
+                    "At": processed_at,
+                    "By": processed_by,
+                    "Revision": processed_version,
+                    "Environment": command,
+                })
+        self.processing_metadata.append({
+            "At": time.time(),
+            "By": "forge.cpd3.convert.instrument",
+            "Revision": __version__,
+            "Environment": ' '.join(sys.argv),
+        })
+
+    class RecordConverter:
+        def __init__(self, converter: "Converter", group: Group):
+            self.converter = converter
+            self.group = group
+
+        def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) -> None:
+            raise NotImplementedError
+
+    class DataRecord(RecordConverter):
+        def __init__(self, converter: "Converter", group: Group):
+            super().__init__(converter, group)
+
+            self.times: typing.List[typing.Tuple[float, float, typing.Set[str]]] = list()
+            self.coverage: typing.List[typing.Optional[float]] = list()
+
+            self.cut_size_lookup: typing.Dict[typing.Optional[float], typing.Set[str]] = {
+                None: set(),
+            }
+            record_cut_size = self.group.variables.get("cut_size")
+            if record_cut_size is not None:
+                self.cut_size_lookup.clear()
+                if not record_cut_size.shape:
+                    record_cut_size = [float(record_cut_size[0])]
+                for diameter in record_cut_size:
+                    if not diameter or not isfinite(diameter):
+                        self.cut_size_lookup[None] = _CUT_WHOLE
+                    elif diameter == 1.0:
+                        self.cut_size_lookup[diameter] = _CUT_PM1
+                    elif diameter == 2.5:
+                        self.cut_size_lookup[diameter] = _CUT_PM25
+                    elif diameter == 10.0:
+                        self.cut_size_lookup[diameter] = _CUT_PM10
+
+            record_times = self.group.variables["time"]
+            record_averaged_time = self.group.variables.get("averaged_time")
+            for i in range(len(record_times)):
+                start_time: float = float(record_times[i]) / 1000.0
+
+                if i != len(record_times)-1:
+                    end_time: float = float(record_times[i + 1]) / 1000.0
+                    if self.converter.expected_record_interval:
+                        expected_end_time: float = start_time + self.converter.expected_record_interval
+                        if expected_end_time < end_time:
+                            end_time = expected_end_time
+                else:
+                    if self.converter.expected_record_interval:
+                        end_time: float = start_time + self.converter.expected_record_interval
+                    elif self.converter.file_end_time:
+                        end_time: float = self.converter.file_end_time
+                    # elif len(self.times) != 0:
+                    #     prior_interval = self.times[-1][1] - self.times[-1][0]
+                    #     end_time: float = start_time + prior_interval
+                    else:
+                        raise ValueError("unable to determine record end time")
+
+                if self.converter.file_start_time and start_time < self.converter.file_start_time:
+                    start_time = self.converter.file_start_time
+                if self.converter.file_end_time and end_time > self.converter.file_end_time:
+                    end_time = self.converter.file_end_time
+
+                cut_size = None
+                if record_cut_size:
+                    if i > len(record_cut_size):
+                        cut_size = record_cut_size[0]
+                    else:
+                        cut_size = record_cut_size[i]
+                    if not cut_size or not isfinite(cut_size):
+                        cut_size = None
+                    else:
+                        cut_size = float(cut_size)
+                cut_size = self.cut_size_lookup[cut_size]
+
+                self.times.append((start_time, end_time, cut_size))
+
+                coverage_fraction: typing.Optional[float] = None
+                if self.converter.expected_record_interval and record_averaged_time is not None:
+                    coverage_fraction = (float(record_averaged_time[i]) / 1000.0) / self.converter.expected_record_interval
+                    if coverage_fraction >= 1.0:
+                        coverage_fraction = None
+                    elif coverage_fraction < 0.0:
+                        coverage_fraction = 0.0
+                self.coverage.append(coverage_fraction)
+
+        def global_fanout(self, result: typing.List[typing.Tuple[Identity, typing.Any]], name: Name, value: typing.Any,
+                          use_cut_size: bool = True) -> None:
+
+            start_time: float = self.converter.file_start_time or self.times[0][0]
+            end_time: float = self.converter.file_end_time or self.times[-1][1]
+            if self.converter.system_start_time and self.converter.system_start_time < start_time:
+                start_time = self.converter.system_start_time
+
+            if not use_cut_size:
+                result.append((Identity(name=name, start=start_time, end=end_time), value))
+                return
+
+            for cut_flavors in self.cut_size_lookup.values():
+                result.append((Identity(name=name,
+                                        flavors=name.flavors | cut_flavors,
+                                        start=start_time, end=end_time),
+                               value))
+
+        def value_convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]],
+                          name: Name, variable: Variable,
+                          c: typing.Callable[[typing.Any], typing.Any],
+                          use_cut_size: bool = True) -> None:
+            for i in range(len(self.times)):
+                v = c(variable[i])
+                flavors = name.flavors
+                if use_cut_size:
+                    flavors = flavors | self.times[i][2]
+                result.append((Identity(name=name,
+                                        flavors=flavors,
+                                        start=self.times[i][0], end=self.times[i][1]),
+                               v))
+
+        def value_coverage(self, result: typing.List[typing.Tuple[Identity, typing.Any]],
+                          name: Name, use_cut_size: bool = True) -> None:
+            for i in range(len(self.times)):
+                cover = self.coverage[i]
+                if cover is None:
+                    continue
+                flavors = set(name.flavors)
+                flavors.add("cover")
+                if use_cut_size:
+                    flavors |= self.times[i][2]
+                result.append((Identity(name=name,
+                                        flavors=flavors,
+                                        start=self.times[i][0], end=self.times[i][1]),
+                               cover))
+
+        class VariableConverter:
+            def __init__(self, record: "Converter.DataRecord", variable: Variable):
+                self.record = record
+                self.variable = variable
+
+            def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) -> None:
+                raise NotImplementedError
+
+        class FlagsConverter(VariableConverter):
+            def __init__(self, record: "Converter.DataRecord", variable: Variable):
+                super().__init__(record, variable)
+                self.base_name = Name(self.record.converter.station, 'raw',
+                                      'F1_' + self.record.converter.source)
+
+            def metadata(self) -> cpd3_variant.Metadata:
+                meta = cpd3_variant.MetadataFlags()
+                meta["Description"] = "Instrument flags"
+                meta["Source"] = self.record.converter.source_metadata
+                meta["Processing"] = self.record.converter.processing_metadata
+
+                all_bits = 0
+                for flag in self.record.converter.flag_lookup.values():
+                    flag_data: typing.Dict[str, typing.Any] = {
+                        "Origin": ["forge.cpd3.convert.instrument"]
+                    }
+                    if flag.description:
+                        flag_data["Description"] = flag.description
+                    if flag.bit:
+                        flag_data["Bits"] = flag.bit
+                        all_bits |= flag.bit
+                    meta.children[flag.code] = flag_data
+
+                meta["Format"] = "FFFF"
+                if all_bits:
+                    digits = int(ceil(all_bits.bit_length() / (4 * 4))) * 4
+                    meta["Format"] = "F" * digits
+
+                return meta
+
+            def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) ->None:
+                self.record.global_fanout(result, self.base_name, self.metadata())
+
+                flag_meanings = self.variable.flag_meanings.split(' ')
+                flag_masks = self.variable.flag_masks
+                bit_lookup: typing.Dict[int, typing.Set[str]] = dict()
+                for i in range(len(flag_meanings)):
+                    flag_name = flag_meanings[i]
+                    cpd3_flag = self.record.converter.flag_lookup.get(flag_name)
+                    if cpd3_flag is None:
+                        continue
+                    flag_bits = flag_masks[i]
+                    bit_lookup[flag_bits] = {cpd3_flag.code}
+
+                def c(bits) -> typing.Set[str]:
+                    if bits is None:
+                        return _FLAGS_EMPTY
+                    bits = int(bits)
+                    if bits == 0:
+                        return _FLAGS_EMPTY
+                    check = bit_lookup.get(bits)
+                    if check is not None:
+                        return check
+                    flag_set: typing.Set[str] = set()
+                    for bit, flag in bit_lookup.items():
+                        if (bits & bit) != 0:
+                            flag_set.update(flag)
+                    return flag_set
+
+                self.record.value_convert(result, self.base_name, self.variable, c)
+
+        class GenericConverter(VariableConverter):
+            def __init__(self, record: "Converter.DataRecord", variable: Variable):
+                super().__init__(record, variable)
+                variable_name: str = variable.variable_id
+                if "_" not in variable_name:
+                    variable_name = variable_name + "_" + self.record.converter.source
+                self.base_name = Name(self.record.converter.station, 'raw', variable_name)
+
+                ancillary_variables = getattr(self.variable, "ancillary_variables", None)
+                if ancillary_variables:
+                    self.ancillary_variables: typing.Set[str] = set(ancillary_variables.split(' '))
+                else:
+                    self.ancillary_variables: typing.Set[str] = set()
+
+            @property
+            def simplified_type(self) -> typing.Union[typing.Type[int], typing.Type[float], typing.Type[str]]:
+                if self.variable.dtype == np.float64:
+                    return float
+                elif self.variable.dtype == np.float32:
+                    return float
+                elif self.variable.dtype == str:
+                    return str
+                return int
+
+            def metadata(self) -> cpd3_variant.Metadata:
+                metadata_type = self.simplified_type
+                if metadata_type == float:
+                    metadata_type = cpd3_variant.MetadataReal
+                elif metadata_type == str:
+                    metadata_type = cpd3_variant.MetadataString
+                elif metadata_type == int:
+                    metadata_type = cpd3_variant.MetadataInteger
+                else:
+                    raise ValueError("invalid metadata type")
+
+                meta = metadata_type()
+                meta["Source"] = self.record.converter.source_metadata
+                meta["Processing"] = self.record.converter.processing_metadata
+
+                units = getattr(self.variable, "units", None)
+                if units:
+                    meta['Units'] = units
+                    units = unit_lookup.get(units)
+                    if units:
+                        if units.units:
+                            meta['Units'] = units.units
+                        if units.format:
+                            meta['Format'] = units.format
+
+                fmt = getattr(self.variable, "C_format", None)
+                if fmt:
+                    fmt = convert_format_code(str(fmt))
+                    if fmt:
+                        meta["Format"] = fmt
+
+                description = getattr(self.variable, "long_name", None)
+                if description:
+                    meta["Description"] = str(description)
+
+                if "standard_temperature" in self.ancillary_variables:
+                    standard_temperature = self.record.group.variables.get("standard_temperature")
+                    if standard_temperature is not None:
+                        meta["ReportT"] = float(standard_temperature[0])
+                if "standard_pressure" in self.ancillary_variables:
+                    standard_pressure = self.record.group.variables.get("standard_pressure")
+                    if standard_pressure is not None:
+                        meta["ReportP"] = float(standard_pressure[0])
+
+                standard_name = getattr(self.variable, "standard_name", None)
+                comment = getattr(self.variable, "comment", None)
+                if comment:
+                    if standard_name == "number_concentration_of_aerosol_particles_at_stp_in_air" or standard_name == "number_concentration_of_ambient_aerosol_particles_in_air":
+                        meta["NoteFlow"] = str(comment)
+                    elif self.variable.name == "sample_flow":
+                        meta["NoteFlow"] = str(comment)
+                    else:
+                        meta["Comment"] = str(comment)
+
+                return meta
+
+            def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) -> None:
+                use_cut_size = "cut_size" in self.ancillary_variables
+
+                self.record.global_fanout(result, self.base_name, self.metadata(), use_cut_size=use_cut_size)
+
+                c = self.simplified_type
+
+                if c == float:
+                    c = lambda v: float(v) if v is not None and isfinite(float(v)) else nan
+
+                self.record.value_convert(result, self.base_name, self.variable, c, use_cut_size=use_cut_size)
+                self.record.value_coverage(result, self.base_name, use_cut_size=use_cut_size)
+
+        _IGNORED_VARIABLES = frozenset({
+            "time", "averaged_time", "averaged_count",
+            "cut_size",
+            "wavelength",
+            "standard_temperature", "standard_pressure",
+        })
+
+        def variable_converter(self, variable: Variable) -> typing.Optional["Converter.DataRecord.VariableConverter"]:
+            if variable.name == "system_flags":
+                return self.FlagsConverter(self, variable)
+            if variable.name in self._IGNORED_VARIABLES:
+                return None
+            if not getattr(variable, 'variable_id', None):
+                return None
+            return self.GenericConverter(self, variable)
+
+        def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) -> None:
+            for var in self.group.variables.values():
+                converter = self.variable_converter(var)
+                if not converter:
+                    continue
+                converter.convert(result)
+
+    def record_converter(self, group: Group) -> typing.Optional["Converter.RecordConverter"]:
+        if group.name == "instrument":
+            return None
+        if group.name == "data":
+            return self.DataRecord(self, group)
+        raise ValueError(f"unrecognized group {group.name}")
+
+    def convert(self) -> typing.List[typing.Tuple[Identity, typing.Any]]:
+        result: typing.List[typing.Tuple[Identity, typing.Any]] = list()
+
+        for g in self.root.groups.values():
+            converter = self.record_converter(g)
+            if not converter:
+                continue
+            converter.convert(result)
+
+        return result

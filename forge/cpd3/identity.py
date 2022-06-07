@@ -2,6 +2,7 @@ import typing
 import struct
 import time
 from math import nan, isfinite
+from forge.formattime import format_iso8601_time
 from .variant import serialize_short_string, deserialize_short_string
 
 
@@ -111,8 +112,7 @@ class Identity:
         def format_time(ts: float) -> str:
             if not ts:
                 return "∞"
-            ts = time.gmtime(ts)
-            return f"{ts.tm_year:04}-{ts.tm_mon:02}-{ts.tm_mday:02}T{ts.tm_hour:02}:{ts.tm_min:02}:{ts.tm_sec:02}Z"
+            return format_iso8601_time(ts)
 
         return f"Identity({self.name}, {format_time(self.start)}, {format_time(self.end)}, {self.priority})"
 

@@ -34,6 +34,11 @@ setup(
         "forge-vis-realtime-control = forge.vis.realtime.controller.server:main",
         "forge-vis-acquisition-control = forge.vis.acquisition.controller.server:main",
 
+        "forge-acquisition-serial-multiplexer = forge.acquisition.serial.multiplexer.__main__:main",
+        "forge-acquisition-serial-eavesdropper = forge.acquisition.serial.multiplexer.eavesdropper:main",
+        "forge-acquisition-bus-server = forge.acquisition.bus.server.__main__:main",
+        "forge-acquisition-instrument = forge.acquisition.instrument.run:main",
+
         "forge-processing-control = forge.processing.control.cli.__main__:main",
 
         "forge-telemetry = forge.telemetry.__main__:main",
@@ -49,6 +54,7 @@ setup(
         "forge-cpd3-pass-server = forge.cpd3.pass.server:main",
         "forge-cpd3-acquisition-incoming = forge.cpd3.acquisition.incoming.__main__:main",
         "forge-cpd3-acquisition-uplink = forge.cpd3.acquisition.incoming.uplink.__main__:main",
+        "forge-cpd3-convert-acquisition = forge.cpd3.convert.acquisition:main",
     ]},
     packages=find_packages(exclude=["tests"]),
     package_data={"": [

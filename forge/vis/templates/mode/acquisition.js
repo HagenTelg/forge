@@ -282,6 +282,8 @@ $(document).ready(function() {
                 context.addInstrumentPresent((source, info) => {
                     const serial_number = info.serial_number;
                     const display_id = info.display_id;
+                    const manufacturer = info.manufacturer;
+                    const model = info.model;
 
                     if (instrument) {
                         let display = instrument;
@@ -294,6 +296,12 @@ $(document).ready(function() {
                         target.textContent = display;
                     } else if (display_id) {
                         let display = display_id;
+                        if (serial_number) {
+                            display = display + " #" + serial_number;
+                        }
+                        target.textContent = display;
+                    } else if (manufacturer && model) {
+                        let display = manufacturer + " " + model;
                         if (serial_number) {
                             display = display + " #" + serial_number;
                         }

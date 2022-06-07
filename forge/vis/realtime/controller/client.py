@@ -94,6 +94,7 @@ if __name__ == '__main__':
     import argparse
     import time
     from json import dumps as to_json
+    from forge.formattime import format_export_time
     from forge.vis import CONFIGURATION
 
     parser = argparse.ArgumentParser(description="Realtime test client.")
@@ -117,8 +118,7 @@ if __name__ == '__main__':
         def format_time(ts: int) -> str:
             if not ts:
                 return ""
-            ts = time.gmtime(ts / 1000.0)
-            return f"{ts.tm_year:04}-{ts.tm_mon:02}-{ts.tm_mday:02} {ts.tm_hour:02}:{ts.tm_min:02}:{ts.tm_sec:02}"
+            return format_export_time(ts / 1000.0)
 
         class DebugReader(ReadData):
             async def block_ready(self, block: DataBlock):

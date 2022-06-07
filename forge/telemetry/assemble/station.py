@@ -7,4 +7,13 @@ async def get_station() -> typing.Optional[str]:
     if station:
         return station.upper()
 
+    from forge.telemetry import CONFIGURATION
+    station = CONFIGURATION.get("TELEMETRY.STATION", None)
+    if station and isinstance(station, str):
+        return station.upper()
+
+    station = CONFIGURATION.get("ACQUISITION.STATION", None)
+    if station and isinstance(station, str):
+        return station.upper()
+
     return None
