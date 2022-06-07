@@ -3,6 +3,7 @@ from collections import OrderedDict
 from ..default.view import detach, View, aerosol_views, ozone_views, met_views
 from ..default.aerosol.wind import Wind
 from ..default.aerosol.temperature import Temperature
+from ..default.aerosol.ccn import CCNStatus
 from ..default.met.temperature import Temperature as MetTemperature
 from ..default.met.wind import Wind as MetWind
 from ..default.met.editing.temperature import EditingTemperature as MetEditingTemperature
@@ -13,6 +14,7 @@ from ..default.met.editing.tower import EditingTowerTemperatureDifference as Met
 from .flow import Flow
 from .filter import FilterStatus, SecondFilterStatus
 from .umac import UMACStatus
+from .counts import ParticleConcentration, EditingParticleConcentration
 
 
 station_views = detach(aerosol_views, ozone_views, met_views)
@@ -44,12 +46,19 @@ station_views['aerosol-realtime-temperature'] = Temperature('aerosol-realtime', 
     ('{code}filterrack', 'Filter rack {type}'),
 ]), omit_traces={'TDnephinlet', 'TDfilterrack', 'Ufilterrack'}, realtime=True)
 
+station_views['aerosol-raw-counts'] = ParticleConcentration('aerosol-raw')
+station_views['aerosol-realtime-counts'] = ParticleConcentration('aerosol-realtime', realtime=True)
+station_views['aerosol-editing-counts'] = EditingParticleConcentration()
+station_views['aerosol-clean-counts'] = ParticleConcentration('aerosol-clean')
+station_views['aerosol-avgh-counts'] = ParticleConcentration('aerosol-avgh')
 station_views['aerosol-raw-filterstatus'] = FilterStatus('aerosol-raw')
 station_views['aerosol-raw-filterstatus2'] = SecondFilterStatus('aerosol-raw')
 station_views['aerosol-raw-umacstatus'] = UMACStatus('aerosol-raw')
 station_views['aerosol-realtime-filterstatus'] = FilterStatus('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-filterstatus2'] = SecondFilterStatus('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-umacstatus'] = UMACStatus('aerosol-realtime', realtime=True)
+station_views['aerosol-raw-ccnstatus'] = CCNStatus('aerosol-raw')
+station_views['aerosol-raw-ccnstatus'] = CCNStatus('aerosol-raw', realtime=True)
 
 
 measurements = OrderedDict([

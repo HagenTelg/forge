@@ -1,8 +1,9 @@
 import typing
 from forge.vis.acquisition import Translator
-from forge.vis.acquisition.basic import ParameterDisplay, Display
+from forge.vis.acquisition.basic import ParameterDisplay, ParameterSummary, Display, SummaryItem
 from ..default.acquisition import Acquisition as BaseAcquisition
 from ..default.acquisition import display as base_display
+from ..default.acquisition import summary as base_summary
 from ..cpd3 import Name, acquisition_translator
 from ..cpd3 import AcquisitionTranslator as BaseAcquisitionTranslator
 
@@ -14,10 +15,17 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrument(display_type='filtercarousel', match_source='F21'))
         self.display_instrument.append(self.DisplayInstrument(display_type='filtercarousel', match_source='F31'))
 
+        self.summary_instrument.append(self.SummaryInstrument(summary_type='realtimewind', match_source='XM2',
+                                                              priority=1000))
+
 
 _source_display: typing.Dict[str, Display] = {
     'F21': ParameterDisplay('filtercarousel', {'header': 'PMEL Filter Carousel'}),
     'F31': ParameterDisplay('filtercarousel', {'header': 'SCRIPPS Filter Carousel'}),
+}
+
+_type_summary: typing.Dict[str, SummaryItem] = {
+    'realtimewind': ParameterSummary('wind', {'instrument': "Tower"}),
 }
 
 
@@ -59,9 +67,7 @@ station_acquisition_translator = AcquisitionTranslator()
 
 class _FilterCarouselInterface(AcquisitionTranslator.Interface):
     def __init__(self):
-        variable_map: typing.Dict[AcquisitionTranslator.Variable, str] = {
-            AcquisitionTranslator.Variable('Fn'): 'Fn',
-        }
+        variable_map: typing.Dict[AcquisitionTranslator.Variable, str] = {}
         for i in range(9):
             var = 'Qt' + str(i)
             variable_map[AcquisitionTranslator.Variable(var)] = var
@@ -90,6 +96,13 @@ class _FilterCarouselInterface(AcquisitionTranslator.Interface):
                 }
 
             return 'next', translator
+        elif name.variable.startswith('Fn_'):
+            def translator(value: typing.Optional[int]) -> typing.Optional[int]:
+                if value is None or value < 0:
+                    return None
+                return value
+
+            return 'Fn', translator
         return super().value_translator(name)
 
 
@@ -97,14 +110,38 @@ class PMELFilterCarousel(_FilterCarouselInterface):
     def matches(self, interface_name: str, interface_info: typing.Dict[str, typing.Any]) -> bool:
         return interface_name == 'F21'
 
+    def display_information(self, interface_info: typing.Dict[str, typing.Any]) -> typing.Any:
+        info = super().display_information(interface_info)
+        info['display_letter'] = 'F'
+        return info
+
 
 class SCRIPPSFilterCarousel(_FilterCarouselInterface):
     def matches(self, interface_name: str, interface_info: typing.Dict[str, typing.Any]) -> bool:
         return interface_name == 'F31'
 
+    def display_information(self, interface_info: typing.Dict[str, typing.Any]) -> typing.Any:
+        info = super().display_information(interface_info)
+        info['display_letter'] = 'S'
+        return info
+
 
 station_acquisition_translator.interfaces.append(PMELFilterCarousel())
 station_acquisition_translator.interfaces.append(SCRIPPSFilterCarousel())
+
+
+class RealtimeWindInterface(AcquisitionTranslator.Interface):
+    def __init__(self):
+        super().__init__('realtimewind', variable_map={
+            AcquisitionTranslator.Variable('WS'): 'WS',
+            AcquisitionTranslator.Variable('WD'): 'WD',
+        })
+
+    def matches(self, interface_name: str, interface_info: typing.Dict[str, typing.Any]) -> bool:
+        return interface_name == 'XM2'
+
+
+station_acquisition_translator.interfaces.append(RealtimeWindInterface())
 
 
 def display(station: str, display_type: str, source: typing.Optional[str]) -> typing.Optional[Display]:
@@ -112,6 +149,13 @@ def display(station: str, display_type: str, source: typing.Optional[str]) -> ty
     if d:
         return d
     return base_display(station, display_type, source)
+
+
+def summary(station: str, summary_type: str, source: typing.Optional[str]) -> typing.Optional[SummaryItem]:
+    s = _type_summary.get(summary_type)
+    if s:
+        return s
+    return base_summary(station, summary_type, source)
 
 
 def translator(station: str) -> typing.Optional[Translator]:

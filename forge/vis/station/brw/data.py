@@ -1,8 +1,37 @@
 import typing
-from ..cpd3 import DataStream, DataReader, RealtimeTranslator, Name, data_profile_get, detach, profile_data
+from ..cpd3 import DataStream, DataReader, EditedReader, RealtimeTranslator, Name, data_profile_get, detach, profile_data
 
 
 station_profile_data = detach(profile_data)
+
+station_profile_data['aerosol']['raw']['cnc'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'N_N61'): 'cnc',
+        Name(station, 'raw', 'N_N11'): 'ccn',
+    }, send
+)
+station_profile_data['aerosol']['realtime']['cnc'] = {
+    RealtimeTranslator.Key('N_N61'): 'cnc',
+    RealtimeTranslator.Key('N_N11'): 'ccn',
+}
+station_profile_data['aerosol']['editing']['cnc'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+    start_epoch_ms, end_epoch_ms, station, 'aerosol', {
+        Name(station, 'clean', 'N_N61'): 'cnc',
+        Name(station, 'clean', 'N_N11'): 'ccn',
+    }, send
+)
+station_profile_data['aerosol']['clean']['cnc'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'clean', 'N_N61'): 'cnc',
+        Name(station, 'clean', 'N_N11'): 'ccn',
+    }, send
+)
+station_profile_data['aerosol']['avgh']['cnc'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'avgh', 'N_N61'): 'cnc',
+        Name(station, 'avgh', 'N_N11'): 'ccn',
+    }, send
+)
 
 station_profile_data['aerosol']['raw']['wind'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
@@ -95,12 +124,25 @@ station_profile_data['aerosol']['realtime']['filterstatus'] = dict(
     [(RealtimeTranslator.Key(f'Pd_P2{i+1}'), f'Pd{i+1}') for i in range(8)]
 )
 
+station_profile_data['aerosol']['raw']['filterstatus2'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, dict(
+        [(Name(station, 'raw', f'Fn_F31'), f'Fn')] +
+        [(Name(station, 'raw', f'Pd_P3{i+1}'), f'Pd{i+1}') for i in range(8)]
+    ), send
+)
+station_profile_data['aerosol']['realtime']['filterstatus2'] = dict(
+    [(RealtimeTranslator.Key(f'Fn_F31'), f'Fn')] +
+    [(RealtimeTranslator.Key(f'Pd_P3{i+1}'), f'Pd{i+1}') for i in range(8)]
+)
+
 station_profile_data['aerosol']['raw']['umacstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'T_X1'): 'T',
         Name(station, 'raw', 'V_X1'): 'V',
         Name(station, 'raw', 'T_X3'): 'Tfilter',
         Name(station, 'raw', 'V_X3'): 'Vfilter',
+        Name(station, 'raw', 'T_X5'): 'Tfilter2',
+        Name(station, 'raw', 'V_X5'): 'Vfilter2',
     }, send
 )
 station_profile_data['aerosol']['realtime']['umacstatus'] = {
@@ -108,6 +150,35 @@ station_profile_data['aerosol']['realtime']['umacstatus'] = {
     RealtimeTranslator.Key('V_X1'): 'V',
     RealtimeTranslator.Key('T_X3'): 'Tfilter',
     RealtimeTranslator.Key('V_X3'): 'Vfilter',
+    RealtimeTranslator.Key('T_X5'): 'Tfilter2',
+    RealtimeTranslator.Key('V_X5'): 'Vfilter2',
+}
+
+station_profile_data['aerosol']['raw']['ccnstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'Tu_N11'): 'Tinlet',
+        Name(station, 'raw', 'T1_N11'): 'Ttec1',
+        Name(station, 'raw', 'T2_N11'): 'Ttec2',
+        Name(station, 'raw', 'T3_N11'): 'Ttec3',
+        Name(station, 'raw', 'T4_N11'): 'Tsample',
+        Name(station, 'raw', 'T5_N11'): 'Topc',
+        Name(station, 'raw', 'T6_N11'): 'Tnafion',
+        Name(station, 'raw', 'Q1_N11'): 'Qsample',
+        Name(station, 'raw', 'Q2_N11'): 'Qsheath',
+        Name(station, 'raw', 'Uc_N11'): 'SScalc',
+    }, send
+)
+station_profile_data['aerosol']['realtime']['ccnstatus'] = {
+    RealtimeTranslator.Key('Tu_N11'): 'Tinlet',
+    RealtimeTranslator.Key('T1_N11'): 'Ttec1',
+    RealtimeTranslator.Key('T2_N11'): 'Ttec2',
+    RealtimeTranslator.Key('T3_N11'): 'Ttec3',
+    RealtimeTranslator.Key('T4_N11'): 'Tsample',
+    RealtimeTranslator.Key('T5_N11'): 'Topc',
+    RealtimeTranslator.Key('T6_N11'): 'Tnafion',
+    RealtimeTranslator.Key('Q1_N11'): 'Qsample',
+    RealtimeTranslator.Key('Q2_N11'): 'Qsheath',
+    RealtimeTranslator.Key('Uc_N11'): 'SScalc',
 }
 
 

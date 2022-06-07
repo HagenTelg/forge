@@ -24,9 +24,15 @@ class UMACStatus(TimeSeries):
         temperatures.traces.append(internal)
 
         internal = TimeSeries.Trace(degrees)
-        internal.legend = "Internal (filter)"
+        internal.legend = "Internal (PMEL filter)"
         internal.data_record = f'{mode}-umacstatus'
         internal.data_field = 'Tfilter'
+        temperatures.traces.append(internal)
+
+        internal = TimeSeries.Trace(degrees)
+        internal.legend = "Internal (SCRIPPS filter)"
+        internal.data_record = f'{mode}-umacstatus'
+        internal.data_field = 'Tfilter2'
         temperatures.traces.append(internal)
 
 
@@ -46,8 +52,14 @@ class UMACStatus(TimeSeries):
         voltage.traces.append(supply)
 
         supply = TimeSeries.Trace(V)
-        supply.legend = "Supply (filter)"
+        supply.legend = "Supply (PMEL filter)"
         supply.data_record = f'{mode}-umacstatus'
         supply.data_field = 'Vfilter'
+        voltage.traces.append(supply)
+
+        supply = TimeSeries.Trace(V)
+        supply.legend = "Supply (SCRIPPS filter)"
+        supply.data_record = f'{mode}-umacstatus'
+        supply.data_field = 'Vfilter2'
         voltage.traces.append(supply)
 
