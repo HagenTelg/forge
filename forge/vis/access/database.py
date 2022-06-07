@@ -803,6 +803,20 @@ class ControlInterface:
                             'mode': access.mode,
                             'write': access.write,
                         })
+
+                    has_password = orm_session.query(_AuthPassword).filter_by(user=user.id).one_or_none() is not None
+                    oidc_provider = orm_session.query(_AuthOpenIDConnect).filter_by(user=user.id).one_or_none()
+                    if oidc_provider is not None:
+                        oidc_provider = oidc_provider.provider
+
+                    authentication = None
+                    if has_password and oidc_provider:
+                        authentication = 'password+' + oidc_provider
+                    elif has_password:
+                        authentication = 'password'
+                    elif oidc_provider:
+                        authentication = oidc_provider
+
                     result.append({
                         'id': user.id,
                         'name': user.name,
@@ -810,6 +824,7 @@ class ControlInterface:
                         'initials': user.initials,
                         'last_seen': user.last_seen,
                         'access': user_access,
+                        'authentication': authentication,
                     })
 
             return result
