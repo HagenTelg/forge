@@ -56,10 +56,12 @@ async def update(request: Request) -> Response:
     except:
         raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Error decoding json")
 
-    try:
-        origin = str(ipaddress.ip_address(request.client.host))
-    except ValueError:
-        origin = None
+    origin = None
+    if 'ignoreorigin' not in request.query_params:
+        try:
+            origin = str(ipaddress.ip_address(request.client.host))
+        except ValueError:
+            origin = None
 
     if not await request.scope['telemetry'].direct_update(key, origin, content):
         _LOGGER.debug("Direct telemetry update rejected")
