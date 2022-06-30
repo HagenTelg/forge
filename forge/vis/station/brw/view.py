@@ -58,7 +58,7 @@ station_views['aerosol-realtime-filterstatus'] = FilterStatus('aerosol-realtime'
 station_views['aerosol-realtime-filterstatus2'] = SecondFilterStatus('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-umacstatus'] = UMACStatus('aerosol-realtime', realtime=True)
 station_views['aerosol-raw-ccnstatus'] = CCNStatus('aerosol-raw')
-station_views['aerosol-raw-ccnstatus'] = CCNStatus('aerosol-raw', realtime=True)
+station_views['aerosol-realtime-ccnstatus'] = CCNStatus('aerosol-raw', realtime=True)
 
 
 measurements = OrderedDict([
