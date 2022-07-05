@@ -20,7 +20,7 @@ class Instrument(ModbusInstrument):
     DISPLAY_LETTER = "M"
     TAGS = frozenset({"aerosol", "mass", _INSTRUMENT_TYPE})
 
-    class _InputRegister(enum.IntEnum):
+    class _Register(enum.IntEnum):
         # 32-bit integers, but read nonsense
         # PUMP_TACHOMETER = 0
         # AMPLITUDE_HISTOGRAM_COUNT = 2
@@ -56,19 +56,19 @@ class Instrument(ModbusInstrument):
         self.data_X25 = self.input("X25")
         self.data_X10 = self.input("X10")
         self.data_Pambient = self.input("Pambient")
-        self.register_map: typing.Dict[Instrument._InputRegister, Instrument.Input] = {
-            self._InputRegister.AMBIENT_TEMPERATURE: self.input("Tambient"),
-            self._InputRegister.SAMPLE_TEMPERATURE: self.input("Tsample"),
-            self._InputRegister.ASC_TUBE_TEMPERATURE: self.input("Tasc"),
-            self._InputRegister.LED_TEMPERATURE: self.input("Tled"),
-            self._InputRegister.BOX_TEMPERATURE: self.input("Tbox"),
-            self._InputRegister.RH: self.input("Usample"),
-            self._InputRegister.SAMPLE_FLOW: self.input("Qsample"),
-            self._InputRegister.BYPASS_FLOW: self.input("Qbypass"),
-            self._InputRegister.SPAN_DEVIATION: self.input("spandev"),
-            self._InputRegister.PUMP_DUTY_CYCLE: self.input("PCTpump"),
-            self._InputRegister.PROPORTIONAL_VALVE_DUTY_CYCLE: self.input("PCTvalve"),
-            self._InputRegister.ASC_HEATER_DUTY_CYCLE: self.input("PCTasc"),
+        self.register_map: typing.Dict[Instrument._Register, Instrument.Input] = {
+            self._Register.AMBIENT_TEMPERATURE: self.input("Tambient"),
+            self._Register.SAMPLE_TEMPERATURE: self.input("Tsample"),
+            self._Register.ASC_TUBE_TEMPERATURE: self.input("Tasc"),
+            self._Register.LED_TEMPERATURE: self.input("Tled"),
+            self._Register.BOX_TEMPERATURE: self.input("Tbox"),
+            self._Register.RH: self.input("Usample"),
+            self._Register.SAMPLE_FLOW: self.input("Qsample"),
+            self._Register.BYPASS_FLOW: self.input("Qbypass"),
+            self._Register.SPAN_DEVIATION: self.input("spandev"),
+            self._Register.PUMP_DUTY_CYCLE: self.input("PCTpump"),
+            self._Register.PROPORTIONAL_VALVE_DUTY_CYCLE: self.input("PCTvalve"),
+            self._Register.ASC_HEATER_DUTY_CYCLE: self.input("PCTasc"),
         }
 
         self.data_diameter = self.persistent("diameter", save_value=False, send_to_bus=False)
@@ -97,30 +97,30 @@ class Instrument(ModbusInstrument):
 
             self.variable_air_pressure(self.data_Pambient, "pressure", code="P"),
 
-            self.variable_sample_flow(self.register_map[self._InputRegister.SAMPLE_FLOW],
+            self.variable_sample_flow(self.register_map[self._Register.SAMPLE_FLOW],
                                       code="Q1", attributes={'C_format': "%4.2f"}),
-            self.variable_flow(self.register_map[self._InputRegister.BYPASS_FLOW],
+            self.variable_flow(self.register_map[self._Register.BYPASS_FLOW],
                                "bypass_flow", code="Q2", attributes={'long_name': "inlet stack bypass flow"}),
 
-            self.variable_air_rh(self.register_map[self._InputRegister.RH],
+            self.variable_air_rh(self.register_map[self._Register.RH],
                                  "sample_humidity", code="U1"),
 
-            self.variable_air_temperature(self.register_map[self._InputRegister.SAMPLE_TEMPERATURE],
+            self.variable_air_temperature(self.register_map[self._Register.SAMPLE_TEMPERATURE],
                                           "sample_temperature", code="T1"),
-            self.variable_temperature(self.register_map[self._InputRegister.AMBIENT_TEMPERATURE],
+            self.variable_temperature(self.register_map[self._Register.AMBIENT_TEMPERATURE],
                                       "ambient_temperature", code="T2",
                                       attributes={'long_name': "ambient temperature measured by the external sensor"}),
-            self.variable_temperature(self.register_map[self._InputRegister.ASC_TUBE_TEMPERATURE],
+            self.variable_temperature(self.register_map[self._Register.ASC_TUBE_TEMPERATURE],
                                       "asc_temperature", code="T3",
                                       attributes={'long_name': "aerosol sample conditioner tube jacket temperature"}),
-            self.variable_temperature(self.register_map[self._InputRegister.LED_TEMPERATURE],
+            self.variable_temperature(self.register_map[self._Register.LED_TEMPERATURE],
                                       "led_temperature", code="T4",
                                       attributes={'long_name': "OPC LED temperature"}),
-            self.variable_temperature(self.register_map[self._InputRegister.BOX_TEMPERATURE],
+            self.variable_temperature(self.register_map[self._Register.BOX_TEMPERATURE],
                                       "box_temperature", code="T5",
                                       attributes={'long_name': "internal box temperature"}),
 
-            self.variable(self.register_map[self._InputRegister.SPAN_DEVIATION],
+            self.variable(self.register_map[self._Register.SPAN_DEVIATION],
                           "span_deviation", code="ZSPAN", attributes={
                 'long_name': "span deviation",
                 'C_format': "%6.1f"
@@ -142,7 +142,7 @@ class Instrument(ModbusInstrument):
             ],
         )
 
-    async def _read_float_input(self, reg: "Instrument._InputRegister") -> float:
+    async def _read_float_input(self, reg: "Instrument._Register") -> float:
         index = int(reg)
         raw = await wait_cancelable(self.read_input_registers(index, index+1), 10.0)
         return struct.unpack('>f', raw)[0]
@@ -153,13 +153,13 @@ class Instrument(ModbusInstrument):
 
         await wait_cancelable(self.read_mapped_inputs(self.input_flags.keys()), 10.0)
 
-        pump_duty = await self._read_float_input(self._InputRegister.PUMP_DUTY_CYCLE)
+        pump_duty = await self._read_float_input(self._Register.PUMP_DUTY_CYCLE)
         if not isfinite(pump_duty) or pump_duty < 0.0 or pump_duty > 100.0:
             raise CommunicationsError(f"invalid pump duty cycle {pump_duty}")
 
         if self._have_pm1_option is None:
             try:
-                pm1 = await self._read_float_input(self._InputRegister.PM1_CONCENTRATION)
+                pm1 = await self._read_float_input(self._Register.PM1_CONCENTRATION)
                 if not isfinite(pm1) or pm1 < -20.0 or pm1 > 1E5:
                     raise ModbusException(0)
                 self._have_pm1_option = True
@@ -170,7 +170,7 @@ class Instrument(ModbusInstrument):
                 self.data_diameter([2.5, 10.0])
                 _LOGGER.debug("PM1 option absent")
 
-        pm10 = await self._read_float_input(self._InputRegister.PM10_CONCENTRATION)
+        pm10 = await self._read_float_input(self._Register.PM10_CONCENTRATION)
         if not isfinite(pm10) or pm10 < -100.0:
             raise CommunicationsError(f"invalid PM10 concentration {pm10}")
 
@@ -188,12 +188,12 @@ class Instrument(ModbusInstrument):
         for reg, inp in self.register_map.items():
             inp(await self._read_float_input(reg))
 
-        self.data_Pambient(await self._read_float_input(self._InputRegister.AMBIENT_PRESSURE) * 10.0)
+        self.data_Pambient(await self._read_float_input(self._Register.AMBIENT_PRESSURE) * 10.0)
 
-        self.data_X10(await self._read_float_input(self._InputRegister.PM10_CONCENTRATION))
-        self.data_X25(await self._read_float_input(self._InputRegister.PM25_CONCENTRATION))
+        self.data_X10(await self._read_float_input(self._Register.PM10_CONCENTRATION))
+        self.data_X25(await self._read_float_input(self._Register.PM25_CONCENTRATION))
         if self._have_pm1_option:
-            self.data_X1(await self._read_float_input(self._InputRegister.PM1_CONCENTRATION))
+            self.data_X1(await self._read_float_input(self._Register.PM1_CONCENTRATION))
             self.data_X([float(self.data_X1), float(self.data_X25), float(self.data_X10)])
         else:
             self.data_X([float(self.data_X25), float(self.data_X10)])

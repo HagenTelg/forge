@@ -231,6 +231,20 @@ cut_size = false
 - Instrument baud rate: 9600
 - Display letter: I
 
+## Teledyne N500
+
+```toml
+[instrument.G82]
+type = "teledynen640"
+tcp = "140.172.50.74:502"
+cut_size = false
+serial_number = 1533
+```
+
+- The IP or host name must match the instrument
+- Port "2" on instrument front panel must be enabled and match the above (the ":2" above).  Any valid TCP port (1-65535) can be used as long as they match.
+- Display letter: G
+
 ## Teledyne T640
 
 ```toml
@@ -261,6 +275,7 @@ cut_size = false
 
 ```toml
 [instrument.G81]
+type = "thermo49iq"
 tcp = "140.172.50.74:502"
 cut_size = false
 ```
@@ -273,6 +288,7 @@ cut_size = false
 
 ```toml
 [instrument.A21]
+type = "thermomaap"
 serial_port = "/dev/serial/by-id/..."
 cut_size = false
 ```

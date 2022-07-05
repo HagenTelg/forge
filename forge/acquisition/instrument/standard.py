@@ -433,6 +433,9 @@ class StandardInstrument(BaseInstrument):
 
     variable_ozone = _declare_variable_type(netcdf_var.variable_ozone, "ozone_mixing_ratio")
     variable_co2 = _declare_variable_type(netcdf_var.variable_co2, "carbon_dioxide_mixing_ratio")
+    variable_no2 = _declare_variable_type(netcdf_var.variable_no2, "nitrogen_dioxide_mixing_ratio")
+    variable_no = _declare_variable_type(netcdf_var.variable_no, "nitrogen_monoxide_mixing_ratio")
+    variable_nox = _declare_variable_type(netcdf_var.variable_nox, "nox_mixing_ratio")
     variable_temperature = _declare_variable_type(netcdf_var.variable_temperature)
     variable_air_temperature = _declare_variable_type(netcdf_var.variable_air_temperature)
     variable_dewpoint = _declare_variable_type(netcdf_var.variable_dewpoint)

@@ -115,6 +115,26 @@ def variable_co2(var: Variable) -> None:
     var.C_format = "%9.2f"
 
 
+def variable_no(var: Variable) -> None:
+    var.long_name = "fractional concentration of nitrogen monoxide"
+    var.standard_name = "mole_fraction_of_nitrogen_monoxide_in_air"
+    var.units = "1e-9"  # canonical ppb
+    var.C_format = "%9.2f"
+
+
+def variable_no2(var: Variable) -> None:
+    var.long_name = "fractional concentration of nitrogen dioxide"
+    var.standard_name = "mole_fraction_of_nitrogen_dioxide_in_air"
+    var.units = "1e-9"  # canonical ppb
+    var.C_format = "%9.2f"
+
+
+def variable_nox(var: Variable) -> None:
+    var.long_name = "fractional concentration of NOx"
+    var.units = "1e-9"  # canonical ppb
+    var.C_format = "%9.2f"
+
+
 def variable_wind_speed(var: Variable) -> None:
     var.long_name = "wind speed"
     var.standard_name = "wind_speed"
