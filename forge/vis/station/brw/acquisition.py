@@ -8,6 +8,10 @@ from ..cpd3 import Name, acquisition_translator
 from ..cpd3 import AcquisitionTranslator as BaseAcquisitionTranslator
 
 
+def visible(station: str, mode_name: typing.Optional[str] = None) -> bool:
+    return True
+
+
 class Acquisition(BaseAcquisition):
     def __init__(self, mode_name: str = 'acquisition', display_name: str = "Acquisition", **kwargs):
         super().__init__(mode_name, display_name, **kwargs)
