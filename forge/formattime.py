@@ -1,5 +1,6 @@
 import typing
 import time
+import datetime
 
 
 def format_iso8601_duration(duration: float, milliseconds: bool = False) -> str:
@@ -81,3 +82,26 @@ def format_iso8601_time(t: float, delimited: bool = True, milliseconds: bool = F
 def format_export_time(t: float) -> str:
     ts = time.gmtime(t)
     return _date(ts) + " " + _time_of_day(ts)
+
+
+def format_year_doy(t: float, digits: int = 5, year_mode: typing.Union[bool, str] = ':',
+                    doy_padding: typing.Union[bool, str] = '0') -> str:
+    current_time = datetime.datetime.fromtimestamp(t, tz=datetime.timezone.utc)
+    start_of_year = datetime.datetime(current_time.year, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc).timestamp()
+    doy = (t - start_of_year) / (24.0 * 60.0 * 60.0) + 1.0
+
+    if isinstance(doy_padding, bool) and doy_padding:
+        doy_padding = '0'
+
+    if doy_padding:
+        doy_format = '{:' + doy_padding + str(3 + (digits + 1 if digits else 0)) + '.' + str(digits) + 'f}'
+    else:
+        doy_format = '{:.' + str(digits) + 'f}'
+
+    if isinstance(year_mode, bool) and year_mode:
+        year_mode = ':'
+
+    if year_mode:
+        return ('{:04}' + year_mode + doy_format).format(current_time.year, doy)
+
+    return doy_format.format(doy)
