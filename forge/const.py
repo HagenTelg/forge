@@ -18,6 +18,7 @@ STATIONS = frozenset({
     'bos',
     'brw',
     'cpr',
+    'csu',
     'egb',
     'etl',
     'euk',
