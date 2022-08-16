@@ -35,3 +35,19 @@ def instrument_timeseries(root: netCDF4.Dataset, station: str, instrument: str, 
     apply_attribute(root, "instrument_id", instrument)
     if tags:
         apply_attribute(root, "forge_tags", " ".join(tags))
+
+
+def event_log(root: netCDF4.Dataset, station: str, start_epoch: float, end_epoch: float,
+              override: typing.Optional[typing.Callable[[str], typing.Any]] = None) -> None:
+    from .basic import set_basic
+    from .dataset import set_dataset
+    from .site import set_site
+    from .timeseries import set_timeseries
+
+    tags = {"eventlog"}
+
+    set_basic(root)
+    set_dataset(root, station, tags=tags, override=override)
+    set_site(root, station, tags=tags, override=override)
+    set_timeseries(root, f"{station.upper()}-LOG", start_epoch, end_epoch)
+    apply_attribute(root, "forge_tags", " ".join(tags))

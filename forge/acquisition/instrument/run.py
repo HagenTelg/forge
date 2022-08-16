@@ -100,6 +100,22 @@ def bus_interface(args: argparse.Namespace) -> BaseBusInterface:
     return BusInterface(args.identifier, CONFIGURATION.get("ACQUISITION.BUS", '/run/forge-acquisition-bus.socket'))
 
 
+def data_directories(args: argparse.Namespace) -> typing.Tuple[typing.Optional[Path], typing.Optional[Path]]:
+    working_directory = args.data_working or CONFIGURATION.get("ACQUISITION.DATA_TEMP")
+    if working_directory:
+        working_directory = Path(working_directory)
+    else:
+        working_directory = None
+
+    completed_directory = args.data_completed or CONFIGURATION.get("ACQUISITION.SEND")
+    if completed_directory:
+        completed_directory = Path(completed_directory)
+    else:
+        completed_directory = None
+
+    return working_directory, completed_directory
+
+
 def data_output(args: argparse.Namespace) -> BaseDataOutput:
     from .dataoutput import DataOutput
 
@@ -113,17 +129,7 @@ def data_output(args: argparse.Namespace) -> BaseDataOutput:
     if global_config:
         roots.append(global_config)
 
-    working_directory = args.data_working or CONFIGURATION.get("ACQUISITION.DATA_TEMP")
-    if working_directory:
-        working_directory = Path(working_directory)
-    else:
-        working_directory = None
-
-    completed_directory = args.data_completed or CONFIGURATION.get("ACQUISITION.SEND")
-    if completed_directory:
-        completed_directory = Path(completed_directory)
-    else:
-        completed_directory = None
+    working_directory, completed_directory = data_directories(args)
 
     return DataOutput(CONFIGURATION.get("ACQUISITION.STATION", 'nil').lower(), args.identifier,
                       LayeredConfiguration(*roots),

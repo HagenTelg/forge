@@ -26,11 +26,11 @@ class BusInterface(BaseBusInterface):
         self.state_records: typing.Dict[str, typing.Any] = dict()
         self.state_record_updated = asyncio.Event()
 
-    async def emit_instrument_info(self, contents: typing.Dict[str, typing.Any]) -> None:
+    async def set_instrument_info(self, contents: typing.Dict[str, typing.Any]) -> None:
         self.instrument_info = contents
         self.instrument_info_updated.set()
 
-    async def emit_instrument_state(self, contents: typing.Dict[str, typing.Any]) -> None:
+    async def set_instrument_state(self, contents: typing.Dict[str, typing.Any]) -> None:
         self.instrument_state = contents
         self.instrument_state_updated.set()
 
@@ -38,7 +38,7 @@ class BusInterface(BaseBusInterface):
         self.data_values.update(contents)
         self.data_value_updated.set()
 
-    async def emit_state_value(self, name: str, contents: typing.Any) -> None:
+    async def set_state_value(self, name: str, contents: typing.Any) -> None:
         self.state_records[name] = contents
         self.state_record_updated.set()
 

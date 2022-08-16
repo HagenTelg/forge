@@ -357,7 +357,7 @@ class StandardInstrument(BaseInstrument):
             'warning': in_warning,
             'notifications': list(notifications),
         }
-        await self.context.bus.emit_instrument_state(state)
+        await self.context.bus.set_instrument_state(state)
 
     def _update_averaging(self) -> None:
         is_bypassed = self.bypassed
@@ -380,7 +380,7 @@ class StandardInstrument(BaseInstrument):
             info.update(self.instrument_info)
             info.update(self._dynamic_instrument_info)
             self._update_instrument_metadata(info)
-            await self.context.bus.emit_instrument_info(info)
+            await self.context.bus.set_instrument_info(info)
 
         if self._instrument_state_updated:
             self._instrument_state_updated = False

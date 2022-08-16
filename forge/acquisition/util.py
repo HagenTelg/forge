@@ -1,5 +1,7 @@
 import typing
 import re
+import os
+from tempfile import mkstemp
 from forge.timeparse import parse_iso8601_duration
 
 
@@ -49,3 +51,22 @@ def parse_interval(interval: typing.Optional[typing.Union[str, float, int, dict,
         )
 
     return parse_iso8601_duration(interval)
+
+
+def write_replace_file(target_file: str, working_directory: str, write_file: typing.Callable[[str], None]) -> None:
+    next_file: typing.Optional[str] = None
+    next_fd: typing.Optional[int] = None
+    try:
+        next_fd, next_file = mkstemp(dir=working_directory)
+        write_file(next_file)
+        os.replace(next_file, target_file)
+        next_file = None
+    finally:
+        if next_fd is not None:
+            os.close(next_fd)
+        if next_file is not None:
+            try:
+                os.unlink(next_file)
+            except OSError:
+                pass
+

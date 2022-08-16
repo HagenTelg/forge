@@ -77,10 +77,10 @@ class BusInterface(BaseBusInterface):
         await self.client.shutdown()
         self.client = None
 
-    async def emit_instrument_info(self, contents: typing.Dict[str, typing.Any]) -> None:
+    async def set_instrument_info(self, contents: typing.Dict[str, typing.Any]) -> None:
         self.client.set_source_information('instrument', contents)
 
-    async def emit_instrument_state(self, contents: typing.Dict[str, typing.Any]) -> None:
+    async def set_instrument_state(self, contents: typing.Dict[str, typing.Any]) -> None:
         self.client.set_source_information('state', contents)
 
     async def emit_data_record(self, contents: typing.Dict[str, float]) -> None:
@@ -93,11 +93,21 @@ class BusInterface(BaseBusInterface):
             record = record + '.' + str(cutsize).lower()
         self.client.send_data(record, contents)
 
-    async def emit_state_value(self, name: str, contents: typing.Any) -> None:
+    async def set_state_value(self, name: str, contents: typing.Any) -> None:
         self.client.set_state(name, contents)
 
     async def set_bypass_held(self, held: bool) -> None:
         self.client.set_state('bypass_held', held)
+
+    async def log(self, message: str, auxiliary: typing.Dict[str, typing.Any] = None,
+                  type: "BaseBusInterface.LogType" = None) -> None:
+        message: typing.Dict[str, typing.Any] = {
+            'message': message,
+            'type': (type.value if type else BaseBusInterface.LogType.INFO.value),
+        }
+        if auxiliary:
+            message['auxiliary'] = auxiliary
+        self.client.send_data('event_log', message)
 
     def connect_data(self, source: typing.Optional[str], field: str,
                      target: typing.Callable[[typing.Any], None]) -> None:

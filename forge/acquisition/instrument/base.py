@@ -112,10 +112,10 @@ class BaseBusInterface:
         self.source = source
         self.bypass_updated: typing.Optional[typing.Callable[[], None]] = None
 
-    async def emit_instrument_info(self, contents: typing.Dict[str, typing.Any]) -> None:
+    async def set_instrument_info(self, contents: typing.Dict[str, typing.Any]) -> None:
         pass
 
-    async def emit_instrument_state(self, contents: typing.Dict[str, typing.Any]) -> None:
+    async def set_instrument_state(self, contents: typing.Dict[str, typing.Any]) -> None:
         pass
 
     async def emit_data_record(self, contents: typing.Dict[str, float]) -> None:
@@ -125,7 +125,20 @@ class BaseBusInterface:
                                   cutsize: CutSize.Size = CutSize.Size.WHOLE) -> None:
         pass
 
-    async def emit_state_value(self, name: str, contents: typing.Any) -> None:
+    async def set_state_value(self, name: str, contents: typing.Any) -> None:
+        pass
+
+    async def set_bypass_held(self, held: bool) -> None:
+        pass
+
+    class LogType(Enum):
+        INFO = "info"
+        COMMUNICATIONS_ESTABLISHED = "communications_established"
+        COMMUNICATIONS_LOST = "communications_lost"
+        ERROR = "error"
+
+    async def log(self, message: str, auxiliary: typing.Dict[str, typing.Any] = None,
+                  type: "BaseBusInterface.LogType" = None) -> None:
         pass
 
     def connect_data(self, source: typing.Optional[str], field: str,

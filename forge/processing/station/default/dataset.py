@@ -10,6 +10,8 @@ def source(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typin
 
 
 def title(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
+    if tags and 'eventlog' in tags:
+        return "Acquisition System Event Log"
     if tags and 'ozone' in tags:
         return "Surface Ozone Measurements"
     if tags and 'met' in tags:

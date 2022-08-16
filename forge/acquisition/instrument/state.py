@@ -68,7 +68,7 @@ class Persistent(BaseInstrument.Persistent):
                 u()
 
         if self._queued_for_bus is not None:
-            await self.instrument.context.bus.emit_state_value(self.name, self._queued_for_bus)
+            await self.instrument.context.bus.set_state_value(self.name, self._queued_for_bus)
             self._queued_for_bus = None
         if self._queued_for_save is not None:
             await self.instrument.context.persistent.save(self.name, self._queued_for_save, now)

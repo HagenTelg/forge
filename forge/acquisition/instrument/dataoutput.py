@@ -3,7 +3,6 @@ import asyncio
 import logging
 import time
 import shutil
-import os
 import numpy as np
 import forge.data.structure.variable as netcdf_var
 import forge.data.structure.timeseries as netcdf_timeseries
@@ -11,7 +10,6 @@ import forge.data.structure.stp as netcdf_stp
 from collections import deque
 from math import floor, nan
 from pathlib import Path
-from tempfile import mkstemp
 from secrets import token_bytes
 from base64 import b32encode
 from netCDF4 import Dataset, Variable, Group
@@ -20,7 +18,7 @@ from forge.formattime import format_iso8601_time
 from forge.data.structure import instrument_timeseries
 from forge.data.structure.history import append_history
 from forge.acquisition import LayeredConfiguration
-from forge.acquisition.util import parse_interval
+from forge.acquisition.util import parse_interval, write_replace_file
 from forge.acquisition.instrument.base import BaseDataOutput
 
 
@@ -157,7 +155,7 @@ class DataOutput(BaseDataOutput):
             raise ValueError(f"invalid data flush interval {self._flush_interval}")
         self._file_duration: float = parse_interval(config.get("DURATION"), 60 * 60)
         if self._file_duration <= 0.0:
-            raise ValueError(f"invalid data file duration {self._flush_interval}")
+            raise ValueError(f"invalid data file duration {self._file_duration}")
 
         if not working_directory:
             working_directory = Path('.')
@@ -528,21 +526,7 @@ class DataOutput(BaseDataOutput):
         if self._data_updated:
             self._data_updated.clear()
 
-        next_file: typing.Optional[str] = None
-        next_fd: typing.Optional[int] = None
-        try:
-            next_fd, next_file = mkstemp(dir=str(self._working_directory))
-            self.write_file(next_file)
-            os.replace(next_file, str(self._active_output_file))
-            next_file = None
-        finally:
-            if next_fd is not None:
-                os.close(next_fd)
-            if next_file is not None:
-                try:
-                    os.unlink(next_file)
-                except OSError:
-                    pass
+        write_replace_file(str(self._active_output_file), str(self._working_directory), self.write_file)
 
         _LOGGER.debug("Data flush completed")
 

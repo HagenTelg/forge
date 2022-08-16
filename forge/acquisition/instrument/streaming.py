@@ -2,6 +2,7 @@ import typing
 import asyncio
 import logging
 import time
+import traceback
 from forge.acquisition import LayeredConfiguration, CONFIGURATION
 from .base import BaseSimulator, BaseContext, BaseDataOutput, BasePersistentInterface, BaseBusInterface, CommunicationsError
 from .standard import StandardInstrument
@@ -143,19 +144,30 @@ class StreamingInstrument(StandardInstrument):
                 return False
 
             _LOGGER.debug("Communications established")
+            await self.context.bus.log("Communications established",
+                                       type=BaseBusInterface.LogType.COMMUNICATIONS_ESTABLISHED)
             return True
 
         async def process() -> bool:
             try:
                 await self.communicate()
             except (TimeoutError, asyncio.TimeoutError):
-                _LOGGER.info("Timeout waiting for response in unpolled communications", exc_info=True)
+                _LOGGER.info("Timeout waiting for response", exc_info=True)
+                await self.context.bus.log("Timeout waiting for response", {
+                    "exception": traceback.format_exc(),
+                }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
                 return False
             except CommunicationsError:
-                _LOGGER.info("Invalid response in start in unpolled communications", exc_info=True)
+                _LOGGER.info("Invalid response received", exc_info=True)
+                await self.context.bus.log("Invalid response received", {
+                    "exception": traceback.format_exc(),
+                }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
                 return False
             except IOError:
-                _LOGGER.warning("Stream IO error during unpolled communications", exc_info=True)
+                _LOGGER.warning("Stream IO error", exc_info=True)
+                await self.context.bus.log("Stream IO error", {
+                    "exception": traceback.format_exc(),
+                }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
                 self._stream_need_reset = True
                 return False
 
