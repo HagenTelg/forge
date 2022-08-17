@@ -26,11 +26,13 @@ def instrument_timeseries(root: netCDF4.Dataset, station: str, instrument: str, 
     from .basic import set_basic
     from .dataset import set_dataset
     from .site import set_site
+    from .ebas import set_ebas
     from .timeseries import set_timeseries
 
     set_basic(root)
     set_dataset(root, station, tags=tags, override=override)
     set_site(root, station, tags=tags, override=override)
+    set_ebas(root, station, tags=tags, override=override)
     set_timeseries(root, f"{station.upper()}-{instrument}", start_epoch, end_epoch, interval)
     apply_attribute(root, "instrument_id", instrument)
     if tags:
@@ -42,6 +44,7 @@ def event_log(root: netCDF4.Dataset, station: str, start_epoch: float, end_epoch
     from .basic import set_basic
     from .dataset import set_dataset
     from .site import set_site
+    from .ebas import set_ebas
     from .timeseries import set_timeseries
 
     tags = {"eventlog"}
@@ -49,5 +52,6 @@ def event_log(root: netCDF4.Dataset, station: str, start_epoch: float, end_epoch
     set_basic(root)
     set_dataset(root, station, tags=tags, override=override)
     set_site(root, station, tags=tags, override=override)
+    set_ebas(root, station, tags=tags, override=override)
     set_timeseries(root, f"{station.upper()}-LOG", start_epoch, end_epoch)
     apply_attribute(root, "forge_tags", " ".join(tags))
