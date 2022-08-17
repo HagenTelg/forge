@@ -44,8 +44,9 @@ class _PersistenceKey:
 
 class Dispatch:
     class _Connection:
-        def __init__(self, source: str, writer: asyncio.StreamWriter):
+        def __init__(self, source: str, disable_echo: bool, writer: asyncio.StreamWriter):
             self.source = source
+            self.disable_echo = disable_echo
             self.writer = writer
             self.owned_persistence: typing.Set[_PersistenceKey] = set()
 
@@ -76,6 +77,8 @@ class Dispatch:
     def _send_persistent(self, target: "Dispatch._Connection") -> None:
         messages: typing.List[typing.Tuple[PersistenceLevel, _PersistenceKey, typing.Any]] = list()
         for key, record in self._persistence.items():
+            if target.disable_echo and record.owner == target:
+                continue
             messages.append((record.level, key, record.value))
         messages.sort(key=lambda v: v[0])
         messages.reverse()
@@ -129,6 +132,8 @@ class Dispatch:
         serialize_value(raw, message.value)
         raw = raw.getvalue()
         for c in self._connections:
+            if c.disable_echo and c == origin:
+                continue
             c.send_message(raw)
 
     def _detach_persistence(self, origin: "Dispatch._Connection") -> None:
@@ -142,10 +147,13 @@ class Dispatch:
             serialize_value(raw, None)
             raw = raw.getvalue()
             for c in self._connections:
+                if c.disable_echo and c == origin:
+                    continue
                 c.send_message(raw)
 
-    async def connection(self, source: str, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
-        connection = self._Connection(source, writer)
+    async def connection(self, source: str, disable_echo: bool,
+                         reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        connection = self._Connection(source, disable_echo, writer)
         self._send_persistent(connection)
         self._connections.add(connection)
         try:

@@ -19,7 +19,8 @@ class Server(UnixServer):
     async def connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         try:
             source = await deserialize_string(reader)
-            await dispatch.connection(source, reader, writer)
+            disable_echo = (await reader.readexactly(1))[0] != 0
+            await dispatch.connection(source, disable_echo, reader, writer)
         except:
             _LOGGER.debug("Error in connection", exc_info=True)
         finally:

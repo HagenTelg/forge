@@ -9,8 +9,9 @@ from forge.tasks import background_task
 
 
 class Client(AcquisitionBusClient):
-    def __init__(self, source: str, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
-        super().__init__(source, reader, writer)
+    def __init__(self, source: str, reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
+                 disable_echo: bool = False):
+        super().__init__(source, reader, writer, disable_echo=disable_echo)
         self.received = asyncio.Queue()
 
     async def incoming_message(self, source: str, record: str, message: typing.Any) -> None:
@@ -51,12 +52,15 @@ async def server():
     return Dispatch()
 
 
-async def _client(server: Dispatch, client_to_server, client_from_server) -> Client:
-    client = Client('client', client_from_server[0], client_to_server[1])
+async def _client(server: Dispatch, client_to_server, client_from_server,
+                  disable_echo: bool = False) -> Client:
+    client = Client('client', client_from_server[0], client_to_server[1], disable_echo=disable_echo)
     await client.start()
     check = await deserialize_string(client_to_server[0])
     assert check == 'client'
-    background_task(server.connection('client', client_to_server[0], client_from_server[1]))
+    check = (await client_to_server[0].readexactly(1))[0] != 0
+    assert check == disable_echo
+    background_task(server.connection('client', disable_echo, client_to_server[0], client_from_server[1]))
     return client
 
 
@@ -179,4 +183,23 @@ async def test_persistence_levels(server: Dispatch):
     check = await c2.received.get()
     assert check == {'source': 'client', 'record': 'record1', 'message': 6.0}
     await c2.shutdown()
+
+
+@pytest.mark.asyncio
+async def test_disable_echo(server: Dispatch):
+    c1 = await _client(server, await _aio_pipe(), await _aio_pipe(), disable_echo=True)
+    c2 = await _client(server, await _aio_pipe(), await _aio_pipe())
+
+    c1.send_data('record1', 'value')
+    await c1.writer.drain()
+    check = await c2.received.get()
+    assert check == {'source': 'client', 'record': 'record1', 'message': 'value'}
+    assert c1.received.empty()
+
+    c2.send_data('record2', 'value2')
+    await c2.writer.drain()
+    check = await c2.received.get()
+    assert check == {'source': 'client', 'record': 'record2', 'message': 'value2'}
+    check = await c1.received.get()
+    assert check == {'source': 'client', 'record': 'record2', 'message': 'value2'}
 

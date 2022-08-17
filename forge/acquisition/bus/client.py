@@ -5,10 +5,12 @@ from forge.acquisition.bus.protocol import PersistenceLevel, serialize_string, d
 
 
 class AcquisitionBusClient:
-    def __init__(self, source: str, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+    def __init__(self, source: str, reader: asyncio.StreamReader, writer: asyncio.StreamWriter,
+                 disable_echo: bool = False):
         self.source = source
         self.reader = reader
         self.writer = writer
+        self.disable_echo = disable_echo
         self._reader: typing.Optional[asyncio.Task] = None
 
     async def incoming_message(self, source: str, record: str, message: typing.Any) -> None:
@@ -32,6 +34,7 @@ class AcquisitionBusClient:
 
     async def start(self) -> None:
         serialize_string(self.writer, self.source)
+        self.writer.write(struct.pack('<B', 1 if self.disable_echo else 0))
         self._reader = asyncio.ensure_future(self._run())
 
     async def shutdown(self) -> None:
