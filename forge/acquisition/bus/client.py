@@ -37,6 +37,11 @@ class AcquisitionBusClient:
         self.writer.write(struct.pack('<B', 1 if self.disable_echo else 0))
         self._reader = asyncio.ensure_future(self._run())
 
+    async def wait(self):
+        if self._reader:
+            await self._reader
+            self._reader = None
+
     async def shutdown(self) -> None:
         if self._reader:
             t = self._reader

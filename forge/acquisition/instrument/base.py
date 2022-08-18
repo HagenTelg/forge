@@ -11,6 +11,11 @@ class CommunicationsError(RuntimeError):
 
 
 class BaseDataOutput:
+    def __init__(self, station: str, source: str):
+        self.station = station
+        self.source = source
+        self.tags: typing.Set[str] = set()
+
     class Field:
         class Template(Enum):
             NONE = auto()
@@ -118,11 +123,14 @@ class BaseBusInterface:
     async def set_instrument_state(self, contents: typing.Dict[str, typing.Any]) -> None:
         pass
 
-    async def emit_data_record(self, contents: typing.Dict[str, float]) -> None:
+    async def emit_data_record(self, contents: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
         pass
 
-    async def emit_average_record(self, contents: typing.Dict[str, float],
+    async def emit_average_record(self, contents: typing.Dict[str, typing.Union[float, typing.List[float]]],
                                   cutsize: CutSize.Size = CutSize.Size.WHOLE) -> None:
+        pass
+
+    async def emit_averaged_extra(self, contents: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
         pass
 
     async def set_state_value(self, name: str, contents: typing.Any) -> None:
@@ -272,6 +280,9 @@ class BaseInstrument:
             self.code = code
 
         def __call__(self) -> None:
+            raise NotImplementedError
+
+        def assemble_unaveraged(self, record: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
             raise NotImplementedError
 
     class Flag:

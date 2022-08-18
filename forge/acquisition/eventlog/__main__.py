@@ -104,7 +104,7 @@ def main():
     _LOGGER.debug("Event log shutdown")
 
     if heartbeat:
-        _LOGGER.debug("Shutting down hearbeat")
+        _LOGGER.debug("Shutting down heartbeat")
         t = heartbeat
         heartbeat = None
         try:

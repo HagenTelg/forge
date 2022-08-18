@@ -72,22 +72,21 @@ class Record(BaseInstrument.Record):
         if self.automatic and len(self._updated_reports) == len(self.reports):
             self._queued = True
 
-    async def emit(self, now: float) -> None:
+    async def emit(self, now: float) -> bool:
         if not self._queued:
-            return
+            return False
         self._queued = False
         self._updated_reports.clear()
 
         try:
             a = self.average(now=now)
             if not a:
-                return
+                return False
 
-            average_data: typing.Dict[str, float] = dict()
+            average_data: typing.Dict[str, typing.Union[float, typing.List[float]]] = dict()
             for rep in self.reports:
                 for var in rep.variables:
-                    if isinstance(var, BaseInstrument.Variable):
-                        average_data[var.source.name] = float(var)
+                    var.assemble_average(average_data)
             if average_data:
                 await self.instrument.context.bus.emit_average_record(average_data, self._active_size.size)
 
@@ -98,6 +97,7 @@ class Record(BaseInstrument.Record):
                 if self._active_size.activate():
                     self.average.start_flush((self._active_size.scheduled_time + self.cutsize.flush_time) - now,
                                              now=now)
+        return True
 
     def drop_queued(self) -> None:
         self._queued = False

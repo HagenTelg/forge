@@ -34,6 +34,9 @@ setup(
         "forge-vis-realtime-control = forge.vis.realtime.controller.server:main",
         "forge-vis-acquisition-control = forge.vis.acquisition.controller.server:main",
 
+        "forge-acquisition-uplink-local = forge.acquisition.uplink.local:main",
+        "forge-acquisition-uplink-remote = forge.acquisition.uplink.remote:main",
+        "forge-acquisition-uplink-incoming = forge.acquisition.uplink.incoming.__main__:main",
         "forge-acquisition-serial-multiplexer = forge.acquisition.serial.multiplexer.__main__:main",
         "forge-acquisition-serial-eavesdropper = forge.acquisition.serial.multiplexer.eavesdropper:main",
         "forge-acquisition-console = forge.acquisition.console.__main__:main",

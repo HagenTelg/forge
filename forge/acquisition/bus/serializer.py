@@ -28,21 +28,64 @@ class AcquisitionBusSerializer:
         self._mvc_float = struct.pack(self._float_format, nan)
 
     @staticmethod
-    def serialize_string(writer: typing.BinaryIO, s: str) -> None:
+    def get_read_n(source: typing.Union[asyncio.StreamReader, typing.BinaryIO]) -> typing.Callable[[int], typing.Awaitable[bytes]]:
+        try:
+            return source.readexactly
+        except AttributeError:
+            async def read(n: int) -> bytes:
+                result = bytes()
+                while n > 0:
+                    add = source.read(n)
+                    if not add:
+                        raise EOFError
+                    result += add
+                    n -= len(add)
+                return result
+
+            return read
+
+    @staticmethod
+    def serialize_length(writer: typing.BinaryIO, n: int) -> None:
+        writer.write(struct.pack('<I', n))
+
+    async def deserialize_length(self, reader: typing.Union[asyncio.StreamReader, typing.BinaryIO],
+                                 read_n: typing.Callable[[int], typing.Awaitable[bytes]] = None) -> int:
+        read_n = read_n or self.get_read_n(reader)
+        return struct.unpack('<I', await read_n(4))[0]
+
+    def serialize_string(self, writer: typing.BinaryIO, s: str) -> None:
         raw = s.encode('utf-8')
-        writer.write(struct.pack('<I', len(raw)))
+        self.serialize_length(writer, len(raw))
         writer.write(raw)
+
+    async def deserialize_string(self, reader: typing.Union[asyncio.StreamReader, typing.BinaryIO],
+                                 read_n: typing.Callable[[int], typing.Awaitable[bytes]] = None) -> str:
+        read_n = read_n or self.get_read_n(reader)
+        count = await self.deserialize_length(reader, read_n=read_n)
+        raw = await read_n(count)
+        return raw.decode('utf-8')
+
+    def serialize_integer(self, writer: typing.BinaryIO, n: int) -> None:
+        try:
+            writer.write(struct.pack('<q', n))
+        except (OverflowError, struct.error):
+            writer.write(struct.pack('<q', int(0x7FFF_FFFF_FFFF_FFFF)))
+
+    async def deserialize_integer(self, reader: typing.Union[asyncio.StreamReader, typing.BinaryIO],
+                                  read_n: typing.Callable[[int], typing.Awaitable[bytes]] = None) -> int:
+        read_n = read_n or self.get_read_n(reader)
+        return struct.unpack('<q', await read_n(8))[0]
 
     def serialize_value(self, writer: typing.BinaryIO, value: typing.Any) -> None:
         def write_float(f: float) -> None:
             if f is None:
                 writer.write(self._mvc_float)
                 return
-            f = float(f)
-            if not isfinite(f):
-                writer.write(self._mvc_float)
-                return
             try:
+                f = float(f)
+                if not isfinite(f):
+                    writer.write(self._mvc_float)
+                    return
                 writer.write(struct.pack(self._float_format, f))
             except OverflowError:
                 writer.write(self._mvc_float)
@@ -55,15 +98,12 @@ class AcquisitionBusSerializer:
             write_float(value)
             return
         elif isinstance(value, str):
-            raw = value.encode('utf-8')
-            writer.write(struct.pack('<BI', self.ValueType.STRING.value, len(raw)))
-            writer.write(raw)
+            writer.write(struct.pack('<B', self.ValueType.STRING.value))
+            self.serialize_string(writer, value)
             return
         elif isinstance(value, int):
-            try:
-                writer.write(struct.pack('<Bq', self.ValueType.INTEGER.value, int(value)))
-            except OverflowError:
-                writer.write(struct.pack('<Bq', self.ValueType.INTEGER.value, int(0x7FFF_FFFF_FFFF_FFFF)))
+            writer.write(struct.pack('<B', self.ValueType.INTEGER.value))
+            self.serialize_integer(writer, int(value))
             return
 
         def is_dict() -> bool:
@@ -76,7 +116,8 @@ class AcquisitionBusSerializer:
             return False
 
         if is_dict():
-            writer.write(struct.pack('<BI', self.ValueType.DICT.value, len(value)))
+            writer.write(struct.pack('<B', self.ValueType.DICT.value))
+            self.serialize_length(writer, len(value))
             for k, v in value.items():
                 self.serialize_string(writer, str(k))
                 self.serialize_value(writer, v)
@@ -104,11 +145,13 @@ class AcquisitionBusSerializer:
 
         if is_array():
             if is_array_of_float():
-                writer.write(struct.pack('<BI', self.ValueType.ARRAY_OF_FLOAT.value, len(value)))
+                writer.write(struct.pack('<B', self.ValueType.ARRAY_OF_FLOAT.value))
+                self.serialize_length(writer, len(value))
                 for v in value:
                     write_float(v)
                 return
-            writer.write(struct.pack('<BI', self.ValueType.ARRAY.value, len(value)))
+            writer.write(struct.pack('<B', self.ValueType.ARRAY.value))
+            self.serialize_length(writer, len(value))
             for v in value:
                 self.serialize_value(writer, v)
             return
@@ -116,44 +159,45 @@ class AcquisitionBusSerializer:
         _LOGGER.warning(f"Unsupported value in serialization {value}")
         writer.write(struct.pack('<B', self.ValueType.NONE.value))
 
-    @staticmethod
-    async def deserialize_string(reader: asyncio.StreamReader) -> str:
-        count = struct.unpack('<I', await reader.readexactly(4))[0]
-        raw = await reader.readexactly(count)
-        return raw.decode('utf-8')
-
-    async def deserialize_value(self, reader: asyncio.StreamReader) -> typing.Any:
-        value_type = self.ValueType(struct.unpack('<B', await reader.readexactly(1))[0])
-
+    async def deserialize_type(self, reader: typing.Union[asyncio.StreamReader, typing.BinaryIO],
+                               value_type: "AcquisitionBusSerializer.ValueType",
+                               read_n: typing.Callable[[int], typing.Awaitable[bytes]] = None) -> typing.Any:
+        read_n = read_n or self.get_read_n(reader)
         if value_type == self.ValueType.NONE:
             return None
         elif value_type == self.ValueType.FLOAT:
-            return struct.unpack(self._float_format, await reader.readexactly(self._float_width))[0]
+            return struct.unpack(self._float_format, await read_n(self._float_width))[0]
         elif value_type == self.ValueType.ARRAY_OF_FLOAT:
-            count = struct.unpack('<I', await reader.readexactly(4))[0]
-            raw = await reader.readexactly(self._float_width * count)
+            count = await self.deserialize_length(reader, read_n=read_n)
+            raw = await read_n(self._float_width * count)
             result: typing.List[float] = list()
             for i in range(count):
                 origin = i * self._float_width
                 result.append(struct.unpack(self._float_format, raw[origin:(origin+self._float_width)])[0])
             return result
         elif value_type == self.ValueType.STRING:
-            return await self.deserialize_string(reader)
+            return await self.deserialize_string(reader, read_n=read_n)
         elif value_type == self.ValueType.INTEGER:
-            return struct.unpack('<q', await reader.readexactly(8))[0]
+            return await self.deserialize_integer(reader, read_n=read_n)
         elif value_type == self.ValueType.ARRAY:
-            count = struct.unpack('<I', await reader.readexactly(4))[0]
+            count = await self.deserialize_length(reader, read_n=read_n)
             result: typing.List[typing.Any] = list()
             for i in range(count):
-                result.append(await self.deserialize_value(reader))
+                result.append(await self.deserialize_value(reader, read_n=read_n))
             return result
         elif value_type == self.ValueType.DICT:
-            count = struct.unpack('<I', await reader.readexactly(4))[0]
+            count = await self.deserialize_length(reader, read_n=read_n)
             result: typing.Dict[str, typing.Any] = dict()
             for i in range(count):
-                k = await self.deserialize_string(reader)
-                v = await self.deserialize_value(reader)
+                k = await self.deserialize_string(reader, read_n=read_n)
+                v = await self.deserialize_value(reader, read_n=read_n)
                 result[k] = v
             return result
         else:
             raise ValueError("Invalid value type")
+
+    async def deserialize_value(self, reader: typing.Union[asyncio.StreamReader, typing.BinaryIO],
+                                read_n: typing.Callable[[int], typing.Awaitable[bytes]] = None) -> typing.Any:
+        read_n = read_n or self.get_read_n(reader)
+        value_type = self.ValueType(struct.unpack('<B', await read_n(1))[0])
+        return await self.deserialize_type(reader, value_type)

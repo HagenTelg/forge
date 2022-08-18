@@ -204,7 +204,7 @@ def run(instrument: BaseInstrument, systemd: bool = False) -> None:
     _LOGGER.debug("Instrument shutdown")
 
     if heartbeat:
-        _LOGGER.debug("Shutting down hearbeat")
+        _LOGGER.debug("Shutting down heartbeat")
         t = heartbeat
         heartbeat = None
         try:

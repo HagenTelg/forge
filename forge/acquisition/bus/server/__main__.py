@@ -20,6 +20,7 @@ class Server(UnixServer):
         try:
             source = await deserialize_string(reader)
             disable_echo = (await reader.readexactly(1))[0] != 0
+            _LOGGER.debug(f"Accepted connection for {source}{' with no echo' if disable_echo else ''}")
             await dispatch.connection(source, disable_echo, reader, writer)
         except:
             _LOGGER.debug("Error in connection", exc_info=True)

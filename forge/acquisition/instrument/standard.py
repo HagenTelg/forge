@@ -24,6 +24,7 @@ class StandardInstrument(BaseInstrument):
             'manufacturer': self.MANUFACTURER,
             'model': self.MODEL,
             'display_letter': self.DISPLAY_LETTER,
+            'tags': self.context.data.tags,
         }
 
         manufacturer = context.config.get('MANUFACTURER')
@@ -390,15 +391,26 @@ class StandardInstrument(BaseInstrument):
             self._average_state_updated = False
             self._update_averaging()
 
-        data_record: typing.Dict[str, float] = dict()
+        data_record: typing.Dict[str, typing.Union[float, typing.List[float]]] = dict()
         for i in self._inputs:
             i.assemble_data(data_record)
         if data_record:
             await self.context.bus.emit_data_record(data_record)
 
         now = time.time()
+        did_average = False
         for rec in self._records:
-            await rec.emit(now)
+            if await rec.emit(now):
+                did_average = True
+
+        if did_average:
+            # After all records have averaged, output an "average" of any inputs not included otherwise so things
+            # (uplink) can display the values anyway
+            average_record: typing.Dict[str, typing.Union[float, typing.List[float]]] = dict()
+            for i in self._inputs:
+                i.assemble_unaveraged(average_record)
+            if average_record:
+                await self.context.bus.emit_averaged_extra(average_record)
 
         for p in self._persistent:
             await p.emit(now)

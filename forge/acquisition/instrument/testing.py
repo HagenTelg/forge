@@ -34,7 +34,7 @@ class BusInterface(BaseBusInterface):
         self.instrument_state = contents
         self.instrument_state_updated.set()
 
-    async def emit_data_record(self, contents: typing.Dict[str, float]) -> None:
+    async def emit_data_record(self, contents: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
         self.data_values.update(contents)
         self.data_value_updated.set()
 
@@ -57,8 +57,11 @@ class BusInterface(BaseBusInterface):
             await self.instrument_state_updated.wait()
             self.instrument_state_updated.clear()
 
-    async def emit_average_record(self, contents: typing.Dict[str, float],
+    async def emit_average_record(self, contents: typing.Dict[str, typing.Union[float, typing.List[float]]],
                                   cutsize: CutSize.Size = CutSize.Size.WHOLE) -> None:
+        pass
+
+    async def emit_averaged_extra(self, contents: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
         pass
 
 

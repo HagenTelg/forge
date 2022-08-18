@@ -12,7 +12,9 @@ class Input(BaseInstrument.Input):
         self.config = config
 
         self.value: float = nan
-        self._queued_value: typing.Optional[float] = None
+        self._queued_data: typing.Optional[float] = None
+        self.attached_to_record: bool = False
+        self._queued_unaveraged: typing.Optional[float] = None
 
         self._overridden = False
         self._override_value: float = nan
@@ -81,7 +83,8 @@ class Input(BaseInstrument.Input):
             value = result
 
         self.value = value
-        self._queued_value = self.value
+        self._queued_data = value
+        self._queued_unaveraged = value
         return self.value
 
     def __float__(self) -> float:
@@ -99,13 +102,25 @@ class Input(BaseInstrument.Input):
             self._override_value = nan
 
     def drop_queued(self) -> None:
-        self._queued_value = None
+        self._queued_data = None
+        self._queued_unaveraged = None
 
-    def assemble_data(self, record: typing.Dict[str, float]) -> None:
-        if self._queued_value is None:
+    def assemble_data(self, record: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
+        if self._queued_data is None:
             return
-        record[self.name] = self._queued_value
-        self._queued_value = None
+        record[self.name] = self._queued_data
+        self._queued_data = None
+
+    def average_consumed(self) -> None:
+        self._queued_unaveraged = None
+
+    def assemble_unaveraged(self, record: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
+        if self.attached_to_record:
+            return
+        if self._queued_unaveraged is None:
+            return
+        record[self.name] = self._queued_unaveraged
+        self._queued_unaveraged = None
 
 
 class Variable(BaseInstrument.Variable):
@@ -138,6 +153,10 @@ class Variable(BaseInstrument.Variable):
             return nan
         return float(self.average)
 
+    def assemble_average(self, record: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
+        record[self.source.name] = float(self)
+        self.source.average_consumed()
+
     def __call__(self) -> None:
         self.average(float(self.source))
 
@@ -152,3 +171,4 @@ class Variable(BaseInstrument.Variable):
             self.average = record.average.variable()
         elif not record.average.has_entry(self.average):
             raise ValueError(f"variable {self.name} from {self.source.name} attached to multiple records")
+        self.source.attached_to_record = True

@@ -132,15 +132,11 @@ class DataOutput(BaseDataOutput):
                  working_directory: Path = None,
                  completed_directory: Path = None,
                  average_interval: typing.Optional[float] = None):
-        super().__init__()
-        self.station = station
-        self.source = source
-
+        super().__init__(station, source)
         self.config = config
         self._override_config = config.section("METADATA")
         self._average_interval = average_interval
 
-        self.tags: typing.Set[str] = set()
         self.instrument_type: typing.Optional[str] = None
 
         self._components: typing.List[DataOutput._FileComponent] = list()

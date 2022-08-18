@@ -19,9 +19,8 @@ from forge.vis.data.stream import DataStream, RecordStream
 from forge.vis.realtime.controller.client import ReadData as RealtimeRead
 from forge.vis.realtime.controller.block import DataBlock as RealtimeDataBlock
 from forge.vis.export import Export, ExportList
-from forge.vis.realtime import Translator as BaseRealtimeTranslator
-from forge.vis.realtime.translation import get_translator
-from forge.vis.acquisition import Translator as BaseAcquisitionTranslator
+from forge.vis.realtime.translation import get_translator, RealtimeTranslator as NativeRealtimeTranslator, CutSize as NativeCutSize
+from forge.vis.acquisition.translation import AcquisitionTranslator as NativeAcquisitionTranslator
 from forge.cpd3.identity import Name, Identity
 from forge.cpd3.variant import serialize as variant_serialize, deserialize as variant_deserialize
 from forge.cpd3.datareader import StandardDataInput, RecordInput
@@ -1878,7 +1877,53 @@ class EventLogReader(DataStream):
             raise
 
 
-class RealtimeTranslator(BaseRealtimeTranslator):
+class NativeInstrument(NativeRealtimeTranslator.Instrument):
+    FLAVORS_TRANSLATION: typing.Dict[NativeCutSize.Size, typing.Set[str]] = {
+        NativeCutSize.Size.WHOLE: set(),
+        NativeCutSize.Size.PM1: {"pm1"},
+        NativeCutSize.Size.PM2_5: {"pm25"},
+        NativeCutSize.Size.PM10: {"pm10"},
+    }
+
+    class DispatchKey:
+        def __init__(self, cutsize: NativeCutSize.Size, field: str):
+            self.cutsize = cutsize
+            self.field = field
+
+        def __eq__(self, other):
+            if not isinstance(other, NativeInstrument.DispatchKey):
+                return NotImplemented
+            return self.cutsize == other.cutsize and self.field == other.field
+
+        def __hash__(self):
+            return hash((self.cutsize, self.field))
+
+    def __init__(self, source: str, instrument_info: typing.Dict[str, typing.Any], translator: "RealtimeTranslator"):
+        super().__init__(source, instrument_info)
+        self.translator = translator
+        self._dispatch: typing.Dict[NativeInstrument.DispatchKey, typing.List[RealtimeTranslator.Target]] = dict()
+
+    def translate_key(self, key: "NativeInstrument.DispatchKey") -> "RealtimeTranslator.Key":
+        mapped_variable = key.field
+        if '_' not in mapped_variable:
+            mapped_variable = mapped_variable + "_" + self.source
+        return RealtimeTranslator.Key(mapped_variable,
+                                      self.FLAVORS_TRANSLATION.get(key.cutsize, NativeCutSize.Size.WHOLE))
+
+    def translate_data(self, cutsize: NativeCutSize.Size,
+                       values: typing.Dict[str, typing.Union[float, typing.List[float]]],
+                       output: "RealtimeTranslator.OutputInterface") -> None:
+        for field, value in values.items():
+            key = self.DispatchKey(cutsize, field)
+            targets = self._dispatch.get(key)
+            if targets is None:
+                targets = self.translator.realtime_targets(self.translate_key(key))
+                self._dispatch[key] = targets
+            for t in targets:
+                output.send_field(t.data_name, t.field, value)
+
+
+class RealtimeTranslator(NativeRealtimeTranslator):
     class Key:
         def __init__(self, variable: str, flavors: typing.Optional[typing.Set[str]] = None):
             self.variable = variable
@@ -1902,6 +1947,9 @@ class RealtimeTranslator(BaseRealtimeTranslator):
         def __init__(self, data_name: str, field: str):
             self.data_name = data_name
             self.field = field
+
+        def __repr__(self):
+            return f"Target({self.data_name}, {self.field})"
 
     def __init__(self, data: typing.Dict[str, typing.Dict["RealtimeTranslator.Key", str]],
                  realtime_offset: float = 60.0):
@@ -1984,8 +2032,44 @@ class RealtimeTranslator(BaseRealtimeTranslator):
                     data[data_name] = record_data
         return cls(data, realtime_offset=realtime_offset)
 
+    @staticmethod
+    def native_remapped_instrument(mapping: typing.Dict[str, str]) -> typing.Type[NativeInstrument]:
+        class MappedInstrument(NativeInstrument):
+            VARIABLE_MAPPING = mapping
 
-class AcquisitionTranslator(BaseAcquisitionTranslator):
+            def translate_key(self, key: NativeInstrument.DispatchKey) -> "RealtimeTranslator.Key":
+                target_variable = self.VARIABLE_MAPPING.get(key.field)
+                if not target_variable:
+                    return super().translate_key(key)
+                return RealtimeTranslator.Key(target_variable + "_" + self.source,
+                                              self.FLAVORS_TRANSLATION.get(key.cutsize, NativeCutSize.Size.WHOLE))
+
+        return MappedInstrument
+
+    NATIVE_INSTRUMENTS: typing.Dict[str, typing.Type[NativeInstrument]] = {
+        "admagiccpc": native_remapped_instrument({
+            "PD": "Pd",
+            "Tinlet": "Tu",
+            "Tconditioner": "T1",
+            "Tinitiator": "T2",
+            "Tmoderator": "T3",
+            "Toptics": "T4",
+            "Theatsink": "T5",
+            "Tpcb": "T6",
+            "Tcabinet": "T7",
+            "Uinlet": "Uu",
+            "TDinlet": "TDu",
+        }),
+    }
+
+    def instrument_translator(self, source: str, instrument_info: typing.Dict[str, typing.Any]) -> typing.Optional[NativeRealtimeTranslator.Instrument]:
+        override = self.NATIVE_INSTRUMENTS.get(instrument_info.get("type"))
+        if override is not None:
+            return override(source, instrument_info, self)
+        return NativeInstrument(source, instrument_info, self)
+
+
+class AcquisitionTranslator(NativeAcquisitionTranslator):
     class Variable:
         def __init__(self, variable: str, flavors: typing.Optional[typing.Set[str]] = None):
             self.variable = variable

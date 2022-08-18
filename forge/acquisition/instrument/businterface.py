@@ -81,17 +81,20 @@ class BusInterface(BaseBusInterface):
         self.client.set_source_information('instrument', contents)
 
     async def set_instrument_state(self, contents: typing.Dict[str, typing.Any]) -> None:
-        self.client.set_source_information('state', contents)
+        self.client.set_state('state', contents)
 
-    async def emit_data_record(self, contents: typing.Dict[str, float]) -> None:
+    async def emit_data_record(self, contents: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
         self.client.send_data('data', contents)
 
-    async def emit_average_record(self, contents: typing.Dict[str, float],
+    async def emit_average_record(self, contents: typing.Dict[str, typing.Union[float, typing.List[float]]],
                                   cutsize: CutSize.Size = CutSize.Size.WHOLE) -> None:
         record = 'avg'
         if cutsize != CutSize.Size.WHOLE:
             record = record + '.' + str(cutsize).lower()
         self.client.send_data(record, contents)
+
+    async def emit_averaged_extra(self, contents: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
+        self.client.send_data('noavg', contents)
 
     async def set_state_value(self, name: str, contents: typing.Any) -> None:
         self.client.set_state(name, contents)

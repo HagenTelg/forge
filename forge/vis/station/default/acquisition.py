@@ -2,6 +2,7 @@ import typing
 from forge.vis.acquisition import Translator
 from forge.vis import CONFIGURATION
 from forge.vis.acquisition import SummaryItem, Display
+from forge.vis.acquisition.translation import AcquisitionTranslator
 from forge.vis.acquisition.basic import BasicDisplay, BasicSummary, ParameterSummary, ParameterDisplay
 from forge.vis.mode.acquisition import Acquisition as BaseAcquisition
 
@@ -113,6 +114,9 @@ def summary(station: str, summary_type: str, source: typing.Optional[str]) -> ty
     return _type_summary.get(summary_type, _default_summary)
 
 
+_acquisition_translator = AcquisitionTranslator()
+
+
 def translator(station: str) -> typing.Optional[Translator]:
-    from forge.vis.station.cpd3 import acquisition_translator
-    return acquisition_translator
+    from forge.vis.station.cpd3 import acquisition_translator as cpd3_acquisition_translator
+    return cpd3_acquisition_translator
