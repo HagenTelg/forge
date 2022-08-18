@@ -168,6 +168,9 @@ def _from_cpd3_calibration(calibration: typing.Any) -> typing.List[float]:
     return result
 
 
+_any_sized_variable = '(((Ba[cfs]*)|(Bb?s)|Be|Ir|L|(N[nbs]?)|(X[cfs]*))[BGRQ0-9]*_.*)|((T|P|U)[0-9]*u?_[SAEN].*)'
+
+
 def _selection_to_single_cutsize(selection: typing.List[typing.Dict[str, typing.Any]]) -> typing.Optional[str]:
     if len(selection) != 1:
         return None
@@ -206,12 +209,12 @@ def _selection_to_single_cutsize(selection: typing.List[typing.Dict[str, typing.
     if selection == {
         'type': 'variable',
         'lacks_flavors': ['pm1', 'pm10', 'pm25'],
-        'variable': '((Ba[cfs]*)|(Bb?s)|Be|Ir|L|(N[nbs]?)|(X[cfs]*))[BGRQ0-9]*_.*',
+        'variable': _any_sized_variable,
     } or selection == {
         'type': 'variable',
         'lacks_flavors': ['pm1', 'pm10', 'pm25'],
         'has_flavors': [],
-        'variable': '((Ba[cfs]*)|(Bb?s)|Be|Ir|L|(N[nbs]?)|(X[cfs]*))[BGRQ0-9]*_.*',
+        'variable': _any_sized_variable,
     }:
         return ''
     return None
@@ -251,7 +254,7 @@ def _to_cpd3_action(directive: typing.Dict[str, typing.Any]) -> typing.Dict[str,
         if original_size == '':
             original_selection = [{
                 'LacksFlavors': ['pm1', 'pm10', 'pm25'],
-                'Variable': '((Ba[cfs]*)|(Bb?s)|Be|Ir|L|(N[nbs]?)|(X[cfs]*))[BGRQ0-9]*_.*',
+                'Variable': _any_sized_variable,
             }]
         else:
             original_selection = [{
