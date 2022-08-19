@@ -73,6 +73,11 @@ def _from_cpd3_selection(selection: typing.Any) -> typing.List[typing.Dict[str, 
             return value[0]
         return value
 
+    def sort_if_exists(value):
+        if not isinstance(value, list):
+            return
+        value.sort()
+
     if selection is None:
         return []
     elif isinstance(selection, str):
@@ -88,7 +93,7 @@ def _from_cpd3_selection(selection: typing.Any) -> typing.List[typing.Dict[str, 
         elif len(parts) == 3:
             return [{'station': parts[0], 'archive': parts[1], 'variable': parts[2]}]
         else:
-            result = {'station': parts[0], 'archive': parts[1], 'variable': parts[2]}
+            result: typing.Dict[str, typing.Any] = {'station': parts[0], 'archive': parts[1], 'variable': parts[2]}
             for i in range(3, len(parts)):
                 flavor = parts[i]
                 if flavor.startswith('!') or flavor.startswith('-'):
@@ -107,6 +112,10 @@ def _from_cpd3_selection(selection: typing.Any) -> typing.List[typing.Dict[str, 
                 else:
                     result.pop('flavors')
                     append_add(result, 'has_flavors', flavor)
+            sort_if_exists(result.get('flavors'))
+            sort_if_exists(result.get('lacks_flavors'))
+            sort_if_exists(result.get('lacks_flavors'))
+            return [result]
     elif isinstance(selection, dict):
         return _from_cpd3_selection([selection])
 
@@ -128,6 +137,9 @@ def _from_cpd3_selection(selection: typing.Any) -> typing.List[typing.Dict[str, 
                 converted['has_flavors'] = entry['HasFlavors']
             if 'LacksFlavors' in entry:
                 converted['lacks_flavors'] = entry['LacksFlavors']
+        sort_if_exists(converted.get('flavors'))
+        sort_if_exists(converted.get('has_flavors'))
+        sort_if_exists(converted.get('lacks_flavors'))
         result.append(converted)
     return result
 
