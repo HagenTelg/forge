@@ -139,7 +139,8 @@ table.details-times input {
 table.details-times input.invalid {
   border-bottom: 2px solid red;
 }
-table.details-times label.invalid {
+table.details-times label.invalid,
+table.details-times.invalid label {
   color: red;
 }
 

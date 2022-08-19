@@ -7,6 +7,7 @@ const startTimeEntry = document.getElementById("details-input-start-time");
 const startTimeDisplay = document.getElementById("details-parsed-start-time");
 const endTimeEntry = document.getElementById("details-input-end-time");
 const endTimeDisplay = document.getElementById("details-parsed-end-time");
+const detailsTimeTable = document.getElementById("details-time-bounds");
 const acceptButton = document.getElementById('details_accept');
 
 const invalidLocks = new Set();
@@ -73,6 +74,9 @@ function startTimeEdited() {
 
         startTimeDisplay.textContent = "ERROR";
         addInvalidLock('start_time');
+
+        removeInvalidLock('invalid_bounds');
+        detailsTimeTable.classList.remove('invalid');
         return;
     }
 
@@ -82,6 +86,14 @@ function startTimeEdited() {
     startTimeDisplay.textContent = TimeParse.toDisplayTime(parsedStart);
     directive.start_epoch_ms = parsedStart;
     PlotInteraction.notifyDirectiveSelected(directive);
+
+    if (parsedStart !== null && parsedEnd !== null && parsedStart >= parsedEnd) {
+        detailsTimeTable.classList.add('invalid');
+        addInvalidLock('invalid_bounds');
+        return
+    }
+    removeInvalidLock('invalid_bounds');
+    detailsTimeTable.classList.remove('invalid');
 }
 $('#details-input-start-time').change(startTimeEdited);
 $('#details-input-start-time').on('input', startTimeEdited);
@@ -96,10 +108,22 @@ function endTimeEdited() {
 
         endTimeDisplay.textContent = "ERROR";
         addInvalidLock('end_time');
+
+        removeInvalidLock('invalid_bounds');
+        detailsTimeTable.classList.remove('invalid');
         return;
     }
 
+    if (parsedStart !== null && parsedEnd !== null && parsedStart >= parsedEnd) {
+        detailsTimeTable.classList.add('invalid');
+        addInvalidLock('invalid_bounds');
+        return
+    }
+    removeInvalidLock('invalid_bounds');
+    detailsTimeTable.classList.remove('invalid');
+
     removeInvalidLock('end_time');
+    removeInvalidLock('invalid_bounds');
     endTimeEntry.classList.remove('invalid');
     endTimeDisplay.classList.remove('invalid');
     endTimeDisplay.textContent = TimeParse.toDisplayTime(parsedEnd);
@@ -119,6 +143,8 @@ function setTimeBounds(start_ms, end_ms) {
     removeInvalidLock('end_time');
     endTimeEntry.classList.remove('invalid');
     endTimeDisplay.classList.remove('invalid');
+
+    removeInvalidLock('invalid_bounds');
 }
 PlotInteraction.timeSelected('edit-details', function(start_ms, end_ms) {
     setTimeBounds(start_ms, end_ms);

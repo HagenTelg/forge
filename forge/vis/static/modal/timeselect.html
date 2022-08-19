@@ -75,13 +75,14 @@
   border-bottom: 2px solid red;
 }
 
-.timeselect-entry label.invalid {
+.timeselect-entry label.invalid,
+.timeselect-entry table.invalid label {
   color: red;
 }
 </style>
 
 <form class="timeselect-entry">
-  <table>
+  <table id="timeselect-entry-table">
     <tr>
       <td><label for="input-start-time">Start</label></td>
       <td><input type="text" id="input-start-time" name="start"></td>
@@ -109,6 +110,7 @@
     const startTimeDisplay = document.getElementById('parsed-start-time');
     const endTimeEntry = document.getElementById('input-end-time');
     const endTimeDisplay = document.getElementById('parsed-end-time');
+    const displayTable = document.getElementById('timeselect-entry-table');
 
     let updateResetOnApply = false;
 
@@ -120,7 +122,7 @@
         const parsedEnd = TimeParse.parseTime(endTimeEntry.value, parsedStart, 1);
         parsedStart = TimeParse.parseTime(startTimeEntry.value, parsedEnd, -1);
 
-        if (!parsedStart || !parsedEnd) {
+        if (!parsedStart || !parsedEnd || parsedStart >= parsedEnd) {
             return;
         }
 
@@ -155,6 +157,7 @@
         if (!parsedStart) {
             startTimeEntry.classList.add('invalid');
             startTimeDisplay.classList.add('invalid');
+            displayTable.classList.add('invalid');
 
             startTimeDisplay.textContent = "ERROR";
             return;
@@ -172,8 +175,16 @@
                 endTimeDisplay.classList.remove('invalid');
                 endTimeEntry.value = offset;
                 endTimeDisplay.textContent = TimeParse.toDisplayTime(setTime);
+                displayTable.classList.remove('invalid');
+                return
             }
         }
+
+        if (!!parsedEnd && parsedStart >= parsedEnd) {
+            displayTable.classList.add('invalid');
+            return
+        }
+        displayTable.classList.remove('invalid');
     }
     $('#input-start-time').change(startTimeEdited);
     $('#input-start-time').on('input', startTimeEdited);
@@ -206,8 +217,16 @@
                 startTimeDisplay.classList.remove('invalid');
                 startTimeEntry.value = offset;
                 startTimeDisplay.textContent = TimeParse.toDisplayTime(setTime);
+                displayTable.classList.remove('invalid');
+                return;
             }
         }
+
+        if (!!parsedStart && parsedStart >= parsedEnd) {
+            displayTable.classList.add('invalid');
+            return
+        }
+        displayTable.classList.remove('invalid');
     }
     $('#input-end-time').change(endTimeEdited);
     $('#input-end-time').on('input', endTimeEdited);
@@ -226,6 +245,7 @@
         endTimeEntry.value = endTimeDisplay.textContent = TimeParse.toDisplayTime(TimeSelect.zoom_end_ms);
         endTimeEntry.classList.remove('invalid');
         endTimeDisplay.classList.remove('invalid');
+        displayTable.classList.remove('invalid')
 
         if (TimeSelect.zoom_start_ms === TimeSelect.start_ms && TimeSelect.zoom_end_ms === TimeSelect.end_ms) {
             unzoomButton.style.display = 'none';
@@ -245,6 +265,7 @@
         endTimeEntry.value = endTimeDisplay.textContent = TimeParse.toDisplayTime(TimeSelect.end_ms);
         endTimeEntry.classList.remove('invalid');
         endTimeDisplay.classList.remove('invalid');
+        displayTable.classList.remove('invalid')
 
         unzoomButton.style.display = 'none';
         updateResetOnApply = false;
@@ -266,6 +287,7 @@
               startTimeDisplay.classList.remove('invalid');
               endTimeEntry.classList.remove('invalid');
               endTimeDisplay.classList.remove('invalid');
+              displayTable.classList.remove('invalid')
 
               if (TimeParse.isOffset(endTimeEntry.value)) {
                   const checkTime = TimeParse.parseTime(endTimeEntry.value, startUnpassed, 1);

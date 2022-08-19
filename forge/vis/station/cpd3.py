@@ -607,6 +607,10 @@ def _new_directive(user: BaseAccessUser, station: str, profile: str,
     start = floor(start) if start else None
     end = ceil(end) if end else None
 
+    if start is not None and end is not None:
+        if start >= end:
+            raise ValueError
+
     identity = Identity(station=station, archive='edits', variable=profile,
                         start=(start / 1000.0 if start else None),
                         end=(end / 1000.0 if end else None))
@@ -656,6 +660,9 @@ def _modify_directive(user: BaseAccessUser, station: str, profile: str,
     end = modification.get('end_epoch_ms')
     start = (floor(start) / 1000.0) if start else None
     end = (ceil(end) / 1000.0) if end else None
+    if start is not None and end is not None:
+        if start >= end:
+            raise ValueError
     if identity.start != start or identity.end != end:
         add_history({
             'Type': 'BoundsChanged',
