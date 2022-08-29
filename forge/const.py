@@ -7,6 +7,7 @@ __version__ = f'{__short_version__}.{PATCH_VERSION}'
 HELP_URL = 'https://gitlab.com/derek.hageman/forge/-/issues'
 
 STATIONS = frozenset({
+    'air',
     'alt',
     'amy',
     'app',
@@ -62,6 +63,7 @@ STATIONS = frozenset({
     'zsf',
 })
 DISPLAY_STATIONS = frozenset(STATIONS - {
+    'air',
     'lab',
     'mrad',
     'nil',
