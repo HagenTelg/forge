@@ -18,3 +18,4 @@ aiohttp>=3.8.1
 psutil>=5.8.0
 pyserial>=3.5
 netCDF4>=1.6.0
+zstandard>=0.18.0

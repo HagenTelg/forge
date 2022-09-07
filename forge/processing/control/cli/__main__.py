@@ -31,6 +31,33 @@ def add_access_selection_arguments(parser):
                        help="realtime acquisition data not allowed")
     parser.set_defaults(acquisition=None)
 
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--data',
+                       dest='data', action='store_true',
+                       help="acquisition data upload allowed")
+    group.add_argument('--no-data',
+                       dest='data', action='store_false',
+                       help="acquisition data upload not allowed")
+    parser.set_defaults(data=None)
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--backup',
+                       dest='backup', action='store_true',
+                       help="station backup upload allowed")
+    group.add_argument('--no-backup',
+                       dest='backup', action='store_false',
+                       help="station backup upload not allowed")
+    parser.set_defaults(backup=None)
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--auxiliary',
+                       dest='auxiliary', action='store_true',
+                       help="auxiliary data file upload allowed")
+    group.add_argument('--no-auxiliary',
+                       dest='auxiliary', action='store_false',
+                       help="auxiliary data file upload not allowed")
+    parser.set_defaults(auxiliary=None)
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Forge processing control interface.")
@@ -56,6 +83,7 @@ def parse_arguments():
     command_parser.add_argument('--no-revoke',
                                 dest='no_revoke', action='store_true',
                                 help="do not revoke existing station keys")
+
     group = command_parser.add_mutually_exclusive_group()
     group.add_argument('--acquisition',
                        dest='acquisition', action='store_true',
@@ -64,6 +92,34 @@ def parse_arguments():
                        dest='acquisition', action='store_false',
                        help="revoke or do not grant access for realtime acquisition data")
     command_parser.set_defaults(acquisition=True)
+
+    group = command_parser.add_mutually_exclusive_group()
+    group.add_argument('--data',
+                       dest='data', action='store_true',
+                       help="grant access for acquisition data upload")
+    group.add_argument('--no-data',
+                       dest='data', action='store_false',
+                       help="revoke or do not grant access for acquisition data upload")
+    command_parser.set_defaults(data=True)
+
+    group = command_parser.add_mutually_exclusive_group()
+    group.add_argument('--backup',
+                       dest='backup', action='store_true',
+                       help="grant access for station backup upload")
+    group.add_argument('--no-backup',
+                       dest='backup', action='store_false',
+                       help="revoke or do not grant access for station backup upload")
+    command_parser.set_defaults(backup=True)
+
+    group = command_parser.add_mutually_exclusive_group()
+    group.add_argument('--auxiliary',
+                       dest='auxiliary', action='store_true',
+                       help="grant access for auxiliary data file upload")
+    group.add_argument('--no-auxiliary',
+                       dest='auxiliary', action='store_false',
+                       help="revoke or do not grant access for auxiliary data file upload")
+    command_parser.set_defaults(auxiliary=True)
+
     command_parser.add_argument('grant_key', nargs=1,
                                 help="public key")
     command_parser.add_argument('grant_station', nargs=1,
@@ -111,7 +167,10 @@ def main():
             station = args.grant_station[0]
             await interface.set_access(public_key, station,
                                        revoke_existing=(not args.no_revoke),
-                                       acquisition=args.acquisition)
+                                       acquisition=args.acquisition,
+                                       data=args.data,
+                                       backup=args.backup,
+                                       auxiliary=args.auxiliary)
         elif args.command == 'access-revoke':
             await interface.revoke_access(**vars(args))
 

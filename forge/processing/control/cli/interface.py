@@ -4,7 +4,7 @@ import asyncio
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from forge.crypto import PublicKey
-from ..database import Interface, AccessStation, AccessAcquisition
+from ..database import Interface, AccessStation, AccessAcquisition, AccessData, AccessBackup, AccessAuxiliary
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,12 +28,16 @@ class ControlInterface(Interface):
             return f'%{raw}%'
 
         query = orm_session.query(AccessStation)
-        if kwargs.get('acquisition') is not None:
-            if kwargs['acquisition']:
-                query = query.join(AccessAcquisition)
-            else:
-                query = query.outerjoin(AccessAcquisition, AccessStation.id == AccessAcquisition.access_station)
-                query = query.filter(AccessAcquisition.access_station.is_(None))
+
+        for arg, table in (('acquisition', AccessAcquisition), ('data', AccessData),
+                           ('backup', AccessBackup), ('auxiliary', AccessAuxiliary)):
+            if kwargs.get(arg) is not None:
+                if kwargs[arg]:
+                    query = query.join(table)
+                else:
+                    query = query.outerjoin(table, AccessStation.id == table.access_station)
+                    query = query.filter(table.access_station.is_(None))
+
         if kwargs.get('public_key'):
             query = query.filter(AccessStation.public_key == kwargs['public_key'])
         if kwargs.get('station'):
@@ -44,7 +48,10 @@ class ControlInterface(Interface):
 
     async def set_access(self, key: PublicKey, station: str,
                          revoke_existing: bool = True,
-                         acquisition: typing.Optional[bool] = True) -> None:
+                         acquisition: typing.Optional[bool] = True,
+                         data: typing.Optional[bool] = True,
+                         backup: typing.Optional[bool] = True,
+                         auxiliary: typing.Optional[bool] = True) -> None:
         key = self.key_to_column(key)
         station = station.lower()
 
@@ -71,6 +78,9 @@ class ControlInterface(Interface):
                         return None
 
                 set_component(AccessAcquisition, acquisition)
+                set_component(AccessData, data)
+                set_component(AccessBackup, backup)
+                set_component(AccessAuxiliary, auxiliary)
 
                 orm_session.commit()
 
@@ -97,6 +107,9 @@ class ControlInterface(Interface):
                         'public_key': access.public_key,
                         'station': access.station,
                         'acquisition': has_access(AccessAcquisition),
+                        'data': has_access(AccessData),
+                        'backup': has_access(AccessBackup),
+                        'auxiliary': has_access(AccessAuxiliary),
                     })
 
             return result

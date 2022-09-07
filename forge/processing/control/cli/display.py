@@ -20,8 +20,11 @@ def display_access_text(access: typing.List[typing.Dict]) -> None:
     header_public_key = "Public Key"
     header_id = "ID"
     header_access = [
-        "/-- Acquisition",
-        "|",
+        "/----- Acquisition",
+        "|/---- Data",
+        "||/--- Backup",
+        "|||/-- Auxiliary",
+        "||||",
     ]
 
     column_widths = [
@@ -45,7 +48,10 @@ def display_access_text(access: typing.List[typing.Dict]) -> None:
             return "*" if allowed else "-"
 
         columns.append(
-            allowed_marker(info.get('acquisition'))
+            allowed_marker(info.get('acquisition')) +
+            allowed_marker(info.get('data')) +
+            allowed_marker(info.get('backup')) +
+            allowed_marker(info.get('auxiliary'))
         )
 
         for i in range(len(columns)):

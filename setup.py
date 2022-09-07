@@ -45,6 +45,10 @@ setup(
         "forge-acquisition-instrument = forge.acquisition.instrument.run:main",
 
         "forge-processing-control = forge.processing.control.cli.__main__:main",
+        "forge-processing-incoming = forge.processing.transfer.incoming.__main__:main",
+        "forge-processing-storage-server = forge.processing.transfer.storage.server:main",
+        "forge-processing-upload = forge.processing.transfer.upload:main",
+        "forge-processing-download = forge.processing.transfer.download:main",
 
         "forge-telemetry = forge.telemetry.__main__:main",
         "forge-telemetry-control = forge.telemetry.cli.__main__:main",

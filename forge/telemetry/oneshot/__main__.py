@@ -49,6 +49,9 @@ def parse_arguments():
 
     args = parser.parse_args()
 
+    if not args.server:
+        parser.error("A telemetry server URL is required")
+
     return args
 
 
@@ -58,8 +61,8 @@ def upload_ftp(ftp: FTP, telemetry: bytes, public_key: PublicKey, signature: byt
         'signature': b64encode(signature).decode('ascii'),
     }).encode('utf-8')
     uid = b32encode(token_bytes(10)).decode('ascii')
-    ftp.storbinary(f'STOR telemetry_{uid}.sig', BytesIO(signature_file))
     ftp.storbinary(f'STOR telemetry_{uid}', BytesIO(telemetry))
+    ftp.storbinary(f'STOR telemetry_{uid}.sig', BytesIO(signature_file))
 
 
 async def upload_post(session: aiohttp.ClientSession, url: URL, telemetry: bytes,
