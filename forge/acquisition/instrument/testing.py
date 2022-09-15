@@ -135,7 +135,7 @@ async def create_streaming_instrument(instrument: typing.Type[StreamingInstrumen
                                       config: typing.Optional[dict] = None) -> typing.Tuple[StreamingSimulator,
                                                                                             StreamingInstrument]:
     s, reader, writer = await create_streaming_simulator(simulator)
-    data = DataOutput()
+    data = DataOutput("nil", "XTEST")
     bus = BusInterface()
     persistent = PersistentInterface()
     context = PipeStreamingContext(LayeredConfiguration(config or dict()), data, bus, persistent, reader, writer)

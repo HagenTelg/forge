@@ -1923,6 +1923,20 @@ class NativeInstrument(NativeRealtimeTranslator.Instrument):
                 output.send_field(t.data_name, t.field, value)
 
 
+def native_remapped_instrument(mapping: typing.Dict[str, str]) -> typing.Type[NativeInstrument]:
+    class MappedInstrument(NativeInstrument):
+        VARIABLE_MAPPING = mapping
+
+        def translate_key(self, key: NativeInstrument.DispatchKey) -> "RealtimeTranslator.Key":
+            target_variable = self.VARIABLE_MAPPING.get(key.field)
+            if not target_variable:
+                return super().translate_key(key)
+            return RealtimeTranslator.Key(target_variable + "_" + self.source,
+                                          self.FLAVORS_TRANSLATION.get(key.cutsize, NativeCutSize.Size.WHOLE))
+
+    return MappedInstrument
+
+
 class RealtimeTranslator(NativeRealtimeTranslator):
     class Key:
         def __init__(self, variable: str, flavors: typing.Optional[typing.Set[str]] = None):
@@ -2031,20 +2045,6 @@ class RealtimeTranslator(NativeRealtimeTranslator):
                     data_name = f'{profile_name}-{archive_name}-{record_name}'
                     data[data_name] = record_data
         return cls(data, realtime_offset=realtime_offset)
-
-    @staticmethod
-    def native_remapped_instrument(mapping: typing.Dict[str, str]) -> typing.Type[NativeInstrument]:
-        class MappedInstrument(NativeInstrument):
-            VARIABLE_MAPPING = mapping
-
-            def translate_key(self, key: NativeInstrument.DispatchKey) -> "RealtimeTranslator.Key":
-                target_variable = self.VARIABLE_MAPPING.get(key.field)
-                if not target_variable:
-                    return super().translate_key(key)
-                return RealtimeTranslator.Key(target_variable + "_" + self.source,
-                                              self.FLAVORS_TRANSLATION.get(key.cutsize, NativeCutSize.Size.WHOLE))
-
-        return MappedInstrument
 
     NATIVE_INSTRUMENTS: typing.Dict[str, typing.Type[NativeInstrument]] = {
         "admagiccpc": native_remapped_instrument({

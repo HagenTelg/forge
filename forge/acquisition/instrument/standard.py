@@ -10,6 +10,42 @@ from .record import Report, Record
 from .state import Persistent, State, ChangeEvent
 
 
+def _declare_variable_type(configure: typing.Callable[[netcdf_var.Variable], None],
+                           default_name: str = None):
+    def method(self: "StandardInstrument", source: Input, name: str = None, code: str = None,
+               attributes: typing.Dict[str, typing.Any] = None):
+        v = self.variable(source, name or default_name, code, attributes)
+        v.data.configure_variable = configure
+        return v
+
+    return method
+
+
+def _declare_state_type(value_type: typing.Type, field_type: typing.Type[BaseDataOutput.Field]):
+    class StateHandler(State):
+        class Field(field_type):
+            def __init__(self, name: str):
+                super().__init__(name)
+                self.persistent: typing.Optional[Persistent] = None
+                self.override: typing.Optional[value_type] = None
+
+            @property
+            def value(self) -> value_type:
+                if self.override is not None:
+                    return self.override
+                return self.persistent.value
+
+        def apply_override(self, value: typing.Optional[value_type]) -> None:
+            self.data.override = value
+
+    def method(self: "BaseInstrument", source: Persistent, name: str = None, code: str = None,
+               attributes: typing.Dict[str, typing.Any] = None, automatic: bool = True):
+        if not attributes:
+            attributes = dict()
+        return StateHandler(self, source, name, code, attributes, automatic)
+    return method
+
+
 class StandardInstrument(BaseInstrument):
     def __init__(self, context: BaseContext):
         super().__init__(context)
@@ -189,16 +225,6 @@ class StandardInstrument(BaseInstrument):
         v.data.configure_variable = t
         return v
 
-    @staticmethod
-    def _declare_variable_type(configure: typing.Callable[[netcdf_var.Variable], None],
-                               default_name: str = None):
-        def method(self: "StandardInstrument", source: Input, name: str = None, code: str = None,
-                   attributes: typing.Dict[str, typing.Any] = None):
-            v = self.variable(source, name or default_name, code, attributes)
-            v.data.configure_variable = configure
-            return v
-        return method
-
     variable_ozone = _declare_variable_type(netcdf_var.variable_ozone, "ozone_mixing_ratio")
     variable_temperature = _declare_variable_type(netcdf_var.variable_temperature)
     variable_air_temperature = _declare_variable_type(netcdf_var.variable_air_temperature)
@@ -267,31 +293,6 @@ class StandardInstrument(BaseInstrument):
 
         self._persistent.append(p)
         return p
-
-    @staticmethod
-    def _declare_state_type(value_type: typing.Type, field_type: typing.Type[BaseDataOutput.Field]):
-        class StateHandler(State):
-            class Field(field_type):
-                def __init__(self, name: str):
-                    super().__init__(name)
-                    self.persistent: typing.Optional[Persistent] = None
-                    self.override: typing.Optional[value_type] = None
-
-                @property
-                def value(self) -> value_type:
-                    if self.override is not None:
-                        return self.override
-                    return self.persistent.value
-
-            def apply_override(self, value: typing.Optional[value_type]) -> None:
-                self.data.override = value
-
-        def method(self: "BaseInstrument", source: Persistent, name: str = None, code: str = None,
-                   attributes: typing.Dict[str, typing.Any] = None, automatic: bool = True):
-            if not attributes:
-                attributes = dict()
-            return StateHandler(self, source, name, code, attributes, automatic)
-        return method
 
     state_float = _declare_state_type(float, BaseDataOutput.Float)
     state_integer = _declare_state_type(int, BaseDataOutput.Integer)
