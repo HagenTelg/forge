@@ -58,11 +58,11 @@ async def upload_post(session: aiohttp.ClientSession, url: URL,
     }) as resp:
         if resp.status != 200:
             data = (await resp.read()).decode('utf-8')
-            raise UploadRejected(f"Upload not accepted by the server: {resp.reason} - {data}")
+            raise Exception(f"Upload not accepted by the server: {resp.reason} - {data}")
         content = await resp.json()
         status = content['status']
         if status == 'unauthorized':
-            _LOGGER.debug("Authorization rejected for")
+            _LOGGER.debug("Authorization rejected")
             raise UploadRejected("Upload authorization rejected")
         if status == 'no_receiver':
             _LOGGER.debug("Server has no receiver target")
