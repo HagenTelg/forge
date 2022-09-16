@@ -1,0 +1,3 @@
+[Unit]
+Description=Forge acquisition stopped
+Conflicts=forge-acquisition-initialize.target forge-acquisition-control.target forge-acquisition-start.target

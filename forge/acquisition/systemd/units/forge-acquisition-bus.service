@@ -1,0 +1,15 @@
+[Unit]
+Description=Forge acquisition bus server
+Conflicts=forge-acquisition-stop.target
+
+[Service]
+Type=notify
+DynamicUser=yes
+Group=forge
+TimeoutStopSec=5
+WatchdogSec=30
+ProtectSystem=strict
+ProtectHome=true
+WorkingDirectory=/
+Environment=ROOT_PATH_FOR_DYNACONF=/etc/forge/acquisition
+ExecStart=/opt/forge/venv/bin/forge-acquisition-bus-server --systemd

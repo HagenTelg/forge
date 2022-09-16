@@ -543,8 +543,8 @@ class DataOutput(BaseDataOutput):
             c.advance_file()
 
         try:
-            asyncio.get_event_loop().run_in_executor(None, shutil.move,
-                                                     str(source_file), str(target_file))
+            await asyncio.get_event_loop().run_in_executor(None, shutil.move,
+                                                           str(source_file), str(target_file))
             _LOGGER.debug(f"Moved completed data file {source_file} to {target_file}")
         except OSError:
             _LOGGER.warning(f"Failed to relocate completed data file {source_file} to {target_file}", exc_info=True)

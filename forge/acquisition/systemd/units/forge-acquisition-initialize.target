@@ -1,0 +1,4 @@
+[Unit]
+Description=Forge acquisition initialized
+Before=forge-acquisition-control.target forge-acquisition-start.target
+Conflicts=forge-acquisition-stop.target

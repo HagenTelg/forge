@@ -1,0 +1,12 @@
+[Unit]
+Description=Forge acquisition bus socket
+Before=forge-acquisition-initialize.target
+Conflicts=forge-acquisition-stop.target
+
+[Install]
+WantedBy=forge-acquisition-initialize.target
+
+[Socket]
+ListenStream=/run/forge-acquisition-bus.socket
+SocketGroup=forge
+SocketMode=660

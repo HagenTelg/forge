@@ -1,7 +1,6 @@
 import typing
 import asyncio
 import signal
-import sys
 import argparse
 import logging
 from importlib import import_module
@@ -107,7 +106,7 @@ def data_directories(args: argparse.Namespace) -> typing.Tuple[typing.Optional[P
     else:
         working_directory = None
 
-    completed_directory = args.data_completed or CONFIGURATION.get("ACQUISITION.SEND")
+    completed_directory = args.data_completed or CONFIGURATION.get("ACQUISITION.DATA_COMPLETED")
     if completed_directory:
         completed_directory = Path(completed_directory)
     else:
