@@ -11,8 +11,6 @@ class Simulator(StreamingSimulator):
         self.unpolled_interval = 1.0
         self._unpolled_task: typing.Optional[asyncio.Task] = None
 
-        self.expanded_poll = False
-
         self.data_N = 1234.0
         self.data_Q = 0.2
         self.data_Clower = self.data_N * self.data_Q * 1000.0 - 1
@@ -107,20 +105,12 @@ class Simulator(StreamingSimulator):
                         self.writer.write(b' 2019 Mar 14\r\n')
                     elif line.startswith(b'rtc,'):
                         self.writer.write(b'\r\nOK\r\n')
-                    elif line == b'poll':
-                        if self.expanded_poll:
-                            # Most of these are guesses, since they're not in the manual
-                            self.writer.write((f"{self.data_N:7.0f},"
-                                               f"{self.data_Tconditioner:4.1f},"
-                                               f"{self.data_Tinitiator:4.1f},"
-                                               f"{self.data_Tmoderator:4.1f},"
-                                               f"{self.data_Toptics:4.1f},"
-                                               f"{self.data_Theatsink:4.1f},"
-                                               f"10000,"  # Raw dead time ( 1e-4 )
-                                               f"{self.data_Q*1000:3.0f},"
-                                               f"{self.data_P:6.1f}\r\n").encode('ascii'))
-                        else:
-                            self.writer.write(f"{self.data_N:7.0f}\r\n".encode('ascii'))
+                    elif line == b'hdr':
+                        self.writer.write(b'year time, Concentration,DewPoint,Input T, Input RH\r\n')
+                        self.writer.write(b'Cond T, Init T,Mod T, Opt T, HeatSink T, Board T, Case T \r\n')
+                        self.writer.write(b'Power Supply Voltage, Diff. Press,Abs. Press.,flow (cc/min)\r\n')
+                        self.writer.write(b'log interval, corrected live time, measured dead time, raw counts, raw counts2\r\n')
+                        self.writer.write(b'Status(hex code), Status(ascii), Serial Number\r\n')
                     else:
                         raise ValueError
                 except (ValueError, IndexError):

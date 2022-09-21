@@ -2047,7 +2047,7 @@ class RealtimeTranslator(NativeRealtimeTranslator):
         return cls(data, realtime_offset=realtime_offset)
 
     NATIVE_INSTRUMENTS: typing.Dict[str, typing.Type[NativeInstrument]] = {
-        "admagiccpc": native_remapped_instrument({
+        "admagic200cpc": native_remapped_instrument({
             "PD": "Pd",
             "Tinlet": "Tu",
             "Tconditioner": "T1",
@@ -3162,7 +3162,7 @@ profile_export: typing.Dict[str, typing.Dict[str, DataExportList]] = {
 
 
 acquisition_translator = AcquisitionTranslator(interfaces=[
-    AcquisitionTranslator.Component('acquire_ad_cpcmagic200', 'admagiccpc', variable_map={
+    AcquisitionTranslator.Component('acquire_ad_cpcmagic200', 'admagic200cpc', variable_map={
         AcquisitionTranslator.Variable('N'): 'N',
         AcquisitionTranslator.Variable('C1'): 'Clower',
         AcquisitionTranslator.Variable('C2'): 'Cupper',
@@ -3206,6 +3206,63 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'PumpOff',
         'RHSensorError',
         'Overheat',
+    }),
+
+    AcquisitionTranslator.Component('acquire_ad_cpcmagic250', 'admagic250cpc', variable_map={
+        AcquisitionTranslator.Variable('N'): 'N',
+        AcquisitionTranslator.Variable('C'): 'C',
+        AcquisitionTranslator.Variable('Q'): 'Q',
+        AcquisitionTranslator.Variable('ZQ'): 'Qinstrument',
+        AcquisitionTranslator.Variable('P'): 'P',
+        AcquisitionTranslator.Variable('Pd'): 'PD',
+        AcquisitionTranslator.Variable('V'): 'Vpulse',
+        AcquisitionTranslator.Variable('PCT'): 'PCTwick',
+        AcquisitionTranslator.Variable('Tu'): 'Tinlet',
+        AcquisitionTranslator.Variable('T1'): 'Tconditioner',
+        AcquisitionTranslator.Variable('T2'): 'Tinitiator',
+        AcquisitionTranslator.Variable('T3'): 'Tmoderator',
+        AcquisitionTranslator.Variable('T4'): 'Toptics',
+        AcquisitionTranslator.Variable('T5'): 'Theatsink',
+        AcquisitionTranslator.Variable('T6'): 'Tcase',
+        AcquisitionTranslator.Variable('Uu'): 'Uinlet',
+        AcquisitionTranslator.Variable('TDu'): 'TDinlet',
+        AcquisitionTranslator.Variable('TD1'): 'TDgrowth',
+    }, flags_notifications={
+        'ConditionerTemperatureOutOfRange': 'conditioner_temperature_out_of_range',
+        'InitiatorTemperatureOutOfRange': 'initiator_temperature_out_of_range',
+        'ModeratorTemperatureOutOfRange': 'moderator_temperature_out_of_range',
+        'OpticsTemperatureOutOfRange': 'optics_temperature_out_of_range',
+        'LaserOff': 'laser_off',
+        'PumpOff': 'pump_off',
+        'RHDataStale': 'rh_data_stale',
+        'I2CCommunicationFailure': 'i2c_communication_error',
+        'RHSensorError': 'rh_sensor_error',
+        'Overheat': 'overheat',
+        'DryWick': 'dry_wick',
+        'FallbackHumidifierDewpoint': 'fallback_humidifier_dewpoint',
+        'DewpointCalculationError': 'dewpoint_calculation_error',
+        'WickSensorOutOfRange': 'wick_sensor_out_of_range',
+        'FlashFull': 'flash_full',
+        'FRAMDataInvalid': 'fram_data_invalid',
+        'BadThermistor': 'thermistor_fault',
+        'SampleFlowOutOfRange': 'sample_flow_out_of_range',
+        'I2CMultiplexerError': 'ic2_multiplexer_error',
+        'LowClockBattery': 'low_clock_battery',
+        'ClockStopped': 'clock_stopped',
+    }, flags_set_warning={
+        'ConditionerTemperatureOutOfRange',
+        'InitiatorTemperatureOutOfRange',
+        'ModeratorTemperatureOutOfRange',
+        'OpticsTemperatureOutOfRange',
+        'LaserOff',
+        'PumpOff',
+        'RHSensorError',
+        'Overheat',
+        'DryWick',
+        'FallbackHumidifierDewpoint',
+        'WickSensorOutOfRange',
+        'BadThermistor',
+        'SampleFlowOutOfRange',
     }),
 
     AcquisitionTranslator.AnalogInputOutputDigital('acquire_azonix_umac1050', 'azonixumac1050', variable_map={

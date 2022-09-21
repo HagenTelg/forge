@@ -107,28 +107,29 @@ class Instrument(StreamingInstrument):
             await self.writer.drain()
             await self.drain_reader(1.0)
 
-            self.writer.write(b"poll\r")
+            self.writer.write(b"hdr\r")
             await self.writer.drain()
-            data: bytes = await asyncio.wait_for(self.read_line(), 2.0)
-            if data.startswith(b"poll"):  # Ignore the echo
+            hdr = await self.read_multiple_lines(total=5.0, first=2.0, tail=1.0)
+            if hdr[0].startswith(b"hdr"):  # Ignore the echo
+                del hdr[0]
+            if not hdr:
+                raise CommunicationsError("no header response")
+            hdr = b",".join(hdr)
+            if b"Concentration" not in hdr or b"raw counts2" not in hdr:
+                raise CommunicationsError(f"header response: {hdr}")
+
+            self.writer.write(b"wadc\r")
+            await self.writer.drain()
+            try:
                 data: bytes = await asyncio.wait_for(self.read_line(), 2.0)
-            fields = data.split(b",")
-            if len(fields) == 1:
-                N = parse_number(fields[0])
-                if N < 0.0:
-                    raise CommunicationsError(f"invalid concentration: {N}")
-            elif len(fields) == 9:
-                N = parse_number(fields[0])
-                if N < 0.0:
-                    raise CommunicationsError(f"invalid concentration: {N}")
-                Q = parse_number(fields[7])
-                if Q < 0.0:
-                    raise CommunicationsError(f"invalid flow: {Q}")
-                P = parse_number(fields[8])
-                if P < 10.0 or P > 1500.0:
-                    raise CommunicationsError(f"invalid pressure: {P}")
-            else:
-                raise CommunicationsError(f"invalid poll response: {data}")
+                if data.startswith(b"wadc"):  # Ignore the echo
+                    data: bytes = await asyncio.wait_for(self.read_line(), 2.0)
+                if b"ERROR" not in data:
+                    float(data.strip())
+                    raise CommunicationsError(f"valid wadc command, this is probably a Magic 250: {data}")
+            except (asyncio.TimeoutError, ValueError, OverflowError):
+                pass
+            await self.drain_reader(0.25)
 
             self.writer.write(b"rv\r")
             await self.writer.drain()

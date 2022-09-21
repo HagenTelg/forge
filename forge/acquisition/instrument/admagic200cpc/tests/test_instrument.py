@@ -2,8 +2,8 @@ import asyncio
 import typing
 import pytest
 from forge.acquisition.instrument.testing import create_streaming_instrument, BusInterface
-from forge.acquisition.instrument.admagiccpc.simulator import Simulator
-from forge.acquisition.instrument.admagiccpc.instrument import Instrument
+from forge.acquisition.instrument.admagic200cpc.simulator import Simulator
+from forge.acquisition.instrument.admagic200cpc.instrument import Instrument
 
 
 

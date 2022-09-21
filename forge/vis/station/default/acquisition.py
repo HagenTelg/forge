@@ -24,7 +24,8 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3010cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3781cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3783cpc'))
-        self.display_instrument.append(self.DisplayInstrumentSimple('admagiccpc'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('admagic200cpc'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('admagic250cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('bmi1710cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('bmi1720cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('clap'))
@@ -55,7 +56,10 @@ class Acquisition(BaseAcquisition):
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3010cpc', priority=4000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3781cpc', priority=4000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3783cpc', priority=4000))
-        self.summary_instrument.append(self.SummaryInstrumentSimple('admagiccpc', priority=4000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('admagic200cpc', priority=4000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('admagic250cpc', priority=4000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('bmi1710cpc', priority=4000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('bmi1720cpc', priority=4000))
 
         self.summary_instrument.append(self.SummaryInstrumentSimple('clap', priority=3000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('tap', priority=3000))
@@ -92,7 +96,10 @@ _type_summary: typing.Dict[str, SummaryItem] = {
     'tsi3010cpc': ParameterSummary('cpc', {'instrument': "TSI 3010"}),
     'tsi3781cpc': ParameterSummary('cpc', {'instrument': "TSI 3781"}),
     'tsi3783cpc': ParameterSummary('cpc', {'instrument': "TSI 3783"}),
-    'admagiccpc': ParameterSummary('cpc', {'instrument': "Magic"}),
+    'admagic200cpc': ParameterSummary('cpc', {'instrument': "Magic 200"}),
+    'admagic250cpc': ParameterSummary('cpc', {'instrument': "Magic 250"}),
+    'bmi1710cpc': ParameterSummary('cpc', {'instrument': "BMI 1710"}),
+    'bmi1720cpc': ParameterSummary('cpc', {'instrument': "BMI 1720"}),
     'tap': ParameterSummary('clap', {'instrument': "BMI TAP"}),
     'tsi3563nephelometer': ParameterSummary('nephelometer', {'instrument': "TSI 3563"}),
     'ecotechnephelometer': ParameterSummary('nephelometer', {
