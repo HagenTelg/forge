@@ -1,7 +1,9 @@
 import typing
 from dynaconf import Dynaconf
 from dynaconf.constants import DEFAULT_SETTINGS_FILES
-from dynaconf.utils.boxing import Box
+from tomlkit.container import Container as TOMLContainer
+from tomlkit.items import Item as TOMLItem, Table as TOMLTable, Comment as TOMLComment, Key as TOMLKey
+from tomlkit.exceptions import NonExistentKey as TOMLNonExistentKey
 
 CONFIGURATION = Dynaconf(
     environments=False,
@@ -10,10 +12,68 @@ CONFIGURATION = Dynaconf(
     default_settings_paths=DEFAULT_SETTINGS_FILES,
 )
 
+_CONFIGURATION_TOML_LOADED: bool = False
+_CONFIGURATION_TOML_ROOT: typing.Optional[TOMLContainer] = None
+
 
 class LayeredConfiguration:
-    def __init__(self, *roots: dict):
+    def __init__(self, *roots: dict, toml: typing.Optional[TOMLContainer] = None):
         self._roots = roots
+        self._toml = toml
+
+    @staticmethod
+    def _get_toml_key(toml: TOMLContainer, key: str) -> typing.Optional[TOMLItem]:
+        try:
+            return toml[key]
+        except TOMLNonExistentKey:
+            pass
+        key = key.casefold()
+        for check, value in toml.body:
+            if not isinstance(check, TOMLKey):
+                continue
+            if check.key.casefold() == key:
+                return value
+        return None
+
+    @staticmethod
+    def _lookup_toml_path(toml: TOMLContainer, path: typing.Iterable[str]) -> typing.Optional[TOMLContainer]:
+        for p in path:
+            toml = LayeredConfiguration._get_toml_key(toml, p)
+            if not toml:
+                return None
+            if not isinstance(toml, TOMLTable):
+                return None
+            toml = toml.value
+        return toml
+
+    @staticmethod
+    def toml_path(toml: typing.Optional[TOMLContainer], *path: str) -> typing.Optional[TOMLContainer]:
+        if toml is None:
+            return None
+
+        actual_path = list()
+        for p in path:
+            actual_path.extend(p.split('.'))
+
+        return LayeredConfiguration._lookup_toml_path(toml, actual_path)
+
+    @staticmethod
+    def configuration_toml(*path: str) -> typing.Optional[TOMLContainer]:
+        global _CONFIGURATION_TOML_LOADED
+        global _CONFIGURATION_TOML_ROOT
+        if not _CONFIGURATION_TOML_LOADED:
+            _CONFIGURATION_TOML_LOADED = True
+
+            filename = CONFIGURATION.find_file("settings.toml")
+            if filename:
+                from tomlkit.exceptions import ParseError
+                from tomlkit import load
+                try:
+                    with open(filename, "rt") as f:
+                        _CONFIGURATION_TOML_ROOT = load(f)
+                except (FileNotFoundError, ParseError):
+                    pass
+        return LayeredConfiguration.toml_path(_CONFIGURATION_TOML_ROOT, *path)
 
     def get(self, *path: str, default=None):
         actual_path = list()
@@ -37,6 +97,44 @@ class LayeredConfiguration:
         return default
 
     def comment(self, *path: str) -> typing.Optional[str]:
+        if not self._toml:
+            return None
+
+        actual_path = []
+        for p in path:
+            actual_path.extend(p.split('.'))
+        toml = self._lookup_toml_path(self._toml, actual_path[:-1])
+        if toml is None:
+            return None
+
+        value = self._get_toml_key(toml, actual_path[-1])
+        if value is not None:
+            comment = value.trivia.comment.strip()
+            if comment.startswith("#"):
+                comment = comment[1:].strip()
+            if comment:
+                return comment
+
+        last_comment: typing.Optional[TOMLComment] = None
+        key = actual_path[-1].casefold()
+        for check, value in toml.body:
+            if isinstance(value, TOMLComment):
+                last_comment = value
+            if not isinstance(check, TOMLKey):
+                continue
+            if check.key.casefold() != key:
+                last_comment = None
+                continue
+
+            if last_comment is not None:
+                comment = last_comment.trivia.comment.strip()
+                if comment.startswith("#"):
+                    comment = comment[1:].strip()
+                if comment:
+                    return comment
+
+            break
+
         return None
 
     def section_or_constant(self, *path: str) -> typing.Any:
@@ -66,7 +164,11 @@ class LayeredConfiguration:
                 # A non-dict part of the path was encountered, so mask any other layers off
                 break
 
-        return LayeredConfiguration(*subroots)
+        if self._toml:
+            toml = self._lookup_toml_path(self._toml, actual_path)
+        else:
+            toml = None
+        return LayeredConfiguration(*subroots, toml=toml)
 
     def section(self, *path: str) -> "LayeredConfiguration":
         s = self.section_or_constant(*path)

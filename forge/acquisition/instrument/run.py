@@ -55,42 +55,54 @@ def instrument_config(args: argparse.Namespace) -> LayeredConfiguration:
     roots: typing.List[dict] = list()
 
     instrument_local = CONFIGURATION.get("INSTRUMENT." + args.identifier)
+    toml = None
     if instrument_local:
         roots.append(instrument_local)
+        toml = LayeredConfiguration.configuration_toml("INSTRUMENT." + args.identifier)
 
     global_config = CONFIGURATION.get("ACQUISITION.GLOBAL")
     if global_config:
         roots.append(global_config)
+        if toml is None:
+            toml = LayeredConfiguration.configuration_toml("ACQUISITION.GLOBAL")
 
-    return LayeredConfiguration(*roots)
+    return LayeredConfiguration(*roots, toml=toml)
 
 
 def average_config(args: argparse.Namespace) -> LayeredConfiguration:
     roots: typing.List[dict] = list()
 
     instrument_local = CONFIGURATION.get("INSTRUMENT." + args.identifier + ".AVERAGE")
+    toml = None
     if instrument_local:
         roots.append(instrument_local)
+        toml = LayeredConfiguration.configuration_toml("INSTRUMENT." + args.identifier + ".AVERAGE")
 
     global_config = CONFIGURATION.get("ACQUISITION.AVERAGE")
     if global_config:
         roots.append(global_config)
+        if toml is None:
+            toml = LayeredConfiguration.configuration_toml("ACQUISITION.AVERAGE")
 
-    return LayeredConfiguration(*roots)
+    return LayeredConfiguration(*roots, toml=toml)
 
 
 def cutsize_config(args: argparse.Namespace) -> LayeredConfiguration:
     roots: typing.List[dict] = list()
 
     instrument_local = CONFIGURATION.get("INSTRUMENT." + args.identifier + ".CUTSIZE")
+    toml = None
     if instrument_local:
         roots.append(instrument_local)
+        toml = LayeredConfiguration.configuration_toml("INSTRUMENT." + args.identifier + ".CUTSIZE")
 
     global_config = CONFIGURATION.get("ACQUISITION.CUTSIZE")
     if global_config:
         roots.append(global_config)
+        if toml is None:
+            toml = LayeredConfiguration.configuration_toml("ACQUISITION.CUTSIZE")
 
-    return LayeredConfiguration(*roots)
+    return LayeredConfiguration(*roots, toml=toml)
 
 
 def bus_interface(args: argparse.Namespace) -> BaseBusInterface:
@@ -121,17 +133,21 @@ def data_output(args: argparse.Namespace) -> BaseDataOutput:
     roots: typing.List[dict] = list()
 
     instrument_local = CONFIGURATION.get("INSTRUMENT." + args.identifier + ".FILE")
+    toml = None
     if instrument_local:
         roots.append(instrument_local)
+        toml = LayeredConfiguration.configuration_toml("INSTRUMENT." + args.identifier + ".FILE")
 
     global_config = CONFIGURATION.get("ACQUISITION.FILE")
     if global_config:
         roots.append(global_config)
+        if toml is None:
+            toml = LayeredConfiguration.configuration_toml("ACQUISITION.FILE")
 
     working_directory, completed_directory = data_directories(args)
 
     return DataOutput(CONFIGURATION.get("ACQUISITION.STATION", 'nil').lower(), args.identifier,
-                      LayeredConfiguration(*roots),
+                      LayeredConfiguration(*roots, toml=toml),
                       working_directory, completed_directory,
                       AverageRecord(average_config(args)).interval)
 

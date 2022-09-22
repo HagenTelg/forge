@@ -19,3 +19,4 @@ psutil>=5.8.0
 pyserial>=3.5
 netCDF4>=1.6.0
 zstandard>=0.18.0
+tomlkit>=0.11.4
