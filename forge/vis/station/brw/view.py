@@ -14,7 +14,7 @@ from ..default.met.editing.tower import EditingTowerTemperatureDifference as Met
 from .flow import Flow
 from .filter import FilterStatus, SecondFilterStatus
 from .umac import UMACStatus
-from .counts import ParticleConcentration, EditingParticleConcentration
+from .counts import ParticleConcentration, EditingParticleConcentration, ADMagicCPC250StatusSecondary
 
 
 station_views = detach(aerosol_views, ozone_views, met_views)
@@ -57,6 +57,8 @@ station_views['aerosol-raw-umacstatus'] = UMACStatus('aerosol-raw')
 station_views['aerosol-realtime-filterstatus'] = FilterStatus('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-filterstatus2'] = SecondFilterStatus('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-umacstatus'] = UMACStatus('aerosol-realtime', realtime=True)
+station_views['aerosol-raw-cpcstatus2'] = ADMagicCPC250StatusSecondary('aerosol-raw')
+station_views['aerosol-realtime-cpcstatus2'] = ADMagicCPC250StatusSecondary('aerosol-raw', realtime=True)
 station_views['aerosol-raw-ccnstatus'] = CCNStatus('aerosol-raw')
 station_views['aerosol-realtime-ccnstatus'] = CCNStatus('aerosol-raw', realtime=True)
 

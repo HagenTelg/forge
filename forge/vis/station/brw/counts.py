@@ -1,6 +1,6 @@
 import typing
 from forge.vis.view.timeseries import TimeSeries
-from ..default.aerosol.tsi377Xcpc import TSI3776CPCStatus as BaseTSI3776CPCStatus
+from ..default.aerosol.admagiccpc import ADMagicCPC250Status
 
 
 class ParticleConcentration(TimeSeries):
@@ -23,6 +23,12 @@ class ParticleConcentration(TimeSeries):
         n_cnc.legend = "CNC"
         n_cnc.data_record = f'{mode}-cnc'
         n_cnc.data_field = 'cnc'
+        cnc.traces.append(n_cnc)
+
+        n_cnc = TimeSeries.Trace(cm_3)
+        n_cnc.legend = "CNC2 (MAGIC)"
+        n_cnc.data_record = f'{mode}-cnc'
+        n_cnc.data_field = 'cnc2'
         cnc.traces.append(n_cnc)
 
         n_cnc = TimeSeries.Trace(cm_3)
@@ -53,6 +59,13 @@ class EditingParticleConcentration(TimeSeries):
         n_cnc.data_record = f'{profile}-raw-cnc'
         n_cnc.data_field = 'cnc'
         raw.traces.append(n_cnc)
+        raw.axes.append(cm_3)
+
+        n_cnc = TimeSeries.Trace(cm_3)
+        n_cnc.legend = "Raw CNC2 (MAGIC)"
+        n_cnc.data_record = f'{profile}-raw-cnc'
+        n_cnc.data_field = 'cnc2'
+        raw.traces.append(n_cnc)
 
         n_cnc = TimeSeries.Trace(cm_3)
         n_cnc.legend = "Raw CCN"
@@ -79,7 +92,23 @@ class EditingParticleConcentration(TimeSeries):
         edited.traces.append(n_cnc)
 
         n_cnc = TimeSeries.Trace(cm_3)
+        n_cnc.legend = "Edited CNC2 (MAGIC)"
+        n_cnc.data_record = f'{profile}-editing-cnc'
+        n_cnc.data_field = 'cnc2'
+        edited.traces.append(n_cnc)
+
+        n_cnc = TimeSeries.Trace(cm_3)
         n_cnc.legend = "Edited CCN"
         n_cnc.data_record = f'{profile}-editing-cnc'
         n_cnc.data_field = 'ccn'
         edited.traces.append(n_cnc)
+
+
+class ADMagicCPC250StatusSecondary(ADMagicCPC250Status):
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
+        self.title = "MAGIC CPC Status"
+
+        for g in self.graphs:
+            for t in g.traces:
+                t.data_record += '2'

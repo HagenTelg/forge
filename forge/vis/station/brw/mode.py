@@ -15,11 +15,15 @@ station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-filterstatus2', 
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-filterstatus2', "SCRIPPS Filter Status"),
                                          'aerosol-realtime-filterstatus')
 
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-cpcstatus2', "MAGIC CPC Status"),
+                                    'aerosol-raw-cpcstatus')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-cpcstatus2', "MAGIC CPC Status"),
+                                         'aerosol-realtime-cpcstatus')
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-ccnstatus', "CCN Status"),
-                                    'aerosol-raw-cpcstatus')
+                                    'aerosol-raw-cpcstatus2')
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-ccnstatus', "CCN Status"),
-                                         'aerosol-realtime-cpcstatus')
+                                         'aerosol-realtime-cpcstatus2')
 
 
 station_modes['met-raw'].insert(ViewList.Entry('met-raw-tower', "Tower dT"))
