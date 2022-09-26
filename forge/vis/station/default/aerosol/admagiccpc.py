@@ -273,12 +273,12 @@ class ADMagicCPC250Status(TimeSeries):
         pressure.title = "Pressure"
         self.graphs.append(pressure)
 
-        absolute = TimeSeries.Axis()
-        absolute.title = "Absolute (hPa)"
-        absolute.format_code = '.1f'
-        pressure.axes.append(absolute)
+        hPa = TimeSeries.Axis()
+        hPa.title = "hPa"
+        hPa.format_code = '.1f'
+        pressure.axes.append(hPa)
 
-        sample = TimeSeries.Trace(absolute)
+        sample = TimeSeries.Trace(hPa)
         sample.legend = "Sample Pressure"
         sample.data_record = f'{mode}-cpcstatus'
         sample.data_field = 'Psample'

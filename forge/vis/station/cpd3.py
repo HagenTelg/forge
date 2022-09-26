@@ -2060,6 +2060,20 @@ class RealtimeTranslator(NativeRealtimeTranslator):
             "Uinlet": "Uu",
             "TDinlet": "TDu",
         }),
+        "admagic250cpc": native_remapped_instrument({
+            "Tinlet": "Tu",
+            "Tconditioner": "T1",
+            "Tinitiator": "T2",
+            "Tmoderator": "T3",
+            "Toptics": "T4",
+            "Theatsink": "T5",
+            "Tcase": "T6",
+            "Uinlet": "Uu",
+            "TDinlet": "TDu",
+            "TDgrowth": "TD1",
+            "Vpulse": "V",
+            "PCTwick": "PCT",
+        }),
     }
 
     def instrument_translator(self, source: str, instrument_info: typing.Dict[str, typing.Any]) -> typing.Optional[NativeRealtimeTranslator.Instrument]:
@@ -3214,7 +3228,6 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         AcquisitionTranslator.Variable('Q'): 'Q',
         AcquisitionTranslator.Variable('ZQ'): 'Qinstrument',
         AcquisitionTranslator.Variable('P'): 'P',
-        AcquisitionTranslator.Variable('Pd'): 'PD',
         AcquisitionTranslator.Variable('V'): 'Vpulse',
         AcquisitionTranslator.Variable('PCT'): 'PCTwick',
         AcquisitionTranslator.Variable('Tu'): 'Tinlet',
