@@ -19,8 +19,10 @@ class CutSize(Schedule):
                 pass
             if data == 25:
                 return CutSize.Size.PM2_5
-            if data == 0:
+            if data == 0 or data == 10:
                 return CutSize.Size.PM10
+            if data == 1:
+                return CutSize.Size.PM1
             if data == False:
                 return CutSize.Size.WHOLE
             try:
@@ -68,8 +70,8 @@ class CutSize(Schedule):
             return None
         return super().next(now)
 
-    async def automatic_activation(self) -> None:
+    async def automatic_activation(self, now: float = None) -> None:
         if self.constant_size:
-            await self.current().automatic_activation()
+            await self.current().automatic_activation(now)
             return
         await super().automatic_activation()

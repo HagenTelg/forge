@@ -27,8 +27,8 @@ class Schedule:
             self._has_activated = True
             return True
 
-        async def automatic_activation(self) -> bool:
-            return self.activate()
+        async def automatic_activation(self, now: float = None) -> bool:
+            return self.activate(now)
 
         def describe_offset(self) -> str:
             if self.cycle_offset <= 0.0:
@@ -72,9 +72,15 @@ class Schedule:
             self.active.append(self.Active(config))
         else:
             self.config = config
-            for entry in self.config.get('SCHEDULE'):
+            entries = self.config.get('SCHEDULE')
+            if not isinstance(entries, list):
+                entries = [entries]
+            for entry in entries:
                 a = self.Active(entry)
-                offset = entry.get("TIME")
+                if isinstance(entry, dict):
+                    offset = entry.get("TIME")
+                else:
+                    offset = None
                 if offset is not None:
                     a.cycle_offset = parse_interval(offset)
                 if a.cycle_offset < 0.0:
@@ -195,7 +201,7 @@ class Schedule:
         while True:
             now = time.time()
             current = self.current(now)
-            await current.automatic_activation()
+            await current.automatic_activation(now)
 
             next = self.next(now)
             delay = next.next_time - now

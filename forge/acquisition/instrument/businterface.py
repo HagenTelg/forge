@@ -67,6 +67,8 @@ class BusInterface(BaseBusInterface):
             self._dispatch_data_record(source, message)
         elif record == 'bypass_held':
             self._handle_bypass(source, message)
+        elif record == 'bypass_user':
+            self._handle_bypass('', message)
 
     async def start(self) -> None:
         reader, writer = await asyncio.open_unix_connection(self._bus_socket_name)

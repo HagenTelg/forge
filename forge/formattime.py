@@ -53,7 +53,7 @@ def _time_of_day(ts, epoch_ms: typing.Optional[int] = None, delimiter: str = ':'
     return f"{ts.tm_hour:02}{delimiter}{ts.tm_min:02}{delimiter}{seconds}"
 
 
-def format_time_of_day(t: float, delimited: bool = True, milliseconds: bool = False):
+def format_time_of_day(t: float, delimited: bool = True, milliseconds: bool = False) -> str:
     if milliseconds:
         epoch_ms = round(t * 1000.0)
         ts = time.gmtime(int(epoch_ms / 1000))

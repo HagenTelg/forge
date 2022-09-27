@@ -146,6 +146,8 @@ class AcquisitionTranslatorClient(AcquisitionClient):
             return
         elif record == 'bypass_held':
             return
+        elif record == 'bypass_user':
+            return
         elif record == 'command':
             return
         elif record == 'restart_acquisition':
@@ -195,7 +197,7 @@ class AcquisitionTranslatorClient(AcquisitionClient):
         })
 
     async def incoming_bypass(self, bypassed: bool) -> None:
-        await self.bus.send_message(PersistenceLevel.SYSTEM, 'bypass_held', bypassed and 1 or 0)
+        await self.bus.send_message(PersistenceLevel.SYSTEM, 'bypass_user', bypassed and 1 or 0)
 
     async def incoming_message_log(self, author: str, text: str, auxiliary: typing.Any) -> None:
         await self.bus.send_message(PersistenceLevel.DATA, 'event_log', {

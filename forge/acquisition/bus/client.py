@@ -55,11 +55,16 @@ class AcquisitionBusClient:
             except:
                 pass
         if self.writer:
+            w = self.writer
+            self.writer = None
             try:
-                self.writer.close()
+                await w.drain()
+            except:
+                pass
+            try:
+                w.close()
             except OSError:
                 pass
-            self.writer = None
 
     def send_message(self, level: PersistenceLevel, record: str, message: typing.Any) -> None:
         if not self.writer:

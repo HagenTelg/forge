@@ -43,6 +43,7 @@ setup(
         "forge-acquisition-bus-server = forge.acquisition.bus.server.__main__:main",
         "forge-acquisition-event-log = forge.acquisition.eventlog.__main__:main",
         "forge-acquisition-instrument = forge.acquisition.instrument.run:main",
+        "forge-acquisition-control = forge.acquisition.control.run:main",
         "forge-acquisition-systemd-startup = forge.acquisition.systemd.startup:main",
 
         "forge-processing-control = forge.processing.control.cli.__main__:main",

@@ -178,7 +178,6 @@ class InstrumentWindow:
         max_x = len(self.window_title)
         max_y = 0
 
-        columns = self.data_columns()
         if columns:
             max_rows = 0
             total_width = 0
