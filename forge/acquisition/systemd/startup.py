@@ -202,6 +202,8 @@ def start_instrument(source: str) -> None:
 
 
 def start_all_control() -> None:
+    start_control("restart")
+
     cutsize = CONFIGURATION.get("ACQUISITION.CUTSIZE")
     if cutsize and not CutSize(LayeredConfiguration(cutsize)).constant_size:
         start_control("impactorcycle")

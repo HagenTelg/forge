@@ -82,7 +82,7 @@ async def _receive_file(request: Request, output: WriteFile, signature: bytes) -
     with TemporaryFile(dir=_DIRECTORY) as storage:
         _LOGGER.debug(f"Receiving {output.file_type.name} {output.station.upper()}/{output.filename}")
 
-        loop = asyncio.get_running_loop()
+        loop = asyncio.get_event_loop()
         async for chunk in request.stream():
             await asyncio.wait([
                 asyncio.ensure_future(loop.run_in_executor(None, storage.write, chunk)),
