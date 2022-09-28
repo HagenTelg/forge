@@ -239,8 +239,11 @@ class InstrumentWindow:
             return
 
         if apply_resize:
-            self.window.mvwin(0, 0)
-            self.window.resize(content_y, content_x)
+            try:
+                self.window.mvwin(0, 0)
+                self.window.resize(content_y, content_x)
+            except curses:
+                return
 
         self.window.mvwin(self._y, self._x)
 
