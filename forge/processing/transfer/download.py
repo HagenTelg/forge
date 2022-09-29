@@ -27,6 +27,10 @@ def parse_arguments():
     parser.add_argument('--debug',
                         dest='debug', action='store_true',
                         help="enable debug output")
+    parser.add_argument('--systemd',
+                        dest='systemd', action='store_true',
+                        help="enable systemd integration")
+
     parser.add_argument('--socket',
                         dest='socket',
                         default=CONFIGURATION.get('PROCESSING.TRANSFER.SOCKET', '/run/forge-transfer-storage.socket'),
@@ -70,7 +74,7 @@ def parse_arguments():
 
     parser.add_argument('--command',
                         dest='command',
-                        help="command to after file fetch")
+                        help="command to run after file fetch")
 
     args = parser.parse_args()
 
@@ -179,7 +183,9 @@ def main():
                 output.close()
 
                 file_directory = completion_directory(output_directory, self.key, self.station, self.file_type)
-                output_path = str(Path(file_directory) / self.filename)
+                file_directory = Path(file_directory)
+                file_directory.mkdir(parents=True, exist_ok=True)
+                output_path = str(file_directory / self.filename)
                 move_file(output.name, output_path)
 
                 if args.command:
@@ -191,17 +197,43 @@ def main():
 
                 _LOGGER.info(f"Received file {output_path}")
 
-    async def run():
+    reader: typing.Optional[asyncio.StreamReader] = None
+    writer: typing.Optional[asyncio.StreamWriter] = None
+
+    loop = asyncio.new_event_loop()
+
+    async def start():
+        nonlocal reader
+        nonlocal writer
+
         if args.tcp_server and args.tcp_port:
+            _LOGGER.debug(f"Connecting to transfer TCP socket {args.tcp_server}:{args.tcp_port}")
             reader, writer = await asyncio.open_connection(args.tcp_server, args.tcp_port)
         else:
+            _LOGGER.debug(f"Connecting to transfer Unix socket {args.socket}")
             reader, writer = await asyncio.open_unix_connection(args.socket)
 
+    loop.run_until_complete(start())
+
+    async def run():
         client = _Client(reader, writer)
         _LOGGER.info("Connected to transfer server")
         await client.run()
 
-    loop = asyncio.new_event_loop()
+    heartbeat: typing.Optional[asyncio.Task] = None
+    if args.systemd:
+        import systemd.daemon
+        systemd.daemon.notify("READY=1")
+
+        _LOGGER.debug("Starting systemd heartbeat")
+
+        async def send_heartbeat() -> typing.NoReturn:
+            while True:
+                await asyncio.sleep(10)
+                systemd.daemon.notify("WATCHDOG=1")
+
+        heartbeat = loop.create_task(send_heartbeat())
+
     asyncio.set_event_loop(loop)
     get_run = loop.create_task(run())
     loop.add_signal_handler(signal.SIGINT, get_run.cancel)
@@ -210,6 +242,20 @@ def main():
         loop.run_until_complete(get_run)
     except asyncio.CancelledError:
         pass
+
+    if heartbeat:
+        _LOGGER.debug("Shutting down heartbeat")
+        t = heartbeat
+        heartbeat = None
+        try:
+            t.cancel()
+        except:
+            pass
+        try:
+            loop.run_until_complete(t)
+        except:
+            pass
+
     loop.close()
 
 

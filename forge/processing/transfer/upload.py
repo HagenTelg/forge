@@ -293,7 +293,9 @@ def main():
 
             if args.completed:
                 target_dir = completion_directory(args.completed, upload_key, args.station, args.type)
-                target_file = Path(target_dir) / file.name
+                target_dir = Path(target_dir)
+                target_dir.mkdir(parents=True, exist_ok=True)
+                target_file = target_dir / file.name
                 try:
                     move_file(str(file), str(target_file))
                 except IOError:
