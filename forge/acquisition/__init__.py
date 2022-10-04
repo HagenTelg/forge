@@ -64,15 +64,32 @@ class LayeredConfiguration:
         if not _CONFIGURATION_TOML_LOADED:
             _CONFIGURATION_TOML_LOADED = True
 
-            filename = CONFIGURATION.find_file("settings.toml")
-            if filename:
-                from tomlkit.exceptions import ParseError
+            def merge_toml(filename: typing.Optional[str]) -> None:
+                global _CONFIGURATION_TOML_ROOT
+                if not filename:
+                    return
+
+                from tomlkit.exceptions import (ParseError, TOMLKitError)
                 from tomlkit import load
                 try:
                     with open(filename, "rt") as f:
-                        _CONFIGURATION_TOML_ROOT = load(f)
+                        root = load(f)
                 except (FileNotFoundError, ParseError):
-                    pass
+                    return
+
+                if _CONFIGURATION_TOML_ROOT is None:
+                    _CONFIGURATION_TOML_ROOT = root
+                    return
+
+                for key, value in root.body:
+                    try:
+                        _CONFIGURATION_TOML_ROOT.append(key, value)
+                    except TOMLKitError:
+                        pass
+
+            merge_toml(CONFIGURATION.find_file("settings.local.toml"))
+            merge_toml(CONFIGURATION.find_file("settings.toml"))
+
         return LayeredConfiguration.toml_path(_CONFIGURATION_TOML_ROOT, *path)
 
     def get(self, *path: str, default=None):
