@@ -279,7 +279,7 @@ def main():
                 except UploadRejected:
                     _LOGGER.error(f"Upload of {file} rejected, further attempts aborted")
                     contents.close()
-                    exit(1)
+                    exit(4)
                 except:
                     _LOGGER.warning(f"Upload to {repr(url)} failed", exc_info=True)
                     continue
