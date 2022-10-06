@@ -582,8 +582,8 @@ class UserInterface:
 
             win_entries.append((title, window_selected(win)))
         win_entries.sort(key=lambda x: x[0])
-        for e in win_entries:
-            menu.add_entry(e[0], e[1], ord(e[0]) if e[0] != " " else None)
+        for title, activate in win_entries:
+            menu.add_entry(title, activate, ord(title[0].lower()) if title[0] != " " else None)
 
     def _handle_key(self, key: int) -> None:
         if self._menu:
@@ -652,8 +652,6 @@ class UserInterface:
                 asyncio.get_event_loop().remove_reader(sys.stdin.fileno())
             elif key == curses.KEY_RESIZE:
                 curses.update_lines_cols()
-                y, x = self.stdscr.getmaxyx()
-                curses.resizeterm(y, x)
             elif key == curses.KEY_EXIT:
                 break
             else:

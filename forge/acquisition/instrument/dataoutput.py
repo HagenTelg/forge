@@ -52,6 +52,8 @@ def _configure_variable(var: Variable, source: BaseDataOutput.Field) -> None:
         netcdf_timeseries.variable_coordinates(group, var)
         netcdf_var.variable_cutsize(var)
         var.coverage_content_type = "referenceInformation"  # Not measured, so reference is a bit better fit
+    elif source.template == BaseDataOutput.Field.Template.DIMENSION:
+        var.coverage_content_type = "coordinate"
     elif source.template == BaseDataOutput.Field.Template.MEASUREMENT:
         _measurement()
     else:
@@ -64,6 +66,10 @@ def _configure_variable(var: Variable, source: BaseDataOutput.Field) -> None:
         var.ancillary_variables = " ".join(ancillary_variables)
 
     for key, value in source.attributes.items():
+        if value is None:
+            if key in var.ncattrs():
+                var.delncattr(key)
+            continue
         var.setncattr(key, value)
 
 
@@ -244,7 +250,10 @@ class DataOutput(BaseDataOutput):
                 self.values = np.delete(self.values, np.s_[:count])
 
             def create_variable(self, target: Dataset) -> None:
-                var = target.createVariable(self.field.name, self.values.dtype, ('time',), fill_value=False)
+                fill_value = False
+                if np.issubdtype(self.values.dtype, np.floating):
+                    fill_value = nan
+                var = target.createVariable(self.field.name, self.values.dtype, ('time',), fill_value=fill_value)
                 _configure_variable(var, self.field)
                 var[:] = self.values
 
@@ -265,31 +274,45 @@ class DataOutput(BaseDataOutput):
                 self.values = np.concatenate((self.values, [v]))
 
             def remove_start(self, count: int) -> None:
-                del self.sizes[:count]
-                self.values = np.delete(self.values, np.s_[:count], 0)
-                newsize = max(self.sizes)
-                if newsize < self.values.shape[1]:
-                    self.values = np.delete(self.values, np.s_[newsize:], 1)
+                try:
+                    if count >= len(self.sizes):
+                        self.sizes.clear()
+                        newsize = 0
+                    else:
+                        for i in range(count):
+                            self.sizes.popleft()
+                        newsize = max(self.sizes)
+                    self.values = np.delete(self.values, np.s_[:count], 0)
+                    if newsize < self.values.shape[1]:
+                        self.values = np.delete(self.values, np.s_[newsize:], 1)
+                except:
+                    _LOGGER.warning("ERR", exc_info=True)
+                    raise
 
             def create_variable(self, target: Dataset) -> None:
                 field_dimension = self.field.dimension
                 if field_dimension:
-                    dim = target.createDimension(field_dimension.name, self.values.shape[1])
-                    if isinstance(field_dimension, BaseDataOutput.ArrayFloat):
-                        dvar = target.createVariable(dim.name, 'f8', (dim.name,), fill_value=False)
+                    dim = target.dimensions.get(field_dimension.name)
+                    if dim is None:
+                        dim = target.createDimension(field_dimension.name, self.values.shape[1])
+                        if isinstance(field_dimension, BaseDataOutput.ArrayFloat):
+                            dvar = target.createVariable(dim.name, 'f8', (dim.name,), fill_value=nan)
+                        else:
+                            raise ValueError("unknown dimension type")
                     else:
-                        raise ValueError("unknown dimension type")
+                        dvar = target.variables[dim.name]
 
                     _configure_variable(dvar, field_dimension)
 
                     dimension_value = field_dimension.value
                     if dimension_value:
-                        n_assign = min(len(dimension_value), self.values.shape[1])
+                        n_assign = min(len(dimension_value), self.values.shape[1], dim.size)
                         dvar[:n_assign] = dimension_value[:n_assign]
                 else:
                     dim = target.createDimension(self.field.name, self.values.shape[1])
 
-                var = target.createVariable(self.field.name, self.values.dtype, (dim.name, 'time'), fill_value=False)
+                var = target.createVariable(self.field.name, self.values.dtype, (dim.name, 'time'),
+                                            fill_value=self.pad)
                 _configure_variable(var, self.field)
                 var[:] = np.transpose(self.values)
 
@@ -304,7 +327,11 @@ class DataOutput(BaseDataOutput):
                 self.values.append(self.field.value)
 
             def remove_start(self, count: int) -> None:
-                del self.values[:count]
+                for i in range(count):
+                    try:
+                        self.values.popleft()
+                    except IndexError:
+                        break
 
             def create_variable(self, target: Dataset) -> None:
                 var = target.createVariable(self.field.name, self.data_type, ('time',), fill_value=False)
@@ -606,8 +633,10 @@ class DataOutput(BaseDataOutput):
                 pass
             try:
                 await t
-            except:
+            except asyncio.CancelledError:
                 pass
+            except:
+                _LOGGER.warning("Error in automatic file write", exc_info=True)
         self._data_updated = None
         self._flush_file()
 
@@ -651,7 +680,7 @@ if __name__ == '__main__':
         def dimension(self) -> typing.Optional["BaseDataOutput.ArrayFloat"]:
             return self.dim
 
-    class ConstantArrayFlag(BaseDataOutput.Flag):
+    class ConstantFlag(BaseDataOutput.Flag):
         def __init__(self, name: str, value: bool):
             super().__init__(name)
             self._value = value
@@ -663,8 +692,8 @@ if __name__ == '__main__':
     rec = data.measurement_record('data')
     rec.add_variable(ConstantFloat('var1', 1.0))
     rec.add_variable(ConstantString('var2', "value"))
-    rec.add_flag(ConstantArrayFlag("flag1", True))
-    rec.add_flag(ConstantArrayFlag("flag2", False))
+    rec.add_flag(ConstantFlag("flag1", True))
+    rec.add_flag(ConstantFlag("flag2", False))
     af = ConstantArrayFloat('var3', [3.0, 4.0])
     af.dim = ConstantArrayFloat('afdim', [5.0, 6.0])
     rec.add_variable(af)

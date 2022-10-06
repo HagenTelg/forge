@@ -20,7 +20,7 @@ class Persistent(BaseInstrument.Persistent):
         self._update_queued: bool = False
         self.on_update: typing.List[typing.Callable[[], None]] = list()
 
-    def __call__(self, value: typing.Any, deduplicate: bool = True):
+    def __call__(self, value: typing.Any, deduplicate: bool = True) -> typing.Any:
         if deduplicate and self.value == value:
             return
 
@@ -32,7 +32,6 @@ class Persistent(BaseInstrument.Persistent):
             self._queued_for_save = self.value
 
         self._update_queued = True
-
         return self.value
 
     def load_prior(self, value: typing.Any, effective_time: typing.Optional[float]) -> None:

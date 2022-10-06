@@ -34,11 +34,14 @@ class Name:
         return f"Name({self.station}, {self.archive}, {self.variable}, {self.flavors})"
 
     @property
-    def metadata(self):
+    def metadata(self) -> bool:
         return self.archive.endswith('_meta')
 
+    def to_metadata(self) -> "Name":
+        return Name(self.station, self.archive + '_meta', self.variable, self.flavors)
+
     @property
-    def default_station(self):
+    def default_station(self) -> bool:
         return self.station == '_'
 
     def serialize(self) -> bytes:

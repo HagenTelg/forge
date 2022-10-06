@@ -22,6 +22,7 @@ class BaseDataOutput:
             METADATA = auto()
             STATE = auto()
             CUT_SIZE = auto()
+            DIMENSION = auto()
             MEASUREMENT = auto()
 
         def __init__(self, name: str):
@@ -221,6 +222,15 @@ class BaseInstrument:
         def __float__(self) -> float:
             raise NotImplementedError
 
+        def drop_queued(self) -> None:
+            raise NotImplementedError
+
+        def assemble_data(self, record: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
+            raise NotImplementedError
+
+        def assemble_unaveraged(self, record: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
+            raise NotImplementedError
+
     class Notification:
         def __init__(self, instrument: "BaseInstrument", name: str, is_warning: bool):
             self.instrument = instrument
@@ -274,15 +284,7 @@ class BaseInstrument:
             pass
 
     class Variable(DataField):
-        def __init__(self, instrument: "BaseInstrument", name: str, code: typing.Optional[str],
-                     attributes: typing.Dict[str, typing.Any]):
-            super().__init__(instrument, name, code, attributes)
-            self.code = code
-
         def __call__(self) -> None:
-            raise NotImplementedError
-
-        def assemble_unaveraged(self, record: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
             raise NotImplementedError
 
     class Flag:
@@ -317,13 +319,7 @@ class BaseInstrument:
             raise NotImplementedError
 
     class State(DataField):
-        def __init__(self, instrument: "BaseInstrument", name: str,
-                     code: typing.Optional[str], attributes: typing.Dict[str, typing.Any]):
-            super().__init__(instrument, name, code, attributes)
-            self.code = code
-
-            if self.code and 'variable_id' not in self.data.attributes:
-                self.data.attributes['variable_id'] = self.code
+        pass
 
     class ChangeEvent:
         def __init__(self, instrument: "BaseInstrument", name: str):
@@ -335,6 +331,9 @@ class BaseInstrument:
 
         async def emit(self, now: float) -> None:
             raise NotImplementedError
+
+    class Dimension(DataField):
+        Field: BaseDataOutput.ArrayFloat = BaseDataOutput.ArrayFloat
 
 
 class BaseSimulator:

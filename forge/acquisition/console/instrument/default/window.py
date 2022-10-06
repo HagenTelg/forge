@@ -104,13 +104,23 @@ class InstrumentWindow:
 
         return ""
 
-    @staticmethod
-    def _unroll_formatted(value: typing.Union[float, int, str, typing.List[float]],
+    def _unroll_formatted(self, value: typing.Union[float, int, str, typing.List[float]],
                           formatter: typing.Callable[[float], str]) -> str:
         if isinstance(value, str):
             return value
         if isinstance(value, list):
-            return ", ".join([InstrumentWindow._unroll_formatted(v, formatter) for v in value])
+            if len(value) <= 4:
+                return ", ".join([self._unroll_formatted(v, formatter) for v in value])
+
+            try:
+                center_max = max(value[1:-1])
+            except TypeError:
+                center_max = None
+            return (
+                self._unroll_formatted(value[0], formatter) +
+                (" .. " + self._unroll_formatted(center_max, formatter) + " .. " if center_max else " ... ") +
+                self._unroll_formatted(value[-1], formatter)
+            )
         return formatter(value)
 
     def data_lines(self) -> typing.List[typing.Tuple[str, str]]:
@@ -208,6 +218,9 @@ class InstrumentWindow:
 
         columns = self.data_columns()
         content_x, content_y = self.content_size(columns)
+        title = self.window_title
+        if content_x < len(title):
+            content_x = len(title)
         content_x += 2
         content_y += 2
         if content_x > max_x or content_y > max_y:
@@ -224,24 +237,24 @@ class InstrumentWindow:
             self._x = (max_x - win_x) // 2
             self._y = (max_y - win_y) // 2
 
-        if self._x + win_x > max_x:
-            self._x = max_x - win_x
+        if self._x + win_x >= max_x:
+            self._x = max_x - win_x - 1
         if self._x < 0:
             self._x = 0
-        if self._y + win_y > max_y:
-            self._y = max_y - win_y
+        if self._y + win_y >= max_y:
+            self._y = max_y - win_y - 1
         if self._y < 0:
             self._y = 0
 
-        if self._x + win_x > max_x:
+        if self._x + win_x >= max_x:
             return
-        if self._y + win_y > max_y:
+        if self._y + win_y >= max_y:
             return
 
         if apply_resize:
             try:
                 self.window.mvwin(0, 0)
-                self.window.resize(content_y, content_x)
+                self.window.resize(win_y, win_x)
             except curses:
                 return
 
@@ -249,7 +262,6 @@ class InstrumentWindow:
 
         self.window.clear()
         self.window.box()
-        title = self.window_title
         self.window.addstr(0, (win_x - len(title))//2, title)
 
         status_line = self.detailed_status

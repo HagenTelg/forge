@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import forge.cpd3.variant as cpd3_variant
 import re
+import enum
 from math import isfinite, nan, ceil
 from netCDF4 import Dataset, Group, Variable
 from forge.const import __version__
@@ -232,7 +233,7 @@ class Converter:
                           c: typing.Callable[[typing.Any], typing.Any],
                           use_cut_size: bool = True) -> None:
             for i in range(len(self.times)):
-                v = c(variable[i])
+                v = c(variable[..., i])
                 flavors = name.flavors
                 if use_cut_size:
                     flavors = flavors | self.times[i][2]
@@ -296,7 +297,7 @@ class Converter:
                 return meta
 
             def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) ->None:
-                self.record.global_fanout(result, self.base_name, self.metadata())
+                self.record.global_fanout(result, self.base_name.to_metadata(), self.metadata())
 
                 flag_meanings = self.variable.flag_meanings.split(' ')
                 flag_masks = self.variable.flag_masks
@@ -340,26 +341,61 @@ class Converter:
                 else:
                     self.ancillary_variables: typing.Set[str] = set()
 
+            class ConversionType(enum.Enum):
+                FLOAT = enum.auto()
+                INTEGER = enum.auto()
+                STRING = enum.auto()
+                ARRAYFLOAT = enum.auto()
+
+                @property
+                def converter(self) -> typing.Callable[[typing.Any], typing.Any]:
+                    def float_converter(v: float) -> float:
+                        if v is None:
+                            return nan
+                        v = float(v)
+                        if not isfinite(v):
+                            return nan
+                        return v
+
+                    if self == self.FLOAT:
+                        return float_converter
+                    elif self == self.INTEGER:
+                        return int
+                    elif self == self.STRING:
+                        return str
+                    elif self == self.ARRAYFLOAT:
+                        return lambda v: [float_converter(i) for i in v]
+                    else:
+                        raise ValueError("invalid conversion type")
+
+                @property
+                def metadata(self) -> typing.Type[cpd3_variant.Metadata]:
+                    if self == self.FLOAT:
+                        return cpd3_variant.MetadataReal
+                    elif self == self.INTEGER:
+                        return cpd3_variant.MetadataInteger
+                    elif self == self.STRING:
+                        return cpd3_variant.MetadataString
+                    elif self == self.ARRAYFLOAT:
+                        return cpd3_variant.MetadataArray
+                    else:
+                        raise ValueError("invalid conversion type")
+
             @property
-            def simplified_type(self) -> typing.Union[typing.Type[int], typing.Type[float], typing.Type[str]]:
-                if self.variable.dtype == np.float64:
-                    return float
-                elif self.variable.dtype == np.float32:
-                    return float
+            def conversion_type(self) -> "Converter.DataRecord.GenericConverter.ConversionType":
+                if np.issubdtype(self.variable.dtype, np.floating):
+                    if len(self.variable.dimensions) == 2:
+                        return self.ConversionType.ARRAYFLOAT
+                    return self.ConversionType.FLOAT
+                elif np.issubdtype(self.variable.dtype, np.integer):
+                    return self.ConversionType.INTEGER
                 elif self.variable.dtype == str:
-                    return str
-                return int
+                    return self.ConversionType.STRING
+                return self.ConversionType.INTEGER
 
             def metadata(self) -> cpd3_variant.Metadata:
-                metadata_type = self.simplified_type
-                if metadata_type == float:
-                    metadata_type = cpd3_variant.MetadataReal
-                elif metadata_type == str:
-                    metadata_type = cpd3_variant.MetadataString
-                elif metadata_type == int:
-                    metadata_type = cpd3_variant.MetadataInteger
-                else:
-                    raise ValueError("invalid metadata type")
+                conversion_type = self.conversion_type
+                metadata_type = conversion_type.metadata
 
                 meta = metadata_type()
                 meta["Source"] = self.record.converter.source_metadata
@@ -404,20 +440,47 @@ class Converter:
                     else:
                         meta["Comment"] = str(comment)
 
+                if conversion_type == self.ConversionType.ARRAYFLOAT:
+                    meta["Count"] = int(self.variable.shape[0])
+                    children = cpd3_variant.MetadataReal()
+                    meta["Children"] = children
+                    if meta.get("Units"):
+                        children["Units"] = meta["Units"]
+                    if meta.get("Format"):
+                        children["Format"] = meta["Format"]
+
                 return meta
 
             def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) -> None:
                 use_cut_size = "cut_size" in self.ancillary_variables
 
-                self.record.global_fanout(result, self.base_name, self.metadata(), use_cut_size=use_cut_size)
+                self.record.global_fanout(result, self.base_name.to_metadata(), self.metadata(),
+                                          use_cut_size=use_cut_size)
 
-                c = self.simplified_type
-
-                if c == float:
-                    c = lambda v: float(v) if v is not None and isfinite(float(v)) else nan
-
-                self.record.value_convert(result, self.base_name, self.variable, c, use_cut_size=use_cut_size)
+                self.record.value_convert(result, self.base_name, self.variable,
+                                          self.conversion_type.converter,
+                                          use_cut_size=use_cut_size)
                 self.record.value_coverage(result, self.base_name, use_cut_size=use_cut_size)
+
+        class ConstantConverter(GenericConverter):
+            @property
+            def conversion_type(self) -> "Converter.DataRecord.GenericConverter.ConversionType":
+                if np.issubdtype(self.variable.dtype, np.floating):
+                    if len(self.variable.dimensions) == 1:
+                        return self.ConversionType.ARRAYFLOAT
+                return super().conversion_type
+
+            def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) -> None:
+                use_cut_size = "cut_size" in self.ancillary_variables
+
+                self.record.global_fanout(result, self.base_name.to_metadata(), self.metadata(),
+                                          use_cut_size=use_cut_size)
+
+                self.record.global_fanout(
+                    result, self.base_name,
+                    self.conversion_type.converter(self.variable[...]),
+                    use_cut_size=use_cut_size
+                )
 
         _IGNORED_VARIABLES = frozenset({
             "time", "averaged_time", "averaged_count",
@@ -433,6 +496,8 @@ class Converter:
                 return None
             if not getattr(variable, 'variable_id', None):
                 return None
+            if 'time' not in variable.dimensions:
+                return self.ConstantConverter(self, variable)
             return self.GenericConverter(self, variable)
 
         def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) -> None:

@@ -176,3 +176,26 @@ def variable_flow(var: Variable) -> None:
 def variable_sample_flow(var: Variable) -> None:
     var.long_name = "sample flow rate"
     variable_flow(var)
+
+
+def variable_size_distribution_Dp(var: Variable) -> None:
+    var.long_name = "central diameter of particles in the bin (Dp)"
+    var.units = "um"
+    var.C_format = "%7.4f"
+
+
+def variable_size_distribution_Dp_electrical_mobility(var: Variable) -> None:
+    variable_size_distribution_Dp(var)
+    var.standard_name = "electrical_mobility_diameter_of_ambient_aerosol_particles"
+
+
+def variable_size_distribution_dN(var: Variable) -> None:
+    var.long_name = "binned number concentration (dN)"
+    var.units = "cm-3"
+    var.C_format = "%7.1f"
+
+
+def variable_size_distribution_dNdlogDp(var: Variable) -> None:
+    var.long_name = "normalized number concentration (dN/dlogDp)"
+    var.units = "cm-3"
+    var.C_format = "%7.1f"

@@ -5,7 +5,9 @@ from forge.acquisition import LayeredConfiguration
 from forge.acquisition.util import parse_interval
 from .base import BaseInstrument, BaseContext, BaseDataOutput
 from .variable import Input, Variable
+from .array import ArrayInput, ArrayVariable
 from .flag import Notification, Flag
+from .dimension import Dimension
 from .record import Report, Record
 from .state import Persistent, State, ChangeEvent
 
@@ -21,19 +23,31 @@ def _declare_variable_type(configure: typing.Callable[[netcdf_var.Variable], Non
     return method
 
 
+def _declare_variable_array_type(configure: typing.Callable[[netcdf_var.Variable], None],
+                                 default_name: str = None):
+    def method(self: "StandardInstrument", source: ArrayInput, dimension: typing.Optional[Dimension] = None,
+               name: str = None, code: str = None, attributes: typing.Dict[str, typing.Any] = None):
+        v = self.variable_array(source, dimension, name or default_name, code, attributes)
+        v.data.configure_variable = configure
+        return v
+
+    return method
+
+
 def _declare_state_type(value_type: typing.Type, field_type: typing.Type[BaseDataOutput.Field]):
     class StateHandler(State):
         class Field(field_type):
             def __init__(self, name: str):
                 super().__init__(name)
-                self.persistent: typing.Optional[Persistent] = None
+                self.state: typing.Optional["StateHandler"] = None
                 self.override: typing.Optional[value_type] = None
+                self.template = BaseDataOutput.Field.Template.STATE
 
             @property
             def value(self) -> value_type:
                 if self.override is not None:
                     return self.override
-                return self.persistent.value
+                return self.state.source.value
 
         def apply_override(self, value: typing.Optional[value_type]) -> None:
             self.data.override = value
@@ -43,6 +57,17 @@ def _declare_state_type(value_type: typing.Type, field_type: typing.Type[BaseDat
         if not attributes:
             attributes = dict()
         return StateHandler(self, source, name, code, attributes, automatic)
+    return method
+
+
+def _declare_dimension_type(configure: typing.Callable[[netcdf_var.Variable], None],
+                            default_name: str = None):
+    def method(self: "StandardInstrument", source: Persistent, name: str = None, code: str = None,
+               attributes: typing.Dict[str, typing.Any] = None):
+        d = self.dimension(source, name or default_name, code, attributes)
+        d.data.configure_variable = configure
+        return d
+
     return method
 
 
@@ -97,7 +122,7 @@ class StandardInstrument(BaseInstrument):
         self._bypass_flush_time = parse_interval(bypass_config.get('FLUSH_TIME'), default=62.0)
 
         self._input_names: typing.Set[str] = set()
-        self._inputs: typing.List[Input] = list()
+        self._inputs: typing.List[BaseInstrument.Input] = list()
 
         self._notification_names: typing.Set[str] = set()
         self._notifications: typing.List[Notification] = list()
@@ -198,12 +223,23 @@ class StandardInstrument(BaseInstrument):
             self._bypass_state_changed()
         self._local_bypass = state
 
-    def input(self, name: str) -> Input:
+    def input(self, name: str, send_to_bus: bool = True) -> Input:
         if name in self._input_names:
             raise ValueError(f"duplicate input name {name}")
         self._input_names.add(name)
 
-        i = Input(self, name, self.context.config.section_or_constant('DATA', name))
+        i = Input(self, name, self.context.config.section_or_constant('DATA', name), send_to_bus)
+        if not isinstance(i.config, LayeredConfiguration):
+            i.comment = self.context.config.comment('DATA', name)
+        self._inputs.append(i)
+        return i
+
+    def input_array(self, name: str, send_to_bus: bool = True) -> ArrayInput:
+        if name in self._input_names:
+            raise ValueError(f"duplicate input name {name}")
+        self._input_names.add(name)
+
+        i = ArrayInput(self, name, self.context.config.section_or_constant('DATA', name), send_to_bus)
         if not isinstance(i.config, LayeredConfiguration):
             i.comment = self.context.config.comment('DATA', name)
         self._inputs.append(i)
@@ -214,6 +250,13 @@ class StandardInstrument(BaseInstrument):
         if not attributes:
             attributes = dict()
         return Variable(self, source, name, code, attributes)
+
+    def variable_array(self, source: ArrayInput, dimension: typing.Optional[Dimension] = None,
+                       name: str = None, code: str = None,
+                       attributes: typing.Dict[str, typing.Any] = None) -> Variable:
+        if not attributes:
+            attributes = dict()
+        return ArrayVariable(self, source, dimension, name, code, attributes)
 
     def variable_number_concentration(self, source: Input, name: str = None, code: str = None,
                                       attributes: typing.Dict[str, typing.Any] = None) -> Variable:
@@ -237,6 +280,11 @@ class StandardInstrument(BaseInstrument):
     variable_delta_pressure = _declare_variable_type(netcdf_var.variable_delta_pressure)
     variable_flow = _declare_variable_type(netcdf_var.variable_flow)
     variable_sample_flow = _declare_variable_type(netcdf_var.variable_sample_flow, "sample_flow")
+
+    variable_size_distribution_dN = _declare_variable_array_type(
+        netcdf_var.variable_size_distribution_dN, "number_distribution")
+    variable_size_distribution_dNdlogDp = _declare_variable_array_type(
+        netcdf_var.variable_size_distribution_dNdlogDp, "normalized_number_distribution")
 
     def notification(self, name: str, is_warning=False) -> Notification:
         if name in self._notification_names:
@@ -299,6 +347,41 @@ class StandardInstrument(BaseInstrument):
     state_unsigned_integer = _declare_state_type(int, BaseDataOutput.UnsignedInteger)
     state_string = _declare_state_type(str, BaseDataOutput.String)
 
+    def state_array(self, source: Persistent, dimension: typing.Optional[Dimension] = None,
+                    name: str = None, code: str = None,
+                    attributes: typing.Dict[str, typing.Any] = None, automatic: bool = True):
+        class StateHandler(State):
+            class Field(BaseDataOutput.ArrayFloat):
+                def __init__(self, name: str):
+                    super().__init__(name)
+                    self.state: typing.Optional["StateHandler"] = None
+                    self.override: typing.Optional[typing.List[float]] = None
+                    self.template = BaseDataOutput.Field.Template.STATE
+
+                @property
+                def value(self) -> typing.List[float]:
+                    if self.override is not None:
+                        return self.override
+                    return self.state.source.value
+
+                @property
+                def dimension(self) -> typing.Optional[BaseDataOutput.ArrayFloat]:
+                    if self.state.dimension:
+                        return self.state.dimension.data
+                    return None
+
+            def __init__(self, instrument: BaseInstrument, source: Persistent, dimension: typing.Optional[Dimension],
+                         name: str, code: typing.Optional[str], attributes: typing.Dict[str, typing.Any],
+                         automatic: bool):
+                super().__init__(instrument, source, name, code, attributes, automatic)
+                self.dimension = dimension
+
+            def apply_override(self, value: typing.Optional[typing.List[float]]) -> None:
+                self.data.override = value
+        if not attributes:
+            attributes = dict()
+        return StateHandler(self, source, dimension, name, code, attributes, automatic)
+
     def change_event(self, *state: State, name: str = "state") -> ChangeEvent:
         if name in self._change_event_names:
             raise ValueError(f"duplicate change event name {name}")
@@ -307,6 +390,17 @@ class StandardInstrument(BaseInstrument):
         e = ChangeEvent(self, name, state)
         self._change_events.append(e)
         return e
+
+    def dimension(self, source: Persistent, name: str = None, code: str = None,
+                  attributes: typing.Dict[str, typing.Any] = None) -> Dimension:
+        if not attributes:
+            attributes = dict()
+        return Dimension(self, source, name, code, attributes)
+
+    dimension_size_distribution_diameter = _declare_dimension_type(
+        netcdf_var.variable_size_distribution_Dp, "diameter")
+    dimension_size_distribution_diameter_electrical = _declare_dimension_type(
+        netcdf_var.variable_size_distribution_Dp_electrical_mobility, "diameter")
 
     class _MetadataField(BaseDataOutput.String):
         def __init__(self, name: str):
@@ -395,8 +489,6 @@ class StandardInstrument(BaseInstrument):
         data_record: typing.Dict[str, typing.Union[float, typing.List[float]]] = dict()
         for i in self._inputs:
             i.assemble_data(data_record)
-        if data_record:
-            await self.context.bus.emit_data_record(data_record)
 
         now = time.time()
         did_average = False
@@ -418,3 +510,6 @@ class StandardInstrument(BaseInstrument):
 
         for rec in self._change_events:
             await rec.emit(now)
+
+        if data_record:
+            await self.context.bus.emit_data_record(data_record)
