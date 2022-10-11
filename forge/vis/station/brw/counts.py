@@ -59,7 +59,6 @@ class EditingParticleConcentration(TimeSeries):
         n_cnc.data_record = f'{profile}-raw-cnc'
         n_cnc.data_field = 'cnc'
         raw.traces.append(n_cnc)
-        raw.axes.append(cm_3)
 
         n_cnc = TimeSeries.Trace(cm_3)
         n_cnc.legend = "Raw CNC2 (MAGIC)"
