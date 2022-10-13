@@ -1,6 +1,7 @@
 import typing
 import asyncio
 import time
+from forge.tasks import wait_cancelable
 from forge.units import flow_ccm_to_lpm
 from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError
 from ..parse import parse_number, parse_datetime_field, parse_flags_bits
@@ -40,8 +41,8 @@ class Instrument(StreamingInstrument):
         self.data_TDinlet = self.input("TDinlet")
         self.data_TDgrowth = self.input("TDgrowth")
 
-        if not self.data_N.comment and self.data_Q.comment:
-            self.data_N.comment = self.data_Q.comment
+        if not self.data_N.field.comment and self.data_Q.field.comment:
+            self.data_N.field.comment = self.data_Q.field.comment
 
         self.bit_flags: typing.Dict[int, Instrument.Notification] = dict()
         self.instrument_report = self.report(
@@ -132,9 +133,9 @@ class Instrument(StreamingInstrument):
 
             self.writer.write(b"wadc\r")
             await self.writer.drain()
-            data: bytes = await asyncio.wait_for(self.read_line(), 2.0)
+            data: bytes = await wait_cancelable(self.read_line(), 2.0)
             if data.startswith(b"wadc"):  # Ignore the echo
-                data: bytes = await asyncio.wait_for(self.read_line(), 2.0)
+                data: bytes = await wait_cancelable(self.read_line(), 2.0)
             wadc = parse_number(data)
             if wadc < 0 or wadc > 0xFFFF:
                 raise CommunicationsError(f"wadc read: {hdr}")
@@ -157,17 +158,17 @@ class Instrument(StreamingInstrument):
             ts = time.gmtime()
             self.writer.write(f"rtc,{ts.tm_hour:02}:{ts.tm_min:02}:{ts.tm_sec:02}\r".encode('ascii'))
             await self.writer.drain()
-            data: bytes = await asyncio.wait_for(self.read_line(), 2.0)
+            data: bytes = await wait_cancelable(self.read_line(), 2.0)
             if data.startswith(b"rtc,"):  # Ignore the echo
-                data: bytes = await asyncio.wait_for(self.read_line(), 2.0)
+                data: bytes = await wait_cancelable(self.read_line(), 2.0)
             if data != b"OK":
                 raise CommunicationsError(f"set time response: {data}")
 
             self.writer.write(f"rtc,{ts.tm_year%100:02}/{ts.tm_mon:02}/{ts.tm_mday:02}\r".encode('ascii'))
             await self.writer.drain()
-            data: bytes = await asyncio.wait_for(self.read_line(), 2.0)
+            data: bytes = await wait_cancelable(self.read_line(), 2.0)
             if data.startswith(b"rtc,"):  # Ignore the echo
-                data: bytes = await asyncio.wait_for(self.read_line(), 2.0)
+                data: bytes = await wait_cancelable(self.read_line(), 2.0)
             if data != b"OK":
                 raise CommunicationsError(f"set date response: {data}")
 
@@ -176,13 +177,13 @@ class Instrument(StreamingInstrument):
 
         # Flush the first record
         await self.drain_reader(0.5)
-        await asyncio.wait_for(self.read_line(), self._report_interval * 3 + 5)
+        await wait_cancelable(self.read_line(), self._report_interval * 3 + 5)
 
         # Process a valid record
         await self.communicate()
 
     async def communicate(self) -> None:
-        line: bytes = await asyncio.wait_for(self.read_line(), self._report_interval + 5)
+        line: bytes = await wait_cancelable(self.read_line(), self._report_interval + 5)
         if len(line) < 3:
             raise CommunicationsError
 

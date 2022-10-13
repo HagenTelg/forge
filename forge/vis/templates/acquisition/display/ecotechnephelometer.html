@@ -251,6 +251,7 @@
 (function() {
     const context = document.getElementById('{{uid}}').context;
     context.standardMode();
+    context.attachSpancheck();
 
     $('.value-spancheck', context.root).each(function() {
         const path = this.getAttribute('path').split('.');

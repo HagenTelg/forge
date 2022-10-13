@@ -3,7 +3,8 @@ import asyncio
 import logging
 import time
 import traceback
-from forge.acquisition import LayeredConfiguration, CONFIGURATION
+from forge.tasks import wait_cancelable
+from forge.acquisition import LayeredConfiguration
 from .base import BaseSimulator, BaseContext, BaseDataOutput, BasePersistentInterface, BaseBusInterface, CommunicationsError
 from .standard import StandardInstrument
 
@@ -43,7 +44,7 @@ class StreamingInstrument(StandardInstrument):
             if remaining < 0.0:
                 break
             try:
-                await asyncio.wait_for(self.reader.read(4096), max(remaining, 0.01))
+                await wait_cancelable(self.reader.read(4096), max(remaining, 0.01))
             except asyncio.TimeoutError:
                 break
             now = time.monotonic()
@@ -71,7 +72,7 @@ class StreamingInstrument(StandardInstrument):
 
         async def do_read():
             if first:
-                line = await asyncio.wait_for(self.read_line(), first)
+                line = await wait_cancelable(self.read_line(), first)
             else:
                 line = await self.read_line()
             result_lines.append(line)
@@ -79,7 +80,7 @@ class StreamingInstrument(StandardInstrument):
             while not maximum_count or len(result_lines) < maximum_count:
                 if tail:
                     try:
-                        line = await asyncio.wait_for(self.read_line(), tail)
+                        line = await wait_cancelable(self.read_line(), tail)
                     except asyncio.TimeoutError:
                         break
                 else:
@@ -88,7 +89,7 @@ class StreamingInstrument(StandardInstrument):
 
         if total:
             try:
-                await asyncio.wait_for(do_read(), total)
+                await wait_cancelable(do_read(), total)
             except asyncio.TimeoutError:
                 if not result_lines:
                     raise
@@ -132,7 +133,7 @@ class StreamingInstrument(StandardInstrument):
 
             try:
                 await self.start_communications()
-            except (TimeoutError, asyncio.TimeoutError):
+            except (TimeoutError, asyncio.TimeoutError) as e:
                 _LOGGER.debug("Timeout waiting for response in start communications", exc_info=True)
                 return False
             except CommunicationsError:
@@ -144,28 +145,28 @@ class StreamingInstrument(StandardInstrument):
                 return False
 
             _LOGGER.debug("Communications established")
-            await self.context.bus.log("Communications established",
-                                       type=BaseBusInterface.LogType.COMMUNICATIONS_ESTABLISHED)
+            self.context.bus.log("Communications established",
+                                 type=BaseBusInterface.LogType.COMMUNICATIONS_ESTABLISHED)
             return True
 
         async def process() -> bool:
             try:
                 await self.communicate()
-            except (TimeoutError, asyncio.TimeoutError):
+            except (TimeoutError, asyncio.TimeoutError) as e:
                 _LOGGER.info("Timeout waiting for response", exc_info=True)
-                await self.context.bus.log("Timeout waiting for response", {
+                self.context.bus.log("Timeout waiting for response", {
                     "exception": traceback.format_exc(),
                 }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
                 return False
             except CommunicationsError:
                 _LOGGER.info("Invalid response received", exc_info=True)
-                await self.context.bus.log("Invalid response received", {
+                self.context.bus.log("Invalid response received", {
                     "exception": traceback.format_exc(),
                 }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
                 return False
             except IOError:
                 _LOGGER.warning("Stream IO error", exc_info=True)
-                await self.context.bus.log("Stream IO error", {
+                self.context.bus.log("Stream IO error", {
                     "exception": traceback.format_exc(),
                 }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
                 self._stream_need_reset = True

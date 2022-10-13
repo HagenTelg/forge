@@ -1,5 +1,6 @@
 import typing
 import asyncio
+import enum
 from .base import BaseInstrument
 
 
@@ -10,7 +11,9 @@ class Persistent(BaseInstrument.Persistent):
         self.send_to_bus = send_to_bus
         self.save_value = save_value
         self.value: typing.Any = None
+        self._deduplicate_value: typing.Any = None
 
+        self._ignore_queue_drop: bool = False
         self._queued_for_bus: typing.Any = None
         self._queued_for_save: typing.Any = None
 
@@ -20,21 +23,42 @@ class Persistent(BaseInstrument.Persistent):
         self._update_queued: bool = False
         self.on_update: typing.List[typing.Callable[[], None]] = list()
 
-    def __call__(self, value: typing.Any, deduplicate: bool = True) -> typing.Any:
-        if deduplicate and self.value == value:
+    def __repr__(self) -> str:
+        return f"Persistent({self.name}={self.value})"
+
+    def to_bus_value(self, value: typing.Any) -> typing.Any:
+        return value
+
+    def to_save_value(self, value: typing.Any) -> typing.Any:
+        return value
+
+    def from_save_value(self, value: typing.Any) -> typing.Any:
+        return value
+
+    def __call__(self, value: typing.Any, deduplicate: bool = None,
+                 oneshot: bool = False) -> typing.Any:
+        if deduplicate is None:
+            deduplicate = not oneshot
+        if deduplicate and self._deduplicate_value == value:
             return
 
         self.value = value
 
         if self.send_to_bus:
-            self._queued_for_bus = self.value
+            self._queued_for_bus = self.to_bus_value(self.value)
         if self.save_value:
-            self._queued_for_save = self.value
+            self._queued_for_save = self.to_save_value(self.value)
+
+        if oneshot:
+            self._ignore_queue_drop = True
 
         self._update_queued = True
         return self.value
 
     def load_prior(self, value: typing.Any, effective_time: typing.Optional[float]) -> None:
+        if value is None:
+            return
+        value = self.from_save_value(value)
         if value is None:
             return
 
@@ -43,9 +67,14 @@ class Persistent(BaseInstrument.Persistent):
 
         if self.value is None:
             self.value = value
-            self._queued_for_bus = value
+            self._deduplicate_value = value
+            if self.send_to_bus:
+                self._queued_for_bus = self.to_bus_value(value)
 
     def drop_queued(self) -> None:
+        if self._ignore_queue_drop:
+            return
+
         # Safe to drop the bus here because the initial one from loading will be sent before any drops happen
         self._queued_for_bus = self._loaded_value
         self._queued_for_save = None
@@ -61,8 +90,11 @@ class Persistent(BaseInstrument.Persistent):
         return v, t
 
     async def emit(self, now: float) -> None:
+        self._ignore_queue_drop = False
+
         if self._update_queued:
             self._update_queued = False
+            self._deduplicate_value = self.value
             for u in self.on_update:
                 u()
 
@@ -74,6 +106,25 @@ class Persistent(BaseInstrument.Persistent):
             self._queued_for_save = None
 
 
+class PersistentEnum(Persistent):
+    def __init__(self, instrument: BaseInstrument, name: str, enum_type: typing.Type[enum.Enum],
+                 send_to_bus: bool, save_value: bool):
+        super().__init__(instrument, name, send_to_bus, save_value)
+        self.enum_type = enum_type
+
+    def to_bus_value(self, value: typing.Any) -> typing.Any:
+        return value.name
+
+    def to_save_value(self, value: typing.Any) -> typing.Any:
+        return value.value
+
+    def from_save_value(self, value: typing.Any) -> typing.Any:
+        try:
+            return self.enum_type(value)
+        except ValueError:
+            return None
+
+
 class State(BaseInstrument.State):
     def __init__(self, instrument: BaseInstrument, source: Persistent,
                  name: str, code: typing.Optional[str], attributes: typing.Dict[str, typing.Any],
@@ -82,6 +133,9 @@ class State(BaseInstrument.State):
         self.data.state = self
         self.source = source
         self.automatic = automatic
+
+    def __repr__(self) -> str:
+        return f"State({self.name} {self.source.name}{' AUTO' if self.automatic else ''})"
 
     def apply_override(self, value) -> None:
         raise NotImplementedError
@@ -94,7 +148,7 @@ class ChangeEvent(BaseInstrument.ChangeEvent):
         self._first_emit: bool = True
         self._queued: bool = False
 
-        self._data_record = self.instrument.context.data.state_record(name)
+        self.data_record = self.instrument.context.data.state_record(name)
 
         self.state: typing.List[BaseInstrument.State] = list()
 
@@ -111,7 +165,10 @@ class ChangeEvent(BaseInstrument.ChangeEvent):
             if s.automatic:
                 s.source.on_update.append(self)
 
-            self._data_record.add_variable(s.data)
+            self.data_record.add_variable(s.data)
+
+    def __repr__(self) -> str:
+        return "ChangeEvent(" + repr(self.state) + ")"
 
     def __call__(self) -> None:
         self._queued = True
@@ -134,7 +191,7 @@ class ChangeEvent(BaseInstrument.ChangeEvent):
         if record_time > now:
             record_time = now
 
-        self._data_record(record_time, historical=True)
+        self.data_record(record_time, historical=True)
         for s in self.state:
             s.apply_override(None)
 
@@ -147,4 +204,4 @@ class ChangeEvent(BaseInstrument.ChangeEvent):
             return
         self._queued = False
 
-        self._data_record(now)
+        self.data_record(now)

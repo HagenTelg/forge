@@ -5,6 +5,72 @@ from forge.acquisition.average import AverageRecord
 from .base import BaseInstrument, BaseDataOutput
 
 
+class InputFieldControl:
+    def __init__(self, config: LayeredConfiguration = None):
+        self.use_standard_temperature: typing.Optional[bool] = None
+        self.use_standard_pressure: typing.Optional[bool] = None
+        self.is_dried: typing.Optional[bool] = None
+        self.use_cut_size: typing.Optional[bool] = None
+
+        self.comment: typing.Optional[str] = None
+        self.override_description: typing.Optional[str] = None
+
+        if config is None:
+            return
+
+        use_stp = config.get('STP')
+        if use_stp is not None:
+            use_stp = bool(use_stp)
+            self.use_standard_temperature = use_stp
+            self.use_standard_pressure = use_stp
+
+        use_standard_temperature = config.get('STANDARD_TEMPERATURE')
+        if use_standard_temperature is not None:
+            use_standard_temperature = bool(use_standard_temperature)
+            self.use_standard_temperature = use_standard_temperature
+
+        use_standard_pressure = config.get('STANDARD_PRESSURE')
+        if use_standard_pressure is not None:
+            use_standard_pressure = bool(use_standard_pressure)
+            self.use_standard_pressure = use_standard_pressure
+
+        is_dried = config.get('DRIED')
+        if is_dried is not None:
+            is_dried = bool(is_dried)
+            self.is_dried = is_dried
+
+        use_cut_size = config.get('CUT_SIZE')
+        if use_cut_size is not None:
+            use_cut_size = bool(use_cut_size)
+            self.use_cut_size = use_cut_size
+
+    def add_comment(self, comment: str) -> None:
+        if not comment:
+            return
+        if not self.comment:
+            self.comment = comment
+        else:
+            self.comment = self.comment + "\n" + comment
+            
+    def apply(self, data: BaseDataOutput.Field, 
+              calibration: typing.Optional[typing.List[float]] = None) -> None:
+        if self.use_standard_temperature is not None:
+            data.use_standard_temperature = self.use_standard_temperature
+        if self.use_standard_pressure is not None:
+            data.use_standard_pressure = self.use_standard_pressure
+        if self.is_dried is not None:
+            data.is_dried = self.is_dried
+        if self.use_cut_size is not None:
+            data.use_cut_size = self.use_cut_size
+
+        if calibration and 'calibration_polynomial' not in data.attributes:
+            data.attributes['calibration_polynomial'] = calibration
+        if self.override_description and 'measurement_source_override' not in data.attributes:
+            data.attributes['measurement_source_override'] = self.override_description
+        if self.comment and 'comment' not in data.attributes:
+            data.attributes['comment'] = self.comment
+
+
 class Input(BaseInstrument.Input):
     def __init__(self, instrument: BaseInstrument, name: str, config: LayeredConfiguration,
                  send_to_bus: bool = True):
@@ -22,8 +88,7 @@ class Input(BaseInstrument.Input):
         self._override_value: float = nan
 
         self.calibration: typing.List[float] = list()
-        self.comment: typing.Optional[str] = None
-        self.override_description: typing.Optional[str] = None
+        self.field = InputFieldControl()
 
         if isinstance(self.config, float):
             self.calibration.append(self.config)
@@ -31,7 +96,7 @@ class Input(BaseInstrument.Input):
 
         if isinstance(self.config, str):
             fields = self.config.split(':', 2)
-            self.override_description = str(self.config)
+            self.field.override_description = str(self.config)
             if len(fields) == 1:
                 self.instrument.context.bus.connect_data(None, fields[0], self._incoming_override)
             else:
@@ -44,6 +109,8 @@ class Input(BaseInstrument.Input):
                 self.calibration.append(float(c))
             return
 
+        self.field = InputFieldControl(config)
+
         override_field = self.config.get('INPUT')
         if override_field:
             source = self.config.get('INSTRUMENT')
@@ -51,28 +118,21 @@ class Input(BaseInstrument.Input):
             self._overridden = True
 
             if source:
-                self.override_description = f"{source}:{override_field}"
+                self.field.override_description = f"{source}:{override_field}"
             else:
-                self.override_description = override_field
+                self.field.override_description = override_field
 
-            comment = self.config.comment('INPUT')
-            if comment:
-                if not self.comment:
-                    self.comment = comment
-                else:
-                    self.comment = self.comment + "\n" + comment
+            self.field.add_comment(self.config.comment('INPUT'))
 
         calibration = self.config.get('CALIBRATION')
         if calibration:
             for c in calibration:
                 self.calibration.append(float(c))
 
-            comment = self.config.comment('CALIBRATION')
-            if comment:
-                if not self.comment:
-                    self.comment = comment
-                else:
-                    self.comment = self.comment + "\n" + comment
+            self.field.add_comment(self.config.comment('CALIBRATION'))
+
+    def __repr__(self) -> str:
+        return f"Input({self.name}={self.value})"
 
     def __call__(self, value: float) -> float:
         if self._overridden:
@@ -147,13 +207,7 @@ class Variable(BaseInstrument.Variable):
         self.data.variable = self
         self.source = source
         self.average: typing.Optional[AverageRecord.Variable] = None
-
-        if self.source.calibration and 'calibration_polynomial' not in self.data.attributes:
-            self.data.attributes['calibration_polynomial'] = self.source.calibration
-        if self.source.override_description and 'measurement_source_override' not in self.data.attributes:
-            self.data.attributes['measurement_source_override'] = self.source.override_description
-        if self.source.comment and 'comment' not in self.data.attributes:
-            self.data.attributes['comment'] = self.source.comment
+        source.field.apply(self.data, source.calibration)
 
     @property
     def value(self) -> float:

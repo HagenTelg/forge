@@ -11,7 +11,7 @@ import socket
 import errno
 from enum import IntEnum
 from fcntl import ioctl
-from serial.serialposix import PlatformSpecific as SerialPlatformSpecific
+from serial.serialposix import PlatformSpecific as SerialPlatformSpecific, CMSPAR
 from forge.acquisition.serial.multiplexer.protocol import ToMultiplexer, FromMultiplexer
 from forge.acquisition.serial.util import standard_termios, TCAttr
 
@@ -97,6 +97,18 @@ class Upstream:
 
     def termios_from_downstream(self, tio) -> None:
         standard_termios(tio)
+
+        # Pseudoterminals do not propagate bytesize/parity, so preserve the existing setting
+        tio_base = termios.tcgetattr(self._fd)
+        tio[TCAttr.c_cflag] &= ~termios.CSIZE
+        tio[TCAttr.c_cflag] |= (tio_base[TCAttr.c_cflag] & termios.CSIZE)
+        tio[TCAttr.c_iflag] &= ~(termios.INPCK | termios.ISTRIP | termios.PARENB | termios.PARODD)
+        tio[TCAttr.c_iflag] |= (tio_base[TCAttr.c_cflag] & (termios.INPCK | termios.ISTRIP | termios.PARENB |
+                                                            termios.PARODD))
+        if CMSPAR:
+            tio[TCAttr.c_iflag] &= ~CMSPAR
+            tio[TCAttr.c_iflag] |= (tio_base[TCAttr.c_iflag] & CMSPAR)
+
         termios.tcsetattr(self._fd, termios.TCSANOW, tio)
 
     def flush_from_downstream(self) -> None:
@@ -155,6 +167,14 @@ class Upstream:
     def _initialize_device(self) -> None:
         tio = termios.tcgetattr(self._fd)
         standard_termios(tio)
+
+        # Since we do not get bytesize/parity from the downstream, set ti to 8/N (what the psuedoterminal always reads)
+        tio[TCAttr.c_cflag] &= ~termios.CSIZE
+        tio[TCAttr.c_cflag] |= termios.CS8
+        tio[TCAttr.c_iflag] &= ~(termios.INPCK | termios.ISTRIP | termios.PARENB | termios.PARODD)
+        if CMSPAR:
+            tio[TCAttr.c_iflag] &= ~CMSPAR
+
         termios.tcsetattr(self._fd, termios.TCSANOW, tio)
 
     def reopen(self) -> None:

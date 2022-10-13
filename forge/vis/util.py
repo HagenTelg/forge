@@ -1,4 +1,6 @@
+import typing
 import os.path
+from math import isfinite
 from forge.const import STATIONS, HELP_URL, __version__
 from . import CONFIGURATION
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -32,3 +34,20 @@ def name_to_initials(name: str) -> str:
             continue
         initials += w[0].upper()
     return initials
+
+
+def sanitize_for_json(v: typing.Any) -> typing.Any:
+    if v is None:
+        return None
+    elif isinstance(v, float):
+        # Convert NaN to null
+        if not isfinite(v):
+            return None
+    elif isinstance(v, dict):
+        for key, value in list(v.items()):
+            v[key] = sanitize_for_json(value)
+    elif isinstance(v, list):
+        for i in range(len(v)):
+            v[i] = sanitize_for_json(v[i])
+    return v
+

@@ -1,5 +1,6 @@
 import typing
 import asyncio
+from forge.tasks import wait_cancelable
 from forge.units import flow_ccs_to_lpm, flow_lpm_to_ccs
 from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError
 from ..parse import parse_number, parse_datetime_field_fixed, parse_flags_bits
@@ -45,13 +46,14 @@ class Instrument(StreamingInstrument):
         self.data_Dp = self.persistent("Dp", save_value=False)
         self.data_Dp(bin_diameters)
 
-        if not self.data_N.comment and self.data_Q.comment:
-            self.data_N.comment = self.data_Q.comment
-        if not self.data_dN.comment and self.data_Q.comment:
-            self.data_dN.comment = self.data_Q.comment
+        if not self.data_N.field.comment and self.data_Q.field.comment:
+            self.data_N.field.comment = self.data_Q.field.comment
+        if not self.data_dN.field.comment and self.data_Q.field.comment:
+            self.data_dN.field.comment = self.data_Q.field.comment
 
         dimension_Dp = self.dimension_size_distribution_diameter(self.data_Dp, code="Ns", attributes={
             'comment': context.config.comment('DIAMETER'),
+            'cell_methods': "time: mean",  # Makes the most sense to average this, even if it's constant at acquisition
         })
 
         self.bit_flags: typing.Dict[int, Instrument.Notification] = dict()
@@ -95,13 +97,13 @@ class Instrument(StreamingInstrument):
     async def start_communications(self) -> None:
         # Flush the first record
         await self.drain_reader(0.5)
-        await asyncio.wait_for(self.read_line(), 5)
+        await wait_cancelable(self.read_line(), 5)
 
         # Process a valid record
         await self.communicate()
 
     async def communicate(self) -> None:
-        line: bytes = await asyncio.wait_for(self.read_line(), 5)
+        line: bytes = await wait_cancelable(self.read_line(), 5)
         if len(line) < 4:
             raise CommunicationsError
 

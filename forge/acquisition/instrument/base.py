@@ -1,5 +1,5 @@
 import typing
-from enum import Enum, auto
+from enum import Enum, IntEnum, auto
 from forge.acquisition import LayeredConfiguration
 from forge.acquisition.average import AverageRecord
 from forge.acquisition.cutsize import CutSize
@@ -24,6 +24,7 @@ class BaseDataOutput:
             CUT_SIZE = auto()
             DIMENSION = auto()
             MEASUREMENT = auto()
+            STATE_MEASUREMENT = auto()
 
         def __init__(self, name: str):
             self.name: str = name
@@ -54,6 +55,19 @@ class BaseDataOutput:
         @property
         def value(self) -> str:
             raise NotImplementedError
+
+    class Enum(Field):
+        @property
+        def value(self) -> typing.Union[int, str]:
+            raise NotImplementedError
+
+        @property
+        def enum(self) -> typing.Type[Enum]:
+            raise NotImplementedError
+
+        @property
+        def typename(self) -> str:
+            return self.name + "_t"
 
     class ArrayFloat(Field):
         @property
@@ -102,6 +116,8 @@ class BaseDataOutput:
     class ConstantRecord:
         def __init__(self):
             self.constants: typing.List[BaseDataOutput.Field] = list()
+            self.standard_temperature: typing.Optional[float] = None
+            self.standard_pressure: typing.Optional[float] = None
 
     def constant_record(self, name: str) -> "BaseDataOutput.ConstantRecord":
         return self.ConstantRecord()
@@ -146,12 +162,15 @@ class BaseBusInterface:
         COMMUNICATIONS_LOST = "communications_lost"
         ERROR = "error"
 
-    async def log(self, message: str, auxiliary: typing.Dict[str, typing.Any] = None,
-                  type: "BaseBusInterface.LogType" = None) -> None:
+    def log(self, message: str, auxiliary: typing.Dict[str, typing.Any] = None,
+            type: "BaseBusInterface.LogType" = None) -> None:
         pass
 
     def connect_data(self, source: typing.Optional[str], field: str,
                      target: typing.Callable[[typing.Any], None]) -> None:
+        pass
+
+    def connect_command(self, command: str, handler: typing.Callable[[typing.Any], None]) -> None:
         pass
 
     async def start(self) -> None:

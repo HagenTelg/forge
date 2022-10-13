@@ -1,7 +1,8 @@
 import typing
 import asyncio
+from enum import Enum
 from abc import ABC, abstractmethod
-from ..bus.client import AcquisitionBusClient
+from ..bus.client import AcquisitionBusClient, PersistenceLevel
 
 
 class BaseControl:
@@ -26,6 +27,16 @@ class BaseControl:
 
     async def bus_message(self, source: str, record: str, message: typing.Any) -> None:
         pass
+
+    def log(self, message: str, auxiliary: typing.Dict[str, typing.Any] = None,
+            is_error: bool = False) -> None:
+        message: typing.Dict[str, typing.Any] = {
+            'message': message,
+            'type': ('error' if is_error else 'info'),
+        }
+        if auxiliary:
+            message['auxiliary'] = auxiliary
+        self.bus.send_message(PersistenceLevel.DATA, 'event_log', message)
 
     @abstractmethod
     async def run(self):

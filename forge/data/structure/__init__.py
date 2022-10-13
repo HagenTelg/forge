@@ -36,7 +36,9 @@ def instrument_timeseries(root: netCDF4.Dataset, station: str, instrument: str, 
     set_timeseries(root, f"{station.upper()}-{instrument}", start_epoch, end_epoch, interval)
     apply_attribute(root, "instrument_id", instrument)
     if tags:
-        apply_attribute(root, "forge_tags", " ".join(tags))
+        sorted_tags = list(tags)
+        sorted_tags.sort()
+        apply_attribute(root, "forge_tags", " ".join(sorted_tags))
 
 
 def event_log(root: netCDF4.Dataset, station: str, start_epoch: float, end_epoch: float,

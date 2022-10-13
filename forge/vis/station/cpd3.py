@@ -1523,6 +1523,12 @@ class RealtimeReader(DataReader):
         self.clip_start_epoch = rounded_start / 1000.0
         self.clip_end_epoch = rounded_end / 1000.0
 
+    def apply_stream_parameters(self, stream: "RealtimeReader.RealtimeStream") -> None:
+        if self.data_name == 'aerosol-realtime-nephzero':
+            stream.data_break_threshold = 36 * 60 * 60 * 1000
+            stream.data_break_epoch_ms = stream.discard_epoch_ms + stream.data_break_threshold
+            stream.record_time_offset = 0
+
     async def run(self) -> None:
         await super().run()
 
@@ -1535,6 +1541,7 @@ class RealtimeReader(DataReader):
         _LOGGER.debug(f"Realtime data connection open for {self.station} {self.data_name} on {socket_name}")
         try:
             stream = self.RealtimeStream(self, reader, writer)
+            self.apply_stream_parameters(stream)
             await stream.run()
             _LOGGER.debug(f"Realtime data connection ended for {self.station} {self.data_name}")
         finally:
@@ -1902,6 +1909,7 @@ class NativeInstrument(NativeRealtimeTranslator.Instrument):
         super().__init__(source, instrument_info)
         self.translator = translator
         self._dispatch: typing.Dict[NativeInstrument.DispatchKey, typing.List[RealtimeTranslator.Target]] = dict()
+        self._message_dispatch: typing.Dict[str, typing.List[RealtimeTranslator.Target]] = dict()
 
     def translate_key(self, key: "NativeInstrument.DispatchKey") -> "RealtimeTranslator.Key":
         mapped_variable = key.field
@@ -1922,10 +1930,31 @@ class NativeInstrument(NativeRealtimeTranslator.Instrument):
             for t in targets:
                 output.send_field(t.data_name, t.field, value)
 
+    def message_key(self, record: str) -> typing.Optional["RealtimeTranslator.Key"]:
+        return None
 
-def native_remapped_instrument(mapping: typing.Dict[str, str]) -> typing.Type[NativeInstrument]:
+    def translate_message(self, record: str, message: typing.Any,
+                          output: "RealtimeTranslator.OutputInterface") -> None:
+        targets = self._message_dispatch.get(record)
+        if targets is None:
+            key = self.message_key(record)
+            if key is None:
+                self._message_dispatch[record] = list()
+                return
+            targets = self.translator.realtime_targets(key)
+            self._message_dispatch[record] = targets
+        for t in targets:
+            output.send_field(t.data_name, t.field, message)
+
+
+def native_remapped_instrument(mapping: typing.Dict[str, str],
+                               persistent: typing.Dict[str, str] = None) -> typing.Type[NativeInstrument]:
+    if not persistent:
+        persistent = dict()
+
     class MappedInstrument(NativeInstrument):
         VARIABLE_MAPPING = mapping
+        PERSISTENT_MAPPING = persistent
 
         def translate_key(self, key: NativeInstrument.DispatchKey) -> "RealtimeTranslator.Key":
             target_variable = self.VARIABLE_MAPPING.get(key.field)
@@ -1933,6 +1962,35 @@ def native_remapped_instrument(mapping: typing.Dict[str, str]) -> typing.Type[Na
                 return super().translate_key(key)
             return RealtimeTranslator.Key(target_variable + "_" + self.source,
                                           self.FLAVORS_TRANSLATION.get(key.cutsize, NativeCutSize.Size.WHOLE))
+
+        def message_key(self, record: str) -> typing.Optional["RealtimeTranslator.Key"]:
+            target_variable = self.PERSISTENT_MAPPING.get(record)
+            if not target_variable:
+                return super().message_key(record)
+            return RealtimeTranslator.Key(target_variable + "_" + self.source)
+
+    return MappedInstrument
+
+
+def native_wavelength_instrument(mapping: typing.Dict[str, str],
+                                 wavelength_names: typing.Dict[str, typing.List[str]],
+                                 persistent: typing.Dict[str, str] = None) -> typing.Type[NativeInstrument]:
+    base = native_remapped_instrument(mapping, persistent=persistent)
+
+    class MappedInstrument(base):
+        WAVELENGTH_MAPPING = wavelength_names
+
+        def translate_data(self, cutsize: NativeCutSize.Size,
+                           values: typing.Dict[str, typing.Union[float, typing.List[float]]],
+                           output: "RealtimeTranslator.OutputInterface") -> None:
+            super().translate_data(cutsize, values, output)
+            for field, value in values.items():
+                targets = self.WAVELENGTH_MAPPING.get(field)
+                if targets and isinstance(value, list):
+                    unpacked: typing.Dict[str, float] = dict()
+                    for i in range(min(len(targets), len(value))):
+                        unpacked[targets[i]] = value[i]
+                    super().translate_data(cutsize, unpacked, output)
 
     return MappedInstrument
 
@@ -2073,6 +2131,48 @@ class RealtimeTranslator(NativeRealtimeTranslator):
             "TDgrowth": "TD1",
             "Vpulse": "V",
             "PCTwick": "PCT",
+        }),
+        "csdpops": native_remapped_instrument({
+            "Tpressure": "T1",
+            "Tlaser": "T2",
+            "Tinternal": "T3",
+            "dN": "Nb",
+            "baseline": "I",
+            "baseline_stddevmax": "Ig",
+            "laser_monitor": "ZLASERMON",
+            "pump_feedback": "ZPUMPFB",
+        }, persistent={
+            "Dp": "Ns",
+        }),
+        "tsi3563nephelometer": native_wavelength_instrument({
+            "Psample": "P",
+            "Tsample": "T",
+            "Tinlet": "Tu",
+            "Usample": "U",
+            "Uinlet": "Uu",
+            # This back and forth is so the plots get the zero data removed
+            "BsB": "_",
+            "BsG": "_",
+            "BsR": "_",
+            "BbsB": "_",
+            "BbsG": "_",
+            "BbsR": "_",
+            "_BsB": "BsB",
+            "_BsG": "BsG",
+            "_BsR": "BsR",
+            "_BbsB": "BbsB",
+            "_BbsG": "BbsG",
+            "_BbsR": "BbsR",
+        }, {
+            "Bs": ["_BsB", "_BsG", "_BsR"],
+            "Bbs": ["_BbsB", "_BbsG", "_BbsR"],
+        }, persistent={
+            "BswB": "BswB",
+            "BswG": "BswG",
+            "BswR": "BswR",
+            "BbswB": "BbswB",
+            "BbswG": "BbswG",
+            "BbswR": "BbswR",
         }),
     }
 

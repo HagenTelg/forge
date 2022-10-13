@@ -29,6 +29,10 @@ class RealtimeTranslator(Translator):
                            output: "RealtimeTranslator.OutputInterface") -> None:
             pass
 
+        def translate_message(self, record: str, message: typing.Any,
+                              output: "RealtimeTranslator.OutputInterface") -> None:
+            pass
+
     @staticmethod
     def instrument_translator(source: str, instrument_info: typing.Dict[str, typing.Any]) -> typing.Optional["RealtimeTranslator.Instrument"]:
         return RealtimeTranslator.Instrument(source, instrument_info)

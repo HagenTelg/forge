@@ -47,7 +47,8 @@ class AcquisitionTranslator(Translator):
     @staticmethod
     def translate_message(source: str, record: str, message: typing.Any,
                           output: "AcquisitionTranslator.OutputInterface") -> None:
-        pass
+        if source == 'spancheck' and record != 'command':
+            output.set_single_data('_spancheck', record, message)
 
 
 def get_translator(station: str) -> typing.Optional[Translator]:

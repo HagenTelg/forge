@@ -15,6 +15,7 @@ from starlette.exceptions import HTTPException
 from starlette.websockets import WebSocket
 from forge.const import STATIONS
 from forge.vis import CONFIGURATION
+from forge.vis.util import sanitize_for_json
 from .assemble import display, summary
 from .controller.client import Client as BaseClient
 
@@ -63,7 +64,7 @@ class _AcquisitionSocket(WebSocketEndpoint):
             }
 
             if len(generic) > 0:
-                message['values'] = generic
+                message['values'] = sanitize_for_json(generic)
 
             def encode_float(v: float) -> bytes:
                 if v is None or not isfinite(v):

@@ -154,7 +154,11 @@ def data_output(args: argparse.Namespace) -> BaseDataOutput:
 
 def persistent_interface(args: argparse.Namespace) -> BasePersistentInterface:
     from .persistent import PersistentInterface
-    return PersistentInterface()
+
+    state_file = f"{args.identifier}-{args.type.lower()}.json"
+    state_location = Path(CONFIGURATION.get("ACQUISITION.STATE_LOCATION", "/var/lib/forge/state"))
+
+    return PersistentInterface(state_location / state_file)
 
 
 def prepare_context(instrument: BaseInstrument) -> None:

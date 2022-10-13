@@ -40,7 +40,7 @@ class Simulator(StreamingSimulator):
 
         self.flags = 0
 
-    async def run(self) -> None:
+    async def run(self) -> typing.NoReturn:
         while True:
             ts = time.gmtime()
             self.writer.write((

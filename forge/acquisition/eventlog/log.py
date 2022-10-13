@@ -11,7 +11,8 @@ from json import dumps as to_json
 from pathlib import Path
 from secrets import token_bytes
 from base64 import b32encode
-from netCDF4 import Dataset, Variable, Group
+from netCDF4 import Dataset
+from forge.tasks import wait_cancelable
 from forge.formattime import format_iso8601_time
 from forge.data.structure import event_log
 from forge.data.structure.history import append_history
@@ -218,7 +219,7 @@ class Log:
                 if maximum_sleep < 0.001:
                     maximum_sleep = 0.001
                 try:
-                    await asyncio.wait_for(self._data_updated.wait(), maximum_sleep)
+                    await wait_cancelable(self._data_updated.wait(), maximum_sleep)
                 except asyncio.TimeoutError:
                     pass
             else:

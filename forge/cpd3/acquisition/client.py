@@ -2,10 +2,11 @@ import typing
 import asyncio
 import logging
 import struct
-from .protocol import ToServerPacketType, FromServerPacketType
+from forge.tasks import wait_cancelable
 from forge.cpd3.variant import serialize as variant_serialize, deserialize as variant_deserialize
 from forge.cpd3.identity import Name as RealtimeName
 from forge.cpd3.timeinterval import TimeUnit, TimeInterval
+from .protocol import ToServerPacketType, FromServerPacketType
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -98,7 +99,7 @@ class Client:
                 raise ValueError(f"Invalid response from server {packet_type}")
 
     async def run(self) -> typing.NoReturn:
-        await asyncio.wait_for(self._connect(), timeout=self.CONNECTION_TIMEOUT)
+        await wait_cancelable(self._connect(), timeout=self.CONNECTION_TIMEOUT)
         await self.connection_ready()
 
         self.writer.write(struct.pack('<B', ToServerPacketType.REALTIME_RESEND.value))

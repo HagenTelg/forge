@@ -124,6 +124,8 @@ def start_instrument_serial(source: str, instrument_unit_name: str) -> typing.Op
         return None
     if isinstance(physical_port, dict):
         physical_port = CONFIGURATION.get(f"INSTRUMENT.{source}.SERIAL_PORT.PORT")
+    if not physical_port:
+        return None
 
     _LOGGER.debug(f"Starting serial port interface for {source} on {physical_port}")
 
@@ -184,6 +186,9 @@ def start_instrument(source: str) -> None:
     properties.append(("RuntimeDirectory", [f"forge-instrument-{source}"]))
     properties.append(("UMask", dbus.types.UInt32(0o0007)))
     properties.append(("ReadWritePaths", [_COMPLETED_DATA_DIRECTORY]))
+    if serial_controller and _SERIAL_ACCESS_GROUPS:
+        # Needed so parity/data bits can be set since the pty does not propagate them
+        properties.append(("SupplementaryGroups", _SERIAL_ACCESS_GROUPS))
     properties.append(("ExecStart", assemble_forge_exec(
         "forge-acquisition-instrument", "--systemd", *(["--debug"] if _ENABLE_DEBUG else []),
         "--data-working", "${RUNTIME_DIRECTORY}",
@@ -201,12 +206,30 @@ def start_instrument(source: str) -> None:
     start_transient_unit(instrument_unit_name, properties)
 
 
+def need_spancheck_control() -> bool:
+    spancheck_instruments = frozenset({
+        'ecotechnephelometer',
+        'tsi3563nephelometer',
+    })
+    instrument_root = CONFIGURATION.get("INSTRUMENT")
+    if not instrument_root:
+        return False
+    for source in instrument_root.keys():
+        instrument_type = CONFIGURATION.get(f"INSTRUMENT.{source}.TYPE")
+        if instrument_type in spancheck_instruments:
+            return True
+    return False
+
+
 def start_all_control() -> None:
     start_control("restart")
 
     cutsize = CONFIGURATION.get("ACQUISITION.CUTSIZE")
     if cutsize and not CutSize(LayeredConfiguration(cutsize)).constant_size:
         start_control("impactorcycle")
+
+    if need_spancheck_control():
+        start_control("spancheck")
 
 
 def start_all_instruments() -> None:

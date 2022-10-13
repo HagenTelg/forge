@@ -39,7 +39,7 @@ def parse_date(raw: bytes,
         day = int(fields[2].strip())
         return datetime.date(year, month, day)
     except ValueError as e:
-        raise CommunicationsError(e)
+        raise CommunicationsError from e
 
 
 def parse_date_fixed(raw: bytes, year_digits: int = 4, month_digits: int = 2, day_digits: int = 2) -> datetime.date:
@@ -54,7 +54,7 @@ def parse_date_fixed(raw: bytes, year_digits: int = 4, month_digits: int = 2, da
         day = int(raw[(year_digits+month_digits):].strip())
         return datetime.date(year, month, day)
     except ValueError as e:
-        raise CommunicationsError(e)
+        raise CommunicationsError from e
 
 
 def parse_time(raw: bytes,
@@ -68,7 +68,7 @@ def parse_time(raw: bytes,
         second = int(fields[2].strip())
         return datetime.time(hour, minute, second, tzinfo=datetime.timezone.utc)
     except ValueError as e:
-        raise CommunicationsError(e)
+        raise CommunicationsError from e
 
 
 def parse_time_fixed(raw: bytes, hour_digits: int = 2, minute_digits: int = 2, second_digits: int = 2) -> datetime.time:
@@ -80,7 +80,7 @@ def parse_time_fixed(raw: bytes, hour_digits: int = 2, minute_digits: int = 2, s
         second = int(raw[(hour_digits+minute_digits):].strip())
         return datetime.time(hour, minute, second, tzinfo=datetime.timezone.utc)
     except ValueError as e:
-        raise CommunicationsError(e)
+        raise CommunicationsError from e
 
 
 def parse_date_and_time(date_field: bytes, time_field: bytes,
@@ -91,7 +91,7 @@ def parse_date_and_time(date_field: bytes, time_field: bytes,
         t = parse_time(time_field, time_separator=time_separator)
         return datetime.datetime(d.year, d.month, d.day, t.hour, t.minute, t.second, tzinfo=t.tzinfo)
     except ValueError as e:
-        raise CommunicationsError(e)
+        raise CommunicationsError from e
 
 
 def parse_date_and_time_fixed(
@@ -104,7 +104,7 @@ def parse_date_and_time_fixed(
                              second_digits=second_digits)
         return datetime.datetime(d.year, d.month, d.day, t.hour, t.minute, t.second, tzinfo=t.tzinfo)
     except ValueError as e:
-        raise CommunicationsError(e)
+        raise CommunicationsError from e
 
 
 def parse_datetime_field(dt: bytes, datetime_seperator: bytes = b' ', **kwargs) -> datetime.datetime:
@@ -114,7 +114,7 @@ def parse_datetime_field(dt: bytes, datetime_seperator: bytes = b' ', **kwargs) 
             raise CommunicationsError("invalid number of datetime fields")
         return parse_date_and_time(subfields[0].strip(), subfields[1].strip(), **kwargs)
     except ValueError as e:
-        raise CommunicationsError(e)
+        raise CommunicationsError from e
 
 
 def parse_datetime_field_fixed(dt: bytes, datetime_seperator: bytes = b' ', **kwargs) -> datetime.datetime:
@@ -127,7 +127,7 @@ def parse_datetime_field_fixed(dt: bytes, datetime_seperator: bytes = b' ', **kw
         length_date = kwargs.get('year_digits', 4) + kwargs.get('month_digits', 2) + kwargs.get('day_digits', 2)
         return parse_date_and_time_fixed(dt[:length_date], dt[length_date:], **kwargs)
     except ValueError as e:
-        raise CommunicationsError(e)
+        raise CommunicationsError from e
 
 
 def parse_flags_bits(field: bytes, dispatch: typing.Dict[int, typing.Callable[[bool], typing.Any]],

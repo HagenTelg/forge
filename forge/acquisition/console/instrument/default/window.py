@@ -1,7 +1,7 @@
 import typing
 import curses
 import time
-from forge.acquisition.console.ui import UserInterface
+from forge.acquisition.console.ui import UserInterface, PersistenceLevel
 from .data import DataDisplay
 from ..lookup import instrument_data
 
@@ -41,6 +41,13 @@ class InstrumentWindow:
 
     def global_message(self, source: str, record: str, message: typing.Any) -> bool:
         pass
+
+    def send_command(self, command: str, data: typing.Any = None) -> None:
+        self.ui.client.send_message(PersistenceLevel.DATA, 'command', {
+            'target': self.source,
+            'command': command,
+            'data': data,
+        })
 
     @property
     def display_letter(self) -> typing.Optional[str]:

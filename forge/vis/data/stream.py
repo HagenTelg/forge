@@ -3,6 +3,7 @@ import struct
 from abc import ABC, abstractmethod
 from math import isfinite, nan
 from base64 import b64encode
+from forge.vis.util import sanitize_for_json
 
 
 class DataStream(ABC):
@@ -117,10 +118,7 @@ class RecordStream(DataStream):
                     content['data'][field]['values'].append(b64encode(raw).decode('ascii'))
                 continue
 
-            content['data'][field] = [
-                (value if value is None or not isinstance(value, float) or isfinite(value) else None)
-                for value in values
-            ]
+            content['data'][field] = [sanitize_for_json(value) for value in values]
 
         await self.send(content)
         self.epoch_ms.clear()

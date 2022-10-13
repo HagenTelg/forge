@@ -12,7 +12,7 @@ from os.path import exists as file_exists
 from dynaconf import Dynaconf
 from dynaconf.constants import DEFAULT_SETTINGS_FILES
 from starlette.datastructures import URL
-from forge.tasks import background_task
+from forge.tasks import background_task, wait_cancelable
 from forge.authsocket import WebsocketBinary as AuthSocket, PrivateKey
 from forge.cpd3.variant import deserialize as deserialize_variant, serialize as serialize_variant
 from forge.cpd3.variant import Metadata, MetadataChildren, MetadataString, MetadataInteger, MetadataBytes, MetadataBoolean
@@ -544,7 +544,7 @@ class UplinkConnection:
 
                     self.acquisition = CPD3Acquisition(reader, writer, self)
                     acquisition_task = asyncio.ensure_future(self.acquisition.run())
-                    await asyncio.wait_for(self.acquisition.wait_for_connected(), timeout=10.0)
+                    await wait_cancelable(self.acquisition.wait_for_connected(), timeout=10.0)
                     _LOGGER.info(f"Uplink connected from {cpd3_socket} to {self.url}")
 
                     websocket_task = asyncio.ensure_future(self._read_websocket())

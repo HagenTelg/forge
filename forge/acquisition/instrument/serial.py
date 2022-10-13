@@ -1,18 +1,33 @@
 import typing
 import asyncio
+import logging
 import serial
-import termios
+import os
 from forge.acquisition import LayeredConfiguration
 from forge.tasks import background_task
+from forge.acquisition.serial.util import TCAttr, standard_termios
 from .streaming import StreamingContext
 from .base import BaseDataOutput, BasePersistentInterface, BaseBusInterface
+
+have_termios = False
+try:
+    import termios
+    have_termios = True
+except ImportError:
+    termios = object()
+    class FakeError(Exception):
+        pass
+    termios.error = FakeError
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 _DATA_BITS = {
     5: serial.FIVEBITS,
     6: serial.SIXBITS,
     7: serial.SEVENBITS,
-    8: serial.SEVENBITS,
+    8: serial.EIGHTBITS,
 }
 _STOP_BITS = {
     1: serial.STOPBITS_ONE,
@@ -25,7 +40,7 @@ _PARITY = {
     'NONE': serial.PARITY_NONE,
 
     'E': serial.PARITY_EVEN,
-    'EVENT': serial.PARITY_EVEN,
+    'EVEN': serial.PARITY_EVEN,
 
     'O': serial.PARITY_ODD,
     'ODD': serial.PARITY_ODD,
@@ -265,7 +280,32 @@ class SerialTransport(asyncio.Transport):
 
 
 async def open_serial(limit: int = None, **kwargs) -> typing.Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
-    port = serial.Serial(**kwargs)
+    if have_termios:
+        device = kwargs.pop('port')
+        bytesize = kwargs.pop('bytesize', None)
+        parity = kwargs.pop('parity', None)
+
+        port = serial.Serial(**kwargs)
+        port.port = device
+        try:
+            port.open()
+        except termios.error as e:
+            raise IOError from e
+
+        # Separate step for pseudoterminals which silently ignore this on linux, but various
+        # distributions patch python/glibc to report EINVAL instead.
+        if bytesize:
+            try:
+                port.bytesize = bytesize
+            except termios.error:
+                _LOGGER.debug("Error changing bytesize (probably a pseudoterminal)", exc_info=True)
+        if parity:
+            try:
+                port.parity = parity
+            except termios.error:
+                _LOGGER.debug("Error changing parity (probably a pseudoterminal)", exc_info=True)
+    else:
+        port = serial.Serial(**kwargs)
 
     if limit is None:
         limit = 64 * 1024
@@ -277,6 +317,49 @@ async def open_serial(limit: int = None, **kwargs) -> typing.Tuple[asyncio.Strea
     reader.serial_transport = transport
     writer = asyncio.StreamWriter(transport, protocol, reader, loop)
     return reader, writer
+
+
+def _apply_real_termios(device: str, bytesize, parity) -> None:
+    try:
+        fd = os.open(device, os.O_RDWR | os.O_CLOEXEC | os.O_NOCTTY)
+    except OSError:
+        _LOGGER.debug("Error opening real device", exc_info=True)
+        return
+    try:
+        tio = termios.tcgetattr(fd)
+        standard_termios(tio)
+        if bytesize is not None:
+            tio[TCAttr.c_cflag] &= ~termios.CSIZE
+            if bytesize == serial.EIGHTBITS:
+                tio[TCAttr.c_cflag] |= termios.CS8
+            elif bytesize == serial.SEVENBITS:
+                tio[TCAttr.c_cflag] |= termios.CS7
+            elif bytesize == serial.SIXBITS:
+                tio[TCAttr.c_cflag] |= termios.CS6
+            elif bytesize == serial.FIVEBITS:
+                tio[TCAttr.c_cflag] |= termios.CS5
+        if parity is not None:
+            tio[TCAttr.c_iflag] &= ~(termios.INPCK | termios.ISTRIP | termios.PARENB | termios.PARODD)
+            if serial.serialposix.CMSPAR:
+                tio[TCAttr.c_iflag] &= ~serial.serialposix.CMSPAR
+            if parity == serial.PARITY_NONE:
+                pass
+            elif parity == serial.PARITY_EVEN:
+                tio[TCAttr.c_iflag] |= termios.PARENB
+            elif parity == serial.PARITY_ODD:
+                tio[TCAttr.c_iflag] |= (termios.PARENB | termios.PARODD)
+            elif parity == serial.PARITY_MARK:
+                tio[TCAttr.c_iflag] |= (termios.PARENB | serial.serialposix.CMSPAR | termios.PARODD)
+            elif parity == serial.PARITY_SPACE:
+                tio[TCAttr.c_iflag] |= (termios.PARENB | serial.serialposix.CMSPAR)
+        termios.tcsetattr(fd, termios.TCSANOW, tio)
+    except termios.error as e:
+        raise IOError from e
+    finally:
+        try:
+            os.close(fd)
+        except:
+            pass
 
 
 class SerialPortContext(StreamingContext):
@@ -331,9 +414,33 @@ class SerialPortContext(StreamingContext):
         self._serial_args['write_timeout'] = 0
         self._serial_args['exclusive'] = False
 
+        self._real_serial_port: typing.Optional[str] = None
+        configured_serial = config.section_or_constant("SERIAL_PORT")
+        if configured_serial and not isinstance(configured_serial, str):
+            configured_serial = serial.get("PORT")
+        if configured_serial and isinstance(configured_serial, str) and configured_serial != self._serial_args['port']:
+            self._real_serial_port = configured_serial
+
     async def open_stream(self) -> typing.Tuple[typing.Optional[asyncio.StreamReader],
                                                 typing.Optional[asyncio.StreamWriter]]:
-        return await open_serial(**self._serial_args)
+        (reader, writer) = await open_serial(**self._serial_args)
+
+        if have_termios and self._real_serial_port:
+            bytesize = self._serial_args.get('bytesize')
+            parity = self._serial_args.get('parity')
+
+            if (bytesize and bytesize != serial.EIGHTBITS) or (parity and parity != serial.PARITY_NONE):
+                _LOGGER.debug(f"Setting serial parameters on real device {self._real_serial_port}")
+                try:
+                    _apply_real_termios(self._real_serial_port, bytesize, parity)
+                except:
+                    try:
+                        writer.close()
+                    except:
+                        pass
+                    raise
+
+        return reader, writer
 
     async def close_stream(self, reader: typing.Optional[asyncio.StreamReader],
                            writer: typing.Optional[asyncio.StreamWriter]) -> None:

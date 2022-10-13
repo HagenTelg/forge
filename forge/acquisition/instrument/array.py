@@ -4,6 +4,7 @@ from forge.acquisition import LayeredConfiguration
 from forge.acquisition.average import AverageRecord
 from .base import BaseInstrument, BaseDataOutput
 from .dimension import Dimension
+from .variable import InputFieldControl
 
 
 def _normalize_array(value: typing.Iterable[float]) -> typing.List[float]:
@@ -37,12 +38,11 @@ class ArrayInput(BaseInstrument.Input):
 
         self.calibration: typing.List[float] = list()
         self.constant: typing.Optional[typing.List[float]] = None
-        self.comment: typing.Optional[str] = None
-        self.override_description: typing.Optional[str] = None
+        self.field = InputFieldControl()
 
         if isinstance(self.config, str):
             fields = self.config.split(':', 2)
-            self.override_description = str(self.config)
+            self.field.override_description = str(self.config)
             if len(fields) == 1:
                 self.instrument.context.bus.connect_data(None, fields[0], self._incoming_override)
             else:
@@ -55,6 +55,8 @@ class ArrayInput(BaseInstrument.Input):
             self._overridden = True
             return
 
+        self.field = InputFieldControl(config)
+
         override_field = self.config.get('INPUT')
         if override_field:
             source = self.config.get('INSTRUMENT')
@@ -62,40 +64,41 @@ class ArrayInput(BaseInstrument.Input):
             self._overridden = True
 
             if source:
-                self.override_description = f"{source}:{override_field}"
+                self.field.override_description = f"{source}:{override_field}"
             else:
-                self.override_description = override_field
+                self.field.override_description = override_field
 
-            comment = self.config.comment('INPUT')
-            if comment:
-                if not self.comment:
-                    self.comment = comment
-                else:
-                    self.comment = self.comment + "\n" + comment
+            self.field.add_comment(self.config.comment('INPUT'))
 
         constant = self.config.get('CONSTANT')
         if constant:
             self._override_value = _normalize_array(constant)
             self._overridden = True
 
-            comment = self.config.comment('CONSTANT')
-            if comment:
-                if not self.comment:
-                    self.comment = self.config.comment('CONSTANT')
-                else:
-                    self.comment = self.comment + "\n" + comment
+            self.field.add_comment(self.config.comment('CONSTANT'))
 
         calibration = self.config.get('CALIBRATION')
         if calibration:
             for c in calibration:
                 self.calibration.append(float(c))
 
-            comment = self.config.comment('CALIBRATION')
-            if comment:
-                if not self.comment:
-                    self.comment = comment
-                else:
-                    self.comment = self.comment + "\n" + comment
+            self.field.add_comment(self.config.comment('CALIBRATION'))
+
+        use_stp = self.config.get('STP')
+        if use_stp is not None:
+            use_stp = bool(use_stp)
+            self.use_standard_temperature = use_stp
+            self.use_standard_pressure = use_stp
+
+        use_standard_temperature = self.config.get('STANDARD_TEMPERATURE')
+        if use_standard_temperature is not None:
+            use_standard_temperature = bool(use_standard_temperature)
+            self.use_standard_temperature = use_standard_temperature
+
+        use_standard_pressure = self.config.get('STANDARD_PRESSURE')
+        if use_standard_pressure is not None:
+            use_standard_pressure = bool(use_standard_pressure)
+            self.use_standard_pressure = use_standard_pressure
 
     def _convert_value(self, value: float) -> float:
         if value is None:
@@ -193,13 +196,7 @@ class ArrayVariable(BaseInstrument.Variable):
         self.dimension = dimension
         self.source = source
         self.average: typing.Optional[AverageRecord.Array] = None
-
-        if self.source.calibration and 'calibration_polynomial' not in self.data.attributes:
-            self.data.attributes['calibration_polynomial'] = self.source.calibration
-        if self.source.override_description and 'measurement_source_override' not in self.data.attributes:
-            self.data.attributes['measurement_source_override'] = self.source.override_description
-        if self.source.comment and 'comment' not in self.data.attributes:
-            self.data.attributes['comment'] = self.source.comment
+        source.field.apply(self.data, source.calibration)
 
     @property
     def value(self) -> typing.List[float]:

@@ -38,45 +38,55 @@ class Record(BaseInstrument.Record):
         else:
             self.cutsize = self._CutSizeSchedule(None)
         self.reports: typing.Set[Report] = set()
+        self.automatic_reports: typing.Set[Report] = set()
 
         self.variables: typing.Set[BaseInstrument.Variable] = set()
+        self.auxiliary_variables: typing.Set[BaseInstrument.Variable] = set()
         self._variable_names: typing.Set[str] = set()
 
         self.flags: typing.Set[BaseInstrument.Flag] = set()
         self._flag_names: typing.Set[str] = set()
 
-        self._updated_reports: typing.Set[BaseInstrument.Report] = set()
+        self._automatic_updated_reports: typing.Set[BaseInstrument.Report] = set()
         self._queued: bool = False
 
-        self._data_record = self.instrument.context.data.measurement_record(name)
+        self.data_record = self.instrument.context.data.measurement_record(name)
         self._active_size: CutSize.Active = self.cutsize.current()
 
         now = time.time()
         self._active_size.activate(now)
         if self.cutsize.constant_size:
             if self._active_size.size != CutSize.Size.WHOLE:
-                self._data_record.constants.append(self._CurrentCutSizeField(self))
+                self.data_record.constants.append(self._CurrentCutSizeField(self))
         else:
-            self._data_record.add_variable(self._CurrentCutSizeField(self))
+            self.data_record.add_variable(self._CurrentCutSizeField(self))
             flushing_for = (self._active_size.scheduled_time + self.cutsize.flush_time) - now
             if flushing_for > 0.0:
                 self.average.start_flush(flushing_for, now=now)
+
+    def __repr__(self) -> str:
+        return ("Record(" + self.name + "=[" + repr(self.reports) +
+                f"],auto={len(self._automatic_updated_reports)}/{len(self.automatic_reports)})")
 
     def __call__(self) -> None:
         self._queued = True
 
     def report_generated(self, report: BaseInstrument.Report) -> None:
-        if self.automatic and report in self._updated_reports:
+        if not self.automatic:
+            return
+        if report not in self.automatic_reports:
+            return
+        if report in self._automatic_updated_reports:
             self._queued = True
-        self._updated_reports.add(report)
-        if self.automatic and len(self._updated_reports) == len(self.reports):
+        self._automatic_updated_reports.add(report)
+        if len(self._automatic_updated_reports) == len(self.automatic_reports):
             self._queued = True
 
     async def emit(self, now: float) -> bool:
         if not self._queued:
             return False
         self._queued = False
-        self._updated_reports.clear()
+        self._automatic_updated_reports.clear()
 
         try:
             a = self.average(now=now)
@@ -87,10 +97,12 @@ class Record(BaseInstrument.Record):
             for rep in self.reports:
                 for var in rep.variables:
                     var.assemble_average(average_data)
+                for var in rep.auxiliary_variables:
+                    var.assemble_average(average_data)
             if average_data:
                 await self.instrument.context.bus.emit_average_record(average_data, self._active_size.size)
 
-            self._data_record(a.start_time, a.end_time, a.total_seconds, a.total_samples)
+            self.data_record(a.start_time, a.end_time, a.total_seconds, a.total_samples)
         finally:
             if not self.cutsize.constant_size:
                 self._active_size = self.cutsize.current(now=now)
@@ -104,6 +116,8 @@ class Record(BaseInstrument.Record):
         self.average.reset()
 
     def attach_variable(self, var: BaseInstrument.Variable) -> None:
+        if var in self.auxiliary_variables:
+            raise ValueError(f"variable {repr(var)} already a display variable in record {self.name}")
         if var in self.variables:
             return
 
@@ -113,7 +127,7 @@ class Record(BaseInstrument.Record):
 
         var.attach_to_record(self)
         self.variables.add(var)
-        self._data_record.add_variable(var.data)
+        self.data_record.add_variable(var.data)
 
     def attach_flag(self, flag: BaseInstrument.Flag) -> None:
         if flag in self.flags:
@@ -125,16 +139,28 @@ class Record(BaseInstrument.Record):
 
         flag.attach_to_record(self)
         self.flags.add(flag)
-        self._data_record.add_flag(flag.data)
+        self.data_record.add_flag(flag.data)
+
+    def attach_auxiliary_variable(self, var: BaseInstrument.Variable) -> None:
+        if var in self.variables:
+            raise ValueError(f"variable {repr(var)} already a data variable in record {self.name}")
+        if var in self.auxiliary_variables:
+            return
+
+        var.attach_to_record(self)
+        self.auxiliary_variables.add(var)
 
 
 class Report(BaseInstrument.Report):
     def __init__(self, instrument: BaseInstrument, record: Record,
                  variables: typing.Iterable[BaseInstrument.Variable],
-                 flags: typing.Iterable[BaseInstrument.Flag]):
+                 flags: typing.Iterable[BaseInstrument.Flag],
+                 auxiliary_variables: typing.Iterable[BaseInstrument.Variable],
+                 automatic: bool):
         super().__init__(instrument)
         self.record = record
         self.variables: typing.List[BaseInstrument.Variable] = list()
+        self.auxiliary_variables: typing.List[BaseInstrument.Variable] = list()
         self.flags: typing.List[BaseInstrument.Flag] = list()
 
         for v in variables:
@@ -143,6 +169,12 @@ class Report(BaseInstrument.Report):
             self.variables.append(v)
             self.record.attach_variable(v)
 
+        for v in auxiliary_variables:
+            if v is None:
+                continue
+            self.auxiliary_variables.append(v)
+            self.record.attach_auxiliary_variable(v)
+
         for f in flags:
             if f is None:
                 continue
@@ -150,12 +182,19 @@ class Report(BaseInstrument.Report):
             self.record.attach_flag(f)
 
         self.record.reports.add(self)
+        if automatic:
+            self.record.automatic_reports.add(self)
+
+    def __repr__(self) -> str:
+        return "Report(" + repr(self.variables) + "," + repr(self.flags) + ")"
 
     def __call__(self) -> None:
         if not self.instrument.is_communicating:
             return
 
         for v in self.variables:
+            v()
+        for v in self.auxiliary_variables:
             v()
         for f in self.flags:
             f()

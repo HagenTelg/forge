@@ -29,6 +29,8 @@ class BusInterface(BaseBusInterface):
         self._bypass_held: typing.Set[str] = set()
         self.bypass_ignore_source: typing.Set[str] = set()
 
+        self._command_dispatch: typing.Dict[str, typing.List[typing.Callable[[typing.Any], None]]] = dict()
+
     def _dispatch_data_record(self, source: str, message: typing.Dict[str, typing.Any]) -> None:
         if not isinstance(message, dict):
             return
@@ -58,6 +60,25 @@ class BusInterface(BaseBusInterface):
         if was_bypassed != is_bypassed:
             self.bypass_updated()
 
+    def _dispatch_command(self, message: typing.Dict[str, typing.Any]) -> None:
+        if not isinstance(message, dict):
+            return
+        if not self._command_dispatch:
+            return
+
+        target = message.get('target')
+        if target and target != self.source:
+            return
+
+        command = message.get('command')
+        handlers = self._command_dispatch.get(command)
+        if not handlers:
+            return
+
+        data = message.get('data')
+        for h in handlers:
+            h(data)
+
     @property
     def bypassed(self) -> bool:
         return bool(self._bypass_held)
@@ -69,6 +90,8 @@ class BusInterface(BaseBusInterface):
             self._handle_bypass(source, message)
         elif record == 'bypass_user':
             self._handle_bypass('', message)
+        elif record == 'command':
+            self._dispatch_command(message)
 
     async def start(self) -> None:
         reader, writer = await asyncio.open_unix_connection(self._bus_socket_name)
@@ -104,8 +127,8 @@ class BusInterface(BaseBusInterface):
     async def set_bypass_held(self, held: bool) -> None:
         self.client.set_state('bypass_held', held)
 
-    async def log(self, message: str, auxiliary: typing.Dict[str, typing.Any] = None,
-                  type: "BaseBusInterface.LogType" = None) -> None:
+    def log(self, message: str, auxiliary: typing.Dict[str, typing.Any] = None,
+            type: "BaseBusInterface.LogType" = None) -> None:
         message: typing.Dict[str, typing.Any] = {
             'message': message,
             'type': (type.value if type else BaseBusInterface.LogType.INFO.value),
@@ -130,3 +153,11 @@ class BusInterface(BaseBusInterface):
             field_dispatch[field] = targets
 
         targets.append(target)
+
+    def connect_command(self, command: str, handler: typing.Callable[[typing.Any], None]) -> None:
+        targets = self._command_dispatch.get(command)
+        if not targets:
+            targets = list()
+            self._command_dispatch[command] = targets
+
+        targets.append(handler)

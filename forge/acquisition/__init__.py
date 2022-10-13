@@ -100,7 +100,7 @@ class LayeredConfiguration:
         for layer in self._roots:
             origin = layer
             for p in actual_path[:-1]:
-                origin = origin.get(p, default=None)
+                origin = origin.get(p, None)
                 if isinstance(origin, dict):
                     continue
                 if origin is not None:

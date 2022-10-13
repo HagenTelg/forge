@@ -5,6 +5,7 @@ import curses.ascii
 import sys
 import time
 from collections import deque
+from forge.tasks import wait_cancelable
 from forge.formattime import format_iso8601_time, format_year_doy
 from forge.acquisition.bus.client import AcquisitionBusClient, PersistenceLevel
 from .instrument.lookup import instrument_data
@@ -112,6 +113,10 @@ class Menu:
     def hide(self) -> None:
         self.ui._menu = None
         self.ui._changed.set()
+
+    @property
+    def is_empty(self) -> bool:
+        return len(self._entries) == 0
 
     def handle_key(self, key: int) -> None:
         if key == ord('\n') or key == ord('\r') or key == curses.KEY_ENTER:
@@ -301,12 +306,13 @@ class Dialog:
                 return False
         return YesNo(self, on_yes, on_no)
 
-    def text_entry(self, label: str = ""):
+    def text_entry(self, label: str = "", to_value: typing.Callable[[str], typing.Any] = None):
         class TextEntry(Dialog._Item):
             def __init__(self, dialog: Dialog, label: str = ""):
                 super().__init__(dialog)
                 self.text = ""
                 self.label = label
+                self.validator: typing.Optional[typing.Callable[[str], bool]] = None
                 _, max_x = self.dialog.ui.stdscr.getmaxyx()
                 self.min_width = max_x - 10
 
@@ -317,6 +323,10 @@ class Dialog:
                 required_width = len(self.label) + 10
                 desired_width = max(len(self.text) + len(self.label), self.min_width)
                 return max(min(max_x - 10, desired_width), required_width)
+
+            @property
+            def value(self) -> typing.Any:
+                return to_value(self.text)
 
             def draw(self, is_focused: bool) -> None:
                 _, win_x = self.window.getmaxyx()
@@ -339,6 +349,12 @@ class Dialog:
                 else:
                     attr = 0
                     display_text = self.text[:available_length]
+
+                if self.validator:
+                    valid = self.validator(self.text)
+                    if not valid:
+                        attr |= curses.color_pair(curses.COLOR_RED)
+
                 self.dialog.window.addstr(self.y, x, display_text, attr)
                 x += len(display_text)
                 available_length -= len(display_text)
@@ -355,6 +371,79 @@ class Dialog:
                     self.text = self.text + chr(key)
                     return True
         return TextEntry(self, label)
+
+    def integer(self, label: str = "", minimum: int = None, maximum: int = None):
+        def fetch(text: str) -> typing.Optional[int]:
+            try:
+                value = int(text)
+            except (ValueError, TypeError):
+                return None
+            if minimum is not None:
+                if value < minimum:
+                    return None
+            if maximum is not None:
+                if value > maximum:
+                    return None
+            return value
+
+        def validator(text: str) -> bool:
+            return fetch(text) is not None
+
+        te = self.text_entry(label=label, to_value=fetch)
+        te.validator = validator
+        te.min_width = len(label) + 16
+        return te
+
+    def float(self, label: str = "", minimum: float = None, maximum: float = None):
+        def fetch(text: str) -> typing.Optional[float]:
+            try:
+                value = float(text)
+            except (ValueError, TypeError):
+                return None
+            if minimum is not None:
+                if value < minimum:
+                    return None
+            if maximum is not None:
+                if value > maximum:
+                    return None
+            return value
+
+        def validator(text: str) -> bool:
+            return fetch(text) is not None
+
+        te = self.text_entry(label=label, to_value=fetch)
+        te.validator = validator
+        te.min_width = len(label) + 16
+        return te
+
+    def checkbox(self, text: str):
+        class Checkbox(Dialog._Item):
+            def __init__(self, dialog: Dialog, text: str):
+                super().__init__(dialog)
+                self.text = text
+                self.value: bool = False
+
+            @property
+            def width(self) -> int:
+                return 4 + len(self.text)
+
+            def draw(self, is_focused: bool) -> None:
+                _, win_x = self.window.getmaxyx()
+
+                draw_text = f"[{'X' if self.value else ' '}] {self.text}"
+                draw_text = draw_text.ljust(win_x - 2)
+                if is_focused:
+                    attr = curses.A_REVERSE | curses.A_BOLD
+                else:
+                    attr = 0
+                self.dialog.window.addstr(self.y, 1, draw_text, attr)
+
+            def handle_key(self, key: int) -> bool:
+                if key == ord('\n') or key == ord('\r') or key == curses.KEY_ENTER or key == ord(' '):
+                    self.value = not self.value
+                    return True
+                return False
+        return Checkbox(self, text)
 
     def __init__(self, ui: "UserInterface"):
         self.ui = ui
@@ -646,7 +735,7 @@ class UserInterface:
             if key == curses.ERR:
                 asyncio.get_event_loop().add_reader(sys.stdin.fileno(), self._changed.set)
                 try:
-                    await asyncio.wait_for(self._changed.wait(), 0.25)
+                    await wait_cancelable(self._changed.wait(), 0.25)
                 except asyncio.TimeoutError:
                     pass
                 asyncio.get_event_loop().remove_reader(sys.stdin.fileno())

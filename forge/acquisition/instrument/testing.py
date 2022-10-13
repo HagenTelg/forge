@@ -26,6 +26,10 @@ class BusInterface(BaseBusInterface):
         self.state_records: typing.Dict[str, typing.Any] = dict()
         self.state_record_updated = asyncio.Event()
 
+        self._command_dispatch: typing.Dict[str, typing.List[typing.Callable[[typing.Any], None]]] = dict()
+
+        self.is_bypass_held: bool = False
+
     async def set_instrument_info(self, contents: typing.Dict[str, typing.Any]) -> None:
         self.instrument_info = contents
         self.instrument_info_updated.set()
@@ -42,6 +46,9 @@ class BusInterface(BaseBusInterface):
         self.state_records[name] = contents
         self.state_record_updated.set()
 
+    async def set_bypass_held(self, held: bool) -> None:
+        self.is_bypass_held = held
+
     async def value(self, name: str) -> float:
         while True:
             v = self.data_values.get(name)
@@ -50,10 +57,31 @@ class BusInterface(BaseBusInterface):
             await self.data_value_updated.wait()
             self.data_value_updated.clear()
 
+    async def state(self, name: str) -> typing.Any:
+        while True:
+            v = self.state_records.get(name)
+            if v is not None:
+                return v
+            await self.state_record_updated.wait()
+            self.state_record_updated.clear()
+
     async def wait_for_communicating(self) -> None:
         while True:
             if self.instrument_state and self.instrument_state.get('communicating'):
                 break
+            await self.instrument_state_updated.wait()
+            self.instrument_state_updated.clear()
+
+    async def wait_for_notification(self, name: str, is_set: bool = True) -> None:
+        while True:
+            if self.instrument_state:
+                notify = self.instrument_state.get('notifications')
+                if is_set:
+                    if notify and name in notify:
+                        break
+                else:
+                    if not notify or name not in notify:
+                        break
             await self.instrument_state_updated.wait()
             self.instrument_state_updated.clear()
 
@@ -63,6 +91,18 @@ class BusInterface(BaseBusInterface):
 
     async def emit_averaged_extra(self, contents: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
         pass
+
+    def connect_command(self, command: str, handler: typing.Callable[[typing.Any], None]) -> None:
+        targets = self._command_dispatch.get(command)
+        if not targets:
+            targets = list()
+            self._command_dispatch[command] = targets
+
+        targets.append(handler)
+
+    def command(self, command: str, data: typing.Any = None) -> None:
+        for h in self._command_dispatch[command]:
+            h(data)
 
 
 class PersistentInterface(BasePersistentInterface):

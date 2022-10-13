@@ -100,7 +100,11 @@ class RealtimeTranslatorOutput:
             self._handle_instrument(source, message)
             return
 
-        self.translator.translate_message(source, record, message, self._translator_output)
+        instrument = self._instruments.get(source)
+        if instrument:
+            instrument.translate_message(record, message, self._translator_output)
+        else:
+            self.translator.translate_message(source, record, message, self._translator_output)
 
     def _handle_instrument(self, source: str, instrument_info: typing.Optional[typing.Dict[str, typing.Any]]) -> None:
         existing = self._instruments.get(source)

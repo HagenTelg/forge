@@ -2,6 +2,7 @@ import typing
 import asyncio
 import logging
 import time
+import enum
 import shutil
 import numpy as np
 import forge.data.structure.variable as netcdf_var
@@ -14,6 +15,7 @@ from secrets import token_bytes
 from base64 import b32encode
 from netCDF4 import Dataset, Variable, Group
 from forge.const import __short_version__
+from forge.tasks import wait_cancelable
 from forge.formattime import format_iso8601_time
 from forge.data.structure import instrument_timeseries
 from forge.data.structure.history import append_history
@@ -34,11 +36,14 @@ def _configure_variable(var: Variable, source: BaseDataOutput.Field) -> None:
         netcdf_timeseries.variable_coordinates(group, var)
         var.coverage_content_type = "physicalMeasurement"
 
-        if source.use_standard_temperature and group.variables.get("standard_temperature", None):
+        if 'time' in var.dimensions:
+            var.cell_methods = "time: mean"
+
+        if source.use_standard_temperature and group.variables.get("standard_temperature") is not None:
             ancillary_variables.append("standard_temperature")
-        if source.use_standard_pressure and group.variables.get("standard_temperature", None):
+        if source.use_standard_pressure and group.variables.get("standard_temperature") is not None:
             ancillary_variables.append("standard_pressure")
-        if source.use_cut_size and group.variables.get("cut_size", None):
+        if source.use_cut_size and group.variables.get("cut_size") is not None:
             ancillary_variables.append("cut_size")
 
     if source.template == BaseDataOutput.Field.Template.NONE:
@@ -48,14 +53,22 @@ def _configure_variable(var: Variable, source: BaseDataOutput.Field) -> None:
     elif source.template == BaseDataOutput.Field.Template.STATE:
         netcdf_timeseries.variable_coordinates(group, var)
         var.coverage_content_type = "auxiliaryInformation"
+        if 'time' in var.dimensions:
+            var.cell_methods = "time: point"
     elif source.template == BaseDataOutput.Field.Template.CUT_SIZE:
         netcdf_timeseries.variable_coordinates(group, var)
         netcdf_var.variable_cutsize(var)
         var.coverage_content_type = "referenceInformation"  # Not measured, so reference is a bit better fit
     elif source.template == BaseDataOutput.Field.Template.DIMENSION:
         var.coverage_content_type = "coordinate"
+        if 'time' in var.dimensions:
+            var.cell_methods = "time: point"
     elif source.template == BaseDataOutput.Field.Template.MEASUREMENT:
         _measurement()
+    elif source.template == BaseDataOutput.Field.Template.STATE_MEASUREMENT:
+        _measurement()
+        if 'time' in var.dimensions:
+            var.cell_methods = "time: point"
     else:
         raise ValueError("invalid variable template type")
 
@@ -80,24 +93,28 @@ def _write_constants(target: Dataset, constants: typing.List[BaseDataOutput.Fiel
             if constant_value is None:
                 continue
             var = target.createVariable(c.name, 'f8', fill_value=False)
+            _configure_variable(var, c)
             var[0] = float(constant_value)
         elif isinstance(c, BaseDataOutput.Integer):
             constant_value = c.value
             if constant_value is None:
                 continue
             var = target.createVariable(c.name, 'i8', fill_value=False)
+            _configure_variable(var, c)
             var[0] = int(constant_value)
         elif isinstance(c, BaseDataOutput.UnsignedInteger):
             constant_value = c.value
             if constant_value is None:
                 continue
             var = target.createVariable(c.name, 'u8', fill_value=False)
+            _configure_variable(var, c)
             var[0] = int(constant_value)
         elif isinstance(c, BaseDataOutput.String):
             constant_value = c.value
             if constant_value is None:
                 continue
             var = target.createVariable(c.name, str, fill_value=False)
+            _configure_variable(var, c)
             var[0] = str(constant_value)
         elif isinstance(c, BaseDataOutput.ArrayFloat):
             constant_value = c.value
@@ -106,8 +123,13 @@ def _write_constants(target: Dataset, constants: typing.List[BaseDataOutput.Fiel
 
             constant_dimension = c.dimension
             if constant_dimension:
-                dim = target.createDimension(constant_dimension.name, len(constant_value))
-                dvar = target.createVariable(constant_dimension.name, 'f8', (dim.name,), fill_value=False)
+                dim = target.dimensions.get(constant_dimension.name)
+                if dim is None:
+                    dim = target.createDimension(constant_dimension.name, len(constant_value))
+                    dvar = target.createVariable(dim.name, 'f8', (dim.name,), fill_value=nan)
+                else:
+                    dvar = target.variables[dim.name]
+
                 _configure_variable(dvar, constant_dimension)
 
                 dimension_value = constant_dimension.value
@@ -244,7 +266,13 @@ class DataOutput(BaseDataOutput):
                 self.values = values
 
             def pull_value(self) -> None:
-                self.values = np.append(self.values, self.field.value)
+                v = self.field.value
+                if v is None:
+                    if np.issubdtype(self.values.dtype, np.floating):
+                        v = nan
+                    else:
+                        v = 0
+                self.values = np.append(self.values, v)
 
             def remove_start(self, count: int) -> None:
                 self.values = np.delete(self.values, np.s_[:count])
@@ -267,10 +295,14 @@ class DataOutput(BaseDataOutput):
 
             def pull_value(self) -> None:
                 v = self.field.value
-                self.sizes.append(len(v))
-                if len(v) > self.values.shape[1]:
-                    n_pad = len(v) - self.values.shape[1]
+                add_length = len(v)
+                self.sizes.append(add_length)
+                if add_length > self.values.shape[1]:
+                    n_pad = add_length - self.values.shape[1]
                     self.values = np.pad(self.values, ((0, 0), (0, n_pad)), 'constant', constant_values=self.pad)
+                elif add_length < self.values.shape[1]:
+                    n_pad = self.values.shape[1] - add_length
+                    v = v + [self.pad] * n_pad
                 self.values = np.concatenate((self.values, [v]))
 
             def remove_start(self, count: int) -> None:
@@ -296,7 +328,7 @@ class DataOutput(BaseDataOutput):
                     if dim is None:
                         dim = target.createDimension(field_dimension.name, self.values.shape[1])
                         if isinstance(field_dimension, BaseDataOutput.ArrayFloat):
-                            dvar = target.createVariable(dim.name, 'f8', (dim.name,), fill_value=nan)
+                            dvar = target.createVariable(dim.name, self.values.dtype, (dim.name,), fill_value=nan)
                         else:
                             raise ValueError("unknown dimension type")
                     else:
@@ -337,7 +369,77 @@ class DataOutput(BaseDataOutput):
                 var = target.createVariable(self.field.name, self.data_type, ('time',), fill_value=False)
                 _configure_variable(var, self.field)
                 for i in range(len(self.values)):
-                    var[i] = self.values[i]
+                    v = self.values[i]
+                    if v is None:
+                        continue
+                    var[i] = v
+
+        class _NetCDFVariableEnum(_NetCDFVariable):
+            def __init__(self, field: BaseDataOutput.Enum):
+                super().__init__()
+                self.field = field
+                self.values = deque()
+
+            def pull_value(self) -> None:
+                self.values.append(self.field.value)
+
+            def remove_start(self, count: int) -> None:
+                for i in range(count):
+                    try:
+                        self.values.popleft()
+                    except IndexError:
+                        break
+
+            def _create_string(self, target: Dataset) -> None:
+                var = target.createVariable(self.field.name, str, ('time',), fill_value=False)
+                _configure_variable(var, self.field)
+                for i in range(len(self.values)):
+                    v = self.values[i]
+                    if v is None:
+                        continue
+                    var[i] = str(v)
+
+            def create_variable(self, target: Dataset) -> None:
+                enum_type = self.field.enum
+
+                value_min = 0
+                value_max = 0
+                enum_dict: typing.Dict[str, int] = dict()
+                default_value: typing.Optional[int] = None
+                for t in enum_type:
+                    if not isinstance(t.value, int):
+                        return self._create_string(target)
+
+                    enum_dict[t.name] = t.value
+
+                    if default_value is None:
+                        default_value = t.value
+
+                    if t.value < value_min:
+                        value_min = t.value
+                    if t.value > value_max:
+                        value_max = t.value
+
+                data_type = target.enumtypes.get(self.field.typename)
+                if data_type is None:
+                    for check_type in (np.uint8, np.int8, np.uint16, np.int16, np.uint32, np.int32, np.uint64):
+                        ti = np.iinfo(check_type)
+                        if ti.min <= value_min and ti.max >= value_max:
+                            base_dtype = check_type
+                            break
+                    else:
+                        base_dtype = np.int64
+
+                    data_type = target.createEnumType(base_dtype, self.field.typename, enum_dict)
+
+                var = target.createVariable(self.field.name, data_type, ('time',), fill_value=False)
+                _configure_variable(var, self.field)
+                for i in range(len(self.values)):
+                    v = self.values[i]
+                    if v is None:
+                        var[i] = default_value
+                    else:
+                        var[i] = v
 
         def __init__(self, output: "DataOutput", name: str):
             DataOutput._FileComponent.__init__(self)
@@ -361,6 +463,8 @@ class DataOutput(BaseDataOutput):
                 self.variables.append(self._NetCDFVariableNative(field, str))
             elif isinstance(field, BaseDataOutput.ArrayFloat):
                 self.variables.append(self._NetCDFVariableNPArray(field, np.empty((0, 0), np.double), nan))
+            elif isinstance(field, BaseDataOutput.Enum):
+                self.variables.append(self._NetCDFVariableEnum(field))
             else:
                 raise ValueError("unknown field type")
 
@@ -501,6 +605,12 @@ class DataOutput(BaseDataOutput):
 
         def write_data(self, root: Dataset) -> None:
             target = root.createGroup(self.name)
+
+            if self.standard_temperature is not None:
+                netcdf_stp.standard_temperature(target, self.standard_temperature)
+            if self.standard_pressure is not None:
+                netcdf_stp.standard_pressure(target, self.standard_pressure)
+
             _write_constants(target, self.constants)
 
     def constant_record(self, name: str) -> "BaseDataOutput.ConstantRecord":
@@ -592,7 +702,7 @@ class DataOutput(BaseDataOutput):
                 maximum_sleep = 0.001
             if flush_skipped:
                 try:
-                    await asyncio.wait_for(self._data_updated.wait(), maximum_sleep)
+                    await wait_cancelable(self._data_updated.wait(), maximum_sleep)
                 except asyncio.TimeoutError:
                     pass
             else:

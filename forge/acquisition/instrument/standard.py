@@ -1,3 +1,4 @@
+import enum
 import typing
 import time
 import forge.data.structure.variable as netcdf_var
@@ -9,7 +10,7 @@ from .array import ArrayInput, ArrayVariable
 from .flag import Notification, Flag
 from .dimension import Dimension
 from .record import Report, Record
-from .state import Persistent, State, ChangeEvent
+from .state import Persistent, PersistentEnum, State, ChangeEvent
 
 
 def _declare_variable_type(configure: typing.Callable[[netcdf_var.Variable], None],
@@ -41,6 +42,7 @@ def _declare_state_type(value_type: typing.Type, field_type: typing.Type[BaseDat
                 super().__init__(name)
                 self.state: typing.Optional["StateHandler"] = None
                 self.override: typing.Optional[value_type] = None
+                self.use_cut_size = False
                 self.template = BaseDataOutput.Field.Template.STATE
 
             @property
@@ -52,11 +54,35 @@ def _declare_state_type(value_type: typing.Type, field_type: typing.Type[BaseDat
         def apply_override(self, value: typing.Optional[value_type]) -> None:
             self.data.override = value
 
-    def method(self: "BaseInstrument", source: Persistent, name: str = None, code: str = None,
+    def method(self: "StandardInstrument", source: Persistent, name: str = None, code: str = None,
                attributes: typing.Dict[str, typing.Any] = None, automatic: bool = True):
         if not attributes:
             attributes = dict()
         return StateHandler(self, source, name, code, attributes, automatic)
+
+    return method
+
+
+def _declare_measurement_state_type(configure: typing.Callable[[netcdf_var.Variable], None],
+                                    default_name: str = None):
+    def method(self: "StandardInstrument", source: Persistent, name: str = None, code: str = None,
+               attributes: typing.Dict[str, typing.Any] = None, automatic: bool = True):
+        s = self.state_measurement(source, name or default_name, code, attributes, automatic)
+        s.data.configure_variable = configure
+        return s
+
+    return method
+
+
+def _declare_measurement_state_array_type(configure: typing.Callable[[netcdf_var.Variable], None],
+                                          default_name: str = None):
+    def method(self: "StandardInstrument", source: Persistent, dimension: typing.Optional[Dimension] = None,
+               name: str = None, code: str = None,
+               attributes: typing.Dict[str, typing.Any] = None, automatic: bool = True):
+        s = self.state_measurement_array(source, dimension, name or default_name, code, attributes, automatic)
+        s.data.configure_variable = configure
+        return s
+
     return method
 
 
@@ -230,7 +256,7 @@ class StandardInstrument(BaseInstrument):
 
         i = Input(self, name, self.context.config.section_or_constant('DATA', name), send_to_bus)
         if not isinstance(i.config, LayeredConfiguration):
-            i.comment = self.context.config.comment('DATA', name)
+            i.field.add_comment(self.context.config.comment('DATA', name))
         self._inputs.append(i)
         return i
 
@@ -241,7 +267,7 @@ class StandardInstrument(BaseInstrument):
 
         i = ArrayInput(self, name, self.context.config.section_or_constant('DATA', name), send_to_bus)
         if not isinstance(i.config, LayeredConfiguration):
-            i.comment = self.context.config.comment('DATA', name)
+            i.field.add_comment(self.context.config.comment('DATA', name))
         self._inputs.append(i)
         return i
 
@@ -263,8 +289,39 @@ class StandardInstrument(BaseInstrument):
         v = self.variable(source, name or "number_concentration", code, attributes)
 
         def t(var: netcdf_var.Variable) -> None:
-            netcdf_var.variable_number_concentration(var, is_stp=(v.data.use_standard_temperature and
-                                                                  v.data.use_standard_pressure))
+            netcdf_var.variable_number_concentration(var,
+                                                     is_stp=(v.data.use_standard_temperature and
+                                                             v.data.use_standard_pressure))
+        v.data.configure_variable = t
+        return v
+
+    def variable_total_scattering(self, source: ArrayInput,
+                                  dimension: typing.Optional[Dimension] = None,
+                                  name: str = None, code: str = None,
+                                  attributes: typing.Dict[str, typing.Any] = None) -> ArrayVariable:
+        v = self.variable_array(source, dimension, name or "scattering_coefficient",
+                                code, attributes)
+
+        def t(var: netcdf_var.Variable) -> None:
+            netcdf_var.variable_total_scattering(var,
+                                                 is_stp=(v.data.use_standard_temperature and
+                                                         v.data.use_standard_pressure),
+                                                 is_dried=v.data.is_dried)
+        v.data.configure_variable = t
+        return v
+
+    def variable_back_scattering(self, source: ArrayInput,
+                                  dimension: typing.Optional[Dimension] = None,
+                                  name: str = None, code: str = None,
+                                  attributes: typing.Dict[str, typing.Any] = None) -> ArrayVariable:
+        v = self.variable_array(source, dimension, name or "backscattering_coefficient",
+                                code, attributes)
+
+        def t(var: netcdf_var.Variable) -> None:
+            netcdf_var.variable_back_scattering(var,
+                                                is_stp=(v.data.use_standard_temperature and
+                                                        v.data.use_standard_pressure),
+                                                is_dried=v.data.is_dried)
         v.data.configure_variable = t
         return v
 
@@ -295,16 +352,17 @@ class StandardInstrument(BaseInstrument):
         self._notifications.append(n)
         return n
 
-    def flag(self, source: Notification) -> Flag:
+    def flag(self, source: Notification, preferred_bit: typing.Optional[int] = None) -> Flag:
         f = Flag(self, source)
         self._flags.append(f)
+        if preferred_bit:
+            f.data.preferred_bit = preferred_bit
         return f
 
     def flag_bit(self, lookup: typing.Dict[int, Notification], bit: int, name: str, **kwargs) -> Flag:
         n = self.notification(name, **kwargs)
         lookup[bit] = n
-        f = self.flag(n)
-        f.data.preferred_bit = bit
+        f = self.flag(n, preferred_bit=bit)
         return f
 
     def record(self, name: str = "data", apply_cutsize: bool = True, automatic: bool = True) -> Record:
@@ -318,14 +376,16 @@ class StandardInstrument(BaseInstrument):
 
     def report(self, *fields: BaseInstrument.Variable,
                flags: typing.Optional[typing.Iterable[BaseInstrument.Flag]] = None,
-               record: typing.Optional[Record] = None) -> Report:
+               auxiliary_variables: typing.Optional[typing.Iterable[BaseInstrument.Variable]] = None,
+               record: typing.Optional[Record] = None,
+               automatic: bool = True) -> Report:
         if not record:
             if self._records:
                 record = self._records[0]
             else:
                 record = self.record()
 
-        return Report(self, record, fields, flags or ())
+        return Report(self, record, fields, flags or (), auxiliary_variables or (), automatic)
 
     def persistent(self, name: str, send_to_bus: bool = True, save_value: bool = True) -> Persistent:
         if name in self._persistent_names:
@@ -333,6 +393,22 @@ class StandardInstrument(BaseInstrument):
         self._persistent_names.add(name)
 
         p = Persistent(self, name, send_to_bus, save_value)
+
+        if p.save_value:
+            value, effective_time = self.context.persistent.load(name)
+            if value is not None:
+                p.load_prior(value, effective_time)
+
+        self._persistent.append(p)
+        return p
+
+    def persistent_enum(self, name: str, enum_type: typing.Type[enum.Enum],
+                        send_to_bus: bool = True, save_value: bool = True) -> PersistentEnum:
+        if name in self._persistent_names:
+            raise ValueError(f"duplicate persistent name {name}")
+        self._persistent_names.add(name)
+
+        p = PersistentEnum(self, name, enum_type, send_to_bus, save_value)
 
         if p.save_value:
             value, effective_time = self.context.persistent.load(name)
@@ -382,6 +458,70 @@ class StandardInstrument(BaseInstrument):
             attributes = dict()
         return StateHandler(self, source, dimension, name, code, attributes, automatic)
 
+    def state_enum(self, source: PersistentEnum, typename: typing.Optional[str] = None,
+                   name: str = None, code: str = None,
+                   attributes: typing.Dict[str, typing.Any] = None, automatic: bool = True):
+        enum_type = source.enum_type
+        
+        class StateHandler(State):
+            class Field(BaseDataOutput.Enum):
+                def __init__(self, name: str):
+                    super().__init__(name)
+                    self.state: typing.Optional["StateHandler"] = None
+                    self.override: typing.Optional[enum_type] = None
+                    self.template = BaseDataOutput.Field.Template.STATE
+
+                @property
+                def value(self) -> typing.Union[int, str]:
+                    if self.override is not None:
+                        return self.override.value
+                    return self.state.source.value
+
+                @property
+                def enum(self) -> typing.Type[enum.Enum]:
+                    return enum_type
+
+                @property
+                def dimension(self) -> typing.Optional[BaseDataOutput.ArrayFloat]:
+                    if self.state.dimension:
+                        return self.state.dimension.data
+                    return None
+
+                @property
+                def typename(self) -> str:
+                    if typename:
+                        return typename
+                    return super().typename
+
+            def apply_override(self, value: typing.Optional[typing.List[float]]) -> None:
+                self.data.override = value
+
+        if not attributes:
+            attributes = dict()
+        return StateHandler(self, source, name, code, attributes, automatic)
+
+    def state_measurement(self, source: Persistent, name: str = None, code: str = None,
+                          attributes: typing.Dict[str, typing.Any] = None, automatic: bool = True):
+        s = self.state_float(source, name, code, attributes, automatic)
+        s.data.template = BaseDataOutput.Field.Template.STATE_MEASUREMENT
+        s.data.use_cut_size = False
+        return s
+
+    def state_measurement_array(self, source: Persistent, dimension: typing.Optional[Dimension] = None,
+                                name: str = None, code: str = None,
+                                attributes: typing.Dict[str, typing.Any] = None, automatic: bool = True):
+        s = self.state_array(source, dimension, name, code, attributes, automatic)
+        s.data.template = BaseDataOutput.Field.Template.STATE_MEASUREMENT
+        s.data.use_cut_size = False
+        return s
+
+    state_temperature = _declare_measurement_state_type(netcdf_var.variable_temperature)
+    state_pressure = _declare_measurement_state_type(netcdf_var.variable_pressure)
+    state_wall_total_scattering = _declare_measurement_state_array_type(
+        netcdf_var.variable_wall_total_scattering, "wall_scattering_coefficient")
+    state_wall_back_scattering = _declare_measurement_state_array_type(
+        netcdf_var.variable_wall_back_scattering, "wall_backscattering_coefficient")
+
     def change_event(self, *state: State, name: str = "state") -> ChangeEvent:
         if name in self._change_event_names:
             raise ValueError(f"duplicate change event name {name}")
@@ -397,6 +537,8 @@ class StandardInstrument(BaseInstrument):
             attributes = dict()
         return Dimension(self, source, name, code, attributes)
 
+    dimension_wavelength = _declare_dimension_type(
+        netcdf_var.variable_wavelength, "wavelength")
     dimension_size_distribution_diameter = _declare_dimension_type(
         netcdf_var.variable_size_distribution_Dp, "diameter")
     dimension_size_distribution_diameter_electrical = _declare_dimension_type(
@@ -418,6 +560,7 @@ class StandardInstrument(BaseInstrument):
                 ('model', "instrument model"),
                 ('serial_number', "instrument serial number"),
                 ('firmware_version', "instrument firmware version information"),
+                ('calibration', "instrument calibration information"),
         ):
             value = info.get(name, None)
             target = self._instrument_metadata_fields.get(name)

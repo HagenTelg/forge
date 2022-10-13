@@ -15,7 +15,7 @@ def variable_flags(var: Variable, flags: typing.Dict[int, str] = None) -> None:
     all_bits = 0
     for b in bits:
         all_bits |= b
-    var.valid_range = [uint64(bits[0]), uint64(all_bits)]
+    var.valid_range = [uint64(0), uint64(all_bits)]
     var.flag_masks = [uint64(v) for v in bits]
     var.flag_meanings = " ".join([flags[b].replace(" ", "_") for b in bits])
 
@@ -50,9 +50,9 @@ def variable_number_concentration(var: Variable, is_stp: bool = False) -> None:
 
 def variable_total_scattering(var: Variable, is_stp: bool = False, is_dried: bool = True) -> None:
     if is_stp:
-        var.long_name = "total light scattering coefficient"
-    else:
         var.long_name = "total light scattering coefficient at STP"
+    else:
+        var.long_name = "total light scattering coefficient"
     if is_dried:
         var.standard_name = "volume_scattering_coefficient_in_air_due_to_dried_aerosol_particles"
     elif not is_stp:
@@ -63,9 +63,9 @@ def variable_total_scattering(var: Variable, is_stp: bool = False, is_dried: boo
 
 def variable_back_scattering(var: Variable, is_stp: bool = False, is_dried: bool = True) -> None:
     if is_stp:
-        var.long_name = "backwards hemispheric light scattering coefficient"
-    else:
         var.long_name = "backwards hemispheric light scattering coefficient at STP"
+    else:
+        var.long_name = "backwards hemispheric light scattering coefficient"
     if is_dried:
         var.standard_name = "volume_backwards_scattering_coefficient_in_air_due_to_dried_aerosol_particles"
     var.units = "Mm-1"
@@ -199,3 +199,15 @@ def variable_size_distribution_dNdlogDp(var: Variable) -> None:
     var.long_name = "normalized number concentration (dN/dlogDp)"
     var.units = "cm-3"
     var.C_format = "%7.1f"
+
+
+def variable_wall_total_scattering(var: Variable) -> None:
+    var.long_name = "total light scattering coefficient from wall signal"
+    var.units = "Mm-1"
+    var.C_format = "%7.2f"
+
+
+def variable_wall_back_scattering(var: Variable) -> None:
+    var.long_name = "backwards hemispheric light scattering coefficient from wall signal"
+    var.units = "Mm-1"
+    var.C_format = "%7.2f"

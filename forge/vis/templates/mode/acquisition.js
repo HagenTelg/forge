@@ -553,6 +553,23 @@ $(document).ready(function() {
         return result;
     }
 
+    function updateSpancheckSimultaneousMenu() {
+        let count = 0;
+        Array.from(displayContent.childNodes).forEach(node => {
+            if (!node.context.spancheck_command) {
+                return;
+            }
+            count = count + 1;
+        });
+
+        if (count <= 1) {
+            $('#show_spancheck_simultaneous').css('display', 'none');
+        } else {
+            $('#show_spancheck_simultaneous').css('display', '');
+        }
+    }
+    updateSpancheckSimultaneousMenu();
+
     class DisplayContext extends ListContext {
         constructor(uid, base, source) {
             super(source);
@@ -566,6 +583,8 @@ $(document).ready(function() {
                    this.instrument_info = info;
                 }, source);
             }
+
+            this.spancheck_command = false;
         }
 
         attach() {
@@ -781,6 +800,11 @@ $(document).ready(function() {
             this.attachState();
             this.attachSource();
             this.attachCommandButtons();
+        }
+
+        attachSpancheck() {
+            this.spancheck_command = true;
+            updateSpancheckSimultaneousMenu();
         }
     }
 
@@ -1247,6 +1271,17 @@ $(document).ready(function() {
             },
             title: "Restart the acquisition system?",
             details: "This will restart the acquisition system, temporarily interrupting data collection.  Restarting the system is most commonly used to apply changes to the configuration.",
+        };
+        showModal("{{ request.url_for('static', path='/modal/actionprompt.html') }}");
+        e.preventDefault();
+    });
+    $('#show_spancheck_simultaneous').click(function(e) {
+        ACTION_PROMPT_DATA = {
+            ok: function() {
+                AcquisitionSocket.sendCommand('', 'start_spancheck');
+            },
+            title: "Start spancheck on all instruments?",
+            details: "Start a span gas calibration check on all supported instruments.  This will compare the CO₂ scattering to that of filtered air to generate a percentage error and calibration factors.  Measurements are disabled during the span check.",
         };
         showModal("{{ request.url_for('static', path='/modal/actionprompt.html') }}");
         e.preventDefault();

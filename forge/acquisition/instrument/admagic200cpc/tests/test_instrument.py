@@ -1,6 +1,7 @@
 import asyncio
 import typing
 import pytest
+from forge.tasks import wait_cancelable
 from forge.acquisition.instrument.testing import create_streaming_instrument, BusInterface
 from forge.acquisition.instrument.admagic200cpc.simulator import Simulator
 from forge.acquisition.instrument.admagic200cpc.instrument import Instrument
@@ -17,7 +18,7 @@ async def test_communications():
     simulator_run = asyncio.ensure_future(simulator.run())
     instrument_run = asyncio.ensure_future(instrument.run())
 
-    await asyncio.wait_for(bus.wait_for_communicating(), 30)
+    await wait_cancelable(bus.wait_for_communicating(), 30)
 
     assert await bus.value('N') == simulator.data_N
     assert await bus.value('Q') == simulator.data_Q
@@ -66,7 +67,7 @@ async def test_flow_configuration():
     simulator_run = asyncio.ensure_future(simulator.run())
     instrument_run = asyncio.ensure_future(instrument.run())
 
-    await asyncio.wait_for(bus.wait_for_communicating(), 30)
+    await wait_cancelable(bus.wait_for_communicating(), 30)
 
     assert await bus.value('Q') == 0.5
     assert await bus.value('Qinstrument') == simulator.data_Q
