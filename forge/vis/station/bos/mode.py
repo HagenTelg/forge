@@ -27,14 +27,19 @@ station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-pops', "POPS")
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-pops', "POPS"),
                                          'aerosol-realtime-aethalometer')
 
-station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-t640status', "T640 Status"),
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-cpcstatus2', "MAGIC CPC Status"),
                                     'aerosol-raw-cpcstatus')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-cpcstatus2', "MAGIC CPC Status"),
+                                         'aerosol-realtime-cpcstatus')
+
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-t640status', "T640 Status"),
+                                    'aerosol-raw-cpcstatus2')
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-dmpsstatus', "DMPS Status"),
                                     'aerosol-raw-t640status')
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-popsstatus', "POPS Status"),
                                     'aerosol-raw-dmpsstatus')
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-popsstatus', "POPS Status"),
-                                         'aerosol-realtime-cpcstatus')
+                                         'aerosol-realtime-cpcstatus2')
 
 station_modes['aerosol-realtime'].remove('aerosol-realtime-wind')
 

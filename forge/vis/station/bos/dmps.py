@@ -104,6 +104,12 @@ class DMPSCounts(SizeCounts):
         n_cnc.data_field = 'cnc'
         self.traces.append(n_cnc)
 
+        n_cnc = SizeCounts.Trace()
+        n_cnc.legend = "CNC2"
+        n_cnc.data_record = f'{mode}-cnc'
+        n_cnc.data_field = 'cnc2'
+        self.traces.append(n_cnc)
+
         n_dmps = SizeCounts.Trace()
         n_dmps.legend = "DMPS"
         n_dmps.data_record = f'{mode}-dmps'

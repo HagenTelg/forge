@@ -4,15 +4,19 @@ from ..default.aerosol.pops import POPSStatus, POPSDistribution
 from ..default.aerosol.t640 import T640MassAethalometer, T640Status
 from ..default.aerosol.editing.t640 import EditingT640
 from .dmps import DMPSStatus, DMPSDistribution, DMPSCounts
-from .counts import RealtimeParticleConcentration
+from .counts import RealtimeParticleConcentration, EditingParticleConcentration, ADMagicCPC250StatusStatusSecondary
 
 
 station_views = detach(aerosol_views, ozone_views)
 
 station_views['aerosol-raw-counts'] = DMPSCounts('aerosol-raw')
+station_views['aerosol-editing-counts'] = EditingParticleConcentration()
 station_views['aerosol-clean-counts'] = DMPSCounts('aerosol-clean')
 station_views['aerosol-avgh-counts'] = DMPSCounts('aerosol-avgh')
 station_views['aerosol-realtime-counts'] = RealtimeParticleConcentration('aerosol-realtime')
+
+station_views['aerosol-raw-cpcstatus2'] = ADMagicCPC250StatusStatusSecondary('aerosol-raw')
+station_views['aerosol-realtime-cpcstatus2'] = ADMagicCPC250StatusStatusSecondary('aerosol-realtime', realtime=True)
 
 station_views['aerosol-raw-mass'] = T640MassAethalometer('aerosol-raw')
 station_views['aerosol-raw-t640status'] = T640Status('aerosol-raw')
