@@ -1,0 +1,9 @@
+import typing
+from ..default.view import detach, View, aerosol_views, ozone_views, met_views
+
+
+station_views = detach(aerosol_views, ozone_views, met_views)
+
+
+def get(station: str, view_name: str) -> typing.Optional[View]:
+    return station_views.get(view_name)
