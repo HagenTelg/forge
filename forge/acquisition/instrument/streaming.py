@@ -15,6 +15,7 @@ class StreamingContext(BaseContext):
     def __init__(self, config: LayeredConfiguration, data: BaseDataOutput, bus: BaseBusInterface,
                  persistent: BasePersistentInterface):
         super().__init__(config, data, bus, persistent)
+        self.always_reset_stream: bool = False
 
     async def open_stream(self) -> typing.Tuple[typing.Optional[asyncio.StreamReader],
                                                 typing.Optional[asyncio.StreamWriter]]:
@@ -34,7 +35,7 @@ class StreamingInstrument(StandardInstrument):
         self.reader: typing.Optional[asyncio.StreamReader] = None
         self.writer: typing.Optional[asyncio.StreamWriter] = None
 
-        self._stream_need_reset = False
+        self._stream_need_reset: bool = False
 
     async def drain_reader(self, delay: float) -> None:
         now = time.monotonic()
@@ -133,13 +134,17 @@ class StreamingInstrument(StandardInstrument):
 
             try:
                 await self.start_communications()
-            except (TimeoutError, asyncio.TimeoutError) as e:
+            except (TimeoutError, asyncio.TimeoutError):
                 _LOGGER.debug("Timeout waiting for response in start communications", exc_info=True)
+                if self.context.always_reset_stream:
+                    self._stream_need_reset = True
                 return False
             except CommunicationsError:
                 _LOGGER.debug("Invalid response in start communications", exc_info=True)
+                if self.context.always_reset_stream:
+                    self._stream_need_reset = True
                 return False
-            except IOError:
+            except (IOError, EOFError, asyncio.IncompleteReadError):
                 _LOGGER.warning("Stream IO error during start communications", exc_info=True)
                 self._stream_need_reset = True
                 return False
@@ -152,19 +157,23 @@ class StreamingInstrument(StandardInstrument):
         async def process() -> bool:
             try:
                 await self.communicate()
-            except (TimeoutError, asyncio.TimeoutError) as e:
+            except (TimeoutError, asyncio.TimeoutError):
                 _LOGGER.info("Timeout waiting for response", exc_info=True)
                 self.context.bus.log("Timeout waiting for response", {
                     "exception": traceback.format_exc(),
                 }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
+                if self.context.always_reset_stream:
+                    self._stream_need_reset = True
                 return False
             except CommunicationsError:
                 _LOGGER.info("Invalid response received", exc_info=True)
                 self.context.bus.log("Invalid response received", {
                     "exception": traceback.format_exc(),
                 }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
+                if self.context.always_reset_stream:
+                    self._stream_need_reset = True
                 return False
-            except IOError:
+            except (IOError, EOFError, asyncio.IncompleteReadError):
                 _LOGGER.warning("Stream IO error", exc_info=True)
                 self.context.bus.log("Stream IO error", {
                     "exception": traceback.format_exc(),
@@ -242,16 +251,40 @@ def launch(instrument: typing.Type[StreamingInstrument]) -> None:
             if isinstance(tcp, str):
                 (host, port) = tcp.split(':')
                 ssl = None
+                always_reset = True
             else:
                 host = str(tcp.get("HOST"))
                 port = int(tcp.get("PORT"))
                 ssl = tcp.get("SSL") or None
+                retain = tcp.get("RETRY_RETAIN_CONNECTION")
+                if retain is None:
+                    always_reset = True
+                else:
+                    always_reset = not retain
             host = host.strip()
             if not host:
                 raise ValueError(f"invalid TCP target host: {host}")
             if port <= 0 or port > 65535:
                 raise ValueError(f"invalid TCP target port: {port}")
-            return TCPContext(instrument_config, data, bus, persistent, host, port, ssl)
+            return TCPContext(instrument_config, data, bus, persistent, host, port, ssl, always_reset)
+
+        unix = instrument_config.section_or_constant("UNIX_SOCKET")
+        if unix:
+            from .unixsocket import UnixSocketContext
+            if isinstance(unix, str):
+                path = unix
+                always_reset = True
+            else:
+                path = str(unix.get("PATH"))
+                retain = tcp.get("RETRY_RETAIN_CONNECTION")
+                if retain is None:
+                    always_reset = True
+                else:
+                    always_reset = not retain
+            path = path.strip()
+            if not path:
+                raise ValueError(f"invalid Unix socket path: {path}")
+            return UnixSocketContext(instrument_config, data, bus, persistent, path, always_reset)
 
         raise ValueError("no serial port or streaming device defined")
 

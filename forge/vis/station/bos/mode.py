@@ -6,6 +6,8 @@ station_modes = detach(aerosol_modes, ozone_modes)
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-mass', "Mass"),
                                     'aerosol-raw-aethalometer')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-mass', "Mass"),
+                                         'aerosol-realtime-aethalometer')
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-dmps', "DMPS"),
                                     'aerosol-raw-mass')
@@ -25,7 +27,7 @@ station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-pops', "POPS
 station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-pops', "POPS"),
                                      'aerosol-avgh-dmps')
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-pops', "POPS"),
-                                         'aerosol-realtime-aethalometer')
+                                         'aerosol-realtime-mass')
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-cpcstatus2', "MAGIC CPC Status"),
                                     'aerosol-raw-cpcstatus')
@@ -38,8 +40,10 @@ station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-dmpsstatus', "DM
                                     'aerosol-raw-t640status')
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-popsstatus', "POPS Status"),
                                     'aerosol-raw-dmpsstatus')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-t640status', "T640 Status"),
+                                         'aerosol-raw-cpcstatus2')
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-popsstatus', "POPS Status"),
-                                         'aerosol-realtime-cpcstatus2')
+                                         'aerosol-realtime-t640status')
 
 station_modes['aerosol-realtime'].remove('aerosol-realtime-wind')
 

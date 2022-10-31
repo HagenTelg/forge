@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def arguments() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Forge CPD3 acquisition instrument.")
+    parser = argparse.ArgumentParser(description="Forge acquisition instrument.")
 
     parser.add_argument('--debug',
                         dest='debug', action='store_true',

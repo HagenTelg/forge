@@ -214,7 +214,7 @@ station_profile_data['aerosol']['raw']['t640-pm1'] = lambda station, start_epoch
 station_profile_data['aerosol']['realtime']['t640-whole'] = {
     RealtimeTranslator.Key('X_M11'): 'X',
 }
-station_profile_data['aerosol']['realtime']['t640-pm10'] ={
+station_profile_data['aerosol']['realtime']['t640-pm10'] = {
     RealtimeTranslator.Key('X_M11', {'pm10'}): 'X',
 }
 station_profile_data['aerosol']['realtime']['t640-pm25'] = {

@@ -2,6 +2,8 @@ import typing
 import asyncio
 import termios
 import os
+import logging
+import argparse
 from forge.acquisition.instrument.streaming import StreamingSimulator
 from .util import standard_termios
 
@@ -87,6 +89,35 @@ async def create_simulator_streams(output: str) -> typing.Tuple[asyncio.StreamRe
     writer = _SimulatorWriter(transport, protocol, reader, loop, context)
 
     return reader, writer
+
+
+def arguments() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Forge acquisition simulated instrument.")
+
+    parser.add_argument('--debug',
+                        dest='debug', action='store_true',
+                        help="enable debug output")
+
+    parser.add_argument('tty',
+                        help="output pseudoterminal")
+
+    return parser
+
+
+def parse_arguments(parser: typing.Optional[argparse.ArgumentParser] = None) -> str:
+    if parser is None:
+        parser = arguments()
+
+    args, _ = parser.parse_known_args()
+    if args.debug:
+        root_logger = logging.getLogger()
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter('%(name)-40s %(message)s')
+        handler.setFormatter(formatter)
+        root_logger.setLevel(logging.DEBUG)
+        root_logger.addHandler(handler)
+
+    return args.tty
 
 
 def run(output: str, simulator: typing.Type[StreamingSimulator], *args, **kwargs) -> None:

@@ -1897,6 +1897,12 @@ class NativeInstrument(NativeRealtimeTranslator.Instrument):
             self.cutsize = cutsize
             self.field = field
 
+        def __str__(self):
+            return f"{self.field}:{self.cutsize}"
+
+        def __repr__(self):
+            return f"DispatchKey({self.field}, {self.cutsize})"
+
         def __eq__(self, other):
             if not isinstance(other, NativeInstrument.DispatchKey):
                 return NotImplemented
@@ -1995,6 +2001,31 @@ def native_wavelength_instrument(mapping: typing.Dict[str, str],
     return MappedInstrument
 
 
+class _T640Instrument(native_remapped_instrument({
+    "Pambient": "P",
+    "Tsample": "T1",
+    "Tambient": "T2",
+    "Tasc": "T3",
+    "Tled": "T4",
+    "Tbox": "T5",
+    "Usample": "U1",
+    "Qsample": "Q1",
+    "Qbypass": "Q2",
+    "spandev": "ZSPAN",
+})):
+    def translate_key(self, key: NativeInstrument.DispatchKey) -> "RealtimeTranslator.Key":
+        if key.field == 'X1':
+            return RealtimeTranslator.Key("X_" + self.source,
+                                          self.FLAVORS_TRANSLATION[NativeCutSize.Size.PM1])
+        elif key.field == 'X25':
+            return RealtimeTranslator.Key("X_" + self.source,
+                                          self.FLAVORS_TRANSLATION[NativeCutSize.Size.PM2_5])
+        elif key.field == 'X10':
+            return RealtimeTranslator.Key("X_" + self.source,
+                                          self.FLAVORS_TRANSLATION[NativeCutSize.Size.PM10])
+        return super().translate_key(key)
+
+
 class RealtimeTranslator(NativeRealtimeTranslator):
     class Key:
         def __init__(self, variable: str, flavors: typing.Optional[typing.Set[str]] = None):
@@ -2012,6 +2043,9 @@ class RealtimeTranslator(NativeRealtimeTranslator):
                 flavors = next(x for x in self.flavors)
             return hash((self.variable, flavors))
 
+        def __str__(self):
+            return f"{self.variable}:{':'.join(self.flavors)}"
+
         def __repr__(self):
             return f"Key({self.variable}, {self.flavors})"
 
@@ -2019,6 +2053,9 @@ class RealtimeTranslator(NativeRealtimeTranslator):
         def __init__(self, data_name: str, field: str):
             self.data_name = data_name
             self.field = field
+
+        def __str__(self):
+            return f"{self.data_name}:{self.field}"
 
         def __repr__(self):
             return f"Target({self.data_name}, {self.field})"
@@ -2144,6 +2181,7 @@ class RealtimeTranslator(NativeRealtimeTranslator):
         }, persistent={
             "Dp": "Ns",
         }),
+        "teledynet640": _T640Instrument,
         "tsi3563nephelometer": native_wavelength_instrument({
             "Psample": "P",
             "Tsample": "T",
@@ -3823,19 +3861,19 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         AcquisitionTranslator.Variable('ZSPAN'): 'spandev',
         AcquisitionTranslator.Variable('PCT1'): 'PCTpump',
         AcquisitionTranslator.Variable('PCT2'): 'PCTvalve',
-        AcquisitionTranslator.Variable('PCT3'): 'PCTact',
+        AcquisitionTranslator.Variable('PCT3'): 'PCTasc',
     }, flags_notifications={
-        'BoxTemperatureWarning': 'box_temperature_warning',
-        'FlowAlarm': 'flow_alarm',
+        'BoxTemperatureWarning': 'box_temperature_out_of_range',
+        'FlowAlarm': 'sample_flow_out_of_range',
         'SystemFaultWarning': 'system_fault_warning',
+        'InternalSerialTimeout': 'internal_serial_timeout',
         'SystemResetWarning': 'system_reset_warning',
-        'TemperatureAlarm': 'temperature_alarm',
-        'SystemServiceWarning': 'system_service_warning',
+        'BypassFlowWarning': 'bypass_flow_out_of_range',
         'OPCInstrumentWarning': 'opc_instrument_warning',
-        'SampleTemperatureWarning': 'sample_temperature_warning',
+        'SampleTemperatureWarning': 'sample_temperature_out_of_range',
     }, flags_set_warning={
-        'BoxTemperatureWarning', 'FlowAlarm', 'SystemFaultWarning', 'TemperatureAlarm', 'SystemServiceWarning',
-        'OPCInstrumentWarning', 'SampleTemperatureWarning',
+        'BoxTemperatureWarning', 'FlowAlarm', 'SystemFaultWarning', 'SystemServiceWarning',
+        'OPCInstrumentWarning', 'SampleTemperatureWarning', 'InternalSerialTimeout',
     }),
 
     AcquisitionTranslator.Component('acquire_thermo_ozone49', 'thermo49', variable_map={

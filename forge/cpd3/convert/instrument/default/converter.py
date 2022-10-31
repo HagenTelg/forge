@@ -264,7 +264,7 @@ class VariableConverter:
             def float_converter(v) -> float:
                 if v is None:
                     return nan
-                if v.mask:
+                if getattr(v, 'mask', False):
                     return nan
                 v = float(v)
                 if not isfinite(v):
@@ -277,7 +277,7 @@ class VariableConverter:
                 def c(v):
                     if v is None:
                         return None
-                    if v.mask:
+                    if getattr(v, 'mask', False):
                         return None
                     return int(v)
                 return c
@@ -285,7 +285,7 @@ class VariableConverter:
                 def c(v):
                     if v is None:
                         return None
-                    if v.mask:
+                    if getattr(v, 'mask', False):
                         return None
                     return str(v)
                 return c

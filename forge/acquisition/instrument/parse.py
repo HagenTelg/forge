@@ -143,3 +143,15 @@ def parse_flags_bits(field: bytes, dispatch: typing.Dict[int, typing.Callable[[b
         raise CommunicationsError(f"negative flags {field}")
     for bit, flag in dispatch.items():
         flag((flags & bit) != 0)
+
+
+def parse_flags_mapped(values: typing.Dict[int, bool],
+                       dispatch: typing.Dict[int, typing.Callable[[bool], typing.Any]],
+                       skip_missing: bool = False) -> None:
+    for index, flag in dispatch.items():
+        value = values.get(index)
+        if value is None:
+            if not skip_missing:
+                raise CommunicationsError(f"no flag value for {index}")
+            continue
+        flag(value)

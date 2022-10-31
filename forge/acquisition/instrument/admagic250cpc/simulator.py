@@ -123,6 +123,5 @@ class Simulator(StreamingSimulator):
 
 
 if __name__ == '__main__':
-    import sys
-    from forge.acquisition.serial.simulator import run
-    run(sys.argv[1], Simulator)
+    from forge.acquisition.serial.simulator import parse_arguments, run
+    run(parse_arguments(), Simulator)

@@ -38,24 +38,22 @@
             <tr> <td>Span deviation</td>                    <td class="value-formatted" field="spandev" rightpad="1"></td> </tr>
             <tr> <td>Pump duty cycle (%)</td>               <td class="value-formatted" field="PCTpump" decimals="0" rightpad="3"></td> </tr>
             <tr> <td>Proportional valve duty cycle (%)</td> <td class="value-formatted" field="PCTvalve" decimals="0" rightpad="3"></td> </tr>
-            <tr> <td>ACT heater duty cycle (%)</td>         <td class="value-formatted" field="PCTact" decimals="0" rightpad="3"></td> </tr>
+            <tr> <td>ASC heater duty cycle (%)</td>         <td class="value-formatted" field="PCTasc" decimals="0" rightpad="3"></td> </tr>
         </tbody>
     </table>
 
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="sample_temperature_warning">Sample temperature warning active</div>
+         notification="sample_temperature_out_of_range">Sample temperature greater than 60 °C</div>
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="box_temperature_warning">Box temperature warning active</div>
+         notification="box_temperature_out_of_range">Box temperature greater than 60 °C</div>
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="temperature_alarm">Temperature alarm active</div>
+         notification="sample_flow_out_of_range">Sample flow out of range</div>
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="flow_alarm">Flow alarm active</div>
+         notification="bypass_flow_out_of_range">Bypass flow out of range</div>
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="system_fault_warning">Instrument system fault</div>
+         notification="internal_serial_timeout">Internal serial timeout (contact Teledyne)</div>
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="opc_instrument_warning">OPC warning</div>
-    <div class="content display-data communication-state notification-state hide-false warning"
-         notification="system_service_warning">System service warning</div>
+         notification="system_fault_warning">System fault warning</div>
     <div class="content display-data communication-state notification-state hide-false"
          notification="system_reset_warning">Instrument reset warning</div>
 

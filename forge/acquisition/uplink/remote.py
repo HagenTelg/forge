@@ -242,7 +242,7 @@ def main():
         default_url = str(url)
 
     parser.add_argument('url',
-                        help="CPD3 acquisition uplink websocket URL",
+                        help="Acquisition uplink websocket URL",
                         default=default_url,
                         nargs=default_url and '?' or 1)
 

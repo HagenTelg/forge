@@ -421,6 +421,13 @@ class SerialPortContext(StreamingContext):
         if configured_serial and isinstance(configured_serial, str) and configured_serial != self._serial_args['port']:
             self._real_serial_port = configured_serial
 
+    @property
+    def bit_time(self) -> float:
+        baud = self._serial_args.get('baudrate')
+        if not baud:
+            return 0.0
+        return 1.0 / baud
+
     async def open_stream(self) -> typing.Tuple[typing.Optional[asyncio.StreamReader],
                                                 typing.Optional[asyncio.StreamWriter]]:
         (reader, writer) = await open_serial(**self._serial_args)
