@@ -61,8 +61,8 @@ def upload_ftp(ftp: FTP, telemetry: bytes, public_key: PublicKey, signature: byt
         'signature': b64encode(signature).decode('ascii'),
     }).encode('utf-8')
     uid = b32encode(token_bytes(10)).decode('ascii')
-    ftp.storbinary(f'STOR telemetry_{uid}', BytesIO(telemetry))
     ftp.storbinary(f'STOR telemetry_{uid}.sig', BytesIO(signature_file))
+    ftp.storbinary(f'STOR telemetry_{uid}', BytesIO(telemetry))
 
 
 async def upload_post(session: aiohttp.ClientSession, url: URL, telemetry: bytes,

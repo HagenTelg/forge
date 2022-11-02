@@ -34,8 +34,8 @@ def upload_ftp(ftp: FTP, file: Path, contents: typing.BinaryIO, public_key: Publ
         'public_key': b64encode(key_to_bytes(public_key)).decode('ascii'),
         'signature': b64encode(signature).decode('ascii'),
     }).encode('utf-8')
-    ftp.storbinary(f'STOR {file.name}', contents)
     ftp.storbinary(f'STOR {file.name}.sig', BytesIO(signature_file))
+    ftp.storbinary(f'STOR {file.name}', contents)
 
 
 async def upload_post(session: aiohttp.ClientSession, url: URL,
