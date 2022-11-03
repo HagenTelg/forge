@@ -224,6 +224,9 @@ def launch(instrument: typing.Type[StreamingInstrument]) -> None:
     args.add_argument('--serial',
                       dest="serial",
                       help="connect to a serial port")
+    args.add_argument('--control',
+                      dest="control",
+                      help="auxiliary serial control socket")
 
     args = args.parse_args()
 
@@ -237,13 +240,13 @@ def launch(instrument: typing.Type[StreamingInstrument]) -> None:
         if args.serial:
             from .serial import SerialPortContext
             serial_args = getattr(instrument, 'SERIAL_PORT', {})
-            return SerialPortContext(instrument_config, data, bus, persistent, args.serial, serial_args)
+            return SerialPortContext(instrument_config, data, bus, persistent, args.serial, serial_args, args.control)
 
         serial = instrument_config.section_or_constant("SERIAL_PORT")
         if serial:
             from .serial import SerialPortContext
             serial_args = getattr(instrument, 'SERIAL_PORT', {})
-            return SerialPortContext(instrument_config, data, bus, persistent, serial, serial_args)
+            return SerialPortContext(instrument_config, data, bus, persistent, serial, serial_args, args.control)
 
         tcp = instrument_config.section_or_constant("TCP")
         if tcp:

@@ -2,10 +2,12 @@ import typing
 import asyncio
 import logging
 import serial
-import os
+import socket
+import struct
+from serial.rs485 import RS485Settings
 from forge.acquisition import LayeredConfiguration
 from forge.tasks import background_task
-from forge.acquisition.serial.util import TCAttr, standard_termios
+from forge.acquisition.serial.multiplexer.protocol import ControlOperation, Parity as ControlParity
 from .streaming import StreamingContext
 from .base import BaseDataOutput, BasePersistentInterface, BaseBusInterface
 
@@ -51,6 +53,13 @@ _PARITY = {
     'S': serial.PARITY_SPACE,
     'SPACE': serial.PARITY_SPACE,
 }
+_CONTROL_PARITY = {
+    serial.PARITY_NONE: ControlParity.NONE,
+    serial.PARITY_EVEN: ControlParity.EVEN,
+    serial.PARITY_ODD: ControlParity.ODD,
+    serial.PARITY_MARK: ControlParity.MARK,
+    serial.PARITY_SPACE: ControlParity.SPACE,
+}
 
 
 class SerialTransport(asyncio.Transport):
@@ -60,6 +69,7 @@ class SerialTransport(asyncio.Transport):
         self._loop = loop
         self._protocol = protocol
         self._port: typing.Optional[serial.Serial] = port
+        self._control_socket: str = None
 
         self._is_reading: bool = False
 
@@ -78,6 +88,10 @@ class SerialTransport(asyncio.Transport):
     @property
     def port(self) -> serial.Serial:
         return self._port
+
+    @property
+    def control_socket(self) -> str:
+        return self._control_socket
 
     def get_extra_info(self, name, default=None):
         if name == 'port':
@@ -279,7 +293,8 @@ class SerialTransport(asyncio.Transport):
         self._handle_close()
 
 
-async def open_serial(limit: int = None, **kwargs) -> typing.Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
+async def open_serial(limit: int = None,
+                      **kwargs) -> typing.Tuple[asyncio.StreamReader, asyncio.StreamWriter, serial.Serial]:
     if have_termios:
         device = kwargs.pop('port')
         bytesize = kwargs.pop('bytesize', None)
@@ -316,96 +331,59 @@ async def open_serial(limit: int = None, **kwargs) -> typing.Tuple[asyncio.Strea
     transport = SerialTransport(loop, protocol, port)
     reader.serial_transport = transport
     writer = asyncio.StreamWriter(transport, protocol, reader, loop)
-    return reader, writer
-
-
-def _apply_real_termios(device: str, bytesize, parity) -> None:
-    try:
-        fd = os.open(device, os.O_RDWR | os.O_CLOEXEC | os.O_NOCTTY)
-    except OSError:
-        _LOGGER.debug("Error opening real device", exc_info=True)
-        return
-    try:
-        tio = termios.tcgetattr(fd)
-        standard_termios(tio)
-        if bytesize is not None:
-            tio[TCAttr.c_cflag] &= ~termios.CSIZE
-            if bytesize == serial.EIGHTBITS:
-                tio[TCAttr.c_cflag] |= termios.CS8
-            elif bytesize == serial.SEVENBITS:
-                tio[TCAttr.c_cflag] |= termios.CS7
-            elif bytesize == serial.SIXBITS:
-                tio[TCAttr.c_cflag] |= termios.CS6
-            elif bytesize == serial.FIVEBITS:
-                tio[TCAttr.c_cflag] |= termios.CS5
-        if parity is not None:
-            tio[TCAttr.c_iflag] &= ~(termios.INPCK | termios.ISTRIP | termios.PARENB | termios.PARODD)
-            if serial.serialposix.CMSPAR:
-                tio[TCAttr.c_iflag] &= ~serial.serialposix.CMSPAR
-            if parity == serial.PARITY_NONE:
-                pass
-            elif parity == serial.PARITY_EVEN:
-                tio[TCAttr.c_iflag] |= termios.PARENB
-            elif parity == serial.PARITY_ODD:
-                tio[TCAttr.c_iflag] |= (termios.PARENB | termios.PARODD)
-            elif parity == serial.PARITY_MARK:
-                tio[TCAttr.c_iflag] |= (termios.PARENB | serial.serialposix.CMSPAR | termios.PARODD)
-            elif parity == serial.PARITY_SPACE:
-                tio[TCAttr.c_iflag] |= (termios.PARENB | serial.serialposix.CMSPAR)
-        termios.tcsetattr(fd, termios.TCSANOW, tio)
-    except termios.error as e:
-        raise IOError from e
-    finally:
-        try:
-            os.close(fd)
-        except:
-            pass
+    return reader, writer, port
 
 
 class SerialPortContext(StreamingContext):
     def __init__(self, config: LayeredConfiguration, data: BaseDataOutput, bus: BaseBusInterface,
-                 persistent: BasePersistentInterface, serial: typing.Union[str, LayeredConfiguration],
-                 serial_args: typing.Dict[str, typing.Any] = None):
+                 persistent: BasePersistentInterface, serial_config: typing.Union[str, LayeredConfiguration],
+                 serial_args: typing.Dict[str, typing.Any] = None,
+                 control_socket: typing.Optional[str] = None):
         super().__init__(config, data, bus, persistent)
+
+        self._control_socket = control_socket
 
         self._serial_args: typing.Dict[str, typing.Any] = dict()
         if serial_args:
             self._serial_args.update(serial_args)
 
-        if isinstance(serial, str):
-            self._serial_args['port'] = serial
+        rs485_config = None
+        if isinstance(serial_config, str):
+            self._serial_args['port'] = serial_config
         else:
-            self._serial_args['port'] = serial["PORT"]
+            self._serial_args['port'] = serial_config["PORT"]
 
-            baud = serial.get("BAUD")
+            baud = serial_config.get("BAUD")
             if baud:
                 self._serial_args['baudrate'] = int(baud)
 
-            data_bits = serial.get("DATA_BITS")
+            data_bits = serial_config.get("DATA_BITS")
             if data_bits:
                 self._serial_args['bytesize'] = _DATA_BITS[int(data_bits)]
 
-            stop_bits = serial.get("STOP_BITS")
+            stop_bits = serial_config.get("STOP_BITS")
             if stop_bits:
                 self._serial_args['stopbits'] = _STOP_BITS[float(stop_bits)]
 
-            parity = serial.get("PARITY")
+            parity = serial_config.get("PARITY")
             if parity:
                 if isinstance(parity, str):
                     parity = parity.upper()
                 self._serial_args['parity'] = _PARITY[parity]
 
-            xonxoff = serial.get("XON_XOFF")
+            xonxoff = serial_config.get("XON_XOFF")
             if xonxoff is not None:
                 self._serial_args['xonxoff'] = bool(xonxoff)
 
-            rtscts = serial.get("RTS_CTS")
+            rtscts = serial_config.get("RTS_CTS")
             if rtscts is not None:
                 self._serial_args['rtscts'] = bool(rtscts)
 
-            dsrdtr = serial.get("DSR_DTR")
+            dsrdtr = serial_config.get("DSR_DTR")
             if rtscts is not None:
                 self._serial_args['dsrdtr'] = bool(dsrdtr)
+
+            rs485_config = serial_config.get("RS485")
 
         self.read_only = config.get("READ_ONLY", default=False)
 
@@ -414,12 +392,32 @@ class SerialPortContext(StreamingContext):
         self._serial_args['write_timeout'] = 0
         self._serial_args['exclusive'] = False
 
-        self._real_serial_port: typing.Optional[str] = None
-        configured_serial = config.section_or_constant("SERIAL_PORT")
-        if configured_serial and not isinstance(configured_serial, str):
-            configured_serial = serial.get("PORT")
-        if configured_serial and isinstance(configured_serial, str) and configured_serial != self._serial_args['port']:
-            self._real_serial_port = configured_serial
+        self._rs485: typing.Optional[typing.Union[RS485Settings, bool]] = self._serial_args.pop('rs485', None)
+        if isinstance(rs485_config, bool) and not rs485_config:
+            self._rs485 = False
+        elif rs485_config is not None:
+            if self._rs485 is None:
+                self._rs485 = RS485Settings()
+            if isinstance(rs485_config, dict):
+                rts_level_for_tx = rs485_config.get("RTS_LEVEL_FOR_TX")
+                if rts_level_for_tx is not None:
+                    self._rs485.rts_level_for_tx = bool(rts_level_for_tx)
+
+                rts_level_for_rx = rs485_config.get("RTS_LEVEL_FOR_RX")
+                if rts_level_for_rx is not None:
+                    self._rs485.rts_level_for_rx = bool(rts_level_for_rx)
+
+                loopback = rs485_config.get("LOOPBACK")
+                if loopback is not None:
+                    self._rs485.loopback = bool(loopback)
+
+                delay_before_tx = rs485_config.get("DELAY_BEFORE_TX")
+                if delay_before_tx is not None:
+                    self._rs485.delay_before_tx = float(delay_before_tx)
+
+                delay_before_rx = rs485_config.get("DELAY_BEFORE_RX")
+                if delay_before_rx is not None:
+                    self._rs485.delay_before_rx = float(delay_before_rx)
 
     @property
     def bit_time(self) -> float:
@@ -428,24 +426,73 @@ class SerialPortContext(StreamingContext):
             return 0.0
         return 1.0 / baud
 
+    def _apply_open_control(self) -> None:
+        if not self._control_socket:
+            return
+
+        bytesize = self._serial_args.get('bytesize')
+        parity = self._serial_args.get('parity')
+        if (not bytesize or bytesize == serial.EIGHTBITS) and \
+                (not parity or parity == serial.PARITY_NONE) and \
+                self._rs485 is None:
+            return
+
+        try:
+            s = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        except IOError:
+            _LOGGER.debug(f"Error creating control socket", exc_info=True)
+            return
+
+        def send_control(op: ControlOperation, data: bytes = None) -> None:
+            packet = struct.pack('<B', op.value)
+            if data:
+                packet = packet + data
+            s.sendto(packet, self._control_socket)
+
+        _LOGGER.debug(f"Setting serial parameters on control socket {self._control_socket}")
+        try:
+            if bytesize:
+                send_control(ControlOperation.SET_DATA_BITS, struct.pack('<B', int(bytesize)))
+
+            if parity:
+                send_control(ControlOperation.SET_PARITY, struct.pack('<B', _CONTROL_PARITY[parity]))
+
+            if self._rs485 is not None:
+                if not self._rs485:
+                    send_control(ControlOperation.SET_RS485, struct.pack('<B', 0))
+                else:
+                    send_control(
+                        ControlOperation.SET_RS485, struct.pack(
+                            '<BBBBff', 1,
+                            self._rs485.rts_level_for_tx and 1 or 0,
+                            self._rs485.rts_level_for_rx and 1 or 0,
+                            self._rs485.loopback and 1 or 0,
+                            self._rs485.delay_before_tx,
+                            self._rs485.delay_before_rx
+                        ))
+        except (IOError, NameError):
+            _LOGGER.warning("Failed to send control packet", exc_info=True)
+        finally:
+            try:
+                s.close()
+            except:
+                pass
+
     async def open_stream(self) -> typing.Tuple[typing.Optional[asyncio.StreamReader],
                                                 typing.Optional[asyncio.StreamWriter]]:
-        (reader, writer) = await open_serial(**self._serial_args)
+        (reader, writer, port) = await open_serial(**self._serial_args)
+        writer.transport._control_socket = self._control_socket
 
-        if have_termios and self._real_serial_port:
-            bytesize = self._serial_args.get('bytesize')
-            parity = self._serial_args.get('parity')
+        if self._rs485 is not None:
+            rs485 = self._rs485
+            if not rs485:
+                rs485 = None
+            try:
+                port.rs485_mode = rs485
+            except (ValueError, IOError, NotImplementedError):
+                _LOGGER.debug("Failed to set RS-485 mode", exc_info=True)
 
-            if (bytesize and bytesize != serial.EIGHTBITS) or (parity and parity != serial.PARITY_NONE):
-                _LOGGER.debug(f"Setting serial parameters on real device {self._real_serial_port}")
-                try:
-                    _apply_real_termios(self._real_serial_port, bytesize, parity)
-                except:
-                    try:
-                        writer.close()
-                    except:
-                        pass
-                    raise
+        self._apply_open_control()
 
         return reader, writer
 
@@ -457,3 +504,52 @@ class SerialPortContext(StreamingContext):
         elif reader:
             reader.serial_transport.abort()
             await reader.serial_transport.wait_for_closed()
+
+
+def _set_control_boolean(control_socket: str, op: ControlOperation, state: bool) -> None:
+    if not control_socket:
+        return
+
+    try:
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    except IOError:
+        _LOGGER.debug(f"Error creating control socket", exc_info=True)
+        return
+
+    try:
+        s.sendto(struct.pack('<BB', op.value, state and 1 or 0), control_socket)
+    except (IOError, NameError):
+        _LOGGER.debug("Failed to send control packet", exc_info=True)
+    finally:
+        try:
+            s.close()
+        except:
+            pass
+
+
+def set_rts(writer: asyncio.StreamWriter, state: bool) -> None:
+    transport = writer.transport
+    if not isinstance(transport, SerialTransport):
+        return
+    port = transport.port
+    if port:
+        try:
+            port.rts = state
+        except (ValueError, IOError):
+            _LOGGER.debug("Failed to set RTS directly", exc_info=True)
+
+    _set_control_boolean(transport.control_socket, ControlOperation.SET_RTS, state)
+
+
+def set_dtr(writer: asyncio.StreamWriter, state: bool) -> None:
+    transport = writer.transport
+    if not isinstance(transport, SerialTransport):
+        return
+    port = transport.port
+    if port:
+        try:
+            port.dtr = state
+        except (ValueError, IOError):
+            _LOGGER.debug("Failed to set DTR directly", exc_info=True)
+
+    _set_control_boolean(transport.control_socket, ControlOperation.SET_DTR, state)

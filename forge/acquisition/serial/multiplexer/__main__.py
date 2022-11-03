@@ -11,8 +11,10 @@ import socket
 import errno
 from enum import IntEnum
 from fcntl import ioctl
-from serial.serialposix import PlatformSpecific as SerialPlatformSpecific, CMSPAR
-from forge.acquisition.serial.multiplexer.protocol import ToMultiplexer, FromMultiplexer
+from serial.serialposix import PlatformSpecific as SerialPlatformSpecific
+from serial.serialposix import CMSPAR, TIOCMBIS, TIOCMBIC, TIOCM_RTS_str, TIOCM_DTR_str
+from serial.rs485 import RS485Settings
+from forge.acquisition.serial.multiplexer.protocol import ToMultiplexer, FromMultiplexer, ControlOperation, Parity
 from forge.acquisition.serial.util import standard_termios, TCAttr
 
 
@@ -31,6 +33,11 @@ class TIOCPKT(IntEnum):
     NOSTOP = 16
     DOSTOP = 32
     IOCTL = 64
+
+
+class ApplyPlatformSpecific(SerialPlatformSpecific):
+    def __init__(self, fd: int):
+        self.fd = fd
 
 
 class Upstream:
@@ -95,6 +102,9 @@ class Upstream:
     def data_from_eavesdropper(self, data: bytes):
         self._write_buffer += data
 
+    def data_from_raw(self, data: bytes):
+        self._write_buffer += data
+
     def termios_from_downstream(self, tio) -> None:
         standard_termios(tio)
 
@@ -110,6 +120,104 @@ class Upstream:
             tio[TCAttr.c_iflag] |= (tio_base[TCAttr.c_iflag] & CMSPAR)
 
         termios.tcsetattr(self._fd, termios.TCSANOW, tio)
+
+    def set_baud(self, baud: int) -> None:
+        tio = termios.tcgetattr(self._fd)
+        standard_termios(tio)
+
+        baud_constant = SerialPlatformSpecific.BAUDRATE_CONSTANTS.get(baud)
+        if baud_constant:
+            try:
+                from serial.serialposix import BOTHER
+                baud_constant = BOTHER
+            except (ImportError, NameError):
+                baud_constant = termios.B38400
+            custom_speed = baud
+        else:
+            custom_speed = None
+        tio[TCAttr.c_ispeed] = baud_constant
+        tio[TCAttr.c_ospeed] = baud_constant
+
+        termios.tcsetattr(self._fd, termios.TCSANOW, tio)
+
+        if custom_speed:
+            apply = ApplyPlatformSpecific(self._fd)
+            try:
+                apply._set_special_baudrate(baud)
+            except (IOError, ValueError, NotImplementedError):
+                _LOGGER.warning(f"Failed to set custom baud {baud}", exc_info=True)
+
+    def set_data_bits(self, bits: int) -> None:
+        tio = termios.tcgetattr(self._fd)
+        standard_termios(tio)
+
+        tio[TCAttr.c_cflag] &= ~termios.CSIZE
+        if bits == 8:
+            tio[TCAttr.c_cflag] |= termios.CS8
+        elif bits == 7:
+            tio[TCAttr.c_cflag] |= termios.CS7
+        elif bits == 6:
+            tio[TCAttr.c_cflag] |= termios.CS6
+        elif bits == 5:
+            tio[TCAttr.c_cflag] |= termios.CS5
+
+        termios.tcsetattr(self._fd, termios.TCSANOW, tio)
+
+    def set_parity(self, parity: Parity) -> None:
+        tio = termios.tcgetattr(self._fd)
+        standard_termios(tio)
+
+        tio[TCAttr.c_iflag] &= ~(termios.INPCK | termios.ISTRIP | termios.PARENB | termios.PARODD)
+        if CMSPAR:
+            tio[TCAttr.c_iflag] &= ~CMSPAR
+        if parity == Parity.NONE:
+            pass
+        elif parity == Parity.EVEN:
+            tio[TCAttr.c_iflag] |= termios.PARENB
+        elif parity == Parity.ODD:
+            tio[TCAttr.c_iflag] |= (termios.PARENB | termios.PARODD)
+        elif parity == Parity.MARK:
+            tio[TCAttr.c_iflag] |= (termios.PARENB | CMSPAR | termios.PARODD)
+        elif parity == Parity.SPACE:
+            tio[TCAttr.c_iflag] |= (termios.PARENB | CMSPAR)
+
+        termios.tcsetattr(self._fd, termios.TCSANOW, tio)
+
+    def set_stop_bits(self, bits: int) -> None:
+        tio = termios.tcgetattr(self._fd)
+        standard_termios(tio)
+
+        if bits == 1:
+            tio[TCAttr.c_cflag] &= ~termios.CSTOPB
+        else:
+            tio[TCAttr.c_cflag] |= termios.CSTOPB
+
+        termios.tcsetattr(self._fd, termios.TCSANOW, tio)
+
+    def set_rs485(self, rs485: typing.Optional[RS485Settings]) -> None:
+        apply = ApplyPlatformSpecific(self._fd)
+        try:
+            apply._set_rs485_mode(rs485)
+        except (IOError, ValueError, NotImplementedError):
+            _LOGGER.warning("Failed to set RS485 mode", exc_info=True)
+
+    def set_rts(self, state: bool) -> None:
+        try:
+            if state:
+                ioctl(self._fd, TIOCMBIS, TIOCM_RTS_str)
+            else:
+                ioctl(self._fd, TIOCMBIC, TIOCM_RTS_str)
+        except IOError:
+            _LOGGER.warning("Failed to set RTS line", exc_info=True)
+
+    def set_dtr(self, state: bool) -> None:
+        try:
+            if state:
+                ioctl(self._fd, TIOCMBIS, TIOCM_DTR_str)
+            else:
+                ioctl(self._fd, TIOCMBIC, TIOCM_DTR_str)
+        except IOError:
+            _LOGGER.warning("Failed to set DTR line", exc_info=True)
 
     def flush_from_downstream(self) -> None:
         self._write_buffer.clear()
@@ -128,7 +236,7 @@ class Upstream:
         tio = termios.tcgetattr(self._fd)
         speed_constant = tio[TCAttr.c_ispeed]
         port_baud = 0
-        for baud, c in SerialPlatformSpecific.BAUDRATE_CONSTANTS:
+        for baud, c in SerialPlatformSpecific.BAUDRATE_CONSTANTS.items():
             if c == speed_constant and baud > 0:
                 symbols_to_sleep = 10 * 2  # Approx 2 frames
                 hz_to_sleep = symbols_to_sleep * baud
@@ -168,7 +276,7 @@ class Upstream:
         tio = termios.tcgetattr(self._fd)
         standard_termios(tio)
 
-        # Since we do not get bytesize/parity from the downstream, set ti to 8/N (what the psuedoterminal always reads)
+        # Since we do not get bytesize/parity from the downstream, set it to 8/N (what the psuedoterminal always reads)
         tio[TCAttr.c_cflag] &= ~termios.CSIZE
         tio[TCAttr.c_cflag] |= termios.CS8
         tio[TCAttr.c_iflag] &= ~(termios.INPCK | termios.ISTRIP | termios.PARENB | termios.PARODD)
@@ -572,6 +680,277 @@ class Eavesdropper:
                 self._accept_connection(conn)
 
 
+class Raw:
+    class _Connection:
+        def __init__(self, socket: socket.socket, poll):
+            self._socket = socket
+            self._poll = poll
+
+            self._socket.setblocking(True)
+            self._poll.register(self._socket, select.POLLIN)
+
+            self._write_buffer = bytearray()
+            self.data_to_upstream: typing.Optional[bytes] = None
+
+        def shutdown(self):
+            if self._socket:
+                self._poll.unregister(self._socket)
+                try:
+                    self._socket.close()
+                except OSError:
+                    pass
+                self._socket = None
+
+        def data_from_upstream(self, data: bytes):
+            self._write_buffer += data
+
+        def poll_begin(self):
+            mask = select.POLLIN
+            if self._write_buffer:
+                mask |= select.POLLOUT
+            self._poll.modify(self._socket, mask)
+
+        def poll_result(self, mask: int) -> bool:
+            if mask & select.POLLIN:
+                try:
+                    data = self._socket.recv(4096)
+                    if not data:
+                        return False
+                    if not self.data_to_upstream:
+                        self.data_to_upstream = data
+                    else:
+                        self.data_to_upstream = self.data_to_upstream + data
+                except OSError as e:
+                    if e.errno != errno.EAGAIN and e.errno != errno.ETIMEDOUT:
+                        return False
+
+            if (mask & select.POLLOUT) and self._write_buffer:
+                try:
+                    n = self._socket.send(self._write_buffer)
+                    if n >= len(self._write_buffer):
+                        self._write_buffer.clear()
+                    elif n > 0:
+                        del self._write_buffer[0:n]
+                except OSError as e:
+                    if e.errno != errno.EAGAIN and e.errno != errno.ETIMEDOUT:
+                        return False
+
+            return True
+
+    def __init__(self, socket_name: str, poll):
+        self.socket_name = socket_name
+        self._poll = poll
+
+        try:
+            os.unlink(self.socket_name)
+        except OSError:
+            pass
+
+        self._server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self._server.setblocking(False)
+        self._server.bind(self.socket_name)
+        self._server.listen(8)
+        self._poll.register(self._server, select.POLLIN)
+
+        self._connections: typing.Dict[int, "Raw._Connection"] = dict()
+
+    def __del__(self):
+        try:
+            os.unlink(self.socket_name)
+        except OSError:
+            pass
+
+    def shutdown(self) -> None:
+        if self._server is not None:
+            try:
+                self._server.close()
+            except OSError:
+                pass
+            self._server = None
+        for c in self._connections.values():
+            c.shutdown()
+        try:
+            os.unlink(self.socket_name)
+        except OSError:
+            pass
+
+    def _accept_connection(self, conn: typing.Optional[socket.socket]) -> None:
+        if not conn:
+            return
+        self._connections[conn.fileno()] = self._Connection(conn, self._poll)
+        _LOGGER.debug("Accepted raw connection")
+
+    def get_upstream_data(self) -> typing.Optional[bytes]:
+        result = None
+        for c in self._connections.values():
+            data = c.data_to_upstream
+            c.data_to_upstream = None
+            if not result:
+                result = data
+            else:
+                result = result + data
+        return result
+
+    def data_from_upstream(self, data: bytes) -> None:
+        for c in self._connections.values():
+            c.data_from_upstream(data)
+
+    def poll_begin(self) -> None:
+        for c in self._connections.values():
+            c.poll_begin()
+
+    def poll_result(self, events: typing.List[typing.Tuple[int, int]]) -> None:
+        for fd, mask in events:
+            check = self._connections.get(fd)
+            if check:
+                if not check.poll_result(mask):
+                    check.shutdown()
+                    del self._connections[fd]
+                continue
+
+            if fd == self._server.fileno():
+                conn, addr = self._server.accept()
+                self._accept_connection(conn)
+
+
+class Control:
+    def __init__(self, socket_name: str, poll):
+        self.socket_name = socket_name
+        self._poll = poll
+
+        try:
+            os.unlink(self.socket_name)
+        except OSError:
+            pass
+
+        self._server = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        self._server.setblocking(False)
+        self._server.bind(self.socket_name)
+        self._poll.register(self._server, select.POLLIN)
+
+        self.upstream_operations: typing.Optional[typing.List[typing.Callable[[Upstream], None]]] = None
+
+    def __del__(self):
+        try:
+            os.unlink(self.socket_name)
+        except OSError:
+            pass
+
+    def shutdown(self) -> None:
+        if self._server is not None:
+            try:
+                self._server.close()
+            except OSError:
+                pass
+            self._server = None
+        try:
+            os.unlink(self.socket_name)
+        except OSError:
+            pass
+
+    def _add_operation(self, op: typing.Callable[[Upstream], None]) -> None:
+        if not self.upstream_operations:
+            self.upstream_operations = list()
+        self.upstream_operations.append(op)
+
+    def _process_packet(self, packet: bytes) -> None:
+        if len(packet) < 1:
+            return
+        try:
+            operation = ControlOperation(struct.unpack_from('<B', packet)[0])
+        except ValueError:
+            _LOGGER.warning(f"Invalid control packet type", exc_info=True)
+            return
+
+        if operation == ControlOperation.SET_BAUD:
+            try:
+                baud = struct.unpack_from('<I', packet, offset=1)[0]
+                if baud <= 1:
+                    raise struct.error
+            except struct.error:
+                _LOGGER.warning(f"Invalid control baud", exc_info=True)
+                return
+            self._add_operation(lambda upstream: upstream.set_baud(baud))
+        elif operation == ControlOperation.SET_DATA_BITS:
+            try:
+                data_bits = struct.unpack_from('<B', packet, offset=1)[0]
+                if not (5 <= data_bits <= 8):
+                    raise struct.error
+            except struct.error:
+                _LOGGER.warning(f"Invalid control data bits", exc_info=True)
+                return
+            self._add_operation(lambda upstream: upstream.set_data_bits(data_bits))
+        elif operation == ControlOperation.SET_PARITY:
+            try:
+                parity = Parity(struct.unpack_from('<B', packet, offset=1)[0])
+            except (struct.error, ValueError):
+                _LOGGER.warning(f"Invalid control parity", exc_info=True)
+                return
+            self._add_operation(lambda upstream: upstream.set_parity(parity))
+        elif operation == ControlOperation.SET_STOP_BITS:
+            try:
+                stop_bits = struct.unpack_from('<B', packet, offset=1)[0]
+                if not (1 <= stop_bits <= 2):
+                    raise struct.error
+            except struct.error:
+                _LOGGER.warning(f"Invalid control stop bits", exc_info=True)
+                return
+            self._add_operation(lambda upstream: upstream.set_stop_bits(stop_bits))
+        elif operation == ControlOperation.SET_RS485:
+            try:
+                enable = struct.unpack_from('<B', packet, offset=1)[0]
+            except struct.error:
+                _LOGGER.warning(f"Invalid RS485 mode", exc_info=True)
+                return
+            if enable == 0:
+                self._add_operation(lambda upstream: upstream.set_rs485(None))
+                return
+
+            try:
+                rts_for_tx, rts_for_rx, loopback, before_tx, before_rx = struct.unpack_from('<BBBff', packet, offset=2)
+            except struct.error:
+                _LOGGER.warning(f"Invalid RS485 settings", exc_info=True)
+                return
+            settings = RS485Settings(
+                rts_for_tx != 0,
+                rts_for_rx != 0,
+                loopback != 0,
+                before_tx,
+                before_rx,
+            )
+            self._add_operation(lambda upstream: upstream.set_rs485(settings))
+        elif operation == ControlOperation.SET_RTS:
+            try:
+                enable = (struct.unpack_from('<B', packet, offset=1)[0]) != 0
+            except struct.error:
+                _LOGGER.warning(f"Invalid RTS state", exc_info=True)
+                return
+            self._add_operation(lambda upstream: upstream.set_rts(enable))
+        elif operation == ControlOperation.SET_DTR:
+            try:
+                enable = (struct.unpack_from('<B', packet, offset=1)[0]) != 0
+            except struct.error:
+                _LOGGER.warning(f"Invalid DTR state", exc_info=True)
+                return
+            self._add_operation(lambda upstream: upstream.set_dtr(enable))
+        elif operation == ControlOperation.FLUSH:
+            self._add_operation(lambda upstream: upstream.flush_from_downstream())
+        elif operation == ControlOperation.BREAK:
+            self._add_operation(lambda upstream: upstream.break_from_downstream())
+        elif operation == ControlOperation.REOPEN:
+            self._add_operation(lambda upstream: upstream.reopen())
+        else:
+            raise RuntimeError
+
+    def poll_result(self, events: typing.List[typing.Tuple[int, int]]) -> None:
+        for fd, mask in events:
+            if fd == self._server.fileno():
+                data = self._server.recv(64)
+                if not data:
+                    continue
+                self._process_packet(data)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Forge serial port multiplexer.")
 
@@ -588,6 +967,12 @@ def main():
     parser.add_argument('--eavesdropper',
                         dest='eavesdropper',
                         help="specify a socket to listen for eavesdropper protocol connection on")
+    parser.add_argument('--raw',
+                        dest='raw',
+                        help="specify a socket to listen for raw connections on")
+    parser.add_argument('--control',
+                        dest='control',
+                        help="specify a datagram socket to accept control packets from")
 
     parser.add_argument('upstream',
                         help="backing serial port device",)
@@ -625,11 +1010,21 @@ def main():
     eavesdropper: typing.Optional[Eavesdropper] = None
     if args.eavesdropper:
         eavesdropper = Eavesdropper(args.eavesdropper, poll)
+    raw: typing.Optional[Raw] = None
+    if args.raw:
+        raw = Raw(args.raw, poll)
+    control: typing.Optional[Control] = None
+    if args.control:
+        control = Control(args.control, poll)
 
     try:
         _LOGGER.info(f"Multiplexer connected to {args.upstream} on downstream: {' '.join(args.downstream)}")
         if eavesdropper:
             _LOGGER.info(f"Eavesdropper socket listening on {args.eavesdropper}")
+        if raw:
+            _LOGGER.info(f"Raw socket listening on {args.raw}")
+        if control:
+            _LOGGER.info(f"Control socket listening on {args.control}")
 
         service_heartbeat = lambda: None
         if args.systemd:
@@ -644,6 +1039,13 @@ def main():
                 next_heartbeat = time.monotonic() + 10.0
                 service_heartbeat()
                 remaining_time = 10.0
+
+            if control:
+                if control.upstream_operations:
+                    ops = control.upstream_operations
+                    control.upstream_operations = None
+                    for op in ops:
+                        op(upstream)
 
             for d in downstream:
                 if d.termios_to_upstream:
@@ -668,6 +1070,8 @@ def main():
                     d.data_from_upstream(data)
                 if eavesdropper:
                     eavesdropper.data_from_upstream(data)
+                if raw:
+                    raw.data_from_upstream(data)
 
             for d in downstream:
                 if not upstream.can_accept_downstream_data:
@@ -699,6 +1103,11 @@ def main():
                 if eavesdropper.get_reset():
                     reset_detected = True
 
+            if raw:
+                data = raw.get_upstream_data()
+                if data:
+                    upstream.data_from_raw(data)
+
             if reset_detected:
                 upstream.reopen()
                 for d in downstream:
@@ -709,6 +1118,8 @@ def main():
                 d.poll_begin()
             if eavesdropper:
                 eavesdropper.poll_begin()
+            if raw:
+                raw.poll_begin()
 
             poll_result = poll.poll(max(int(remaining_time * 1000), 10))
 
@@ -717,11 +1128,19 @@ def main():
                 d.poll_result(poll_result)
             if eavesdropper:
                 eavesdropper.poll_result(poll_result)
+            if raw:
+                raw.poll_result(poll_result)
+            if control:
+                control.poll_result(poll_result)
     finally:
         for d in downstream:
             d.shutdown()
         if eavesdropper:
             eavesdropper.shutdown()
+        if raw:
+            raw.shutdown()
+        if control:
+            control.shutdown()
 
 
 if __name__ == '__main__':

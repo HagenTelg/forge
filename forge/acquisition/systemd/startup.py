@@ -145,6 +145,8 @@ def start_instrument_serial(source: str, instrument_unit_name: str) -> typing.Op
     properties.append(("ExecStart", assemble_forge_exec(
         "forge-acquisition-serial-multiplexer", "--systemd", *(["--debug"] if _ENABLE_DEBUG else []),
         "--eavesdropper", "${RUNTIME_DIRECTORY}/eavesdropper.sock",
+        "--raw", "${RUNTIME_DIRECTORY}/raw.sock",
+        "--control", "${RUNTIME_DIRECTORY}/control.dgram",
         "--",
         physical_port, "${RUNTIME_DIRECTORY}/instrument.tty", "${RUNTIME_DIRECTORY}/eavesdropper.tty"
     )))
@@ -164,6 +166,7 @@ def start_instrument(source: str) -> None:
     serial_args: typing.List[str] = []
     if serial_controller:
         serial_args.append(f"--serial=/run/forge-serial-{source}/instrument.tty")
+        serial_args.append(f"--control=/run/forge-serial-{source}/control.dgram")
 
     _LOGGER.debug(f"Starting instrument {source}")
 
@@ -186,9 +189,6 @@ def start_instrument(source: str) -> None:
     properties.append(("RuntimeDirectory", [f"forge-instrument-{source}"]))
     properties.append(("UMask", dbus.types.UInt32(0o0007)))
     properties.append(("ReadWritePaths", [_COMPLETED_DATA_DIRECTORY]))
-    if serial_controller and _SERIAL_ACCESS_GROUPS:
-        # Needed so parity/data bits can be set since the pty does not propagate them
-        properties.append(("SupplementaryGroups", _SERIAL_ACCESS_GROUPS))
     properties.append(("ExecStart", assemble_forge_exec(
         "forge-acquisition-instrument", "--systemd", *(["--debug"] if _ENABLE_DEBUG else []),
         "--data-working", "${RUNTIME_DIRECTORY}",

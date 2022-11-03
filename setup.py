@@ -39,6 +39,7 @@ setup(
         "forge-acquisition-uplink-incoming = forge.acquisition.uplink.incoming.__main__:main",
         "forge-acquisition-serial-multiplexer = forge.acquisition.serial.multiplexer.__main__:main",
         "forge-acquisition-serial-eavesdropper = forge.acquisition.serial.multiplexer.eavesdropper:main",
+        "forge-acquisition-serial-control = forge.acquisition.serial.multiplexer.control:main",
         "forge-acquisition-console = forge.acquisition.console.__main__:main",
         "forge-acquisition-bus-server = forge.acquisition.bus.server.__main__:main",
         "forge-acquisition-event-log = forge.acquisition.eventlog.__main__:main",
