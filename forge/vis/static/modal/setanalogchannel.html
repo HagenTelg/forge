@@ -168,7 +168,7 @@ var ACTION_PROMPT_DATA;
             v = undefined;
         }
         if (selectedChannel && isFinite(v)) {
-            AcquisitionSocket.sendCommand(data.source, 'set_analog_chanel', {
+            AcquisitionSocket.sendCommand(data.source, 'set_analog_channel', {
               channel: selectedChannel.channel,
               value: v,
             });

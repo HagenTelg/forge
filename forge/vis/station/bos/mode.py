@@ -41,7 +41,7 @@ station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-dmpsstatus', "DM
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-popsstatus', "POPS Status"),
                                     'aerosol-raw-dmpsstatus')
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-t640status', "T640 Status"),
-                                         'aerosol-raw-cpcstatus2')
+                                         'aerosol-realtime-cpcstatus2')
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-popsstatus', "POPS Status"),
                                          'aerosol-realtime-t640status')
 

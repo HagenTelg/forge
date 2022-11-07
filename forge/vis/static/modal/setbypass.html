@@ -1,0 +1,90 @@
+<style>
+.setbypass-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.setbypass-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 8px 0 0 16px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.setbypass-info {
+  position: relative;
+  display: flex;
+  margin: 48px 16px 8px;
+  align-items: center;
+}
+
+.setbypass-footer {
+  padding: 0;
+  margin: 0;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.setbypass-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 20px;
+  background-color: transparent;
+  font-weight: bold;
+  font-family: inherit;
+  cursor: pointer;
+}
+.setbypass-footer button:hover,
+.setbypass-footer button:focus {
+  color: #000;
+  text-decoration: none;
+}
+
+
+</style>
+
+<form class="setbypass-entry">
+  <div class="setbypass-header">
+    Change user bypass state?
+  </div>
+
+  <div class="setbypass-info">
+    This allows you to control the user bypass state.  While the user bypass is set, all instruments will be in
+    bypass mode.  While bypassed, logging of data is prevented, so any data while bypassed is dropped.  Additionally,
+    the system will bypass the measurement flow (if applicable).  Clearing the user bypass may not completely un-bypass
+    the system if something else is also triggering a bypass (e.x. a delta pressure too high).
+  </div>
+
+  <div class="setbypass-footer">
+    <button id="setbypass-set" title="Set the user bypass">Set Bypass</button>
+    <button id="setbypass-clear" title="Clear the user bypass">Clear Bypass</button>
+    <button id="setbypass-cancel">Cancel (no change)</button>
+  </div>
+</form>
+
+<script>
+var ACTION_PROMPT_DATA;
+(function() {
+    $('#setbypass-set').click(function(event) {
+        event.preventDefault();
+        AcquisitionSocket.sendSetBypass(true);
+        hideModal();
+    });
+    $('#setbypass-clear').click(function(event) {
+        event.preventDefault();
+        AcquisitionSocket.sendSetBypass(false);
+        hideModal();
+    });
+    $('#setbypass-cancel').click(function(event) {
+        event.preventDefault();
+        hideModal();
+    });
+
+})();
+</script>

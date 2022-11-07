@@ -1275,6 +1275,10 @@ $(document).ready(function() {
         showModal("{{ request.url_for('static', path='/modal/actionprompt.html') }}");
         e.preventDefault();
     });
+    $('#show_set_bypass').click(function(e) {
+        showModal("{{ request.url_for('static', path='/modal/setbypass.html') }}");
+        e.preventDefault();
+    });
     $('#show_spancheck_simultaneous').click(function(e) {
         ACTION_PROMPT_DATA = {
             ok: function() {

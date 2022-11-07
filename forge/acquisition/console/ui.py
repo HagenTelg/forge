@@ -372,10 +372,10 @@ class Dialog:
                     return True
         return TextEntry(self, label)
 
-    def integer(self, label: str = "", minimum: int = None, maximum: int = None):
+    def integer(self, label: str = "", minimum: int = None, maximum: int = None, base=10):
         def fetch(text: str) -> typing.Optional[int]:
             try:
-                value = int(text)
+                value = int(text, base=base)
             except (ValueError, TypeError):
                 return None
             if minimum is not None:
@@ -647,10 +647,29 @@ class UserInterface:
         confirm.yes_text = "RESTART SYSTEM"
         confirm.no_text = "ABORT"
 
+    def _show_set_bypass(self) -> None:
+        dialog = self.show_dialog()
+        dialog.title = "CHANGE BYPASS STATE"
+        dialog.label("This alters the system bypass state for all instruments.")
+        dialog.label("When an instrument is bypassed, averaging is not performed.")
+
+        dialog.button("CANCEL (NO CHANGE)")
+
+        def set():
+            self.client.send_message(PersistenceLevel.SYSTEM, 'bypass_user', 1)
+            dialog.hide()
+        dialog.button("SET BYPASS", set)
+
+        def clear():
+            self.client.send_message(PersistenceLevel.SYSTEM, 'bypass_user', 0)
+            dialog.hide()
+        dialog.button("CLEAR BYPASS", clear)
+
     def _show_main_menu(self) -> None:
         menu = self.show_menu()
 
         menu.add_entry("  MESSAGE LOG", self._show_message_log_entry)
+        menu.add_entry("  SET BYPASS", self._show_set_bypass)
         menu.add_entry("  RESTART ACQUISITION", self._show_restart_confirm)
 
         def window_selected(win: "InstrumentWindow") -> typing.Callable[[], None]:

@@ -193,6 +193,12 @@ class LayeredConfiguration:
             return LayeredConfiguration()
         return s
 
+    def keys(self) -> typing.Set[str]:
+        result: typing.Set[str] = set()
+        for layer in self._roots:
+            result.update(layer.keys())
+        return result
+
     def __getitem__(self, item):
         v = self.get(item)
         if not v:

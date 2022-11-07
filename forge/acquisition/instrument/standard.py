@@ -371,6 +371,17 @@ class StandardInstrument(BaseInstrument):
         self._record_names.add(name)
 
         r = Record(self, name, apply_cutsize, automatic)
+
+        # Make the assumption that anything with a cut size is on the system bypass (meaning bypassed while
+        # acquisition is offline), so it would need a spinup flush too
+        if not r.cutsize.constant_size:
+            default_spinup = self._bypass_flush_time
+        else:
+            default_spinup = 0.0
+        spinup_time = parse_interval(self.context.average_config.get("SPINUP_TIME"), default=default_spinup)
+        if spinup_time > 0.0:
+            r.average.start_flush(spinup_time)
+
         self._records.append(r)
         return r
 

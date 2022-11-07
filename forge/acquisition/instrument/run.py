@@ -90,17 +90,17 @@ def average_config(args: argparse.Namespace) -> LayeredConfiguration:
 def cutsize_config(args: argparse.Namespace) -> LayeredConfiguration:
     roots: typing.List[dict] = list()
 
-    instrument_local = CONFIGURATION.get("INSTRUMENT." + args.identifier + ".CUTSIZE")
+    instrument_local = CONFIGURATION.get("INSTRUMENT." + args.identifier + ".CUT_SIZE")
     toml = None
     if instrument_local:
         roots.append(instrument_local)
-        toml = LayeredConfiguration.configuration_toml("INSTRUMENT." + args.identifier + ".CUTSIZE")
+        toml = LayeredConfiguration.configuration_toml("INSTRUMENT." + args.identifier + ".CUT_SIZE")
 
-    global_config = CONFIGURATION.get("ACQUISITION.CUTSIZE")
+    global_config = CONFIGURATION.get("ACQUISITION.CUT_SIZE")
     if global_config:
         roots.append(global_config)
         if toml is None:
-            toml = LayeredConfiguration.configuration_toml("ACQUISITION.CUTSIZE")
+            toml = LayeredConfiguration.configuration_toml("ACQUISITION.CUT_SIZE")
 
     return LayeredConfiguration(*roots, toml=toml)
 

@@ -339,7 +339,11 @@ class DataRecord(RecordConverter):
             if not record_cut_size.shape:
                 record_cut_size = [float(record_cut_size[0])]
             for diameter in record_cut_size:
-                if not diameter or not isfinite(diameter):
+                if not diameter:
+                    self.cut_size_lookup[None] = _CUT_WHOLE
+                    continue
+                diameter = float(diameter)
+                if not isfinite(diameter):
                     self.cut_size_lookup[None] = _CUT_WHOLE
                 elif diameter == 1.0:
                     self.cut_size_lookup[diameter] = _CUT_PM1

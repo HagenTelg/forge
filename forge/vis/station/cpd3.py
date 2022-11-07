@@ -2579,7 +2579,7 @@ class AcquisitionTranslator(NativeAcquisitionTranslator):
             return active
 
         def translate_command(self, command: str, data: typing.Any) -> typing.Any:
-            if command == 'set_analog_chanel':
+            if command == 'set_analog_channel':
                 return {
                     'SetAnalog': {
                         'Channel': data.get('channel'),
@@ -2654,7 +2654,7 @@ class AcquisitionTranslator(NativeAcquisitionTranslator):
             return active
 
         def translate_command(self, command: str, data: typing.Any) -> typing.Any:
-            if command == 'set_analog_chanel':
+            if command == 'set_analog_channel':
                 return {
                     'SetAnalog': {
                         'Channel': data.get('channel'),
