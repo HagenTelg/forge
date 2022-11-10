@@ -57,9 +57,9 @@ def display_users_text(users: typing.List[typing.Dict]):
         columns = list()
         user['display_columns'] = columns
 
-        if len(user.get('name', '')) > 0 and len(user.get('email', '')) > 0:
+        if user.get('name') and user.get('email'):
             columns.append(f"{user['name']} <{user['email']}>")
-        elif len(user.get('name', '')) > 0:
+        elif user.get('name'):
             columns.append(user['name'])
         else:
             columns.append(user['email'])
@@ -72,7 +72,7 @@ def display_users_text(users: typing.List[typing.Dict]):
         else:
             columns.append('')
 
-        columns.append(user.get('initials', ''))
+        columns.append(user.get('initials') or '')
 
         for i in range(len(columns)):
             user_column_widths[i] = max(user_column_widths[i], len(columns[i]))
