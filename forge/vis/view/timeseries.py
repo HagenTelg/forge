@@ -1,5 +1,6 @@
 import typing
 from collections import OrderedDict
+from types import MethodType
 from starlette.responses import HTMLResponse
 from forge.vis.util import package_template
 from . import View, Request, Response
@@ -40,6 +41,10 @@ class TimeSeries(View):
             self.traces: typing.List[TimeSeries.Trace] = []
             self.contamination: typing.Optional[str] = None
 
+        @property
+        def display_title(self) -> bool:
+            return bool(self.title)
+
     class Processing:
         def __init__(self):
             self.components: typing.List[str] = []
@@ -52,51 +57,73 @@ class TimeSeries(View):
         self.graphs: typing.List[TimeSeries.Graph] = []
         self.processing: typing.Dict[str, TimeSeries.Processing] = dict()
 
-    @staticmethod
-    def _index_code(index, base: str) -> str:
-        if index == 0:
-            return base
-        return base + str(index + 1)
+    class RequestContext:
+        def __init__(self, timeseries: "TimeSeries", request: Request):
+            self.timeseries = timeseries
+            self.request = request
 
-    def axis_code(self, find_axis: "TimeSeries.Axis", base: str = 'y') -> str:
-        # Since we can only do overlaying axes last, the numbering is a bit odd
-        index = 0
-        for graph in self.graphs:
-            if len(graph.axes) == 0:
-                continue
-            if graph.axes[0] == find_axis:
-                return self._index_code(index, base)
-            index += 1
-        for graph in self.graphs:
-            for axis_index in range(1, len(graph.axes)):
-                if graph.axes[axis_index] == find_axis:
+            graph_filter = request.query_params.get('graph')
+            if graph_filter:
+                graph_filter = str(graph_filter)
+                graph_indices: typing.Set[int] = set()
+                for i in graph_filter.split(','):
+                    graph_indices.add(int(i.strip()) - 1)
+                self.graphs: typing.List[TimeSeries.Graph] = list()
+                for i in range(len(self.timeseries.graphs)):
+                    if i not in graph_indices:
+                        continue
+                    self.graphs.append(self.timeseries.graphs[i])
+            else:
+                self.graphs = timeseries.graphs
+
+        def __getattr__(self, item):
+            return getattr(self.timeseries, item)
+
+        @staticmethod
+        def _index_code(index, base: str) -> str:
+            if index == 0:
+                return base
+            return base + str(index + 1)
+
+        def axis_code(self, find_axis: "TimeSeries.Axis", base: str = 'y') -> str:
+            # Since we can only do overlaying axes last, the numbering is a bit odd
+            index = 0
+            for graph in self.graphs:
+                if len(graph.axes) == 0:
+                    continue
+                if graph.axes[0] == find_axis:
                     return self._index_code(index, base)
                 index += 1
-        raise KeyError
+            for graph in self.graphs:
+                for axis_index in range(1, len(graph.axes)):
+                    if graph.axes[axis_index] == find_axis:
+                        return self._index_code(index, base)
+                    index += 1
+            raise KeyError
 
-    def graph_code(self, find_graph: "TimeSeries.Graph", base: str = 'x') -> str:
-        index = 0
-        for graph in self.graphs:
-            if graph == find_graph:
-                return self._index_code(index, base)
-            index += 1
-        raise KeyError
+        def graph_code(self, find_graph: "TimeSeries.Graph", base: str = 'x') -> str:
+            index = 0
+            for graph in self.graphs:
+                if graph == find_graph:
+                    return self._index_code(index, base)
+                index += 1
+            raise KeyError
 
-    def required_components(self) -> typing.List[str]:
-        components = OrderedDict()
-        for graph in self.graphs:
-            if graph.contamination:
-                components['contamination'] = True
-                break
-        for processing in self.processing.values():
-            for name in processing.components:
-                components[name] = True
-        return list(components.keys())
+        def required_components(self) -> typing.List[str]:
+            components = OrderedDict()
+            for graph in self.graphs:
+                if graph.contamination:
+                    components['contamination'] = True
+                    break
+            for processing in self.processing.values():
+                for name in processing.components:
+                    components[name] = True
+            return list(components.keys())
 
     async def __call__(self, request: Request, **kwargs) -> Response:
         return HTMLResponse(await package_template('view', 'timeseries.html').render_async(
             request=request,
-            view=self,
+            view=self.RequestContext(self, request),
             realtime=self.realtime,
             **kwargs
         ))

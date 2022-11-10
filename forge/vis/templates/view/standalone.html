@@ -24,7 +24,12 @@ body, html {
 
 <script>
 $(document).ready(function() {
-    $('#view_content').load('{{ view_url }}');
+    const queryParameters = new URLSearchParams(window.location.search);
+    const viewURL = new URL('{{ view_url }}');
+    queryParameters.forEach((value, param) => {
+        viewURL.searchParams.append(param, value);
+    });
+    $('#view_content').load(viewURL.href);
 });
 </script>
 

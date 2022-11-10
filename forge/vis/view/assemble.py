@@ -45,4 +45,4 @@ async def interior(request: Request) -> Response:
     view = _lookup_view(request, station, view_name)
     if view is None:
         raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail="View not found")
-    return await view(request, station=station)
+    return await view(request, station=station, view_name=view_name)

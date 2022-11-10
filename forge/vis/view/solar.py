@@ -13,7 +13,7 @@ class SolarTimeSeries(TimeSeries):
     async def __call__(self, request: Request, **kwargs) -> Response:
         return HTMLResponse(await package_template('view', 'solartimeseries.html').render_async(
             request=request,
-            view=self,
+            view=self.RequestContext(self, request),
             realtime=self.realtime,
             **kwargs
         ))

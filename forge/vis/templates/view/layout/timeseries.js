@@ -26,7 +26,7 @@ let layout = {
     },
 
     annotations: [
-        //{% for graph in view.graphs %}{% if graph.title and graph.title|length > 0 %}
+        //{% for graph in view.graphs %}{% if graph.display_title %}
         {
             xanchor: 'center',
             yanchor: 'bottom',
@@ -35,7 +35,8 @@ let layout = {
             y: 1,
             x: 0.5,
             text: "{{ graph.title }}",
-            showarrow: false
+            showarrow: false,
+            captureevents: true,
         },
         //{% endif %}{% endfor %}
     ],

@@ -25,6 +25,7 @@ async def _standalone(request: Request) -> Response:
         request=request,
         station=station,
         view_url=request.url_for('view', station=station, view_name=view_name),
+        view_name=view_name,
     ))
 
 

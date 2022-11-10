@@ -70,3 +70,18 @@ TimeSeriesCommon.addHoverControlButton(traces);
 TimeSeriesCommon.addContaminationToggleButton(traces);
 //{% endif %}
 TimeSeriesCommon.addAveragingButton(traces);
+
+div.on('plotly_clickannotation', function(data) {
+    const indexMap = [
+    //{% for graph in view.graphs %}{% if graph.display_title %}
+        '{{ loop.index }}' * 1,
+    //{% endif %}{% endfor %}
+    ];
+    const graphIndex = indexMap[data.index];
+    if (!graphIndex) {
+        return;
+    }
+    const url = new URL('{{ request.url_for("view_standalone", station=station, view_name=view_name) }}');
+    url.searchParams.append("graph", graphIndex.toString())
+    window.open(url.href, "", "noopener");
+});
