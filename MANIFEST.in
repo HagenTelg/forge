@@ -1,0 +1,2 @@
+recursive-include forge/vis/templates *
+recursive-include forge/vis/static *

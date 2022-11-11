@@ -69,9 +69,4 @@ setup(
         "forge-cpd3-convert-acquisition = forge.cpd3.convert.acquisition:main",
     ]},
     packages=find_packages(exclude=["tests"]),
-    package_data={"": [
-        "*.html", "*.txt", "*.csv", "*.json", "*.js", "*.css",
-        "*.svg", "*.png",
-        "*.eot", "*.ttf", "*.woff", "*.woff2"
-    ]},
 )
