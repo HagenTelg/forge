@@ -158,6 +158,6 @@ incomingData = (plotTime, values, epoch) => {
         ebc.contamination = f'{profile}-editing-contamination'
         self.graphs.append(ebc)
 
-
+    @property
     def required_components(self) -> typing.List[str]:
-        return super().required_components() + ['winds']
+        return super().required_components + ['winds']

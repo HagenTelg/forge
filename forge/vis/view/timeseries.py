@@ -57,6 +57,18 @@ class TimeSeries(View):
         self.graphs: typing.List[TimeSeries.Graph] = []
         self.processing: typing.Dict[str, TimeSeries.Processing] = dict()
 
+    @property
+    def required_components(self) -> typing.List[str]:
+        components = OrderedDict()
+        for graph in self.graphs:
+            if graph.contamination:
+                components['contamination'] = True
+                break
+        for processing in self.processing.values():
+            for name in processing.components:
+                components[name] = True
+        return list(components.keys())
+
     class RequestContext:
         def __init__(self, timeseries: "TimeSeries", request: Request):
             self.timeseries = timeseries
@@ -108,17 +120,6 @@ class TimeSeries(View):
                     return self._index_code(index, base)
                 index += 1
             raise KeyError
-
-        def required_components(self) -> typing.List[str]:
-            components = OrderedDict()
-            for graph in self.graphs:
-                if graph.contamination:
-                    components['contamination'] = True
-                    break
-            for processing in self.processing.values():
-                for name in processing.components:
-                    components[name] = True
-            return list(components.keys())
 
     async def __call__(self, request: Request, **kwargs) -> Response:
         return HTMLResponse(await package_template('view', 'timeseries.html').render_async(

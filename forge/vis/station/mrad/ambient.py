@@ -103,5 +103,6 @@ incomingData = (plotTime, values, epoch) => {
 })();"""
             direction.traces.append(trace)
 
+    @property
     def required_components(self) -> typing.List[str]:
-        return super().required_components() + ['winds']
+        return super().required_components + ['winds']

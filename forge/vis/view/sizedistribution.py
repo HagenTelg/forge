@@ -89,6 +89,7 @@ return new SizeDistribution.ConcentrationDispatch(dataName, outputConcentrations
         self.processing: typing.Dict[str, SizeCounts.Processing] = dict()
         self.size_record: typing.Optional[str] = None
 
+    @property
     def required_components(self) -> typing.List[str]:
         components = OrderedDict()
         if self.contamination:
