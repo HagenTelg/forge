@@ -119,6 +119,9 @@ class AnalogOutput:
     def value(self, v: float) -> None:
         self.persistent(v)
 
+    def command_received(self) -> None:
+        pass
+
     def _command_set_analog_channel(self, data: typing.Dict[str, typing.Any]) -> None:
         if not self.command_channel:
             return
@@ -136,6 +139,7 @@ class AnalogOutput:
         if not isfinite(value):
             return
         self.persistent(value)
+        self.command_received()
 
     def _command_set_analog(self, data: typing.Dict[str, typing.Any]) -> None:
         if not isinstance(data, dict):
@@ -152,6 +156,7 @@ class AnalogOutput:
         if not isfinite(value):
             return
         self.persistent(value)
+        self.command_received()
 
     @classmethod
     def construct(cls, instrument: StandardInstrument, name: str,
@@ -261,6 +266,9 @@ class DigitalOutput:
             state = bool(state)
             self.bypass_state[bypass] = state
 
+    def command_received(self) -> None:
+        pass
+
     def _command_set_digital_output(self, data: int) -> None:
         if not self.command_bit:
             return
@@ -270,6 +278,7 @@ class DigitalOutput:
             return
         is_set = (bits & self.command_bit) != 0
         self.persistent(is_set)
+        self.command_received()
 
     def _command_set_digital(self, data: typing.Dict[str, typing.Any]) -> None:
         if not isinstance(data, dict):
@@ -284,6 +293,7 @@ class DigitalOutput:
         if output != self.name:
             return
         self.persistent(value)
+        self.command_received()
 
     @classmethod
     def construct(cls, instrument: StandardInstrument, name: str,
