@@ -196,10 +196,6 @@ class Instrument(StreamingInstrument):
             self.variable_temperature(self.data_T, "board_temperature", code="T", attributes={
                 'long_name': "control board temperature",
             }),
-
-            auxiliary_variables=[
-                self.variable_array(self.data_value),
-            ],
         )
 
         state: typing.List[State] = list()

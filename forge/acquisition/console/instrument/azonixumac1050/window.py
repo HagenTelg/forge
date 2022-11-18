@@ -76,7 +76,7 @@ class InstrumentWindow(BaseWindow):
         confirm.yes_text = "APPLY"
         confirm.no_text = "CANCEL"
 
-    def _show_analog_digital(self, name: str, index: int) -> None:
+    def _show_set_analog(self, name: str, index: int) -> None:
         dialog = self.ui.show_dialog()
         dialog.title = "Set Analog Output"
 
@@ -116,7 +116,7 @@ class InstrumentWindow(BaseWindow):
             if not name:
                 return None
             def act():
-                self._show_analog_digital(name, index)
+                self._show_set_analog(name, index)
             return act
 
         for i in range(len(analog_output_names)):

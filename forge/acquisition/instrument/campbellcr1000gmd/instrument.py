@@ -173,10 +173,6 @@ class Instrument(StreamingInstrument):
             self.variable_temperature(self.data_T, "board_temperature", code="T", attributes={
                 'long_name': "control board temperature",
             }),
-
-            auxiliary_variables=[
-                self.variable_array(self.data_value),
-            ],
         )
 
         state: typing.List[State] = list()
@@ -354,7 +350,6 @@ class Instrument(StreamingInstrument):
         self._output_changed.clear()
         begin_read = time.monotonic()
 
-        await self.drain_reader(1.0)
         self.writer.write(b"RST\r")
 
         line: bytes = await wait_cancelable(self.read_line(), 2.0)

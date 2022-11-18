@@ -97,6 +97,8 @@ class AnalogInput:
 
 
 class AnalogOutput:
+    RESTORE_VALUE = False
+
     def __init__(self, name: str, config: LayeredConfiguration):
         self.name = name
         self.config = config
@@ -117,7 +119,7 @@ class AnalogOutput:
 
     @value.setter
     def value(self, v: float) -> None:
-        self.persistent(v)
+        self(v)
 
     def command_received(self) -> None:
         pass
@@ -138,7 +140,7 @@ class AnalogOutput:
             return
         if not isfinite(value):
             return
-        self.persistent(value)
+        self(value)
         self.command_received()
 
     def _command_set_analog(self, data: typing.Dict[str, typing.Any]) -> None:
@@ -155,7 +157,7 @@ class AnalogOutput:
             return
         if not isfinite(value):
             return
-        self.persistent(value)
+        self(value)
         self.command_received()
 
     @classmethod
@@ -185,7 +187,7 @@ class AnalogOutput:
                 aot.persistent = instrument.persistent(name, send_to_bus=False, save_value=False)
                 continue
 
-            save_value = bool(aot.config.get('RESTORE_VALUE', default=False))
+            save_value = bool(aot.config.get('RESTORE_VALUE', default=cls.RESTORE_VALUE))
 
             if not aot.config.get('ENABLE_LOGGING'):
                 aot.persistent = instrument.persistent(name, send_to_bus=False, save_value=save_value)
@@ -210,6 +212,8 @@ class AnalogOutput:
 
 
 class DigitalOutput:
+    RESTORE_VALUE = False
+
     def __init__(self, name: str, config: LayeredConfiguration):
         self.name = name
         self.config = config
@@ -233,7 +237,7 @@ class DigitalOutput:
 
     @value.setter
     def value(self, v: bool) -> None:
-        self.persistent(v)
+        self(v)
 
     def _configure_cut_size(self, config: typing.Union[str, dict]) -> None:
         if not isinstance(config, dict):
@@ -277,7 +281,7 @@ class DigitalOutput:
         except (ValueError, TypeError, OverflowError):
             return
         is_set = (bits & self.command_bit) != 0
-        self.persistent(is_set)
+        self(is_set)
         self.command_received()
 
     def _command_set_digital(self, data: typing.Dict[str, typing.Any]) -> None:
@@ -292,7 +296,7 @@ class DigitalOutput:
             return
         if output != self.name:
             return
-        self.persistent(value)
+        self(value)
         self.command_received()
 
     @classmethod
@@ -322,7 +326,7 @@ class DigitalOutput:
                 dot.persistent = instrument.persistent(name, send_to_bus=False, save_value=False)
                 continue
 
-            save_value = bool(dot.config.get('RESTORE_VALUE', default=False))
+            save_value = bool(dot.config.get('RESTORE_VALUE', default=cls.RESTORE_VALUE))
 
             dot.persistent = instrument.persistent(name, send_to_bus=False, save_value=save_value)
             if not save_value:
@@ -353,7 +357,7 @@ class DigitalOutput:
         target = self.cut_size_state.get(cut_size)
         if target is None:
             return
-        self.persistent(target)
+        self(target)
 
     def update_bypass(self, bypassed: bool) -> None:
         if bypassed == self._prior_bypass:
@@ -362,4 +366,4 @@ class DigitalOutput:
         target = self.bypass_state.get(bypassed)
         if target is None:
             return
-        self.persistent(target)
+        self(target)
