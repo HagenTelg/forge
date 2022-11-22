@@ -57,7 +57,7 @@ def doi(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.O
         return "10.7289/V57P8WBF"
     if tags and 'met' in tags:
         return None
-    return "10.7289/V55T3HJF"
+    return None
 
 
 def summary(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
