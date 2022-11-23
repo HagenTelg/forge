@@ -6,10 +6,10 @@ from .schedule import Schedule
 
 class CutSize(Schedule):
     class Size(Enum):
-        PM1 = 1.0,
-        PM2_5 = 2.5,
-        PM10 = 10.0,
-        WHOLE = None,
+        PM1 = 1.0
+        PM2_5 = 2.5
+        PM10 = 10.0
+        WHOLE = None
 
         @staticmethod
         def parse(data: typing.Any) -> "CutSize.Size":
@@ -17,14 +17,14 @@ class CutSize(Schedule):
                 return CutSize.Size(data)
             except (ValueError, TypeError):
                 pass
+            if isinstance(data, bool) and not data:
+                return CutSize.Size.WHOLE
             if data == 25:
                 return CutSize.Size.PM2_5
             if data == 0 or data == 10:
                 return CutSize.Size.PM10
             if data == 1:
                 return CutSize.Size.PM1
-            if data == False:
-                return CutSize.Size.WHOLE
             try:
                 s = str(data).upper()
                 if s == "PM1":
@@ -56,11 +56,19 @@ class CutSize(Schedule):
             if not isinstance(config, LayeredConfiguration):
                 self.size = CutSize.Size.parse(config)
             else:
-                self.size = CutSize.Size.parse(config.get("SIZE"))
+                constant_config = config.constant()
+                if constant_config is not None:
+                    self.size = CutSize.Size.parse(constant_config)
+                else:
+                    self.size = CutSize.Size.parse(config.get("SIZE"))
 
     def __init__(self, config: typing.Optional[typing.Union[LayeredConfiguration, str, float, bool]],
                  single_entry: bool = False):
-        if not isinstance(config, LayeredConfiguration) or not config:
+        if not isinstance(config, LayeredConfiguration):
+            single_entry = True
+        elif not config:
+            single_entry = True
+        elif config.constant(False):
             single_entry = True
         super().__init__(config, single_entry=single_entry)
         self.constant_size = (len(self.active) == 1)

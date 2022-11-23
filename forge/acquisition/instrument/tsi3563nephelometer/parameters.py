@@ -3,6 +3,7 @@ import asyncio
 import logging
 from math import isfinite, floor, log10, pow, nan
 from forge.acquisition import LayeredConfiguration
+from forge.units import ONE_ATM_IN_HPA
 from ..streaming import CommunicationsError
 from ..base import BaseDataOutput
 from ..dimension import Dimension
@@ -440,7 +441,7 @@ class Parameters:
         }))
 
         target.standard_temperature = 0.0
-        target.standard_pressure = 1013.25
+        target.standard_pressure = ONE_ATM_IN_HPA
 
     def persistent(self) -> typing.Dict[str, typing.Any]:
         result: typing.Dict[str, typing.Any] = dict()

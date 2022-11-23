@@ -4,6 +4,7 @@ from collections import OrderedDict
 from enum import Enum
 from math import isfinite, nan
 from forge.rayleigh import rayleigh_scattering, CO2
+from forge.units import ZERO_C_IN_K, ONE_ATM_IN_HPA
 from .base import BaseBusInterface
 
 _LOGGER = logging.getLogger(__name__)
@@ -104,10 +105,10 @@ class Spancheck:
             if not isfinite(t) or not isfinite(p):
                 return nan
             if t < 150.0:
-                t += 273.15
+                t += ZERO_C_IN_K
             if t < 150.0 or t > 350.0 or p < 10.0 or p > 2000.0:
                 return nan
-            return (p / 1013.25) * (273.15 / t)
+            return (p / ONE_ATM_IN_HPA) * (ZERO_C_IN_K / t)
 
         @staticmethod
         def to_stp(value: float, density: float) -> float:

@@ -1,6 +1,7 @@
 import typing
 from math import isfinite, nan, exp, log, sqrt
 from forge.solver import newton_raphson
+from forge.units import ZERO_C_IN_K
 
 
 def svp_over_ice(t_kelvin: float) -> float:
@@ -52,7 +53,7 @@ def svp_over_water(t_kelvin: float) -> float:
 
 
 def svp(t_kelvin: float, over_water: bool = False):
-    if not over_water and t_kelvin < 273.15:
+    if not over_water and t_kelvin < ZERO_C_IN_K:
         return svp_over_ice(t_kelvin)
     return svp_over_water(t_kelvin)
 
@@ -72,14 +73,14 @@ def dewpoint(t: float, rh: float, over_water: bool = False) -> float:
         return nan
     if rh <= 0.0 or rh > 100.0 or t < -100.0 or t > 400.0:
         return nan
-    t += 273.15
+    t += ZERO_C_IN_K
 
     svp_target = svp(t, over_water=over_water)
     if not isfinite(svp_target):
         return nan
     svp_target *= (rh / 100.0)
 
-    return _svp_solve(svp_target, t_initial=t, over_water=over_water) - 273.15
+    return _svp_solve(svp_target, t_initial=t, over_water=over_water) - ZERO_C_IN_K
 
 
 def rh(t: float, dewpoint: float, over_water: bool = False) -> float:
@@ -87,8 +88,8 @@ def rh(t: float, dewpoint: float, over_water: bool = False) -> float:
         return nan
     if t < -100.0 or t > 400.0 or dewpoint < -100.0 or dewpoint > 400.0:
         return nan
-    t += 273.15
-    dewpoint += 273.15
+    t += ZERO_C_IN_K
+    dewpoint += ZERO_C_IN_K
 
     svp_t = svp(t, over_water=over_water)
     if not isfinite(svp_t) or svp_t == 0.0:
@@ -104,14 +105,14 @@ def temperature(rh: float, dewpoint: float, over_water: bool = False) -> float:
         return nan
     if rh <= 0.0 or rh > 100.0 or dewpoint < -100.0 or dewpoint > 400.0:
         return nan
-    dewpoint += 273.15
+    dewpoint += ZERO_C_IN_K
 
     svp_target = svp(dewpoint, over_water=over_water)
     if not isfinite(svp_target):
         return nan
     svp_target /= (rh / 100.0)
 
-    return _svp_solve(svp_target, t_initial=dewpoint, over_water=over_water) - 273.15
+    return _svp_solve(svp_target, t_initial=dewpoint, over_water=over_water) - ZERO_C_IN_K
 
 
 def extrapolate_rh(t_of_rh: float, rh_measured: float, t_target: float, over_water: bool = False) -> float:

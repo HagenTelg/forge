@@ -99,6 +99,9 @@ class LayeredConfiguration:
 
         for layer in self._roots:
             origin = layer
+            if not isinstance(origin, dict):
+                # Top level is non-dict, so can't have children
+                return default
             for p in actual_path[:-1]:
                 origin = origin.get(p, None)
                 if isinstance(origin, dict):
@@ -162,6 +165,9 @@ class LayeredConfiguration:
         subroots: typing.List[dict] = list()
         for layer in self._roots:
             origin = layer
+            if not isinstance(origin, dict):
+                # Top level is non-dict, so can't have children
+                break
             for p in actual_path[:-1]:
                 origin = origin.get(p, None)
                 if not isinstance(origin, dict):
@@ -199,6 +205,13 @@ class LayeredConfiguration:
             result.update(layer.keys())
         return result
 
+    def constant(self, default=None) -> typing.Any:
+        for layer in self._roots:
+            if isinstance(layer, dict):
+                break
+            return layer
+        return default
+
     def __getitem__(self, item):
         v = self.get(item)
         if not v:
@@ -208,6 +221,6 @@ class LayeredConfiguration:
     def __bool__(self) -> bool:
         if len(self._roots) == 0:
             return False
-        if self._roots[0] == False:
-            return False
+        if isinstance(self._roots[0], bool):
+            return bool(self._roots[0])
         return True

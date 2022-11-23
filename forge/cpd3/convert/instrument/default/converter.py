@@ -234,6 +234,16 @@ class VariableConverter:
         if description:
             meta["Description"] = str(description)
 
+        channel = getattr(self.variable, "channel", None)
+        if channel is None:
+            channel = getattr(self.variable, "address", None)
+        if channel is not None:
+            try:
+                channel = int(channel)
+                meta["Channel"] = channel
+            except (TypeError, ValueError):
+                meta["Channel"] = channel
+
         if "standard_temperature" in self.ancillary_variables:
             standard_temperature = self.record.group.variables.get("standard_temperature")
             if standard_temperature is not None:

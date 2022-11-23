@@ -2,6 +2,7 @@ import asyncio
 import typing
 import pytest
 from forge.tasks import wait_cancelable
+from forge.units import ZERO_C_IN_K
 from forge.acquisition.instrument.testing import create_streaming_instrument, BusInterface, PersistentInterface
 from forge.acquisition.instrument.tsi3563nephelometer.simulator import Simulator
 from forge.acquisition.instrument.tsi3563nephelometer.instrument import Instrument
@@ -245,7 +246,7 @@ async def test_spancheck():
     await bus.wait_for_notification('zero')
 
     def to_stp(value: float) -> float:
-        density = (simulator.data_Psample / 1013.25) * (273.15 / (simulator.data_Tsample + 273.15))
+        density = (simulator.data_Psample / 1013.25) * (ZERO_C_IN_K / (simulator.data_Tsample + ZERO_C_IN_K))
         return value / density
 
     result = await bus.state('spancheck_result')

@@ -56,12 +56,12 @@ def instrument_config(args: argparse.Namespace) -> LayeredConfiguration:
 
     instrument_local = CONFIGURATION.get("INSTRUMENT." + args.identifier)
     toml = None
-    if instrument_local:
+    if instrument_local is not None:
         roots.append(instrument_local)
         toml = LayeredConfiguration.configuration_toml("INSTRUMENT." + args.identifier)
 
     global_config = CONFIGURATION.get("ACQUISITION.GLOBAL")
-    if global_config:
+    if global_config is not None:
         roots.append(global_config)
         if toml is None:
             toml = LayeredConfiguration.configuration_toml("ACQUISITION.GLOBAL")
@@ -74,12 +74,12 @@ def average_config(args: argparse.Namespace) -> LayeredConfiguration:
 
     instrument_local = CONFIGURATION.get("INSTRUMENT." + args.identifier + ".AVERAGE")
     toml = None
-    if instrument_local:
+    if instrument_local is not None:
         roots.append(instrument_local)
         toml = LayeredConfiguration.configuration_toml("INSTRUMENT." + args.identifier + ".AVERAGE")
 
     global_config = CONFIGURATION.get("ACQUISITION.AVERAGE")
-    if global_config:
+    if global_config is not None:
         roots.append(global_config)
         if toml is None:
             toml = LayeredConfiguration.configuration_toml("ACQUISITION.AVERAGE")
@@ -92,12 +92,12 @@ def cutsize_config(args: argparse.Namespace) -> LayeredConfiguration:
 
     instrument_local = CONFIGURATION.get("INSTRUMENT." + args.identifier + ".CUT_SIZE")
     toml = None
-    if instrument_local:
+    if instrument_local is not None:
         roots.append(instrument_local)
         toml = LayeredConfiguration.configuration_toml("INSTRUMENT." + args.identifier + ".CUT_SIZE")
 
     global_config = CONFIGURATION.get("ACQUISITION.CUT_SIZE")
-    if global_config:
+    if global_config is not None:
         roots.append(global_config)
         if toml is None:
             toml = LayeredConfiguration.configuration_toml("ACQUISITION.CUT_SIZE")
@@ -134,12 +134,12 @@ def data_output(args: argparse.Namespace) -> BaseDataOutput:
 
     instrument_local = CONFIGURATION.get("INSTRUMENT." + args.identifier + ".FILE")
     toml = None
-    if instrument_local:
+    if instrument_local is not None:
         roots.append(instrument_local)
         toml = LayeredConfiguration.configuration_toml("INSTRUMENT." + args.identifier + ".FILE")
 
     global_config = CONFIGURATION.get("ACQUISITION.FILE")
-    if global_config:
+    if global_config is not None:
         roots.append(global_config)
         if toml is None:
             toml = LayeredConfiguration.configuration_toml("ACQUISITION.FILE")

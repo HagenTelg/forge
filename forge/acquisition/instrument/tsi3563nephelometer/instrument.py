@@ -10,6 +10,7 @@ from math import isfinite, nan, floor
 from contextlib import asynccontextmanager
 from forge.tasks import wait_cancelable
 from forge.dewpoint import extrapolate_rh
+from forge.units import temperature_k_to_c, ONE_ATM_IN_HPA
 from forge.acquisition import LayeredConfiguration
 from forge.acquisition.schedule import Schedule
 from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError, BaseBusInterface
@@ -565,7 +566,7 @@ class Instrument(StreamingInstrument):
             name="spancheck",
         )
         self.spancheck_state.data_record.standard_temperature = 0.0
-        self.spancheck_state.data_record.standard_pressure = 1013.25
+        self.spancheck_state.data_record.standard_pressure = ONE_ATM_IN_HPA
 
         self.active_parameters.record(self.context.data.constant_record("parameters"), dimension_wavelength)
 
@@ -880,12 +881,12 @@ class Instrument(StreamingInstrument):
 
         Tsample = parse_number(Tsample)
         if Tsample > 150.0:
-            Tsample -= 273.15
+            Tsample = temperature_k_to_c(Tsample)
         Tsample = self.data_Tsample(Tsample)
 
         Tinlet = parse_number(Tinlet)
         if Tinlet > 150.0:
-            Tinlet -= 273.15
+            Tinlet = temperature_k_to_c(Tinlet)
         Tinlet = self.data_Tinlet(Tinlet)
 
         Usample = self.data_Usample(parse_number(Usample))
