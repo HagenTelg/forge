@@ -1212,6 +1212,13 @@ $(document).ready(function() {
                 context.activateLetter();
             }
         }
+
+        switch(event.code) {
+        case 'Backquote':
+            showModal("{{ request.url_for('static', path='/modal/messagelog.html') }}");
+            event.preventDefault();
+            break;
+        }
     });
 
     CONTROL_CONTEXT.addConnectionState((connected) => {
