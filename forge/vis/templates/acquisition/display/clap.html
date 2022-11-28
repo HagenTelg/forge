@@ -73,8 +73,6 @@
     <div class="content display-data communication-state notification-state hide-false"
          notification="wait_spot_stability"><span class="mdi mdi-loading mdi-spin"></span>Waiting for spot stability</div>
     <div class="content display-data communication-state notification-state hide-false"
-         notification="spot_advancing"><span class="mdi mdi-loading mdi-spin"></span>Advancing spot</div>
-    <div class="content display-data communication-state notification-state hide-false"
          notification="filter_baseline"><span class="mdi mdi-loading mdi-spin"></span>Establishing filter baseline</div>
     <div class="content display-data communication-state notification-state hide-false"
          notification="filter_change"><span class="mdi mdi-loading mdi-spin"></span>Changing filter</div>
@@ -82,11 +80,7 @@
          notification="white_filter_change"><span class="mdi mdi-loading mdi-spin"></span>Changing filter (white)</div>
 
     <div class="content display-data communication-state notification-state hide-false"
-         notification="bypass_wait_spot_stability">Bypass paused establishing filter baseline</div>
-    <div class="content display-data communication-state notification-state hide-false"
-         notification="bypass_filter_baseline">Bypass paused establishing filter baseline</div>
-    <div class="content display-data communication-state notification-state hide-false"
-         notification="bypass_filter_baseline"><span class="mdi mdi-loading mdi-spin"></span>Establishing filter baseline</div>
+         notification="bypass_wait_spot_stability">Bypass paused establishing spot stability</div>
 
     <div class="content display-data communication-state notification-state hide-false warning"
          notification="flow_error">Flow error detected</div>
@@ -125,6 +119,7 @@
     let onLastSpot = false;
     let filterChanging = false;
     let whiteFilterChanging = false;
+    let needFilterChange = false;
 
     function setVisible(id, visible) {
         if (visible) {
@@ -135,7 +130,7 @@
     }
 
     function updateVisibility() {
-        setVisible('#{{uid}}_spot_advance', !onLastSpot && !filterChanging && !whiteFilterChanging);
+        setVisible('#{{uid}}_spot_advance', !onLastSpot && !filterChanging && !whiteFilterChanging && !needFilterChange);
         setVisible('#{{uid}}_filter_change_start', !filterChanging && !whiteFilterChanging);
         setVisible('#{{uid}}_filter_change_end', filterChanging || whiteFilterChanging);
         setVisible('#{{uid}}_white_filter_change', !whiteFilterChanging);
@@ -146,9 +141,11 @@
         if (!notifications) {
             filterChanging = false;
             whiteFilterChanging = false;
+            needFilterChange = false;
         } else {
             filterChanging = notifications.includes('filter_change');
             whiteFilterChanging = notifications.includes('white_filter_change');
+            needFilterChange = notifications.includes('need_filter_change') || notifications.includes('need_white_filter_change');
         }
         updateVisibility();
     }, context.source);

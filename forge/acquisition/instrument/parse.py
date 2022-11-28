@@ -131,7 +131,7 @@ def parse_datetime_field_fixed(dt: bytes, datetime_seperator: bytes = b' ', **kw
 
 
 def parse_flags_bits(field: bytes, dispatch: typing.Dict[int, typing.Callable[[bool], typing.Any]],
-                     base: typing.Optional[int] = 16) -> None:
+                     base: typing.Optional[int] = 16) -> int:
     try:
         if base:
             flags = int(field.strip(), base)
@@ -143,6 +143,7 @@ def parse_flags_bits(field: bytes, dispatch: typing.Dict[int, typing.Callable[[b
         raise CommunicationsError(f"negative flags {field}")
     for bit, flag in dispatch.items():
         flag((flags & bit) != 0)
+    return flags
 
 
 def parse_flags_mapped(values: typing.Dict[int, bool],

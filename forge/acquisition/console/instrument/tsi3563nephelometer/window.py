@@ -61,7 +61,10 @@ class InstrumentWindow(BaseWindow):
             self._persistent_BGR(result, 'Bbsw')
             self._persistent_BGR(result, 'Bswd')
             self._persistent_BGR(result, 'Bbswd')
-            result.append(("MODE", self._persistent.get('modestring')))
+            try:
+                result.append(("MODE", str(self._persistent.get('modestring'))))
+            except (TypeError, ValueError):
+                pass
             try:
                 result.append(("REMAINING", str(int(self.data.get('modetime')))))
             except (TypeError, ValueError):
@@ -74,7 +77,10 @@ class InstrumentWindow(BaseWindow):
             self._data_BGR(result, 'Cd')
             self._data_BGR(result, 'Cbd')
             self._data_BGR(result, 'Cf')
-            result.append(("MODE", self._persistent.get('modestring')))
+            try:
+                result.append(("MODE", str(self._persistent.get('modestring'))))
+            except (TypeError, ValueError):
+                pass
             try:
                 result.append(("REMAINING", str(int(self.data.get('modetime')))))
             except (TypeError, ValueError):

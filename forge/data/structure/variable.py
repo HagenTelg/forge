@@ -178,6 +178,12 @@ def variable_sample_flow(var: Variable) -> None:
     variable_flow(var)
 
 
+def variable_transmittance(var: Variable) -> None:
+    var.long_name = "transmittance fraction of light through the filter relative to the amount before sampling"
+    var.units = "1"
+    var.C_format = "%9.7f"
+
+
 def variable_size_distribution_Dp(var: Variable) -> None:
     var.long_name = "central diameter of particles in the bin (Dp)"
     var.units = "um"

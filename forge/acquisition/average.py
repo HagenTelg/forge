@@ -209,6 +209,64 @@ class AverageRecord:
         self._entries.append(f)
         return f
 
+    class Sum(Entry):
+        def __init__(self):
+            super().__init__()
+            self.value: float = nan
+
+            self._pending_value: typing.Optional[float] = None
+            self._sum: typing.Optional[float] = None
+
+        def __call__(self, value: float) -> None:
+            if value is None or not isfinite(value):
+                self._pending_value = None
+            else:
+                self._pending_value = value
+
+        def __float__(self) -> float:
+            return self.value
+
+        def clear(self) -> None:
+            self._pending_value = None
+
+        def accumulate(self, seconds: float) -> None:
+            if self._pending_value is None:
+                return
+            if not self._sum:
+                self._sum = self._pending_value
+            else:
+                self._sum += self._pending_value
+
+        def complete(self) -> None:
+            if self._sum is None:
+                self.value = nan
+            else:
+                self.value = self._sum
+            self._sum = None
+
+        def reset(self) -> None:
+            self._pending_value = None
+            self._sum = None
+
+    def sum(self) -> "AverageRecord.Sum":
+        v = self.Sum()
+        self._entries.append(v)
+        return v
+
+    class Rate(Sum):
+        def accumulate(self, seconds: float) -> None:
+            if self._pending_value is None:
+                return
+            if not self._sum:
+                self._sum = self._pending_value * seconds
+            else:
+                self._sum += self._pending_value * seconds
+
+    def rate(self) -> "AverageRecord.Rate":
+        v = self.Rate()
+        self._entries.append(v)
+        return v
+
     class Vector(Entry):
         def __init__(self):
             super().__init__()
@@ -269,16 +327,21 @@ class AverageRecord:
         return v
 
     class Array(Entry):
-        def __init__(self):
+        def __init__(self, entry_type: typing.Type = None):
             super().__init__()
             self.value: typing.List[float] = list()
-            self._contents: typing.List[AverageRecord.Variable] = list()
+            if entry_type is None:
+                entry_type = AverageRecord.Variable
+            self._entry_type = entry_type
+            self._contents: typing.List[typing.Union[AverageRecord.Variable, AverageRecord.FirstValid,
+                                                     AverageRecord.LastValid, AverageRecord.Sum,
+                                                     AverageRecord.Rate]] = list()
             self._pending_size: typing.Optional[int] = None
             self._largest_size: typing.Optional[int] = None
 
         def __call__(self, contents: typing.List[float]) -> None:
             while len(contents) > len(self._contents):
-                self._contents.append(AverageRecord.Variable())
+                self._contents.append(self._entry_type())
             for i in range(len(contents)):
                 self._contents[i](contents[i])
             self._pending_size = len(contents)
@@ -328,6 +391,11 @@ class AverageRecord:
 
     def array(self):
         a = self.Array()
+        self._entries.append(a)
+        return a
+
+    def array_last_valid(self):
+        a = self.Array(AverageRecord.LastValid)
         self._entries.append(a)
         return a
 

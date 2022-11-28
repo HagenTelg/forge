@@ -106,9 +106,10 @@ class LayeredConfiguration:
                 origin = origin.get(p, None)
                 if isinstance(origin, dict):
                     continue
-                if origin is not None:
-                    # The path contains a non-dict element, so abort
-                    return default
+                if origin is None:
+                    break
+                # The path contains a non-dict element, so abort
+                return default
             if origin is None:
                 continue
             value = origin.get(actual_path[-1], None)

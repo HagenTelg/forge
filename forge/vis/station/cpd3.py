@@ -2181,6 +2181,12 @@ class RealtimeTranslator(NativeRealtimeTranslator):
         }, persistent={
             "Dp": "Ns",
         }),
+        "clap": native_remapped_instrument({
+            "Tsample": "T1",
+            "Tcase": "T2",
+        }, persistent={
+            "Fn": "Fn",
+        }),
         "teledynet640": _T640Instrument,
         "tsi3563nephelometer": native_wavelength_instrument({
             "Psample": "P",
@@ -2219,6 +2225,9 @@ class RealtimeTranslator(NativeRealtimeTranslator):
         if override is not None:
             return override(source, instrument_info, self)
         return NativeInstrument(source, instrument_info, self)
+
+
+RealtimeTranslator.NATIVE_INSTRUMENTS["bmitap"] = RealtimeTranslator.NATIVE_INSTRUMENTS["clap"]
 
 
 class AcquisitionTranslator(NativeAcquisitionTranslator):
@@ -3715,7 +3724,6 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'FlowError', 'LampError', 'TemperatureOutOfRange', 'NonWhiteFilter',
     }, zstate_notifications={
         'Normalize': 'wait_spot_stability',
-        'SpotAdvance': 'spot_advancing',
         'FilterBaselineStart': 'filter_baseline',
         'FilterBaseline': 'filter_baseline',
         'FilterChangeStart': 'filter_change',
@@ -3725,12 +3733,12 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'WhiteFilterChangeStart': 'white_filter_change',
         'WhiteFilterChange': 'white_filter_change',
         'BypassedNormalize': 'bypass_wait_spot_stability',
-        'BypassedFilterBaselineStart': 'bypass_filter_baseline',
-        'BypassedFilterBaseline': 'bypass_filter_baseline',
+        'BypassedFilterBaselineStart': 'filter_baseline',
+        'BypassedFilterBaseline': 'filter_baseline',
         'BypassedFilterChangeStart': 'filter_change',
         'BypassedFilterChange': 'filter_change',
-        'BypassedWhiteFilterBaselineStart': 'bypass_filter_baseline',
-        'BypassedWhiteFilterBaseline': 'bypass_filter_baseline',
+        'BypassedWhiteFilterBaselineStart': 'filter_baseline',
+        'BypassedWhiteFilterBaseline': 'filter_baseline',
         'BypassedWhiteFilterChangeStart': 'white_filter_change',
         'BypassedWhiteFilterChange': 'white_filter_change',
         'RequireFilterChange': 'need_filter_change',

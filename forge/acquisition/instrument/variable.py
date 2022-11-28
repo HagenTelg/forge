@@ -130,6 +130,12 @@ class Input(BaseInstrument.Input):
                 self.calibration.append(float(c))
 
             self.field.add_comment(self.config.comment('CALIBRATION'))
+        else:
+            scale = self.config.get('SCALE')
+            if scale:
+                self.calibration.append(0.0)
+                self.calibration.append(float(scale))
+                self.field.add_comment(self.config.comment('SCALE'))
 
     def __repr__(self) -> str:
         return f"Input({self.name}={self.value})"
@@ -234,6 +240,36 @@ class Variable(BaseInstrument.Variable):
     def attach_to_record(self, record: BaseInstrument.Record) -> None:
         if self.average is None:
             self.average = record.average.variable()
+        elif not record.average.has_entry(self.average):
+            raise ValueError(f"variable {self.name} from {self.source.name} attached to multiple records")
+        self.source.attached_to_record = True
+
+
+class VariableRate(Variable):
+    def __init__(self, instrument: BaseInstrument, source: Input,
+                 name: str, code: typing.Optional[str], attributes: typing.Dict[str, typing.Any]):
+        if 'cell_methods' not in attributes:
+            attributes['cell_methods'] = "time: sum"
+        super().__init__(instrument, source, name, code, attributes)
+
+    def attach_to_record(self, record: BaseInstrument.Record) -> None:
+        if self.average is None:
+            self.average = record.average.rate()
+        elif not record.average.has_entry(self.average):
+            raise ValueError(f"variable {self.name} from {self.source.name} attached to multiple records")
+        self.source.attached_to_record = True
+
+
+class VariableLastValid(Variable):
+    def __init__(self, instrument: BaseInstrument, source: Input,
+                 name: str, code: typing.Optional[str], attributes: typing.Dict[str, typing.Any]):
+        if 'cell_methods' not in attributes:
+            attributes['cell_methods'] = "time: last"
+        super().__init__(instrument, source, name, code, attributes)
+
+    def attach_to_record(self, record: BaseInstrument.Record) -> None:
+        if self.average is None:
+            self.average = record.average.last_valid()
         elif not record.average.has_entry(self.average):
             raise ValueError(f"variable {self.name} from {self.source.name} attached to multiple records")
         self.source.attached_to_record = True

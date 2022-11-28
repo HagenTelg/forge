@@ -5,8 +5,8 @@ import forge.data.structure.variable as netcdf_var
 from forge.acquisition import LayeredConfiguration
 from forge.acquisition.util import parse_interval
 from .base import BaseInstrument, BaseContext, BaseDataOutput
-from .variable import Input, Variable
-from .array import ArrayInput, ArrayVariable
+from .variable import Input, Variable, VariableRate, VariableLastValid
+from .array import ArrayInput, ArrayVariable, ArrayVariableLastValid
 from .flag import Notification, Flag
 from .dimension import Dimension
 from .record import Report, Record
@@ -277,12 +277,31 @@ class StandardInstrument(BaseInstrument):
             attributes = dict()
         return Variable(self, source, name, code, attributes)
 
+    def variable_rate(self, source: Input, name: str = None, code: str = None,
+                 attributes: typing.Dict[str, typing.Any] = None) -> VariableRate:
+        if not attributes:
+            attributes = dict()
+        return VariableRate(self, source, name, code, attributes)
+
+    def variable_last_valid(self, source: Input, name: str = None, code: str = None,
+                 attributes: typing.Dict[str, typing.Any] = None) -> VariableRate:
+        if not attributes:
+            attributes = dict()
+        return VariableLastValid(self, source, name, code, attributes)
+
     def variable_array(self, source: ArrayInput, dimension: typing.Optional[Dimension] = None,
                        name: str = None, code: str = None,
-                       attributes: typing.Dict[str, typing.Any] = None) -> Variable:
+                       attributes: typing.Dict[str, typing.Any] = None) -> ArrayVariable:
         if not attributes:
             attributes = dict()
         return ArrayVariable(self, source, dimension, name, code, attributes)
+
+    def variable_array_last_valid(self, source: ArrayInput, dimension: typing.Optional[Dimension] = None,
+                                  name: str = None, code: str = None,
+                                  attributes: typing.Dict[str, typing.Any] = None) -> ArrayVariableLastValid:
+        if not attributes:
+            attributes = dict()
+        return ArrayVariableLastValid(self, source, dimension, name, code, attributes)
 
     def variable_number_concentration(self, source: Input, name: str = None, code: str = None,
                                       attributes: typing.Dict[str, typing.Any] = None) -> Variable:
@@ -323,6 +342,30 @@ class StandardInstrument(BaseInstrument):
                                                         v.data.use_standard_pressure),
                                                 is_dried=v.data.is_dried)
         v.data.configure_variable = t
+        return v
+
+    def variable_absorption(self, source: ArrayInput,
+                            dimension: typing.Optional[Dimension] = None,
+                            name: str = None, code: str = None,
+                            attributes: typing.Dict[str, typing.Any] = None) -> ArrayVariable:
+        v = self.variable_array(source, dimension, name or "light_absorption",
+                                code, attributes)
+
+        def t(var: netcdf_var.Variable) -> None:
+            netcdf_var.variable_absorption(var,
+                                           is_stp=(v.data.use_standard_temperature and
+                                                   v.data.use_standard_pressure),
+                                           is_dried=v.data.is_dried)
+        v.data.configure_variable = t
+        return v
+
+    def variable_transmittance(self, source: ArrayInput,
+                               dimension: typing.Optional[Dimension] = None,
+                               name: str = None, code: str = None,
+                               attributes: typing.Dict[str, typing.Any] = None) -> ArrayVariableLastValid:
+        v = self.variable_array_last_valid(source, dimension, name or "transmittance",
+                                           code, attributes)
+        v.data.configure_variable = netcdf_var.variable_transmittance
         return v
 
     variable_ozone = _declare_variable_type(netcdf_var.variable_ozone, "ozone_mixing_ratio")

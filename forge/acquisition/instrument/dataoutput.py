@@ -272,7 +272,8 @@ class DataOutput(BaseDataOutput):
                         v = nan
                     else:
                         v = 0
-                self.values = np.append(self.values, v)
+                # Convoluted because np.append will convert a scalar integer to floating point otherwise
+                self.values = np.append(self.values, np.array([v], dtype=self.values.dtype))
 
             def remove_start(self, count: int) -> None:
                 self.values = np.delete(self.values, np.s_[:count])
@@ -295,6 +296,8 @@ class DataOutput(BaseDataOutput):
 
             def pull_value(self) -> None:
                 v = self.field.value
+                if v is None:
+                    v = []
                 add_length = len(v)
                 self.sizes.append(add_length)
                 if add_length > self.values.shape[1]:

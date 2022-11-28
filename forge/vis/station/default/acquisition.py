@@ -29,7 +29,7 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('bmi1710cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('bmi1720cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('clap'))
-        self.display_instrument.append(self.DisplayInstrumentSimple('tap'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('bmitap'))
         self.display_instrument.append(self.DisplayInstrumentSimple('mageeae33'))
         self.display_instrument.append(self.DisplayInstrumentSimple('teledynet640'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3563nephelometer'))
@@ -62,7 +62,7 @@ class Acquisition(BaseAcquisition):
         self.summary_instrument.append(self.SummaryInstrumentSimple('bmi1720cpc', priority=4000))
 
         self.summary_instrument.append(self.SummaryInstrumentSimple('clap', priority=3000))
-        self.summary_instrument.append(self.SummaryInstrumentSimple('tap', priority=3000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('bmitap', priority=3000))
 
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3563nephelometer', priority=2000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('ecotechnephelometer', priority=2000))
@@ -84,7 +84,7 @@ def visible(station: str, mode_name: typing.Optional[str] = None) -> bool:
 
 _default_display = BasicDisplay()
 _type_display: typing.Dict[str, Display] = {
-    'tap': ParameterDisplay('clap', {'instrument': "BMI TAP"}),
+    'bmitap': ParameterDisplay('clap', {'instrument': "BMI TAP"}),
     'bmi1710cpc': ParameterDisplay('bmi17x0cpc', {'instrument': "BMI 1710"}),
     'bmi1720cpc': ParameterDisplay('bmi17x0cpc', {'instrument': "BMI 1720"}),
 }
@@ -100,7 +100,7 @@ _type_summary: typing.Dict[str, SummaryItem] = {
     'admagic250cpc': ParameterSummary('cpc', {'instrument': "Magic 250"}),
     'bmi1710cpc': ParameterSummary('cpc', {'instrument': "BMI 1710"}),
     'bmi1720cpc': ParameterSummary('cpc', {'instrument': "BMI 1720"}),
-    'tap': ParameterSummary('clap', {'instrument': "BMI TAP"}),
+    'bmitap': ParameterSummary('clap', {'instrument': "BMI TAP"}),
     'tsi3563nephelometer': ParameterSummary('nephelometer', {'instrument': "TSI 3563"}),
     'ecotechnephelometer': ParameterSummary('nephelometer', {
         'instrument': "Ecotech Aurora",

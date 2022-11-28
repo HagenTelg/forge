@@ -30,7 +30,7 @@ class Instrument(StreamingInstrument):
     MANUFACTURER = "TSI"
     MODEL = "3563"
     DISPLAY_LETTER = "N"
-    TAGS = frozenset({"aerosol", "neph", _INSTRUMENT_TYPE})
+    TAGS = frozenset({"aerosol", "scattering", _INSTRUMENT_TYPE})
     SERIAL_PORT = {'baudrate': 9600, 'parity': serial.PARITY_EVEN, 'bytesize': serial.SEVENBITS}
 
     @enum.unique
@@ -396,8 +396,8 @@ class Instrument(StreamingInstrument):
 
         self.data_wavelength = self.persistent("wavelength", save_value=False, send_to_bus=False)
         self.data_wavelength([wl for wl, _ in self.WAVELENGTHS])
-        self.data_Bs = self.input_array("Bs", send_to_bus=False)
-        self.data_Bbs = self.input_array("Bbs", send_to_bus=False)
+        self.data_Bs = self.input_array("Bs")  # Sent to the bus because it has the zero data removed
+        self.data_Bbs = self.input_array("Bbs")
         self.data_Bsw = self.persistent("Bsw", send_to_bus=False)
         self.data_Bbsw = self.persistent("Bbsw", send_to_bus=False)
         self.data_Cs = self.input_array("Cs", send_to_bus=False)
