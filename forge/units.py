@@ -23,3 +23,11 @@ def flow_lpm_to_m3s(lpm: float) -> float:
 
 def temperature_k_to_c(k: float) -> float:
     return k - ZERO_C_IN_K
+
+
+def pressure_Pa_to_hPa(p: float) -> float:
+    return p / 100.0
+
+
+def mass_ng_to_ug(m: float) -> float:
+    return m / 1000.0

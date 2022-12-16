@@ -5,7 +5,7 @@ import forge.data.structure.variable as netcdf_var
 from forge.acquisition import LayeredConfiguration
 from forge.acquisition.util import parse_interval
 from .base import BaseInstrument, BaseContext, BaseDataOutput
-from .variable import Input, Variable, VariableRate, VariableLastValid
+from .variable import Input, Variable, VariableRate, VariableLastValid, VariableVectorMagnitude, VariableVectorDirection
 from .array import ArrayInput, ArrayVariable, ArrayVariableLastValid
 from .flag import Notification, Flag
 from .dimension import Dimension
@@ -314,6 +314,52 @@ class StandardInstrument(BaseInstrument):
         v.data.configure_variable = t
         return v
 
+    def variable_winds(self, speed: Input, direction: Input, name_suffix: str = None,
+                       name_speed: str = None, name_direction: str = None,
+                       code: str = None, code_speed: str = None, code_direction: str = None,
+                       attributes: typing.Dict[str, typing.Any] = None,
+                       attributes_speed: typing.Dict[str, typing.Any] = None,
+                       attributes_direction: typing.Dict[str, typing.Any] = None) -> typing.Tuple[Variable, Variable]:
+        if not name_speed:
+            name_speed = "wind_speed"
+            if name_suffix:
+                name_speed = name_speed + name_suffix
+        if code_speed is None and code is not None:
+            code_speed = "WS" + code
+        if attributes_speed is not None:
+            if attributes is not None:
+                c = attributes.copy()
+                c.update(attributes_speed)
+                attributes_speed = c
+        else:
+            attributes_speed = attributes
+            if not attributes_speed:
+                attributes_speed = dict()
+        variable_speed = VariableVectorMagnitude(self, speed, name_speed, code_speed,
+                                                 attributes_speed)
+        variable_speed.data.configure_variable = netcdf_var.variable_wind_speed
+
+        if not name_direction:
+            name_direction = "wind_direction"
+            if name_suffix:
+                name_direction = name_direction + name_suffix
+        if code_direction is None and code is not None:
+            code_direction = "WS" + code
+        if attributes_direction is not None:
+            if attributes is not None:
+                c = attributes.copy()
+                c.update(attributes_direction)
+                attributes_direction = c
+        else:
+            attributes_direction = attributes
+            if not attributes_direction:
+                attributes_direction = dict()
+        variable_direction = VariableVectorDirection(self, direction, variable_speed, name_direction, code_direction,
+                                                     attributes_direction)
+        variable_direction.data.configure_variable = netcdf_var.variable_wind_direction
+
+        return variable_speed, variable_direction
+
     def variable_total_scattering(self, source: ArrayInput,
                                   dimension: typing.Optional[Dimension] = None,
                                   name: str = None, code: str = None,
@@ -369,6 +415,7 @@ class StandardInstrument(BaseInstrument):
         return v
 
     variable_ozone = _declare_variable_type(netcdf_var.variable_ozone, "ozone_mixing_ratio")
+    variable_co2 = _declare_variable_type(netcdf_var.variable_co2, "carbon_dioxide_mixing_ratio")
     variable_temperature = _declare_variable_type(netcdf_var.variable_temperature)
     variable_air_temperature = _declare_variable_type(netcdf_var.variable_air_temperature)
     variable_dewpoint = _declare_variable_type(netcdf_var.variable_dewpoint)
@@ -381,6 +428,8 @@ class StandardInstrument(BaseInstrument):
     variable_flow = _declare_variable_type(netcdf_var.variable_flow)
     variable_sample_flow = _declare_variable_type(netcdf_var.variable_sample_flow, "sample_flow")
 
+    variable_ebc = _declare_variable_array_type(
+        netcdf_var.variable_ebc, "equivalent_black_carbon")
     variable_size_distribution_dN = _declare_variable_array_type(
         netcdf_var.variable_size_distribution_dN, "number_distribution")
     variable_size_distribution_dNdlogDp = _declare_variable_array_type(

@@ -101,9 +101,16 @@ def variable_ebc(var: Variable) -> None:
 
 
 def variable_ozone(var: Variable) -> None:
-    var.long_name = "mass fraction of ozone"
+    var.long_name = "fraction concentration of ozone"
     var.standard_name = "mole_fraction_of_ozone_in_air"
     var.units = "1e-9"  # canonical ppb
+    var.C_format = "%9.2f"
+
+
+def variable_co2(var: Variable) -> None:
+    var.long_name = "fractional concentration of carbon dioxide"
+    var.standard_name = "dry_atmosphere_mole_fraction_of_carbon_dioxide"
+    var.units = "1e-6"  # canonical ppm
     var.C_format = "%9.2f"
 
 

@@ -273,3 +273,45 @@ class VariableLastValid(Variable):
         elif not record.average.has_entry(self.average):
             raise ValueError(f"variable {self.name} from {self.source.name} attached to multiple records")
         self.source.attached_to_record = True
+
+
+class VariableVectorMagnitude(Variable):
+    def attach_to_record(self, record: BaseInstrument.Record) -> None:
+        if self.average is None:
+            self.average = record.average.vector()
+        elif not record.average.has_entry(self.average):
+            raise ValueError(f"variable {self.name} from {self.source.name} attached to multiple records")
+        self.source.attached_to_record = True
+
+    @property
+    def value(self) -> float:
+        if not self.average:
+            return nan
+        return self.average.magnitude
+
+    def __call__(self) -> None:
+        pass
+
+
+class VariableVectorDirection(Variable):
+    def __init__(self, instrument: BaseInstrument, source: Input, magnitude: VariableVectorMagnitude,
+                 name: str, code: typing.Optional[str], attributes: typing.Dict[str, typing.Any]):
+        if 'cell_methods' not in attributes:
+            attributes['cell_methods'] = f"time: mean {magnitude.data.name}: vector_magnitude"
+        if 'cell_methods' not in magnitude.data.attributes:
+            magnitude.data.attributes['cell_methods'] = f"time: mean {name}: vector_direction"
+        super().__init__(instrument, source, name, code, attributes)
+        self.magnitude = magnitude
+
+    def attach_to_record(self, record: BaseInstrument.Record) -> None:
+        self.magnitude.attach_to_record(record)
+        self.source.attached_to_record = True
+
+    @property
+    def value(self) -> float:
+        if not self.average:
+            return nan
+        return self.magnitude.average.direction
+
+    def __call__(self) -> None:
+        self.magnitude.average(float(self.magnitude.source), float(self.source))

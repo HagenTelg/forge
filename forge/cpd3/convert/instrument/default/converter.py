@@ -194,7 +194,7 @@ class RecordConverter:
         wavelengths = self.group.dimensions.get("wavelength")
         if wavelengths is not None:
             for i in range(len(self.wavelength_suffix), wavelengths.size):
-                self.wavelength_suffix.append(f"{i}")
+                self.wavelength_suffix.append(f"{i+1}")
 
     def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) -> None:
         raise NotImplementedError
@@ -560,6 +560,23 @@ class DataRecord(RecordConverter):
 
             return result
 
+        def _sibling_variable_code(self, name: str, apply_suffix: bool = False) -> typing.Optional[str]:
+            if not name:
+                return None
+            variable = self.record.group.variables.get(name)
+            if variable is None:
+                return None
+
+            variable_name: str = variable.variable_id
+            if "_" not in variable_name:
+                if "wavelength" in self.ancillary_variables and len(self.record.wavelength_suffix) == 1:
+                    variable_name = variable_name + self.record.wavelength_suffix[0]
+
+                if apply_suffix:
+                    variable_name = variable_name + "_" + self.record.converter.source
+
+            return variable_name
+
         def metadata(self) -> cpd3_variant.Metadata:
             conversion_type = self.conversion_type
             metadata_type = conversion_type.metadata
@@ -580,6 +597,25 @@ class DataRecord(RecordConverter):
                 meta["Smoothing"] = {"Mode": "None"}
             elif time_averaging_method == "last":
                 meta["Smoothing"] = {"Mode": "DifferenceInitial"}
+            else:
+                vector_magnitude = self._sibling_variable_code(cell_methods.get("vector_magnitude"))
+                if vector_magnitude:
+                    meta["Smoothing"] = {
+                        "Mode": "Vector2D",
+                        "Parameters": {
+                            "Magnitude": vector_magnitude,
+                            "Direction": self.variable.variable_id,
+                        }
+                    }
+                vector_direction = self._sibling_variable_code(cell_methods.get("vector_angle"))
+                if vector_direction:
+                    meta["Smoothing"] = {
+                        "Mode": "Vector2D",
+                        "Parameters": {
+                            "Direction": vector_direction,
+                            "Magnitude": self.variable.variable_id,
+                        }
+                    }
 
             if conversion_type == self.ConversionType.ARRAYFLOAT:
                 if 'time' in self.variable.dimensions:

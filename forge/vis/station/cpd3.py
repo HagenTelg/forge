@@ -2187,6 +2187,20 @@ class RealtimeTranslator(NativeRealtimeTranslator):
         }, persistent={
             "Fn": "Fn",
         }),
+        "mageeae33": native_remapped_instrument({
+            "Tcontroller": "T1",
+            "Tsupply": "T2",
+            "Tled": "T3",
+            "k1": "ZFACTOR1",
+            "k2": "ZFACTOR2",
+            "k3": "ZFACTOR3",
+            "k4": "ZFACTOR4",
+            "k5": "ZFACTOR5",
+            "k6": "ZFACTOR6",
+            "k7": "ZFACTOR7",
+        }, persistent={
+            "Fn": "Fn",
+        }),
         "teledynet640": _T640Instrument,
         "tsi3563nephelometer": native_wavelength_instrument({
             "Psample": "P",
