@@ -29,5 +29,13 @@ def pressure_Pa_to_hPa(p: float) -> float:
     return p / 100.0
 
 
+def pressure_mmHg_to_hPa(p: float) -> float:
+    return p * 1.33322387415
+
+
 def mass_ng_to_ug(m: float) -> float:
     return m / 1000.0
+
+
+def concentration_ppm_to_ppb(x: float) -> float:
+    return x * 1000.0
