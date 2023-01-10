@@ -221,6 +221,13 @@ def need_spancheck_control() -> bool:
     return False
 
 
+def need_pressure_bypass_control() -> bool:
+    pressure_bypass = CONFIGURATION.get("ACQUISITION.PRESSURE_BYPASS")
+    if pressure_bypass is not None and not pressure_bypass:
+        return False
+    return CONFIGURATION.get("ACQUISITION.PRESSURE_BYPASS.ENABLE", True)
+
+
 def start_all_control() -> None:
     start_control("restart")
 
@@ -230,6 +237,9 @@ def start_all_control() -> None:
 
     if need_spancheck_control():
         start_control("spancheck")
+
+    if need_pressure_bypass_control():
+        start_control("pressurebypass")
 
 
 def start_all_instruments() -> None:
