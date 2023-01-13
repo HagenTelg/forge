@@ -93,6 +93,36 @@ def _ascii_lrc(data: typing.Iterable[int]) -> int:
     return s % 0xFF
 
 
+async def _read_mapped_inner(indices: typing.Iterable[int], span_gaps: bool,
+                             read_multiple: typing.Callable[[int, int], typing.Awaitable[typing.List]],
+                             maximum_span: int = 2008) -> typing.Dict:
+    sorted = list(indices)
+    sorted.sort()
+
+    result = dict()
+    start_index = 0
+    while start_index < len(sorted):
+        end_index = start_index + 1
+        while end_index < len(sorted):
+            if not span_gaps and sorted[end_index] != sorted[end_index-1]:
+                break
+            if sorted[end_index] - sorted[start_index] >= maximum_span:
+                break
+            end_index += 1
+
+        read_data = await read_multiple(sorted[start_index], sorted[end_index-1])
+        read_index = sorted[start_index]
+        output_index = start_index
+        for i in range(len(read_data)):
+            if read_index == sorted[output_index]:
+                result[read_index] = read_data[i]
+                output_index += 1
+            read_index += 1
+
+        start_index = end_index
+    return result
+
+
 class ModbusInstrument(StreamingInstrument):
     def __init__(self, context: StreamingContext):
         super().__init__(context)
@@ -350,7 +380,7 @@ class ModbusInstrument(StreamingInstrument):
             raise ValueError
         await self.write_frame(6, struct.pack('>H', index) + data)
         response = await self.read_frame(6, 4)
-        response_index = struct.unpack('>H', response)[0]
+        response_index = struct.unpack('>H', response[:2])[0]
         if response_index != index:
             raise CommunicationsError(f"mismatched response register index {response_index} expected {index}")
         if response[2:] != data:
@@ -389,41 +419,25 @@ class ModbusInstrument(StreamingInstrument):
         f = self.flag(n, preferred_bit=(1 << (index - bit_offset)))
         return f
 
-    async def _read_mapped_inner(self, indices: typing.Iterable[int], span_gaps: bool,
-                                 read_multiple: typing.Callable[[int, int], typing.Awaitable[typing.List[bool]]]) -> typing.Dict[int, bool]:
-        sorted = list(indices)
-        sorted.sort()
-
-        result: typing.Dict[int, bool] = dict()
-        start_index = 0
-        while start_index < len(sorted):
-            end_index = start_index + 1
-            while end_index < len(sorted):
-                if not span_gaps and sorted[end_index] != sorted[end_index-1]:
-                    break
-                if sorted[end_index] - sorted[start_index] >= 2008:
-                    break
-                end_index += 1
-
-            read_data = await read_multiple(sorted[start_index], sorted[end_index-1])
-            read_index = sorted[start_index]
-            output_index = start_index
-            for i in range(len(read_data)):
-                if read_index == sorted[output_index]:
-                    result[read_index] = read_data[i]
-                    output_index += 1
-                read_index += 1
-
-            start_index = end_index
-        return result
-
     async def read_mapped_inputs(self, inputs: typing.Iterable[int],
                                  span_gaps: bool = True) -> typing.Dict[int, bool]:
-        return await self._read_mapped_inner(inputs, span_gaps, self.read_inputs)
+        return await _read_mapped_inner(inputs, span_gaps, self.read_inputs)
 
     async def read_mapped_coils(self, coils: typing.Iterable[int],
                                 span_gaps: bool = True) -> typing.Dict[int, bool]:
-        return await self._read_mapped_inner(coils, span_gaps, self.read_coils)
+        return await _read_mapped_inner(coils, span_gaps, self.read_coils)
+
+    async def read_mapped_input_integers(self, inputs: typing.Iterable[int], span_gaps: bool = True,
+                                         byteorder: str = '>', unsigned: bool = True) -> typing.Dict[int, int]:
+        async def _reader(first: int, last: int):
+            return await self.read_input_integer_registers(first, last, byteorder=byteorder, unsigned=unsigned)
+        return await _read_mapped_inner(inputs, span_gaps, _reader, maximum_span=123)
+
+    async def read_mapped_holding_integers(self, inputs: typing.Iterable[int], span_gaps: bool = True,
+                                           byteorder: str = '>', unsigned: bool = True) -> typing.Dict[int, int]:
+        async def _reader(first: int, last: int):
+            return await self.read_holding_integer_registers(first, last, byteorder=byteorder, unsigned=unsigned)
+        return await _read_mapped_inner(inputs, span_gaps, _reader, maximum_span=123)
 
 
 class ModbusSimulator(StreamingSimulator):

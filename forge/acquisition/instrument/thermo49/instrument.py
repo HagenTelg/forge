@@ -96,9 +96,9 @@ class Instrument(StreamingInstrument):
         self.bit_flags: typing.Dict[int, Instrument.Notification] = dict()
         self.instrument_report = self.report(
             self.ozone_var,
-            self.variable_air_pressure(self.data_Psample, "sample_temperature", code="P",
+            self.variable_air_pressure(self.data_Psample, "sample_pressure", code="P",
                                        attributes={'long_name': "sample bench pressure"}),
-            self.variable_air_temperature(self.data_Tsample, "sample_pressure", code="T1",
+            self.variable_air_temperature(self.data_Tsample, "sample_temperature", code="T1",
                                           attributes={'long_name': "sample bench temperature"}),
             self.variable_temperature(self.data_Tlamp, "lamp_temperature", code="T2",
                                       attributes={'long_name': "measurement lamp temperature"}),
