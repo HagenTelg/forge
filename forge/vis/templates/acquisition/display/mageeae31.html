@@ -1,0 +1,91 @@
+<div class="display-container collapsable collapsed{% if writable %} menu{% endif %}">
+    <div class="header communication-state warning-state format-source" instrument="Magee AE31"></div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <table class="content display-data column-split communication-state hide-false">
+        <thead>
+            <tr>
+                <th></th>
+                <th>370 nm</th>
+                <th>470 nm</th>
+                <th>520 nm</th>
+                <th>590 nm</th>
+                <th>660 nm</th>
+                <th>880 nm</th>
+                <th>950 nm</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>EBC (μg/m³)</td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="X{{wavelength+1}}" decimals="3" rightpad="3"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>σ<sub>ap</sub> (Mm⁻¹)</td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="Ba{{wavelength+1}}" decimals="2" rightpad="4"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>Transmittance</td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="Ir{{wavelength+1}}" decimals="6"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>I<sub>reference</sub></td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="If{{wavelength+1}}" decimals="4" rightpad="2"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>I<sub>reference zero</sub></td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="Ifz{{wavelength+1}}" decimals="4" rightpad="2"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>I<sub>sample</sub></td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="Ip{{wavelength+1}}" decimals="4" rightpad="2"></td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>I<sub>sample zero</sub></td>
+                {% for wavelength in range(7) %}
+                <td class="value-formatted" field="Ipz{{wavelength+1}}" decimals="4" rightpad="2"></td>
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data communication-state hide-false">
+        <tbody>
+            <tr> <td>Flow (lpm)</td>                    <td class="value-formatted" field="Q" decimals="3"></td> </tr>
+            <tr> <td>Bypass fraction (%)</td>           <td class="value-formatted" field="PCTbypass" decimals="0" rightpad="4"></td> </tr>
+        </tbody>
+    </table>
+
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="spot_advancing"><span class="mdi mdi-loading mdi-spin"></span>Advancing spot</div>
+
+</div>
+
+<style>
+#{{uid}} table sub {
+    font-size: 10px;
+}
+#{{uid}} .warning { color: #f80; }
+</style>
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+})();
+</script>

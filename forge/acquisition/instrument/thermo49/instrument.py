@@ -146,6 +146,7 @@ class Instrument(StreamingInstrument):
                 self.flag_bit(self.bit_flags, 0x80000000, "alarm_ozone_high", is_warning=True),
             ],
         )
+        self.instrument_report.record.data_record.report_interval = self._report_interval
 
         self.report_49c: typing.Optional[Report] = None
         self.report_49i: typing.Optional[Report] = None

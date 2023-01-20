@@ -368,8 +368,8 @@ class Instrument(StreamingInstrument):
         self.data_Bac = self.input_array("Bac", send_to_bus=False)
         self.data_Ba = self.input_array("Ba", send_to_bus=False)
         self.data_Bas = self.input_array("Bas", send_to_bus=False)
-        self.data_Ir = self.input_array("Baa", send_to_bus=False)
-        self.data_Irs = self.input_array("Bab", send_to_bus=False)
+        self.data_Ir = self.input_array("Ir", send_to_bus=False)
+        self.data_Irs = self.input_array("Irs", send_to_bus=False)
         self.data_If = self.input_array("If", send_to_bus=False)
         self.data_Ip = self.input_array("Ip", send_to_bus=False)
         self.data_Ips = self.input_array("Ips", send_to_bus=False)
@@ -416,7 +416,7 @@ class Instrument(StreamingInstrument):
         dimension_wavelength = self.dimension_wavelength(self.data_wavelength)
         self.instrument_report = self.report(
             at_stp(self.variable_ebc(self.data_X, dimension_wavelength, code="X")),
-            at_stp(self.variable_absorption(self.data_Bac, dimension_wavelength, "light_absorption", code="Bac")),
+            at_stp(self.variable_absorption(self.data_Bac, dimension_wavelength, code="Bac")),
 
             at_stp(self.variable_absorption(self.data_Ba, dimension_wavelength, "spot_one_light_absorption",
                                             code="Ba", attributes={
@@ -990,6 +990,7 @@ class Instrument(StreamingInstrument):
         self.data_Ips([float(c) for c in self.data_Ips_wavelength])
         self.data_correction_factor([float(c) for c in self.data_correction_factor_wavelength])
 
+        self.instrument_report.record.data_record.report_interval = self._instrument_timebase
         self.instrument_report()
         for sensor in self._active_external_sensors.values():
             sensor.report_complete()

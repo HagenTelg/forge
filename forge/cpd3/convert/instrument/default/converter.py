@@ -502,7 +502,10 @@ class DataRecord(RecordConverter):
                 cpd3_flag = self.record.converter.flag_lookup.get(flag_name)
                 if cpd3_flag is None:
                     continue
-                flag_bits = flag_masks[i]
+                if len(flag_meanings) == 1:
+                    flag_bits = int(flag_masks)
+                else:
+                    flag_bits = flag_masks[i]
                 bit_lookup[flag_bits] = {cpd3_flag.code}
 
             def c(bits) -> typing.Set[str]:
@@ -697,6 +700,9 @@ class DataRecord(RecordConverter):
                 return self.ConversionType.FLOAT
             return super().conversion_type
 
+        def wavelength_metadata(self, wavelength_index: int) -> cpd3_variant.Metadata:
+            return super().metadata()
+
         def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) -> None:
             use_cut_size = "cut_size" in self.ancillary_variables
 
@@ -711,7 +717,7 @@ class DataRecord(RecordConverter):
                 wavelength_name = self.base_name[i]
                 wavelength_center = self.wavelengths[i]
 
-                meta = self.metadata()
+                meta = self.wavelength_metadata(i)
                 meta["Wavelength"] = wavelength_center
                 self.record.global_fanout(result, wavelength_name.to_metadata(), meta,
                                           use_cut_size=use_cut_size)

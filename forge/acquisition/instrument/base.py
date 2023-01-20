@@ -100,6 +100,10 @@ class BaseDataOutput:
             pass
 
     class MeasurementRecord(Record):
+        def __init__(self):
+            super().__init__()
+            self.report_interval: typing.Optional[float] = None
+
         def __call__(self, start_time: float, end_time: float, total_seconds: float, total_samples: int) -> None:
             pass
 

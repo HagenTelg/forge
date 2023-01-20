@@ -23,7 +23,7 @@ def test_basic():
     assert result.start_time == 100.0
     assert result.end_time == 200.0
     assert result.total_seconds == 100.0
-    assert result.sample_count == 2
+    assert result.total_samples == 2
     assert float(v1) == 2.5
     assert not bool(f1)
 
@@ -38,7 +38,7 @@ def test_basic():
     assert result.start_time == 200.0
     assert result.end_time == 300.0
     assert result.total_seconds == 100.0
-    assert result.sample_count == 2
+    assert result.total_samples == 2
     assert float(v1) == 4.25
     assert bool(f1)
 
@@ -50,7 +50,7 @@ def test_basic():
     assert result.start_time == 300.0
     assert result.end_time == 400.0
     assert result.total_seconds == 20.0
-    assert result.sample_count == 2
+    assert result.total_samples == 2
     assert v1.value == 6.0
     assert not f1.value
 

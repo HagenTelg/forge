@@ -232,10 +232,10 @@ class StandardInstrument(BaseInstrument):
             self._dynamic_instrument_info[key] = value
         self._instrument_info_updated = True
 
-    def set_serial_number(self, serial_number: typing.Union[bytes, str]) -> None:
+    def set_serial_number(self, serial_number: typing.Union[bytes, str, int, float]) -> None:
         self.set_instrument_info('serial_number', self._simplify_serial_number(serial_number))
 
-    def set_firmware_version(self, firmware_version: typing.Union[bytes, str]) -> None:
+    def set_firmware_version(self, firmware_version: typing.Union[bytes, str, int, float]) -> None:
         self.set_instrument_info('firmware_version', self._simplify_serial_number(firmware_version))
 
     @property

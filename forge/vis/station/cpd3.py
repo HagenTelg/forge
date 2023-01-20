@@ -2187,6 +2187,9 @@ class RealtimeTranslator(NativeRealtimeTranslator):
         }, persistent={
             "Fn": "Fn",
         }),
+        "mageeae31": native_remapped_instrument({
+            "PCTbypass": "PCT",
+        }),
         "mageeae33": native_remapped_instrument({
             "Tcontroller": "T1",
             "Tsupply": "T2",
@@ -3815,6 +3818,22 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
     }),
 
     AcquisitionTranslator.LovePID('acquire_love_pid', 'lovepid'),
+
+    AcquisitionTranslator.Component('acquire_magee_aethalometer162131', 'mageeae31', variable_map=dict(
+        [(AcquisitionTranslator.Variable(f'X{i+1}'), f'X{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'Ba{i+1}'), f'Ba{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'Ir{i+1}'), f'Ir{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'If{i+1}'), f'If{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'Ifz{i+1}'), f'Ifz{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'Ip{i+1}'), f'Ip{i+1}') for i in range(7)] +
+        [(AcquisitionTranslator.Variable(f'Ipz{i+1}'), f'Ipz{i+1}') for i in range(7)] +
+        [
+            (AcquisitionTranslator.Variable('Q'), 'Q'),
+            (AcquisitionTranslator.Variable('PCT'), 'PCTbypass'),
+        ]
+    ), flags_notifications={
+        'SpotAdvanced': 'spot_advancing',
+    }),
 
     AcquisitionTranslator.Component('acquire_magee_aethalometer33', 'mageeae33', variable_map=dict(
         [(AcquisitionTranslator.Variable(f'X{i+1}'), f'X{i+1}') for i in range(7)] +

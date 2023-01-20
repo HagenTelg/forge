@@ -203,7 +203,7 @@ class InstrumentWindow:
                 row_width = 0
                 for r in c:
                     row_width = max(row_width, len(r))
-                if total_width == 0:
+                if total_width != 0:
                     total_width += 2
                 total_width += row_width
 

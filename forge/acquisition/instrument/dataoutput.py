@@ -198,6 +198,9 @@ class DataOutput(BaseDataOutput):
         def file_bounds(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float], typing.Optional[float]]:
             return None, None, None
 
+        def average_interval(self) -> typing.Optional[float]:
+            return None
+
     class Record(_FileComponent, BaseDataOutput.Record):
         class _NetCDFVariable:
             def pull_value(self) -> None:
@@ -565,6 +568,9 @@ class DataOutput(BaseDataOutput):
         def file_bounds(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float], typing.Optional[float]]:
             return self.start_time, self.end_time, self.first_time
 
+        def average_interval(self) -> typing.Optional[float]:
+            return self.report_interval
+
     def measurement_record(self, name: str) -> "BaseDataOutput.MeasurementRecord":
         r = self.MeasurementRecord(self, name)
         self._components.append(r)
@@ -630,6 +636,7 @@ class DataOutput(BaseDataOutput):
         start_epoch: typing.Optional[float] = None
         end_epoch: typing.Optional[float] = None
         first_epoch: typing.Optional[float] = None
+        average_interval: typing.Optional[float] = None
         for c in self._components:
             s, e, f = c.file_bounds()
             if s and (not start_epoch or s < start_epoch):
@@ -638,9 +645,17 @@ class DataOutput(BaseDataOutput):
                 end_epoch = e
             if f and (not first_epoch or f < first_epoch):
                 first_epoch = f
+            i = c.average_interval()
+            if i and (not average_interval or i < average_interval):
+                average_interval = i
+
+        if not self._average_interval:
+            average_interval = None
+        elif not average_interval or average_interval < self._average_interval:
+            average_interval = self._average_interval
 
         instrument_timeseries(root, self.station, self.source,
-                              start_epoch, end_epoch, self._average_interval,
+                              start_epoch, end_epoch, average_interval,
                               tags=self.tags, override=self._query_override)
 
         if first_epoch:
