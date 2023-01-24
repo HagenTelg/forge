@@ -32,7 +32,7 @@ def main():
     parser.add_argument('--station',
                         dest='station',
                         help="allowed station",
-                        nargs='*')
+                        action='append')
     parser.add_argument('file',
                         help="input NetCDF file")
 

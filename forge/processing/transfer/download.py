@@ -45,24 +45,24 @@ def parse_arguments():
 
     parser.add_argument('--station',
                         dest='station',
-                        nargs='*',
+                        action='append',
                         help="filter by station code")
     parser.add_argument('--ignore-station',
                         dest='ignore_station',
-                        nargs='*',
+                        action='append',
                         help="ignore by station code")
     parser.add_argument('--type',
                         dest='type',
                         choices=['data', 'backup', 'auxiliary'],
-                        nargs='*',
+                        action='append',
                         help="filter by data type")
     parser.add_argument('--key',
                         dest='public_key',
-                        nargs='*',
+                        action='append',
                         help="filter by public key")
     parser.add_argument('--filename',
                         dest='filename',
-                        nargs='*',
+                        action='append',
                         help="filter by file name regular expression pattern")
 
     parser.add_argument('--directory',

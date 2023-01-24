@@ -273,7 +273,7 @@ def main():
                         help="absolute path to search for Forge executables in")
 
     parser.add_argument('--serial-group',
-                        dest='serial_groups', nargs='*',
+                        dest='serial_groups', action='append',
                         help="additional groups to add for serial port access")
 
     args = parser.parse_args()

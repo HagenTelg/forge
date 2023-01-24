@@ -142,8 +142,8 @@ def parse_arguments():
         default_url = None
     parser.add_argument('--server',
                         help="upload server URL",
-                        default=default_url,
-                        nargs=default_url and '*' or '+')
+                        default=default_url,)
+                        #nargs=default_url and '*' or '+')
 
     parser.add_argument('--station',
                         dest='station', type=str,
@@ -167,19 +167,19 @@ def parse_arguments():
     parser.add_argument('--skip-station',
                         dest='skip_station',
                         help="station code to skip uploading for",
-                        nargs='*')
+                        action='append')
 
     parser.add_argument('--completed',
                         dest='completed',
                         help="directory to move completed files to")
 
     parser.add_argument('--directory',
-                       dest='directory',
-                       help="directory to upload all files in",
-                       nargs='*')
+                        dest='directory',
+                        help="directory to upload all files in",
+                        action='append')
     parser.add_argument('file',
-                       help="file to upload",
-                       nargs='*')
+                        help="file to upload",
+                        nargs='*')
 
     args = parser.parse_args()
 
