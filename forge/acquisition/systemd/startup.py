@@ -77,10 +77,18 @@ def set_dependencies(properties: typing.List[typing.Tuple[str, typing.Any]],
 
 
 def start_transient_unit(name: str, properties: typing.List[typing.Tuple[str, typing.Any]]) -> None:
+    # Have to stop it so we can re-use the name
+    try:
+        _SYSTEMD.StopUnit(name)
+    except dbus.exceptions.DBusException:
+        pass
+
+    # Remove any status about it
     try:
         _SYSTEMD.ResetFailedUnit(name)
     except dbus.exceptions.DBusException:
         pass
+
     _SYSTEMD.StartTransientUnit(name, "replace", [
         (key, value) for key, value in properties
     ], [])
