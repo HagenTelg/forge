@@ -42,6 +42,7 @@ class ApplyPlatformSpecific(SerialPlatformSpecific):
 
 class Upstream:
     def __init__(self, device: str, poll):
+        self._fd = None
         self.device = device
         self._poll = poll
 
@@ -303,6 +304,7 @@ class Upstream:
 
 class Downstream:
     def __init__(self, target: str, poll):
+        self._fd = None
         self.target = target
         self._poll = poll
 
