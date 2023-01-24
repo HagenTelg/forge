@@ -10,3 +10,5 @@ WantedBy=forge-acquisition-initialize.target
 ListenStream=/run/forge-acquisition-bus.socket
 SocketGroup=forge
 SocketMode=660
+TriggerLimitBurst=0
+TriggerLimitIntervalSec=0

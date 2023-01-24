@@ -92,7 +92,7 @@ class Simulator(StreamingSimulator):
 
     @staticmethod
     def _encode_float(v: float) -> bytes:
-        raw = struct.pack('<f', v)
+        raw = struct.pack('>f', v)
         return raw.hex().encode('ascii')
 
     async def _unpolled(self) -> typing.NoReturn:

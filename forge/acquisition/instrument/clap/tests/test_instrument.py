@@ -70,7 +70,7 @@ async def test_filter_change():
     assert await bus.state('Fn') == simulator.data_Fn
 
     bus.command('filter_change_start')
-    await bus.wait_for_notification('need_filter_change')
+    await bus.wait_for_notification('need_filter_change', is_set=False)
     bus.command('filter_change_end')
     await bus.wait_for_notification('filter_baseline')
     await bus.wait_for_notification('filter_change', is_set=False)

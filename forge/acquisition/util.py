@@ -59,6 +59,16 @@ def write_replace_file(target_file: str, working_directory: str, write_file: typ
     try:
         next_fd, next_file = mkstemp(dir=working_directory)
         write_file(next_file)
+
+        # mkstemp hard codes the mode to 0o600, so manually apply the umask
+        try:
+            umask = os.umask(0o666) | 0o111
+            os.umask(umask)
+        except NotImplementedError:
+            umask = 0o033
+        file_mode = 0o666 & ~umask
+        os.chmod(next_file, file_mode)
+
         os.replace(next_file, target_file)
         next_file = None
     finally:

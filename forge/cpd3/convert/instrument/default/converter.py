@@ -416,10 +416,18 @@ class DataRecord(RecordConverter):
     def global_fanout(self, result: typing.List[typing.Tuple[Identity, typing.Any]], name: Name, value: typing.Any,
                       use_cut_size: bool = True) -> None:
 
-        start_time: float = self.converter.file_start_time or self.times[0][0]
-        end_time: float = self.converter.file_end_time or self.times[-1][1]
-        if self.converter.system_start_time and self.converter.system_start_time < start_time:
+        start_time: float = self.converter.file_start_time
+        end_time: float = self.converter.file_end_time
+        if not start_time and len(self.times) > 0:
+            start_time = self.times[0][0]
+        if not end_time and len(self.times) > 0:
+            end_time = self.times[-1][1]
+
+        if not start_time or (self.converter.system_start_time and self.converter.system_start_time < start_time):
             start_time = self.converter.system_start_time
+
+        if not start_time or not end_time:
+            return
 
         if not use_cut_size:
             result.append((Identity(name=name, start=start_time, end=end_time), value))
@@ -779,11 +787,18 @@ class StateRecord(RecordConverter):
     def global_fanout(self, result: typing.List[typing.Tuple[Identity, typing.Any]], name: Name,
                       value: typing.Any) -> None:
         start_time: float = self.converter.file_start_time
-        end_time: float = self.converter.file_end_time or self.times[-1][1]
-        if not start_time or (self.times[0][0] and self.times[0][0] < start_time):
+        end_time: float = self.converter.file_end_time
+
+        if len(self.times) > 0 and (not start_time or (self.times[0][0] and self.times[0][0] < start_time)):
             start_time = self.times[0][0]
-        if self.converter.system_start_time and self.converter.system_start_time < start_time:
+        if not end_time and len(self.times) > 0:
+            end_time = self.times[-1][1]
+
+        if not start_time or (self.converter.system_start_time and self.converter.system_start_time < start_time):
             start_time = self.converter.system_start_time
+
+        if not start_time or not end_time:
+            return
 
         result.append((Identity(name=name, start=start_time, end=end_time), value))
 

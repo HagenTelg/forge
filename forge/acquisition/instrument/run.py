@@ -28,7 +28,10 @@ def arguments() -> argparse.ArgumentParser:
                         help="directory to place in progress data files")
     parser.add_argument('--data-completed',
                         dest='data_completed',
-                        help="directory to place in completed data files")
+                        help="directory to place completed data files")
+    parser.add_argument('--state-location',
+                        dest='state_location',
+                        help="directory to place state files in")
 
     parser.add_argument('type',
                         help="instrument type code")
@@ -156,7 +159,8 @@ def persistent_interface(args: argparse.Namespace) -> BasePersistentInterface:
     from .persistent import PersistentInterface
 
     state_file = f"{args.identifier}-{args.type.lower()}.json"
-    state_location = Path(CONFIGURATION.get("ACQUISITION.STATE_LOCATION", "/var/lib/forge/state"))
+    state_location = args.state_location or CONFIGURATION.get("ACQUISITION.STATE_LOCATION", "/var/lib/forge/state")
+    state_location = Path(state_location)
 
     return PersistentInterface(state_location / state_file)
 

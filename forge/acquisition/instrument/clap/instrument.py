@@ -27,7 +27,7 @@ class Instrument(StreamingInstrument):
     MODEL = "CLAP"
     DISPLAY_LETTER = "W"
     TAGS = frozenset({"aerosol", "absorption", _INSTRUMENT_TYPE})
-    SERIAL_PORT = {'baudrate': 115200}
+    SERIAL_PORT = {'baudrate': 57600}
 
     DEFAULT_SPOT_SIZE = 19.9
 
@@ -225,7 +225,7 @@ class Instrument(StreamingInstrument):
     @staticmethod
     def _parse_instrument_float(value: bytes) -> float:
         raw = bytes.fromhex(value.strip().decode('ascii'))
-        f = struct.unpack('<f', raw)[0]
+        f = struct.unpack('>f', raw)[0]
         if not isfinite(f):
             raise CommunicationsError(f"invalid number {value}")
         return f

@@ -178,7 +178,19 @@ def main():
                         os.unlink(output.name)
                     except IOError:
                         pass
-                    pass
+                    return
+
+                # NamedTemporaryFile hard codes the mode to 0o600, so manually apply the umask now
+                try:
+                    umask = os.umask(0o666) | 0o111
+                    os.umask(umask)
+                except NotImplementedError:
+                    umask = 0o033
+                file_mode = 0o666 & ~umask
+                try:
+                    os.chmod(output.fileno(), file_mode)
+                except NotImplementedError:
+                    os.chmod(output.name, file_mode)
 
                 output.close()
 

@@ -14,6 +14,7 @@ _SYSTEMD: dbus.Interface = None
 _ACQUISITION_SYSTEM_GROUP: str = None
 _DATA_OUTPUT_USER: str = None
 _COMPLETED_DATA_DIRECTORY: str = None
+_STATE_LOCATION_DIRECTORY: str = None
 _SERIAL_ACCESS_GROUPS: typing.List[str] = list()
 _EXECUTABLE_LOCATION: str = None
 _ENABLE_DEBUG: bool = False
@@ -76,7 +77,7 @@ def set_dependencies(properties: typing.List[typing.Tuple[str, typing.Any]],
         properties.append(("Conflicts", conflicts))
 
 
-def start_transient_unit(name: str, properties: typing.List[typing.Tuple[str, typing.Any]]) -> None:
+def release_transient_unit(name: str) -> None:
     # Have to stop it so we can re-use the name
     try:
         _SYSTEMD.StopUnit(name, "replace")
@@ -89,6 +90,8 @@ def start_transient_unit(name: str, properties: typing.List[typing.Tuple[str, ty
     except dbus.exceptions.DBusException:
         pass
 
+
+def start_transient_unit(name: str, properties: typing.List[typing.Tuple[str, typing.Any]]) -> None:
     _SYSTEMD.StartTransientUnit(name, "replace", [
         (key, value) for key, value in properties
     ], [])
@@ -123,7 +126,9 @@ def start_control(control_type: str) -> None:
         "forge-acquisition-control", "--systemd", control_type
     )))
 
-    start_transient_unit(f"forge-control-{control_type}.service", properties)
+    unit_name = f"forge-control-{control_type}.service"
+    release_transient_unit(unit_name)
+    start_transient_unit(unit_name, properties)
 
 
 def start_instrument_serial(source: str, instrument_unit_name: str) -> typing.Optional[str]:
@@ -159,6 +164,7 @@ def start_instrument_serial(source: str, instrument_unit_name: str) -> typing.Op
         physical_port, "${RUNTIME_DIRECTORY}/instrument.tty", "${RUNTIME_DIRECTORY}/eavesdropper.tty"
     )))
 
+    release_transient_unit(serial_unit_name)
     start_transient_unit(serial_unit_name, properties)
     return serial_unit_name
 
@@ -170,6 +176,7 @@ def start_instrument(source: str) -> None:
         return
 
     instrument_unit_name = f"forge-instrument-{source}.service"
+    release_transient_unit(instrument_unit_name)
     serial_controller = start_instrument_serial(source, instrument_unit_name)
     serial_args: typing.List[str] = []
     if serial_controller:
@@ -196,11 +203,12 @@ def start_instrument(source: str) -> None:
     )
     properties.append(("RuntimeDirectory", [f"forge-instrument-{source}"]))
     properties.append(("UMask", dbus.types.UInt32(0o0007)))
-    properties.append(("ReadWritePaths", [_COMPLETED_DATA_DIRECTORY]))
+    properties.append(("ReadWritePaths", [_COMPLETED_DATA_DIRECTORY, _STATE_LOCATION_DIRECTORY]))
     properties.append(("ExecStart", assemble_forge_exec(
         "forge-acquisition-instrument", "--systemd", *(["--debug"] if _ENABLE_DEBUG else []),
         "--data-working", "${RUNTIME_DIRECTORY}",
         "--data-completed", _COMPLETED_DATA_DIRECTORY,
+        "--state-location", _STATE_LOCATION_DIRECTORY,
         *serial_args,
         "--",
         instrument_type, source
@@ -275,6 +283,9 @@ def main():
     parser.add_argument('--data-directory',
                         dest='data_directory', default="/var/lib/forge/incoming",
                         help="directory to move completed data files to")
+    parser.add_argument('--state-location',
+                        dest='state_location', default="/var/lib/forge/state",
+                        help="directory that state is stored in")
 
     parser.add_argument('--executable-path',
                         dest='executable_path', default=sys.path[0],
@@ -305,6 +316,8 @@ def main():
         _SERIAL_ACCESS_GROUPS = args.serial_groups
     global _COMPLETED_DATA_DIRECTORY
     _COMPLETED_DATA_DIRECTORY = args.data_directory
+    global _STATE_LOCATION_DIRECTORY
+    _STATE_LOCATION_DIRECTORY = args.state_location
     global _EXECUTABLE_LOCATION
     _EXECUTABLE_LOCATION = args.executable_path
 
