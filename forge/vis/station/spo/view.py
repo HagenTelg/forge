@@ -9,17 +9,24 @@ from ..default.met.editing.wind import EditingWindDirection as MetEditingWindDir
 from ..default.met.editing.temperature import EditingTemperature as MetEditingTemperature
 from ..default.met.editing.tower import EditingTowerTemperatureDifference as MetEditingTowerTemperatureDifference
 from .counts import ParticleConcentration, EditingParticleConcentration, ADMagicCPC250StatusSecondary
+from .dmps import DMPSCounts, DMPSStatus, DMPSDistribution
 
 
 station_views = detach(aerosol_views, ozone_views, met_views)
 
-station_views['aerosol-raw-counts'] = ParticleConcentration('aerosol-raw')
+station_views['aerosol-raw-counts'] = DMPSCounts('aerosol-raw')
 station_views['aerosol-realtime-counts'] = ParticleConcentration('aerosol-realtime', realtime=True)
 station_views['aerosol-editing-counts'] = EditingParticleConcentration()
 station_views['aerosol-clean-counts'] = ParticleConcentration('aerosol-clean')
 station_views['aerosol-avgh-counts'] = ParticleConcentration('aerosol-avgh')
 station_views['aerosol-raw-cpcstatus2'] = ADMagicCPC250StatusSecondary('aerosol-raw')
 station_views['aerosol-realtime-cpcstatus2'] = ADMagicCPC250StatusSecondary('aerosol-raw', realtime=True)
+
+station_views['aerosol-raw-dmps'] = DMPSDistribution('aerosol-raw')
+station_views['aerosol-raw-dmpsstatus'] = DMPSStatus('aerosol-raw')
+station_views['aerosol-editing-dmps'] = DMPSDistribution('aerosol-editing')
+station_views['aerosol-clean-dmps'] = DMPSDistribution('aerosol-clean')
+station_views['aerosol-avgh-dmps'] = DMPSDistribution('aerosol-avgh')
 
 
 measurements = OrderedDict([

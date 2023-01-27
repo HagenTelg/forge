@@ -78,13 +78,16 @@ class RecordStream(DataStream):
         def is_all_float_array(check: typing.List) -> bool:
             if len(check) == 0:
                 return False
+            any_valid = False
             for v in check:
+                if v is None:
+                    continue
                 if not isinstance(v, list):
                     return False
-                if is_all_float(v):
-                    continue
-                return False
-            return True
+                if not is_all_float(v):
+                    return False
+                any_valid = True
+            return any_valid
 
         for field, values in self.values.items():
             if is_all_float(values):
@@ -106,6 +109,9 @@ class RecordStream(DataStream):
                     'values': [],
                 }
                 for i in range(len(values)):
+                    if values[i] is None:
+                        content['data'][field]['values'].append("")
+                        continue
                     raw = bytearray()
                     for v in values[i]:
                         if v is None or not isfinite(v):

@@ -39,7 +39,13 @@ function incomingDp(plotTime, values, epoch) {
     if (values.length === 0) {
         return;
     }
-    const Dp = values[values.length - 1];
+    let Dp = undefined;
+    for (let i=values.length - 1; i>=0; i--) {
+        Dp = values[i];
+        if (Array.isArray(Dp) && Dp.length > 0) {
+            break;
+        }
+    }
     if (!Array.isArray(Dp)) {
         return;
     }

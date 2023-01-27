@@ -98,6 +98,58 @@ station_profile_data['aerosol']['realtime']['cpcstatus2'] = {
     RealtimeTranslator.Key('V_N42'): 'Vpulse',
 }
 
+station_profile_data['aerosol']['raw']['dmps'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'Ns_N11'): 'Dp',
+        Name(station, 'raw', 'Nn_N11'): 'dNdlogDp',
+        Name(station, 'raw', 'Nb_N11'): 'dN',
+        Name(station, 'raw', 'N_N12'): 'Nraw',
+    }, send
+)
+station_profile_data['aerosol']['editing']['dmps'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+    start_epoch_ms, end_epoch_ms, station, 'aerosol', {
+        Name(station, 'clean', 'Ns_N11'): 'Dp',
+        Name(station, 'clean', 'Nn_N11'): 'dNdlogDp',
+        Name(station, 'clean', 'Nb_N11'): 'dN',
+        Name(station, 'clean', 'N_N12'): 'Nraw',
+        Name(station, 'clean', 'N_N11'): 'N',
+        Name(station, 'clean', 'BsB_N11'): 'BsB',
+        Name(station, 'clean', 'BsG_N11'): 'BsG',
+        Name(station, 'clean', 'BsR_N11'): 'BsR',
+    }, send
+)
+station_profile_data['aerosol']['clean']['dmps'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'clean', 'Ns_N11'): 'Dp',
+        Name(station, 'clean', 'Nn_N11'): 'dNdlogDp',
+        Name(station, 'clean', 'Nb_N11'): 'dN',
+        Name(station, 'clean', 'N_N12'): 'Nraw',
+        Name(station, 'clean', 'N_N11'): 'N',
+        Name(station, 'clean', 'BsB_N11'): 'BsB',
+        Name(station, 'clean', 'BsG_N11'): 'BsG',
+        Name(station, 'clean', 'BsR_N11'): 'BsR',
+    }, send
+)
+station_profile_data['aerosol']['avgh']['dmps'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'avgh', 'Ns_N11'): 'Dp',
+        Name(station, 'avgh', 'Nn_N11'): 'dNdlogDp',
+        Name(station, 'avgh', 'Nb_N11'): 'dN',
+        Name(station, 'avgh', 'N_N12'): 'Nraw',
+        Name(station, 'avgh', 'N_N11'): 'N',
+        Name(station, 'avgh', 'BsB_N11'): 'BsB',
+        Name(station, 'avgh', 'BsG_N11'): 'BsG',
+        Name(station, 'avgh', 'BsR_N11'): 'BsR',
+    }, send
+)
+station_profile_data['aerosol']['raw']['dmpsstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'T1_N11'): 'Taerosol', Name(station, 'raw', 'T2_N11'): 'Tsheath',
+        Name(station, 'raw', 'P1_N11'): 'Paerosol', Name(station, 'raw', 'P2_N11'): 'Psheath',
+        Name(station, 'raw', 'Q1_N11'): 'Qaerosol', Name(station, 'raw', 'Q2_N11'): 'Qsheath',
+    }, send
+)
+
 station_profile_data['aerosol']['raw']['aethalometer'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, dict(
         [(Name(station, 'raw', f'Ba{i+1}_A82'), f'Ba{i+1}') for i in range(7)] +
