@@ -147,7 +147,7 @@ def parse_arguments():
 
     parser.add_argument('--station',
                         dest='station', type=str,
-                        default=CONFIGURATION.get("ACQUISITION.STATION", 'nil'),
+                        default=CONFIGURATION.get("ACQUISITION.STATION", 'nil').lower(),
                         help="station code")
 
     parser.add_argument('--modified',

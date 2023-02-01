@@ -231,7 +231,7 @@ class UplinkConnection:
 def main():
     parser = argparse.ArgumentParser(description="Acquisition websocket remote uplink.")
 
-    default_station = CONFIGURATION.get("ACQUISITION.STATION", 'nil')
+    default_station = CONFIGURATION.get("ACQUISITION.STATION", 'nil').lower()
     default_url = CONFIGURATION.get('ACQUISITION.UPLINK_URL')
     if default_url:
         url = URL(url=default_url)
