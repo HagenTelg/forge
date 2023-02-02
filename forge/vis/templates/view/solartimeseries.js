@@ -1,5 +1,5 @@
-const latitude = '{{ view.latitude }}' * 1.0;
-const longitude = '{{ view.longitude }}' * 1.0;
+const latitude = '{{ latitude }}' * 1.0;
+const longitude = '{{ longitude }}' * 1.0;
 const solarTime = new Solar.Time(latitude, longitude);
 
 shapeHandler.generators.push(() => {

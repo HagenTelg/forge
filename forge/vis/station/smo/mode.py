@@ -1,8 +1,8 @@
 import typing
-from ..default.mode import Mode, ViewList, detach, ozone_modes, met_modes
+from ..default.mode import Mode, ViewList, detach, ozone_modes, met_modes, radiation_modes
 
 
-station_modes = detach(ozone_modes, met_modes)
+station_modes = detach(ozone_modes, met_modes, radiation_modes)
 
 station_modes['met-raw'].insert(ViewList.Entry('met-raw-precipitation', "Precipitation"))
 station_modes['met-editing'].insert(ViewList.Entry('met-editing-precipitation', "Precipitation"))

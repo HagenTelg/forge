@@ -132,6 +132,17 @@ met_modes: typing.Dict[str, Mode] = _construct_modes([
         ViewList.Entry('met-avgh-pressure', "Pressure"),
     ]),
 ])
+radiation_modes: typing.Dict[str, Mode] = _construct_modes([
+    Editing('radiation-editing', "Editing", [
+        Editing.Entry('radiation-editing-solar', "Solar"),
+        Editing.Entry('radiation-editing-ir', "Infrared"),
+        Editing.Entry('radiation-editing-pyranometertemperature', "Pyranometer Temperature"),
+        Editing.Entry('radiation-editing-albedo', "Albedo"),
+        Editing.Entry('radiation-editing-totalratio', "Total Ratio"),
+        Editing.Entry('radiation-editing-ambient', "Ambient Conditions"),
+        Editing.Entry('radiation-editing-solarposition', "Solar Position"),
+    ]),
+])
 
 
 def detach(*modes: typing.Dict[str, Mode]) -> typing.Dict[str, Mode]:
@@ -191,6 +202,9 @@ def visible(station: str, mode_name: typing.Optional[str] = None) -> VisibleMode
         'met-editing',
         'met-clean',
         'met-avgh',
+    ]),
+    _assemble_mode("Radiation", [
+        'radiation-editing',
     ]),
 
     return visible_modes

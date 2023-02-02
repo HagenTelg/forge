@@ -1,5 +1,7 @@
 import typing
 from forge.vis.view import View
+from forge.vis.view.solar import SolarPosition
+from forge.processing.station.lookup import station_data
 
 from .aerosol.counts import ParticleConcentration
 from .aerosol.optical import Optical
@@ -33,6 +35,13 @@ from .ozone.concentration import OzoneConcentration
 from .ozone.thermo49 import Thermo49Status, Thermo49Cells
 from .ozone.wind import Wind as OzoneWind
 from .ozone.editing.concentration import EditingOzoneConcentration
+
+from .radiation.ambient import Ambient as RadiationAmbient
+from .radiation.editing.albedo import EditingAlbedo as RadiationEditingAlbedo
+from .radiation.editing.infrared import EditingInfrared as RadiationEditingInfrared
+from .radiation.editing.infrared import EditingPyrgeometerTemperature as RadiationEditingPyrgeometerTemperature
+from .radiation.editing.ratio import EditingTotalRatio as RadiationEditingEditingTotalRatio
+from .radiation.editing.solar import EditingSolar as RadiationEditingSolar
 
 
 aerosol_views: typing.Dict[str, View] = {
@@ -133,6 +142,15 @@ met_views: typing.Dict[str, View] = {
     'met-avgh-wind': MetWind('met-avgh-wind'),
     'met-avgh-temperature': MetTemperature('met-avgh-temperature'),
     'met-avgh-pressure': MetPressure('met-avgh'),
+}
+radiation_views: typing.Dict[str, View] = {
+    'radiation-editing-solar': RadiationEditingSolar(),
+    'radiation-editing-ir': RadiationEditingInfrared(),
+    'radiation-editing-pyranometertemperature': RadiationEditingPyrgeometerTemperature(),
+    'radiation-editing-albedo': RadiationEditingAlbedo(),
+    'radiation-editing-totalratio': RadiationEditingEditingTotalRatio(),
+    'radiation-editing-ambient': RadiationAmbient('radiation-raw-ambient'),
+    'radiation-editing-solarposition': SolarPosition(),
 }
 
 

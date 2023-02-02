@@ -1,6 +1,6 @@
 import typing
 from collections import OrderedDict
-from ..default.view import detach, View, aerosol_views, ozone_views, met_views
+from ..default.view import detach, View, aerosol_views, ozone_views, met_views, radiation_views
 from ..default.met.wind import Wind as MetWind
 from ..default.met.temperature import Temperature as MetTemperature
 from ..default.met.precipitation import Precipitation as MetPrecipitation
@@ -14,7 +14,7 @@ from .counts import ParticleConcentration, EditingParticleConcentration,  ADMagi
 from .contamination import EditingContaminationDetails
 
 
-station_views = detach(aerosol_views, ozone_views, met_views)
+station_views = detach(aerosol_views, ozone_views, met_views, radiation_views)
 
 station_views['aerosol-raw-counts'] = ParticleConcentration('aerosol-raw')
 station_views['aerosol-realtime-counts'] = ParticleConcentration('aerosol-realtime', realtime=True)

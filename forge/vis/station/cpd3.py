@@ -5635,10 +5635,142 @@ met_data = {
     'realtime': RealtimeTranslator.Data('met'),
 }
 
+radiation_data = {
+    'raw': {
+        'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: ContaminationReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'F1_R81'),
+            }, send
+        ),
+
+        'ambient': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'WS1_XM1'): 'WS',
+                Name(station, 'raw', 'WD1_XM1'): 'WD',
+                Name(station, 'raw', 'P_XM1'): 'Pambient',
+                Name(station, 'raw', 'T1_XM1'): 'Tambient',
+                Name(station, 'raw', 'U1_XM1'): 'Uambient',
+                Name(station, 'raw', 'TD1_XM1'): 'TDambient',
+            }, send
+        ),
+
+        'solar': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'Rdg_R81'): 'Rdg',
+                Name(station, 'raw', 'Rug_R81'): 'Rug',
+                Name(station, 'raw', 'Rdn_R81'): 'Rdn',
+                Name(station, 'raw', 'Rdf_R81'): 'Rdf',
+                Name(station, 'raw', 'Rst_R81'): 'Rst',
+                Name(station, 'raw', 'Rsd_R81'): 'Rsd',
+                Name(station, 'raw', 'Rv_R81'): 'Rv',
+                Name(station, 'raw', 'Rp_R81'): 'Rp',
+            }, send
+        ),
+
+        'ir': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'Rdi_R81'): 'Rdi',
+                Name(station, 'raw', 'Rui_R81'): 'Rui',
+            }, send
+        ),
+
+        'pyranometertemperature': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'Tdic_R81'): 'Tdic',
+                Name(station, 'raw', 'Tdid_R81'): 'Tdid',
+                Name(station, 'raw', 'Tuic_R81'): 'Tuic',
+                Name(station, 'raw', 'Tuid_R81'): 'Tuid',
+            }, send
+        ),
+
+        'albedo': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'Rdg_R81'): 'down',
+                Name(station, 'raw', 'Rug_R81'): 'up',
+                Name(station, 'raw', 'ZSA_R81'): 'zsa',
+            }, send
+        ),
+
+        'totalratio': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'Rdn_R81'): 'direct',
+                Name(station, 'raw', 'Rdf_R81'): 'diffuse',
+                Name(station, 'raw', 'Rdg_R81'): 'global',
+                Name(station, 'raw', 'ZSA_R81'): 'zsa',
+            }, send
+        ),
+        'spn1ratio': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'Rst_R81'): 'total',
+                Name(station, 'raw', 'Rdg_R81'): 'global',
+            }, send
+        ),
+    },
+
+    'editing': {
+        'contamination': lambda station, start_epoch_ms, end_epoch_ms, send: EditedContaminationReader(
+            start_epoch_ms, end_epoch_ms, station, 'radiation', {
+                Name(station, 'clean', 'F1_R81'),
+            }, send
+        ),
+
+        'solar': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'radiation', {
+                Name(station, 'clean', 'Rdg_R81'): 'Rdg',
+                Name(station, 'clean', 'Rug_R81'): 'Rug',
+                Name(station, 'clean', 'Rdn_R81'): 'Rdn',
+                Name(station, 'clean', 'Rdf_R81'): 'Rdf',
+                Name(station, 'clean', 'Rst_R81'): 'Rst',
+                Name(station, 'clean', 'Rsd_R81'): 'Rsd',
+            }, send
+        ),
+
+        'ir': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'radiation', {
+                Name(station, 'clean', 'Rdi_R81'): 'Rdi',
+                Name(station, 'clean', 'Rui_R81'): 'Rui',
+            }, send
+        ),
+
+        'pyranometertemperature': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'radiation', {
+                Name(station, 'clean', 'Tdic_R81'): 'Tdic',
+                Name(station, 'clean', 'Tdid_R81'): 'Tdid',
+                Name(station, 'clean', 'Tuic_R81'): 'Tuic',
+                Name(station, 'clean', 'Tuid_R81'): 'Tuid',
+            }, send
+        ),
+
+        'albedo': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'radiation', {
+                Name(station, 'clean', 'Rdg_R81'): 'down',
+                Name(station, 'clean', 'Rug_R81'): 'up',
+                Name(station, 'clean', 'ZSA_R81'): 'zsa',
+            }, send
+        ),
+
+        'totalratio': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'radiation', {
+                Name(station, 'clean', 'Rdn_R81'): 'direct',
+                Name(station, 'clean', 'Rdf_R81'): 'diffuse',
+                Name(station, 'clean', 'Rdg_R81'): 'global',
+                Name(station, 'clean', 'ZSA_R81'): 'zsa',
+            }, send
+        ),
+        'spn1ratio': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'radiation', {
+                Name(station, 'clean', 'Rst_R81'): 'total',
+                Name(station, 'clean', 'Rdg_R81'): 'global',
+            }, send
+        ),
+    },
+}
+
 profile_data = {
     'aerosol': aerosol_data,
     'ozone': ozone_data,
     'met': met_data,
+    'radiation': radiation_data,
 }
 
 realtime_translator = RealtimeTranslator.assemble_translator(profile_data)
