@@ -46,17 +46,17 @@ station_profile_data['aerosol']['realtime']['maapstatus'] = {
 
 station_profile_data['aerosol']['raw']['aethalometer'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, dict(
-        [(Name(station, 'raw', f'Ba{i+1}_A42'), f'Ba{i+1}') for i in range(7)] +
-        [(Name(station, 'raw', f'X{i+1}_A42'), f'X{i+1}') for i in range(7)] +
-        [(Name(station, 'raw', f'ZFACTOR{i+1}_A42'), f'CF{i+1}') for i in range(7)] +
-        [(Name(station, 'raw', f'Ir{i+1}_A42'), f'Ir{i+1}') for i in range(7)]
+        [(Name(station, 'raw', f'Ba{i+1}_A41'), f'Ba{i+1}') for i in range(7)] +
+        [(Name(station, 'raw', f'X{i+1}_A41'), f'X{i+1}') for i in range(7)] +
+        [(Name(station, 'raw', f'ZFACTOR{i+1}_A41'), f'CF{i+1}') for i in range(7)] +
+        [(Name(station, 'raw', f'Ir{i+1}_A41'), f'Ir{i+1}') for i in range(7)]
     ), send
 )
 station_profile_data['aerosol']['raw']['aethalometerstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
-        Name(station, 'raw', 'T1_A42'): 'Tcontroller',
-        Name(station, 'raw', 'T2_A42'): 'Tsupply',
-        Name(station, 'raw', 'T3_A42'): 'Tled',
+        Name(station, 'raw', 'T1_A41'): 'Tcontroller',
+        Name(station, 'raw', 'T2_A41'): 'Tsupply',
+        Name(station, 'raw', 'T3_A41'): 'Tled',
     }, send
 )
 station_profile_data['aerosol']['realtime']['aethalometer'] = dict(

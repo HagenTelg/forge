@@ -7,26 +7,26 @@ station_profile_export = detach(profile_export)
 
 station_profile_export['aerosol']['raw']['aethalometer'].data = lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
     start_epoch_ms, end_epoch_ms, directory, 'unsplit', set(
-        [Name(station, 'raw', f'Ba{i + 1}_A42') for i in range(7)] +
-        [Name(station, 'raw', f'X{i + 1}_A42') for i in range(7)] +
-        [Name(station, 'raw', f'ZFACTOR{i + 1}_A42') for i in range(7)] +
-        [Name(station, 'raw', f'Ir{i + 1}_A42') for i in range(7)]
+        [Name(station, 'raw', f'Ba{i + 1}_A41') for i in range(7)] +
+        [Name(station, 'raw', f'X{i + 1}_A41') for i in range(7)] +
+        [Name(station, 'raw', f'ZFACTOR{i + 1}_A41') for i in range(7)] +
+        [Name(station, 'raw', f'Ir{i + 1}_A41') for i in range(7)]
     )
 )
 station_profile_export['aerosol']['clean']['aethalometer'].data = lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
     start_epoch_ms, end_epoch_ms, directory, 'unsplit', set(
-        [Name(station, 'clean', f'Ba{i + 1}_A42') for i in range(7)] +
-        [Name(station, 'clean', f'X{i + 1}_A42') for i in range(7)] +
-        [Name(station, 'clean', f'ZFACTOR{i + 1}_A42') for i in range(7)] +
-        [Name(station, 'clean', f'Ir{i + 1}_A42') for i in range(7)]
+        [Name(station, 'clean', f'Ba{i + 1}_A41') for i in range(7)] +
+        [Name(station, 'clean', f'X{i + 1}_A41') for i in range(7)] +
+        [Name(station, 'clean', f'ZFACTOR{i + 1}_A41') for i in range(7)] +
+        [Name(station, 'clean', f'Ir{i + 1}_A41') for i in range(7)]
     )
 )
 station_profile_export['aerosol']['avgh']['aethalometer'].data = lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
     start_epoch_ms, end_epoch_ms, directory, 'average', set(
-        [Name(station, 'avgh', f'Ba{i + 1}_A42') for i in range(7)] +
-        [Name(station, 'avgh', f'X{i + 1}_A42') for i in range(7)] +
-        [Name(station, 'avgh', f'ZFACTOR{i + 1}_A42') for i in range(7)] +
-        [Name(station, 'avgh', f'Ir{i + 1}_A42') for i in range(7)]
+        [Name(station, 'avgh', f'Ba{i + 1}_A41') for i in range(7)] +
+        [Name(station, 'avgh', f'X{i + 1}_A41') for i in range(7)] +
+        [Name(station, 'avgh', f'ZFACTOR{i + 1}_A41') for i in range(7)] +
+        [Name(station, 'avgh', f'Ir{i + 1}_A41') for i in range(7)]
     )
 )
 
