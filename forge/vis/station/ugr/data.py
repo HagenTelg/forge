@@ -1,5 +1,5 @@
 import typing
-from ..cpd3 import DataStream, DataReader, RealtimeTranslator, Name, data_profile_get, detach, profile_data
+from ..cpd3 import DataStream, DataReader, EditedReader, RealtimeTranslator, Name, data_profile_get, detach, profile_data
 
 
 station_profile_data = detach(profile_data)
@@ -15,6 +15,24 @@ station_profile_data['aerosol']['realtime']['maap'] = {
     RealtimeTranslator.Key('BacR_A31'): 'Ba',
     RealtimeTranslator.Key('XR_A31'): 'X',
 }
+station_profile_data['aerosol']['editing']['maap'] =lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+    start_epoch_ms, end_epoch_ms, station, 'aerosol', {
+        Name(station, 'clean', 'BacR_A31'): 'Ba',
+        Name(station, 'clean', 'XR_A31'): 'X',
+    }, send
+)
+station_profile_data['aerosol']['clean']['maap'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'clean', 'BacR_A31'): 'Ba',
+        Name(station, 'clean', 'XR_A31'): 'X',
+    }, send
+)
+station_profile_data['aerosol']['avgh']['maap'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'avgh', 'BacR_A31'): 'Ba',
+        Name(station, 'avgh', 'XR_A31'): 'X',
+    }, send
+)
 
 station_profile_data['aerosol']['raw']['maapstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {

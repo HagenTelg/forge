@@ -31,6 +31,70 @@ station_profile_export['aerosol']['avgh']['aethalometer'].data = lambda station,
 )
 
 
+station_profile_export['aerosol']['raw'].insert(
+    DataExportList.Entry('maap', "MAAP", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+            Name(station, 'raw', 'F1_A31'),
+            Name(station, 'raw', 'P_A31'),
+            Name(station, 'raw', 'IfR_A31'),
+            Name(station, 'raw', 'IpR_A31'),
+            Name(station, 'raw', 'IrR_A31'),
+            Name(station, 'raw', 'Is1_A31'),
+            Name(station, 'raw', 'Is2_A31'),
+            Name(station, 'raw', 'Pd1_A31'),
+            Name(station, 'raw', 'Pd2_A31'),
+            Name(station, 'raw', 'Q_A31'),
+            Name(station, 'raw', 'Qt_A31'),
+            Name(station, 'raw', 'T1_A31'),
+            Name(station, 'raw', 'T2_A31'),
+            Name(station, 'raw', 'T3_A31'),
+            Name(station, 'raw', 'XR_A31'),
+        },
+    )),
+)
+station_profile_export['aerosol']['clean'].insert(
+    DataExportList.Entry('maap', "MAAP", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+            Name(station, 'clean', 'F1_A31'),
+            Name(station, 'clean', 'P_A31'),
+            Name(station, 'clean', 'IfR_A31'),
+            Name(station, 'clean', 'IpR_A31'),
+            Name(station, 'clean', 'IrR_A31'),
+            Name(station, 'clean', 'Is1_A31'),
+            Name(station, 'clean', 'Is2_A31'),
+            Name(station, 'clean', 'Pd1_A31'),
+            Name(station, 'clean', 'Pd2_A31'),
+            Name(station, 'clean', 'Q_A31'),
+            Name(station, 'clean', 'Qt_A31'),
+            Name(station, 'clean', 'T1_A31'),
+            Name(station, 'clean', 'T2_A31'),
+            Name(station, 'clean', 'T3_A31'),
+            Name(station, 'clean', 'XR_A31'),
+        },
+    )),
+)
+station_profile_export['aerosol']['avgh'].insert(
+    DataExportList.Entry('maap', "MAAP", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'average', {
+            Name(station, 'avgh', 'F1_A31'),
+            Name(station, 'avgh', 'P_A31'),
+            Name(station, 'avgh', 'IfR_A31'),
+            Name(station, 'avgh', 'IpR_A31'),
+            Name(station, 'avgh', 'IrR_A31'),
+            Name(station, 'avgh', 'Is1_A31'),
+            Name(station, 'avgh', 'Is2_A31'),
+            Name(station, 'avgh', 'Pd1_A31'),
+            Name(station, 'avgh', 'Pd2_A31'),
+            Name(station, 'avgh', 'Q_A31'),
+            Name(station, 'avgh', 'T1_A31'),
+            Name(station, 'avgh', 'T2_A31'),
+            Name(station, 'avgh', 'T3_A31'),
+            Name(station, 'avgh', 'XR_A31'),
+        },
+    )),
+)
+
+
 def get(station: str, mode_name: str, export_key: str,
         start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
     return export_profile_get(station, mode_name, export_key,
