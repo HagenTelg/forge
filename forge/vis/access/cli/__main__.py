@@ -5,7 +5,7 @@ import asyncio
 import logging
 from os.path import exists as file_exists
 from forge.vis import CONFIGURATION
-from forge.vis.access.database import ControlInterface
+from forge.vis.access.database import ControlInterface, SubscriptionLevel
 from .display import display_users_json, display_users_text, sort_users
 
 
@@ -37,6 +37,12 @@ def add_user_selection_arguments(parser):
     parser.add_argument('--mode',
                         dest='mode',
                         help="allowed mode access")
+    parser.add_argument('--email-for-station',
+                        dest='dashboard_station',
+                        help="receiving emails from a station")
+    parser.add_argument('--email-for-code',
+                        dest='dashboard_code',
+                        help="receiving emails from a station")
 
 
 def parse_arguments():
@@ -57,6 +63,9 @@ def parse_arguments():
     command_parser.add_argument('--json',
                                 dest='json', action='store_true',
                                 help="output user list in JSON")
+    command_parser.add_argument('--email-subscriptions',
+                                dest='display_subscriptions', action='store_true',
+                                help="display email subscriptions")
     command_parser.add_argument('--sort',
                                 dest='sort', default='name,email,station,mode',
                                 help="sort users by field")
@@ -134,6 +143,33 @@ def parse_arguments():
                                 dest='set_password',
                                 help="set password or a file to read")
 
+    command_parser = subparsers.add_parser('email-subscribe',
+                                           help="add dashboard email subscriptions")
+    add_user_selection_arguments(command_parser)
+    command_parser.add_argument('--multiple',
+                                dest='multiple', action='store_true',
+                                help="required if a single user is not selected")
+    command_parser.add_argument('--level',
+                                dest='subscribe_level',
+                                default='info',
+                                choices=[v.value for v in SubscriptionLevel],
+                                help="minimum email severity")
+    command_parser.add_argument('subscribe_station', nargs=1,
+                                help="station code")
+    command_parser.add_argument('subscribe_code', nargs='*',
+                                help="dashboard reporting code")
+
+    command_parser = subparsers.add_parser('email-unsubscribe',
+                                           help="remove dashboard email subscriptions")
+    add_user_selection_arguments(command_parser)
+    command_parser.add_argument('--multiple',
+                                dest='multiple', action='store_true',
+                                help="required if a single user is not selected")
+    command_parser.add_argument('--level',
+                                dest='subscribe_level',
+                                choices=[v.value for v in SubscriptionLevel],
+                                help="minimum email severity")
+
     args = parser.parse_args()
 
     if args.command == 'grant' and args.user is None and not args.multiple:
@@ -145,6 +181,10 @@ def parse_arguments():
     if args.command == 'delete-user' and args.user is None and not args.multiple:
         parser.error("--multiple required when deleting without --user")
     if args.command == 'modify-user' and args.user is None and not args.multiple:
+        parser.error("--multiple required when modifying without --user")
+    if args.command == 'email-subscribe' and args.user is None and not args.multiple:
+        parser.error("--multiple required when modifying without --user")
+    if args.command == 'email-unsubscribe' and args.user is None and not args.multiple:
         parser.error("--multiple required when modifying without --user")
 
     return args
@@ -185,7 +225,7 @@ def main():
             if args.json:
                 display_users_json(users)
             else:
-                display_users_text(users)
+                display_users_text(users, args.display_subscriptions)
         elif args.command == 'grant':
             grant_modes = args.grant
             if len(grant_modes) == 0:
@@ -209,6 +249,18 @@ def main():
         elif args.command == 'modify-user':
             args.set_password = get_password(args.set_password)
             await interface.modify_user(**vars(args))
+        elif args.command == 'email-subscribe':
+            sub_level = SubscriptionLevel(args.subscribe_level)
+            sub_codes = args.subscribe_code
+            if len(sub_codes) == 0:
+                sub_codes = ['*']
+            sub_stations = args.subscribe_station
+            if len(sub_stations) == 1:
+                sub_stations = sub_stations[0].split(',')
+            await interface.dashboard_subscribe(sub_stations, sub_codes, sub_level, **vars(args))
+        elif args.command == 'email-unsubscribe':
+            level = SubscriptionLevel(args.subscribe_level) if args.subscribe_level else None
+            await interface.dashboard_unsubscribe(level, **vars(args))
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)

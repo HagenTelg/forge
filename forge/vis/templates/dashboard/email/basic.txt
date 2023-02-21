@@ -1,0 +1,71 @@
+{% if entry.status == entry.Status.OFFLINE -%}
+OFFLINE SINCE: {{ format_datetime(entry.updated) }}
+{% elif entry.status == entry.Status.FAILED -%}
+FAILED AT: {{ format_datetime(entry.updated) }}
+{% else -%}
+Last updated: {{ format_datetime(entry.updated) }}
+{% endif -%}
+{%- set SEVERITY_HEADER_NAME = {
+    Severity.INFO: 'STATUS:',
+    Severity.WARNING: 'STATUS - WARNING:',
+    Severity.ERROR: 'STATUS - ERROR:',
+} -%}
+{%- set global_status = namespace(count=0) -%}
+{%- for i in notifications -%}
+{%-     if i.code|length == 0 and i.data -%}
+{%-         set global_status.count = global_status.count + 1 %}
+
+{{ SEVERITY_HEADER_NAME[i.severity] }} {% if "\n" in i.data %}
+    {{ i.data|replace("\n", "\n    ") }}
+{%- else %}{{ i.data }}{% endif %}
+{%-     endif -%}
+{%- endfor -%}
+{%- set SEVERITY_HEADER_SUFFIX = {
+    Severity.INFO: '',
+    Severity.WARNING: ' - WARNING',
+    Severity.ERROR: ' - ERROR',
+} -%}
+{%- if notifications|length > global_status.count %}
+
+
+NOTIFICATIONS:
+{%-     for i in notifications -%}
+{%-         if i.code|length > 0 %}
+{{ i.display }}{{ SEVERITY_HEADER_SUFFIX[i.severity] }}
+{%-             if i.data %}
+    {{ i.data|replace("\n", "\n    ") }}
+{%-             endif -%}
+{%-         endif -%}
+{%-     endfor -%}
+{%- endif -%}
+{%- if watchdogs|length > 0 %}
+
+
+WATCHDOGS:
+{%-     for i in watchdogs %}
+{{ i.display }}{{ SEVERITY_HEADER_SUFFIX[i.severity] }}
+{%-         if i.data %}
+    {{ i.data|replace("\n", "\n    ") }}
+{%-         endif -%}
+{%-     endfor -%}
+{%- endif -%}
+{%- if conditions|length > 0 %}
+
+
+CONDITIONS:
+{%-     for i in conditions %}
+{{ i.display }}{{ SEVERITY_HEADER_SUFFIX[i.severity] }}: {{ format_interval(i.total_seconds) }} ({{ condition_percent(i) }}%)
+{%-         if i.data %}
+    {{ i.data|replace("\n", "\n    ") }}
+{%-         endif -%}
+{%-     endfor -%}
+{%- endif -%}
+{%- if events|length > 0 %}
+
+
+EVENTS:
+{%-     for i in events %}
+{{ format_datetime(i.occurred_at) }}| {{ i.display }}{{ SEVERITY_HEADER_SUFFIX[i.severity] }}{%- if i.data %}
+                      {{ i.data|replace("\n", "\n                      ") }}{%- endif -%}
+{%-     endfor -%}
+{%- endif -%}

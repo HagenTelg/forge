@@ -21,25 +21,31 @@ class BaseAccessUser(BaseUser, ABC):
         return self.display_id
 
     @staticmethod
-    def matches_mode(access: str, mode: str) -> bool:
+    def wildcard_match_level(access: str, mode: str) -> typing.Optional[int]:
         if len(access) == 0:
-            return False
+            return None
 
         access_parts = access.split('-')
         mode_parts = mode.split('-')
         if len(access_parts) != len(mode_parts):
             if access_parts[-1] != "*":
-                return False
+                return None
 
+        level = 0
         for i in range(min(len(access_parts), len(mode_parts))):
             check = access_parts[i]
             if check == "*":
                 continue
             if len(check) == 0:
-                return False
+                return None
             if access_parts[i] != mode_parts[i]:
-                return False
+                return None
+            level += 1
         return True
+
+    @staticmethod
+    def matches_mode(access: str, mode: str) -> bool:
+        return BaseAccessUser.wildcard_match_level(access, mode) is not None
 
     @property
     def can_request_access(self) -> bool:
@@ -55,6 +61,10 @@ class BaseAccessUser(BaseUser, ABC):
 
     @abstractmethod
     def allow_mode(self, station: str, mode: str, write=False) -> bool:
+        pass
+
+    @abstractmethod
+    def allow_global(self, mode: str, write=False) -> bool:
         pass
 
 

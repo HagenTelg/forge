@@ -8,6 +8,7 @@ import sqlalchemy.orm as orm
 import starlette.status
 from secrets import token_urlsafe
 from concurrent.futures import Future
+from enum import Enum
 from starlette.responses import Response, RedirectResponse, JSONResponse, HTMLResponse
 from starlette.exceptions import HTTPException
 from starlette.authentication import requires
@@ -23,6 +24,10 @@ from forge.vis import CONFIGURATION
 from forge.const import DISPLAY_STATIONS
 from forge.database import ORMDatabase
 from . import BaseAccessUser, BaseAccessController, Request
+
+
+if typing.TYPE_CHECKING:
+    from forge.dashboard.database import Severity as DashboardSeverity
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -134,6 +139,66 @@ class _AuthOpenIDConnect(_Base):
     _users = orm.relationship(_User, backref=orm.backref('auth_oidc', passive_deletes=True))
 
 
+class SubscriptionLevel(Enum):
+    ALWAYS = "always"
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
+    OFF = "off"
+
+
+class _DashboardSubscription(_Base):
+    __tablename__ = 'dashboard_subscriptions'
+    __table_args__ = {
+        'mysql_engine': 'InnoDB',
+        'mariadb_engine': 'InnoDB',
+    }
+
+    id = db.Column(db.Integer, primary_key=True)
+    user = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), index=True)
+    station = db.Column(db.String(32))
+    code = db.Column(db.String(64))
+    level = db.Column(db.Enum(SubscriptionLevel))
+
+    _users = orm.relationship(_User, backref=orm.backref('dashboard_subscription', passive_deletes=True))
+
+
+db.Index('dashboard_subscription_index',
+         _DashboardSubscription.user, _DashboardSubscription.station, _DashboardSubscription.code, unique=True)
+
+
+def _dashboard_email_subscription(orm_session: Session, user: _User, station: str,
+                                  entry_code: str) -> typing.Optional[SubscriptionLevel]:
+    query = orm_session.query(_DashboardSubscription).filter_by(user=user.id)
+    query = query.filter(db.or_(_DashboardSubscription.station == station,
+                                _DashboardSubscription.station == '*'))
+    query = query.filter(db.or_(_DashboardSubscription.code.ilike('%*%'),
+                                _DashboardSubscription.code == entry_code))
+
+    have_station_specific: bool = False
+    most_specific_sub: typing.Optional[SubscriptionLevel] = None
+    most_specific_level: int = 0
+    for sub in query:
+        match_level = AccessUser.wildcard_match_level(sub.code, entry_code)
+        if match_level is None:
+            continue
+
+        if sub.station == '*':
+            if have_station_specific:
+                continue
+        else:
+            if not have_station_specific:
+                most_specific_level = match_level
+                most_specific_sub = sub.level
+            have_station_specific = True
+
+        if most_specific_sub is None or match_level > most_specific_level:
+            most_specific_level = match_level
+            most_specific_sub = sub.level
+
+    return most_specific_sub
+
+
 class AccessController(BaseAccessController):
     def __init__(self, uri: str):
         self.db = ORMDatabase(uri, _Base)
@@ -223,7 +288,7 @@ class AccessController(BaseAccessController):
         async def purge():
             def remove_old_sessions(engine: Engine):
                 # Session cookies last 14 days, so give it plenty of slack
-                expire_before = datetime.datetime.utcnow() - datetime.timedelta(days=15)
+                expire_before = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=15)
                 with Session(engine) as orm_session:
                     orm_session.query(_Session).filter(_Session.last_seen < expire_before).delete()
                     try:
@@ -254,7 +319,7 @@ class AccessController(BaseAccessController):
         except ValueError:
             return None
 
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
 
         def execute(engine: Engine):
             with Session(engine) as orm_session:
@@ -266,7 +331,8 @@ class AccessController(BaseAccessController):
                 if user is None:
                     return None
 
-                if (now - session.last_seen).total_seconds() > 3600:
+                last_seen = session.last_seen.replace(tzinfo=datetime.timezone.utc)
+                if user.last_seen is None or (now - last_seen).total_seconds() > 3600:
                     user.last_seen = now
                     session.last_seen = now
                     try:
@@ -333,7 +399,7 @@ class AccessController(BaseAccessController):
                     if not pbkdf2_sha256.verify(password, auth_entry.pbkdf2):
                         continue
 
-                    user.last_seen = datetime.datetime.utcnow()
+                    user.last_seen = datetime.datetime.now(tz=datetime.timezone.utc)
                     session = _Session(user=user.id, token=token_urlsafe(32), last_seen=user.last_seen)
                     orm_session.add(session)
 
@@ -385,7 +451,7 @@ class AccessController(BaseAccessController):
             nonlocal challenge_token
             nonlocal challenge_created
 
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
             valid_until = now + datetime.timedelta(minutes=30)
 
             any_hit = False
@@ -438,7 +504,7 @@ class AccessController(BaseAccessController):
 
         def execute(engine: Engine):
             added_session = None
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
             with Session(engine) as orm_session:
                 for challenge in orm_session.query(_PasswordResetChallenge).filter_by(token=reset_token).filter(
                         _PasswordResetChallenge.valid_until >= now):
@@ -498,7 +564,7 @@ class AccessController(BaseAccessController):
                 auth = _AuthPassword(user=user.id, pbkdf2=pbkdf2_sha256.hash(password))
                 orm_session.add(auth)
                 session = _Session(user=user.id, token=token_urlsafe(32),
-                                   last_seen=datetime.datetime.utcnow())
+                                   last_seen=datetime.datetime.now(tz=datetime.timezone.utc))
                 orm_session.add(session)
 
                 orm_session.commit()
@@ -548,7 +614,7 @@ class AccessController(BaseAccessController):
                     name = oidc_user.get('name')
                     name = strip_noaa_suffixes(email, name)
                     name = name[0:255] if name else None
-                    user = _User(email=email, name=name, last_seen=datetime.datetime.utcnow())
+                    user = _User(email=email, name=name, last_seen=datetime.datetime.now(tz=datetime.timezone.utc))
                     if user.name is not None:
                         user.initials = name_to_initials(user.name)
                     orm_session.add(user)
@@ -562,12 +628,12 @@ class AccessController(BaseAccessController):
                     user = orm_session.query(_User).filter_by(id=auth.user).one_or_none()
                     if user is None:
                         raise HTTPException(starlette.status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No user found")
-                    user.last_seen = datetime.datetime.utcnow()
+                    user.last_seen = datetime.datetime.now(tz=datetime.timezone.utc)
 
                     _LOGGER.info(f"Logged in user '{user.name}' {user.email} ({user.id}) via {client_name} authentication ({auth.sub})")
 
                 session = _Session(user=user.id, token=token_urlsafe(32),
-                                   last_seen=datetime.datetime.utcnow())
+                                   last_seen=datetime.datetime.now(tz=datetime.timezone.utc))
                 orm_session.add(session)
 
                 orm_session.commit()
@@ -716,7 +782,7 @@ class AccessController(BaseAccessController):
 
         def execute(engine: Engine):
             nonlocal any_added
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
             with Session(engine) as orm_session:
                 orm_session.query(_AccessChallenge).filter(_AccessChallenge.valid_until < now).delete()
                 for challenge in orm_session.query(_AccessChallenge).filter_by(token=confirm_token,
@@ -739,6 +805,64 @@ class AccessController(BaseAccessController):
             any_added=any_added,
         ))
 
+    async def set_dashboard_email(self, user: _User, level: typing.Optional[SubscriptionLevel],
+                                  change: typing.Iterable[typing.Tuple[typing.Optional[str], str]]) -> None:
+        def execute(engine: Engine):
+            with Session(engine) as orm_session:
+                for station, entry_code in change:
+                    if station is None:
+                        station = ''
+
+                    def has_wildcard_match():
+                        query = orm_session.query(_DashboardSubscription).filter_by(user=user.id)
+                        query = query.filter(db.or_(_DashboardSubscription.station == station,
+                                                    _DashboardSubscription.station == '*'))
+                        query = query.filter(db.or_(_DashboardSubscription.code.ilike('%*%'),
+                                                    _DashboardSubscription.station == '*'))
+                        for check in query:
+                            if check.station == station and check.code == entry_code:
+                                continue
+                            if check.station != station and check.station != '*':
+                                continue
+                            if AccessUser.matches_mode(check.code, entry_code):
+                                return True
+                        return False
+
+                    sub = orm_session.query(_DashboardSubscription).filter_by(
+                        user=user.id, station=station, code=entry_code).one_or_none()
+                    if sub is None:
+                        set_level = level
+                        if not set_level:
+                            if has_wildcard_match():
+                                set_level = SubscriptionLevel.OFF
+                            else:
+                                continue
+                        sub = _DashboardSubscription(user=user.id, station=station, code=entry_code, level=set_level)
+                        orm_session.add(sub)
+                    else:
+                        if not level:
+                            if has_wildcard_match():
+                                sub.level = SubscriptionLevel.OFF
+                            else:
+                                orm_session.delete(sub)
+                        else:
+                            sub.level = level
+
+                orm_session.commit()
+
+        await self.db.execute(execute)
+
+    async def get_dashboard_email(self, user: _User, station: typing.Optional[str],
+                                  entry_code: str) -> typing.Optional[SubscriptionLevel]:
+        if station is None:
+            station = ''
+
+        def execute(engine: Engine) -> typing.Optional[SubscriptionLevel]:
+            with Session(engine) as orm_session:
+                return _dashboard_email_subscription(orm_session, user, station, entry_code)
+
+        return await self.db.execute(execute)
+
 
 class ControlInterface:
     def __init__(self, uri: str):
@@ -747,14 +871,23 @@ class ControlInterface:
     @staticmethod
     def _mode_filter(query, mode: str):
         if mode.endswith('*'):
-            return query.filter(_Access.mode == mode)
+            return query.filter(_Access.mode.ilike(f'{mode}%'))
         elif '%' in mode:
             return query.filter(_Access.mode.ilike(mode))
         else:
-            return query.filter(_Access.mode.ilike(f'{mode}%'))
+            return query.filter(_Access.mode == mode.lower())
+
+    @staticmethod
+    def _dashboard_code_filter(query, code: str):
+        if '%' in code:
+            return query.filter(_DashboardSubscription.code.ilike(code))
+        else:
+            return query.filter(_DashboardSubscription.code == code.lower())
 
     @staticmethod
     def _select_users(orm_session: Session, **kwargs):
+        query = orm_session.query(_User)
+
         def prepare_like(raw):
             if '*' in raw:
                 return raw.replace('*', '%')
@@ -763,17 +896,22 @@ class ControlInterface:
         def to_time(raw):
             if isinstance(raw, datetime.datetime):
                 return raw
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
             seconds = round(float(raw) * 86400)
             return now - datetime.timedelta(seconds=seconds)
 
-        query = orm_session.query(_User)
         if kwargs.get('station') or kwargs.get('mode'):
             query = query.join(_Access)
             if kwargs.get('station'):
                 query = query.filter(_Access.station == kwargs['station'].lower())
             if kwargs.get('mode'):
                 query = ControlInterface._mode_filter(query, kwargs['mode'])
+        if kwargs.get('dashboard_station') is not None or kwargs.get('dashboard_code'):
+            query = query.join(_DashboardSubscription)
+            if kwargs.get('dashboard_station') is not None:
+                query = query.filter(_DashboardSubscription.station == kwargs['dashboard_station'].lower())
+            if kwargs.get('dashboard_code'):
+                query = ControlInterface._dashboard_code_filter(query, kwargs['dashboard_code'])
         if kwargs.get('user'):
             query = query.filter(_User.id == int(kwargs['user']))
         if kwargs.get('email'):
@@ -788,6 +926,7 @@ class ControlInterface:
             query = query.filter(_User.last_seen >= to_time(kwargs['after']))
         if kwargs.get('never'):
             query = query.filter(_User.last_seen == None)
+
         return query
 
     async def list_users(self, **kwargs) -> typing.List[typing.Dict]:
@@ -802,6 +941,15 @@ class ControlInterface:
                             'station': access.station,
                             'mode': access.mode,
                             'write': access.write,
+                        })
+
+                    user_subscriptions = list()
+                    for sub in orm_session.query(_DashboardSubscription).filter_by(user=user.id):
+                        user_subscriptions.append({
+                            'id': sub.id,
+                            'station': sub.station,
+                            'code': sub.code,
+                            'level': sub.level,
                         })
 
                     has_password = orm_session.query(_AuthPassword).filter_by(user=user.id).one_or_none() is not None
@@ -824,6 +972,7 @@ class ControlInterface:
                         'initials': user.initials,
                         'last_seen': user.last_seen,
                         'access': user_access,
+                        'subscriptions': user_subscriptions,
                         'authentication': authentication,
                     })
 
@@ -857,7 +1006,7 @@ class ControlInterface:
 
                     any_added = False
                     challenge_token = token_urlsafe(32)
-                    valid_until = datetime.datetime.utcnow() + datetime.timedelta(days=7)
+                    valid_until = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(days=7)
                     for station in stations:
                         for mode in modes:
                             if orm_session.query(_Access).filter_by(user=user.id, station=station.lower(),
@@ -915,7 +1064,7 @@ class ControlInterface:
                         revoke = revoke.filter_by(station=kwargs['station'].lower())
                     if kwargs.get('mode'):
                         revoke = self._mode_filter(revoke, kwargs['mode'])
-                    revoke.delete(synchronize_session='fetch')
+                    revoke.delete(synchronize_session=False)
                     _LOGGER.info(f"Revoked access for '{user.name}' {user.email} ({user.id})")
                 orm_session.commit()
 
@@ -934,7 +1083,8 @@ class ControlInterface:
     async def delete_user(self, **kwargs):
         def execute(engine: Engine):
             with Session(engine) as orm_session:
-                self._select_users(orm_session, **kwargs).delete(synchronize_session='fetch')
+                for user in self._select_users(orm_session, **kwargs):
+                    orm_session.query(_User).filter_by(id=user.id).delete(synchronize_session=False)
                 orm_session.commit()
 
         await self.db.execute(execute)
@@ -989,6 +1139,123 @@ class ControlInterface:
                 orm_session.commit()
 
         await self.db.execute(execute)
+
+    async def dashboard_subscribe(self, sub_stations: typing.List[str], sub_codes: typing.List[str],
+                                  sub_level: SubscriptionLevel, **kwargs):
+        def execute(engine: Engine):
+            with Session(engine) as orm_session:
+                for user in self._select_users(orm_session, **kwargs):
+                    for station in sub_stations:
+                        for code in sub_codes:
+                            existing = orm_session.query(_DashboardSubscription).filter_by(
+                                    user=user.id, station=station.lower(), code=code.lower()).one_or_none()
+                            if existing:
+                                if existing.level != sub_level:
+                                    _LOGGER.debug(
+                                        f"Changing subscription level '{user.name}' {user.email} ({user.id}) to {code}/{sub_level.name}")
+                                    existing.level = sub_level
+                                else:
+                                    _LOGGER.debug(f"Skipping already subscribed user '{user.name}' {user.email} ({user.id}) to {code}/{sub_level.name}")
+                                continue
+
+                            orm_session.add(_DashboardSubscription(
+                                user=user.id, station=station.lower(),
+                                code=code.lower(), level=sub_level))
+                            _LOGGER.debug(f"Subscribing user '{user.name}' {user.email} ({user.id}) to {code}/{sub_level.name}")
+
+                orm_session.commit()
+
+        await self.db.execute(execute)
+
+    async def dashboard_unsubscribe(self, sub_level: typing.Optional[SubscriptionLevel] = None, **kwargs):
+        def execute(engine: Engine):
+            with Session(engine) as orm_session:
+                for user in self._select_users(orm_session, **kwargs):
+                    unsub = orm_session.query(_DashboardSubscription).filter_by(user=user.id)
+
+                    if kwargs.get('dashboard_station') is not None:
+                        unsub = unsub.filter_by(station=kwargs['dashboard_station'].lower())
+                    if kwargs.get('dashboard_code'):
+                        unsub = unsub.filter_by(code=kwargs['dashboard_code'].lower())
+                    if sub_level:
+                        unsub = unsub.filter(_DashboardSubscription.level == sub_level)
+                    unsub.delete(synchronize_session=False)
+                    _LOGGER.info(f"Removing subscriptions for '{user.name}' {user.email} ({user.id})")
+
+                orm_session.commit()
+
+        await self.db.execute(execute)
+
+
+class EmailInterface:
+    def __init__(self, uri: str):
+        self.db = ORMDatabase(uri, _Base)
+
+    async def get_recipients(self, station: typing.Optional[str], entry_code: str,
+                             severity: typing.Optional["DashboardSeverity"]) -> typing.Set[str]:
+        if station:
+            station = station.lower().strip()
+        if not station:
+            station = ''
+        entry_code = entry_code.lower().strip()
+
+        def should_receive(level: SubscriptionLevel) -> bool:
+            if level is None or level == SubscriptionLevel.OFF:
+                return False
+            elif level == SubscriptionLevel.ALWAYS:
+                return True
+            elif not severity:
+                # No status information, so only send if subscribed to always
+                return False
+
+            if severity == severity.ERROR:
+                return True
+            # severity < ERROR
+            if level == SubscriptionLevel.ERROR:
+                return False
+
+            if severity == severity.WARNING:
+                return True
+            # severity < WARNING
+            if level == SubscriptionLevel.WARNING:
+                return False
+
+            # severity == severity.INFO, level == SubscriptionLevel.INFO
+            return True
+
+        def can_access(orm_session: Session, user: _User) -> bool:
+            for access in orm_session.query(_Access).filter_by(user=user.id):
+                if access.station != '*' and access.station != station:
+                    continue
+                if not AccessUser.matches_mode(access.mode, entry_code):
+                    continue
+                return True
+            return False
+
+        def execute(engine: Engine):
+            result: typing.Set[str] = set()
+
+            with Session(engine) as orm_session:
+                query = orm_session.query(_User).join(_DashboardSubscription)
+                query = query.filter(db.or_(_DashboardSubscription.station == station,
+                                            _DashboardSubscription.station == '*'))
+                query = query.filter(db.or_(_DashboardSubscription.code.ilike('%*%'),
+                                            _DashboardSubscription.code == entry_code))
+                for user in query:
+                    if not is_valid_email(user.email):
+                        continue
+
+                    subscribed_level = _dashboard_email_subscription(orm_session, user, station, entry_code)
+                    if not should_receive(subscribed_level):
+                        continue
+                    if not can_access(orm_session, user):
+                        continue
+
+                    result.add(user.email)
+
+            return result
+
+        return await self.db.execute(execute)
 
 
 class AccessUser(BaseAccessUser):
@@ -1048,6 +1315,17 @@ class AccessUser(BaseAccessUser):
         for access in self._access.result():
             if access.station != '*' and str(access.station) != station:
                 continue
+            if not self.matches_mode(access.mode, mode):
+                continue
+            if not write:
+                return True
+            if access.write:
+                return True
+            continue
+        return False
+
+    def allow_global(self, mode: str, write=False) -> bool:
+        for access in self._access.result():
             if not self.matches_mode(access.mode, mode):
                 continue
             if not write:

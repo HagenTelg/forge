@@ -89,7 +89,8 @@ class ControlInterface(Interface):
     async def revoke_access(self, **kwargs) -> None:
         def execute(engine: Engine):
             with Session(engine) as orm_session:
-                self._select_access(orm_session, **kwargs).delete(synchronize_session='fetch')
+                for access in self._select_access(orm_session, **kwargs):
+                    orm_session.query(AccessStation).filter_by(id=access.id).delete(synchronize_session=False)
                 orm_session.commit()
 
         return await self.db.execute(execute)

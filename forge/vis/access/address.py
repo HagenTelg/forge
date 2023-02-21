@@ -82,3 +82,8 @@ class AccessUser(BaseAccessUser):
         if not self.matches_mode(self.controller.mode, mode):
             return False
         return not write or self.controller.write
+
+    def allow_global(self, mode: str, write=False) -> bool:
+        if not self.matches_mode(self.controller.mode, mode):
+            return False
+        return not write or self.controller.write

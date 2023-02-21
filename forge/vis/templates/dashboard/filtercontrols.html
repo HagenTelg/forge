@@ -1,0 +1,31 @@
+<link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/dashboard_filter.css') }}"/>
+
+<nav class="sidebar">
+{% if enable_user_actions %}
+<a id="user_logout" href="{{ request.url_for('logout') }}">Logout</a>
+<a id="user_profile" href="{{ request.url_for('change_user_info') }}" title="Set information for your user">Profile</a>
+{% elif ENABLE_LOGIN %}
+<a id="user_login" href="{{ request.url_for('login') }}">Login</a>
+{% endif %}
+
+  <ul>
+    <li class="filter-type" id="station_select" title="Visible stations.">
+      <button class="menu-button dropdown-button">Station</button>
+      <ul class="dropdown-content menu-list">
+        <li><button class="menu-select-all">Show All</button></li>
+      </ul>
+    </li>
+
+    <li class="filter-type" id="code_select" title="Visible status types.">
+      <button class="menu-button dropdown-button">Type</button>
+      <ul class="dropdown-content menu-list">
+        <li><button class="menu-select-all">Show All</button></li>
+      </ul>
+    </li>
+
+    <li class="filter-time">
+      <button id="time_select" title="Change the minimum amount of time to display information.">Display: 1 Day</button>
+      <button id="time_new" class="mdi mdi-calendar-refresh" title="Toggle displaying un-viewed information.  This enables display of new information since the last visit even if it is outside the specified time range."></button>
+    </li>
+  </ul>
+</nav>

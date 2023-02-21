@@ -25,6 +25,7 @@ import forge.vis.eventlog.server
 import forge.vis.status.server
 import forge.vis.export.server
 import forge.vis.acquisition.server
+import forge.vis.dashboard.server
 
 
 async def _favicon(request: Request) -> Response:
@@ -129,5 +130,13 @@ if ratelimit_url is not None:
 middleware.append(Middleware(SessionMiddleware, session_cookie="forge_session",
                              secret_key=Secret(CONFIGURATION.get('SESSION.SECRET', token_urlsafe(32)))))
 middleware.append(Middleware(AuthenticationMiddleware, backend=forge.vis.access.authentication.AuthBackend()))
+
+
+dashboard_uri = CONFIGURATION.get('DASHBOARD.DATABASE')
+if dashboard_uri is not None:
+    routes.append(Mount('/dashboard', routes=forge.vis.dashboard.server.routes))
+    routes.append(Mount('/socket/dashboard', routes=forge.vis.dashboard.server.sockets))
+    middleware.append(Middleware(forge.vis.dashboard.server.DatabaseMiddleware, database_uri=dashboard_uri))
+
 
 app = Starlette(routes=routes, middleware=middleware)

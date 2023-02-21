@@ -299,7 +299,7 @@ class Interface:
     def _key_to_host(orm_session: Session, key: PublicKey, current_time: datetime.datetime = None) -> _Host:
         key = _key_to_column(key)
         if current_time is None:
-            current_time = datetime.datetime.utcnow()
+            current_time = datetime.datetime.now(tz=datetime.timezone.utc)
         host = orm_session.query(_Host).filter_by(public_key=key).one_or_none()
         if host is None:
             host = _Host(public_key=key, last_seen=current_time)
@@ -338,7 +338,7 @@ class Interface:
 
         def execute(engine: Engine):
             with Session(engine) as orm_session:
-                current_time = datetime.datetime.utcnow()
+                current_time = datetime.datetime.now(tz=datetime.timezone.utc)
                 host = self._key_to_host(orm_session, key, current_time)
 
                 direct = orm_session.query(_HostDirect).filter_by(host_data=host.id).one_or_none()
@@ -376,7 +376,7 @@ class Interface:
                                partial=False) -> bool:
         def execute(engine: Engine):
             with Session(engine) as orm_session:
-                current_time = datetime.datetime.utcnow()
+                current_time = datetime.datetime.now(tz=datetime.timezone.utc)
                 host = self._key_to_host_connected(orm_session, key, address, station, current_time=current_time)
 
                 _LOGGER.debug(f"Performing connected update for {key} ({station}) from {address}")
@@ -407,7 +407,7 @@ class Interface:
                                 events: typing.List[typing.Dict[str, typing.Any]]) -> None:
         def execute(engine: Engine):
             with Session(engine) as orm_session:
-                current_time = datetime.datetime.utcnow()
+                current_time = datetime.datetime.now(tz=datetime.timezone.utc)
                 host = self._key_to_host_connected(orm_session, key, address, station, current_time=current_time)
 
                 _LOGGER.debug(f"Adding {len(events)} kernel log events for {key} ({station}) from {address}")
@@ -425,7 +425,7 @@ class Interface:
                                      events: typing.List[typing.Dict[str, typing.Any]]) -> None:
         def execute(engine: Engine):
             with Session(engine) as orm_session:
-                current_time = datetime.datetime.utcnow()
+                current_time = datetime.datetime.now(tz=datetime.timezone.utc)
                 host = self._key_to_host_connected(orm_session, key, address, station, current_time=current_time)
 
                 _LOGGER.debug(f"Adding {len(events)} acquisition log events for {key} ({station}) from {address}")
@@ -496,7 +496,7 @@ class ControlInterface:
         def to_time(raw):
             if isinstance(raw, datetime.datetime):
                 return raw
-            now = datetime.datetime.utcnow()
+            now = datetime.datetime.now(tz=datetime.timezone.utc)
             seconds = round(float(raw) * 86400)
             return now - datetime.timedelta(seconds=seconds)
 
@@ -656,7 +656,7 @@ class ControlInterface:
     async def purge_hosts(self, **kwargs) -> None:
         def execute(engine: Engine) -> None:
             with Session(engine) as orm_session:
-                self._select_hosts(orm_session, **kwargs).delete(synchronize_session='fetch')
+                self._select_hosts(orm_session, **kwargs).delete(synchronize_session=False)
                 orm_session.commit()
 
         return await self.db.execute(execute)
@@ -699,7 +699,7 @@ class ControlInterface:
     async def access_revoke(self, **kwargs) -> None:
         def execute(engine: Engine) -> None:
             with Session(engine) as orm_session:
-                self._select_access_station(orm_session, **kwargs).delete(synchronize_session='fetch')
+                self._select_access_station(orm_session, **kwargs).delete(synchronize_session=False)
                 orm_session.commit()
 
         return await self.db.execute(execute)

@@ -18,6 +18,6 @@ def completion_directory(base: str, key: PublicKey, station: str, file_type: typ
     if '{station}' in base:
         base = base.replace('{station}', station.lower())
     if '{time' in base:
-        now = datetime.datetime.utcnow()
+        now = datetime.datetime.now(tz=datetime.timezone.utc)
         base = _time_replace.sub(lambda m: now.strftime(m.group(1)), base)
     return base

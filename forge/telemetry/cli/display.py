@@ -12,8 +12,9 @@ def sort_hosts(sort_keys: typing.List[str], hosts: typing.List[typing.Dict]) -> 
 
         for key in sort_keys:
             if key == 'last_seen':
-                return value.get(key, datetime.datetime.min)
-            return value.get(key, '')
+                result.append(value.get(key) or datetime.datetime.min)
+            else:
+                result.append(value.get(key) or '')
 
         return tuple(result)
 

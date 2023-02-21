@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <body>
+{% if entry.status == entry.Status.OFFLINE %}
+<span style="font-weight: bold; color: #c00;">OFFLINE SINCE</span>: {{ format_datetime(entry.updated) }}
+{% elif entry.status == entry.Status.FAILED %}
+<span style="font-weight: bold; color: #c00;">FAILED AT</span>: {{ format_datetime(entry.updated) }}
+{% else %}
+Last updated: {{ format_datetime(entry.updated) }}
+{% endif %}
+
+{% set SEVERITY_HEADER_STYLE = {
+    Severity.INFO: 'margin-top: 12px; font-weight: bold;',
+    Severity.WARNING: 'margin-top: 12px; font-weight: bold; color: #c90;',
+    Severity.ERROR: 'margin-top: 12px; font-weight: bold; color: #c00;',
+} %}
+{% set global_status = namespace(count=0) %}
+{% for i in notifications %}
+{% if i.code|length == 0 and i.data %}
+    {% set global_status.count = global_status.count + 1 %}
+    <div style="{{ SEVERITY_HEADER_STYLE[i.severity] }}">STATUS</div>
+    {% if "\n" in i.data %}
+        <pre style="margin-top: 2px;">{{ i.data }}</pre>
+    {% else %}
+        <div style="margin-top: 2px;">{{ i.data }}</div>
+    {% endif %}
+{% endif %}
+{% endfor %}
+
+
+{% set SEVERITY_HEADER_STYLE = {
+    Severity.INFO: 'margin-top: 2px; font-weight: bold;',
+    Severity.WARNING: 'margin-top: 2px; font-weight: bold; color: #c90;',
+    Severity.ERROR: 'margin-top: 2px; font-weight: bold; color: #c00;',
+} %}
+
+{% if notifications|length > global_status.count %}
+<div style="margin-top: 12px;">
+    <div style="font-size: 20px; font-weight: bold;">Notifications:</div>
+{% for i in notifications %}
+{% if i.code|length > 0 %}
+    <div style="{{ SEVERITY_HEADER_STYLE[i.severity] }}">{{ i.display }}</div>
+    {% if i.data %}
+        {% if "\n" in i.data %}
+            <pre style="margin-left: 16px;">{{ i.data }}</pre>
+        {% else %}
+            <div style="margin-left: 16px;">{{ i.data }}</div>
+        {% endif %}
+    {% endif %}
+{% endif %}
+{% endfor %}
+</div>
+{% endif %}
+
+{% if watchdogs|length > global_status.count %}
+<div style="margin-top: 12px;">
+    <div style="font-size: 20px; font-weight: bold;">Watchdogs:</div>
+{% for i in watchdogs %}
+{% if i.code|length > 0 %}
+    <div style="{{ SEVERITY_HEADER_STYLE[i.severity] }}" title="Last present: {{ format_datetime(i.last_seen) }}">{{ i.display }}</div>
+    {% if i.data %}
+        {% if "\n" in i.data %}
+            <pre style="margin-left: 16px;" title="Last present: {{ format_datetime(i.last_seen) }}">{{ i.data }}</pre>
+        {% else %}
+            <div style="margin-left: 16px;" title="Last present: {{ format_datetime(i.last_seen) }}">{{ i.data }}</div>
+        {% endif %}
+    {% endif %}
+{% endif %}
+{% endfor %}
+</div>
+{% endif %}
+
+{% if conditions|length > global_status.count %}
+<div style="margin-top: 12px;">
+    <div style="font-size: 20px; font-weight: bold;">Conditions:</div>
+{% for i in conditions %}
+{% if i.code|length > 0 %}
+    <div style="{{ SEVERITY_HEADER_STYLE[i.severity] }}" title="From: {{ format_datetime(i.begin_present) }}&#10;To: {{ format_datetime(i.end_present) }}">{{ i.display }}: {{ format_interval(i.total_seconds) }} ({{ condition_percent(i) }}%)</div>
+    {% if i.data %}
+        {% if "\n" in i.data %}
+            <pre style="margin-left: 16px;">{{ i.data }}</pre>
+        {% else %}
+            <div style="margin-left: 16px;">{{ i.data }}</div>
+        {% endif %}
+    {% endif %}
+{% endif %}
+{% endfor %}
+</div>
+{% endif %}
+
+
+{% set SEVERITY_ROW_STYLE = [{
+    Severity.INFO: 'background-color: #f8f8f8;',
+    Severity.WARNING: 'background-color: #f8e800;',
+    Severity.ERROR: 'background-color: #ff4040;',
+},{
+    Severity.INFO: 'background-color: #f0f0f0;',
+    Severity.WARNING: 'background-color: #e8d800;',
+    Severity.ERROR: 'background-color: #e04040;',
+}] %}
+
+{% if events|length > 0 %}
+<table style="margin: 12px 0 2px 0; border-spacing: 0;">
+    <thead>
+        <tr><th colspan="4" style="text-align: left; font-size: 20px; font-weight: bold;">Events:</th></tr>
+    </thead>
+    <tbody>
+{% set event_loop = namespace(date=None) %}
+{% for i in events %}
+{% set row_date = format_date(i.occurred_at) %}
+{% set row_severity_style = SEVERITY_ROW_STYLE[loop.index0 % 2] %}
+{% if row_date != event_loop.date %}
+{% set event_loop.date = row_date %}
+        <tr>
+            <td style="font-size: 10px; width: 100%; border-bottom: 1px solid black;" colspan="4">{{ row_date }}</td>
+        </tr>
+{% endif %}
+        <tr>
+            <td colspan="2" style="white-space: nowrap; font-family: monospace; {{ row_severity_style[i.severity] }}" title="{{ format_datetime(i.occurred_at) }}">{{ format_time(i.occurred_at) }}</td>
+            <td colspan="2" style="white-space: nowrap; font-weight: bold; padding-left: 8px; width: 100%; {{ row_severity_style[i.severity] }}">{{ i.display }}</td>
+        </tr>
+        {% if i.data %}
+        <tr>
+            <td style="width: 12px; {{ row_severity_style[i.severity] }}"></td>
+            <td style="padding-left: 8px; white-space: normal;" colspan="3">{% if "\n" in i.data %}<pre>{% endif %}{{ i.data }}{% if "\n" in i.data %}</pre>{% endif %}</td>
+        </tr>
+        {% endif %}
+{% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+  </body>
+</html>

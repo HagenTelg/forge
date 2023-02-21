@@ -1,0 +1,187 @@
+<style>
+.dashboardemail-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboardemail-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 8px 0 0 16px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.dashboardemail-info {
+  position: relative;
+  flex-direction: column;
+  display: flex;
+  margin: 48px 16px 8px;
+  align-items: start;
+}
+
+.dashboardemail-footer {
+  padding: 0;
+  margin: 0;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.dashboardemail-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 20px;
+  background-color: transparent;
+  font-weight: bold;
+  font-family: inherit;
+  cursor: pointer;
+}
+.dashboardemail-footer button:hover,
+.dashboardemail-footer button:focus {
+  color: #000;
+  text-decoration: none;
+}
+.dashboardemail-footer button[disabled]:not(.working) {
+  background-color: #004099;
+  color: #999;
+  cursor: not-allowed;
+}
+.dashboardemail-footer button.working {
+  background-color: #004099;
+  color: #999;
+  cursor: wait;
+}
+.dashboardemail-footer button:hover:not([disabled]):not(.working),
+.dashboardemail-footer button:focus:not([disabled]):not(.working) {
+  color: #000;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dashboardemail-info select {
+  border: none;
+  box-sizing: border-box;
+  min-width: 150px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #0080ff;
+  color: white;
+  cursor: pointer;
+  flex-shrink: 0;
+  text-align: left;
+  padding: 12px 20px;
+  display: block;
+  margin-top: 12px;
+}
+
+</style>
+
+<form class="dashboardemail-entry">
+  <div class="dashboardemail-header">Email Subscription</div>
+
+  <div id="dashboardemail-info" class="dashboardemail-info">
+      <div>
+          This allows you to alter the level of information emailed to you.
+          Messages of the selected severity or higher are sent daily.
+          If you select "always" then an email is sent daily regardless of any problems or messages.
+      </div>
+      <select id="dashboardemail-severity" title="Select the minimum severity level">
+        <option value="off" title="Do not send emails">Off</option>
+        <option value="error" title="Send emails when errors are present">Error</option>
+        <option value="warning" title="Send emails when warnings or errors are present">Warning</option>
+        <option value="info" title="Send emails when any messages are present">Info</option>
+        <option value="always" title="Always send emails daily">Always</option>
+      </select>
+  </div>
+
+  <div class="dashboardemail-footer">
+    <button id="dashboardemail-ok" title="Restart the acquisition system">Ok</button>
+    <button id="dashboardemail-cancel">Cancel</button>
+  </div>
+</form>
+
+<script>
+var EMAIL_PROMPT_ENTRIES;
+(function() {
+    if (!EMAIL_PROMPT_ENTRIES || EMAIL_PROMPT_ENTRIES.length === 0) {
+        console.error("No selected entries");
+        hideModal();
+        return;
+    }
+    const entries = EMAIL_PROMPT_ENTRIES;
+    EMAIL_PROMPT_ENTRIES = undefined;
+
+    const okButton = document.getElementById("dashboardemail-ok");
+    const cancelButton = document.getElementById("dashboardemail-cancel");
+    const severitySelect = document.getElementById("dashboardemail-severity");
+
+    let consistentSeverity = undefined;
+    for (const e of entries) {
+        if (e.emailSeverity === undefined) {
+            consistentSeverity = undefined;
+            break;
+        }
+        if (consistentSeverity !== undefined && e.emailSeverity !== consistentSeverity) {
+            consistentSeverity = undefined;
+            break;
+        }
+        consistentSeverity = e.emailSeverity;
+    }
+    if (consistentSeverity) {
+        severitySelect.value = consistentSeverity;
+    } else {
+        severitySelect.selectedIndex = 0;
+    }
+
+    $(okButton).click(function(event) {
+        event.preventDefault();
+        okButton.disabled = true;
+        okButton.classList.add('working');
+        cancelButton.disabled = true;
+
+        const requests = [];
+        for (const e of entries) {
+            const data = {
+                code: e.code,
+            };
+            if (e.station && e.station.length > 0) {
+                data.station = e.station;
+            }
+            requests.push(data);
+        }
+
+        $.ajax({
+            type: "POST",
+            url: SET_EMAIL_URL,
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            data: JSON.stringify({
+                severity: severitySelect.value,
+                entries: requests,
+            }),
+        }).done(function(data) {
+            if (data.status !== "ok") {
+                window.alert("Error changing email");
+                return;
+            }
+            for (const e of entries) {
+                e.emailChanged();
+            }
+        }).fail(function() {
+            window.alert("Error changing email");
+        }).then(function () {
+            hideModal();
+        });
+    });
+    $(cancelButton).click(function(event) {
+        event.preventDefault();
+        hideModal();
+    });
+
+})();
+</script>

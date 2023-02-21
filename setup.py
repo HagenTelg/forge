@@ -61,6 +61,10 @@ setup(
         "forge-telemetry-tunnel-remote = forge.telemetry.tunnel.remote:main",
         "forge-telemetry-tunnel-proxy = forge.telemetry.tunnel.proxy:main",
 
+        "forge-dashboard = forge.dashboard.__main__:main",
+        "forge-dashboard-control = forge.dashboard.cli.__main__:main",
+        "forge-dashboard-report = forge.dashboard.report.__main__:main",
+
         "forge-cpd3-cache-client = forge.cpd3.cache.client:main",
         "forge-cpd3-cache-server = forge.cpd3.cache.server:main",
         "forge-cpd3-pass-server = forge.cpd3.pass.server:main",

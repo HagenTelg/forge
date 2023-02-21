@@ -156,7 +156,7 @@ class WebsocketJSON(WebSocketEndpoint):
         self._handshake_timeout_task: typing.Optional[asyncio.Task] = None
 
     @classmethod
-    async def client_handshake(cls,websocket: "aiohttp.client.ClientWebSocketResponse", key: PrivateKey,
+    async def client_handshake(cls, websocket: "aiohttp.client.ClientWebSocketResponse", key: PrivateKey,
                                extra_data: typing.Dict[str, typing.Any] = None):
         await websocket.send_json({
             'public_key': b64encode(key_to_bytes(key.public_key())).decode('ascii'),

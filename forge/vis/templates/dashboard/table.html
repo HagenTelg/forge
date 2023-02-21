@@ -1,0 +1,14 @@
+<link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/dashboard_table.css') }}"/>
+
+<table class="entries">
+  <thead>
+    <tr class="entry-header">
+      <th scope="col" title="Email control"><button id="email_all" class="mdi mdi-email-outline{% if (not enable_user_actions or not request.user.auth_user.email) and not is_example %} hidden{% endif %}"></button></th>
+      <th scope="col">Status <button sort="1" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></button><button sort="1" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></button></th>
+      <th scope="col" title="Additional status indicator"><button class="mdi mdi-information-variant"></button><button sort="2" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></button><button sort="2" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></button></th>
+      <th scope="col">Station <button sort="3" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></button><button sort="3" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></button></th>
+      <th scope="col">Type <button sort="4" class="sort-down mdi mdi-arrow-down-bold-box" title="Change sort order"></button><button sort="4" class="sort-up mdi mdi-arrow-up-bold-box" title="Change sort order"></button></th>
+    </tr>
+  </thead>
+  <tbody id="dashboard_entries"></tbody>
+</table>

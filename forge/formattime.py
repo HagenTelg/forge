@@ -79,6 +79,11 @@ def format_iso8601_time(t: float, delimited: bool = True, milliseconds: bool = F
     return date_str + "T" + time_str + "Z"
 
 
+def format_date(t: float) -> str:
+    ts = time.gmtime(t)
+    return _date(ts)
+
+
 def format_export_time(t: float) -> str:
     ts = time.gmtime(t)
     return _date(ts) + " " + _time_of_day(ts)

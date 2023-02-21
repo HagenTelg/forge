@@ -10,7 +10,7 @@ tr.edit-header th {
   position: sticky;
   top: 48px;
   text-align: left;
-  height: 32px;
+  height: 34px;
   margin: 0;
   padding: 4px;
   border-bottom: 1px solid black;
@@ -39,20 +39,26 @@ tr.edit-header th.hidden {
   display: none;
 }
 
-tr.edit-header th div.sort-down {
+tr.edit-header th button.sort-down,
+tr.edit-header th button.sort-up {
+  cursor: pointer;
+  font-size: 20px;
+  border: none;
+  outline: none;
+  box-sizing: border-box;
+  background: transparent;
+  margin: 0;
+  padding: 0;
+}
+tr.edit-header th button.sort-down {
   position: absolute;
   bottom: 0;
   right: 0;
-  cursor: pointer;
-  font-size: 20px;
 }
-
-tr.edit-header th div.sort-up  {
+tr.edit-header th button.sort-up  {
   position: absolute;
   top: 0;
   right: 0;
-  cursor: pointer;
-  font-size: 20px;
 }
 
 tr.edit-header th:not(:last-child),

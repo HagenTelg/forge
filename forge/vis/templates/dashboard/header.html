@@ -1,0 +1,10 @@
+<script>
+const DASHBOARD_SOCKET_URL = "{{ request.url_for('dashboard_socket') }}{% if is_example %}?example{% endif %}";
+const ENTRY_DETAILS_URL = "{{ request.url_for('dashboard_details') }}";
+const SET_EMAIL_URL = "{{ request.url_for('dashboard_email') }}";
+</script>
+
+<script defer src="{{ request.url_for('static', path='/js/time.js') }}"></script>
+<script defer src="{{ request.url_for('static', path='/js/dashboardsocket.js') }}"></script>
+
+<link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/dashboard.css') }}"/>

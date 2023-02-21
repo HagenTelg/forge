@@ -22,7 +22,7 @@ class AccessStation(_Base):
     station = db.Column(db.String(32))
 
 
-db.Index('access_station_index', 'public_key', 'station', unique=True)
+db.Index('access_station_index', AccessStation.public_key, AccessStation.station, unique=True)
 
 
 class AccessAcquisition(_Base):

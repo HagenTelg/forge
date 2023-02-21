@@ -1,0 +1,201 @@
+table.entries {
+  width: 100%;
+  margin: 0;
+  position: relative;
+  border-spacing: 0;
+}
+
+tr.entry-header th {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  text-align: left;
+  height: 34px;
+  margin: 0;
+  padding: 4px;
+  border-bottom: 1px solid black;
+  background: white;
+  background-clip: padding-box;
+}
+tr.entry-header th:nth-child(1) {
+  min-width: 10px;
+}
+tr.entry-header th:nth-child(2) {
+  min-width: 160px;
+}
+tr.entry-header th:nth-child(3) {
+  min-width: 40px;
+}
+tr.entry-header th:nth-child(4) {
+  min-width: 100px;
+}
+tr.entry-header th:nth-child(5) {
+  min-width: 160px;
+}
+tr.entry-header th.hidden {
+  display: none;
+}
+
+#email_all {
+  border-radius: 4px;
+}
+#email_all:hover:not([disabled]),
+tr.entry > td:nth-child(1) > button:hover
+{
+  background-color: #444;
+  color: white;
+}
+#email_all[disabled] {
+  cursor: not-allowed;
+}
+
+tr.entry-header th button.sort-down {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  font-size: 20px;
+  padding: 0;
+  margin: 0;
+}
+
+tr.entry-header th button.sort-up  {
+  position: absolute;
+  top: 0;
+  right: 0;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 0;
+  margin: 0;
+}
+
+tr.entry-header th:not(:last-child),
+table.entries > tbody > tr > td:not(:last-child) {
+  white-space: nowrap;
+  border-right: 1px solid black;
+}
+
+tr.entry-header th:last-child,
+tr.entry td:last-child {
+  width: 100%;
+  white-space: nowrap;
+  border-right: none;
+}
+tr.entry > td:last-child {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+tr.entry.hidden,
+tr.details.hidden,
+tr.entry > td:nth-child(1) > button.hidden,
+tr.entry > td:nth-child(3) > div.hidden,
+table.entries tr.entry-header > th:nth-child(1) > button.hidden
+{
+  display: none;
+}
+
+tr.entry:nth-child(4n+1):not(:hover):not(.offline):not(.failed),
+tr.details:nth-child(4n+2):not(.offline):not(.failed) > td:nth-child(1)
+{
+  background-color: #f8f8f8;
+}
+tr.entry:nth-child(4n+3):not(:hover):not(.offline):not(.failed),
+tr.details:nth-child(4n):not(.offline):not(.failed) > td:nth-child(1)
+{
+  background-color: #f0f0f0;
+}
+tr.entry:nth-child(4n+1):not(:hover):not(.offline).failed,
+tr.details:nth-child(4n+2):not(.offline).failed > td:nth-child(1)
+{
+  background-color: #ff4040;
+}
+tr.entry:nth-child(4n+3):not(:hover):not(.offline).failed,
+tr.details:nth-child(4n):not(.offline).failed > td:nth-child(1)
+{
+  background-color: #e04040;
+}
+tr.entry:nth-child(4n+1):not(:hover):not(.failed).offline,
+tr.details:nth-child(4n+2):not(.failed).offline > td:nth-child(1)
+{
+  background-color: #ff5000;
+}
+tr.entry:nth-child(4n+3):not(:hover):not(.failed).offline,
+tr.details:nth-child(4n):not(.failed).offline > td:nth-child(1)
+{
+  background-color: #e05000;
+}
+tr.entry:nth-child(4n+1):not(:hover).failed.offline,
+tr.details:nth-child(4n+2).failed.offline > td:nth-child(1)
+{
+  background-color: #ff0000;
+}
+tr.entry:nth-child(4n+3):not(:hover).failed.offline,
+tr.details:nth-child(4n).failed.offline > td:nth-child(1)
+{
+  background-color: #e00000;
+}
+
+tr.entry {
+  cursor: pointer;
+}
+
+tr.entry:hover {
+  background-color: #444;
+  color: white;
+}
+
+table.entries > tbody > tr.details > td:nth-child(2) {
+  border-top: 1px solid black;
+  border-bottom: 1px solid black;
+}
+table.entries > tbody > tr.details > td:nth-child(1) {
+  border-bottom: 1px solid black;
+  cursor: pointer;
+}
+tr.details > td:nth-child(2) {
+  width: 100%;
+  padding: 4px;
+  white-space: normal;
+}
+
+table.entries .mdi-information-variant,
+table.entries .mdi-message,
+table.entries .mdi-message-alert,
+table.entries .mdi-alert,
+table.entries .mdi-email,
+table.entries .mdi-email-off,
+table.entries .mdi-email-outline,
+table.entries .mdi-loading
+{
+  font-size: 24px;
+}
+
+tr.entry > td:nth-child(1) {
+  padding: 0 4px;
+}
+
+tr.entry > td:nth-child(3) {
+  padding: 0 12px;
+}
+
+tr.entry:not(.offline):not(.failed) .mdi-alert {
+  color: #c00;
+}
+tr.entry:not(.offline):not(.failed) .mdi-email.error {
+  color: #c00;
+}
+tr.entry:not(.offline):not(.failed) .mdi-message-alert {
+  color: #c90;
+}
+tr.entry:not(.offline):not(.failed) .mdi-email.warning {
+  color: #c90;
+}
+tr.entry:not(.offline):not(.failed) .mdi-loading {
+  color: #3AF;
+}
+
+tr.details div.details-loading {
+  color: #3AF;
+  font-size: 48px;
+  text-align: center;
+}
