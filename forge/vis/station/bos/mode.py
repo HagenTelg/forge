@@ -48,5 +48,16 @@ station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-popsst
 station_modes['aerosol-realtime'].remove('aerosol-realtime-wind')
 
 
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-opticalscattering2', "Ecotech Optical"),
+                                    'aerosol-raw-optical')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-opticalscattering2', "Ecotech Optical"),
+                                         'aerosol-realtime-optical')
+
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-nephelometerzero2', "Ecotech Nephelometer Zero"),
+                                    'aerosol-raw-nephelometerstatus')
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-nephelometerstatus2', "Ecotech Nephelometer Status"),
+                                    'aerosol-raw-nephelometerzero2')
+
+
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:
     return station_modes.get(mode_name)

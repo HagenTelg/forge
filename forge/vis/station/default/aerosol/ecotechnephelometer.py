@@ -1,5 +1,6 @@
 import typing
 from forge.vis.view.timeseries import TimeSeries
+from .tsi3563nephelometer import NephelometerZero
 
 
 class NephelometerStatus(TimeSeries):

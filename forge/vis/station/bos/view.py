@@ -5,6 +5,8 @@ from ..default.aerosol.t640 import T640MassAethalometer, T640Status
 from ..default.aerosol.editing.t640 import EditingT640
 from .dmps import DMPSStatus, DMPSDistribution, DMPSCounts
 from .counts import RealtimeParticleConcentration, EditingParticleConcentration, ADMagicCPC250StatusStatusSecondary
+from .ecotechnephelometer import NephelometerStatusSecondary, NephelometerZeroSecondary
+from .optical import OpticalScatteringSecondary
 
 
 station_views = detach(aerosol_views, ozone_views)
@@ -39,6 +41,13 @@ station_views['aerosol-clean-pops'] = POPSDistribution('aerosol-clean')
 station_views['aerosol-avgh-pops'] = POPSDistribution('aerosol-avgh')
 station_views['aerosol-realtime-pops'] = POPSDistribution('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-popsstatus'] = POPSStatus('aerosol-realtime', realtime=True)
+
+station_views['aerosol-raw-opticalscattering2'] = OpticalScatteringSecondary('aerosol-raw')
+station_views['aerosol-realtime-opticalscattering2'] = OpticalScatteringSecondary('aerosol-realtime', realtime=True)
+station_views['aerosol-raw-nephelometerzero2'] = NephelometerZeroSecondary('aerosol-raw')
+station_views['aerosol-raw-nephelometerstatus2'] = NephelometerStatusSecondary('aerosol-raw')
+station_views['aerosol-realtime-nephelometerzero2'] = NephelometerZeroSecondary('aerosol-realtime', realtime=True)
+station_views['aerosol-realtime-nephelometerstatus2'] = NephelometerStatusSecondary('aerosol-realtime', realtime=True)
 
 
 

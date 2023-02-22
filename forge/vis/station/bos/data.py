@@ -307,7 +307,95 @@ station_profile_data['aerosol']['realtime']['t640status'] = {
     RealtimeTranslator.Key('P_M11'): 'Psample',
     RealtimeTranslator.Key('Q1_M11'): 'Qsample',
     RealtimeTranslator.Key('Q2_M11'): 'Qbypass',
+}
 
+
+station_profile_data['aerosol']['raw']['scattering2-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'BsB_S12'): 'BsB',
+        Name(station, 'raw', 'BsG_S12'): 'BsG',
+        Name(station, 'raw', 'BsR_S12'): 'BsR',
+        Name(station, 'raw', 'BbsB_S12'): 'BbsB',
+        Name(station, 'raw', 'BbsG_S12'): 'BbsG',
+        Name(station, 'raw', 'BbsR_S12'): 'BbsR',
+    }, send
+)
+station_profile_data['aerosol']['raw']['scattering2-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'BsB_S12', {'pm10'}): 'BsB',
+        Name(station, 'raw', 'BsG_S12', {'pm10'}): 'BsG',
+        Name(station, 'raw', 'BsR_S12', {'pm10'}): 'BsR',
+        Name(station, 'raw', 'BbsB_S12', {'pm10'}): 'BbsB',
+        Name(station, 'raw', 'BbsG_S12', {'pm10'}): 'BbsG',
+        Name(station, 'raw', 'BbsR_S12', {'pm10'}): 'BbsR',
+    }, send
+)
+station_profile_data['aerosol']['raw']['scattering2-pm1'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'BsB_S12', {'pm1'}): 'BsB',
+        Name(station, 'raw', 'BsG_S12', {'pm1'}): 'BsG',
+        Name(station, 'raw', 'BsR_S12', {'pm1'}): 'BsR',
+        Name(station, 'raw', 'BbsB_S12', {'pm1'}): 'BbsB',
+        Name(station, 'raw', 'BbsG_S12', {'pm1'}): 'BbsG',
+        Name(station, 'raw', 'BbsR_S12', {'pm1'}): 'BbsR',
+    }, send
+)
+station_profile_data['aerosol']['realtime']['scattering2-whole'] = {
+    RealtimeTranslator.Key('BsB_S12'): 'BsB',
+    RealtimeTranslator.Key('BsG_S12'): 'BsG',
+    RealtimeTranslator.Key('BsR_S12'): 'BsR',
+    RealtimeTranslator.Key('BbsB_S12'): 'BbsB',
+    RealtimeTranslator.Key('BbsG_S12'): 'BbsG',
+    RealtimeTranslator.Key('BbsR_S12'): 'BbsR',
+}
+station_profile_data['aerosol']['realtime']['scattering2-pm10'] = {
+    RealtimeTranslator.Key('BsB_S12', {'pm10'}): 'BsB',
+    RealtimeTranslator.Key('BsG_S12', {'pm10'}): 'BsG',
+    RealtimeTranslator.Key('BsR_S12', {'pm10'}): 'BsR',
+    RealtimeTranslator.Key('BbsB_S12', {'pm10'}): 'BbsB',
+    RealtimeTranslator.Key('BbsG_S12', {'pm10'}): 'BbsG',
+    RealtimeTranslator.Key('BbsR_S12', {'pm10'}): 'BbsR',
+}
+station_profile_data['aerosol']['realtime']['scattering2-pm1'] = {
+    RealtimeTranslator.Key('BsB_S12', {'pm1'}): 'BsB',
+    RealtimeTranslator.Key('BsG_S12', {'pm1'}): 'BsG',
+    RealtimeTranslator.Key('BsR_S12', {'pm1'}): 'BsR',
+    RealtimeTranslator.Key('BbsB_S12', {'pm1'}): 'BbsB',
+    RealtimeTranslator.Key('BbsG_S12', {'pm1'}): 'BbsG',
+    RealtimeTranslator.Key('BbsR_S12', {'pm1'}): 'BbsR',
+}
+
+station_profile_data['aerosol']['raw']['nephzero2'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'BswB_S12'): 'BswB',
+        Name(station, 'raw', 'BswG_S12'): 'BswG',
+        Name(station, 'raw', 'BswR_S12'): 'BswR',
+        Name(station, 'raw', 'BbswB_S12'): 'BbswB',
+        Name(station, 'raw', 'BbswG_S12'): 'BbswG',
+        Name(station, 'raw', 'BbswR_S12'): 'BbswR',
+    }, send
+)
+station_profile_data['aerosol']['raw']['nephstatus2'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'CfG_S12'): 'CfG',
+        Name(station, 'raw', 'CfG_S12', {'pm10'}): 'CfG',
+        Name(station, 'raw', 'CfG_S12', {'pm1'}): 'CfG',
+        Name(station, 'raw', 'CfG_S12', {'pm25'}): 'CfG',
+    }, send
+)
+station_profile_data['aerosol']['realtime']['nephzero2'] = {
+    RealtimeTranslator.Key('BswB_S12'): 'BswB',
+    RealtimeTranslator.Key('BswG_S12'): 'BswG',
+    RealtimeTranslator.Key('BswR_S12'): 'BswR',
+    RealtimeTranslator.Key('BbswB_S12'): 'BbswB',
+    RealtimeTranslator.Key('BbswG_S12'): 'BbswG',
+    RealtimeTranslator.Key('BbswR_S12'): 'BbswR',
+}
+station_profile_data['aerosol']['realtime']['nephstatus2'] = {
+    RealtimeTranslator.Key('CfG_S12'): 'CfG',
+    RealtimeTranslator.Key('CfG_S12', {'pm10'}): 'CfG',
+    RealtimeTranslator.Key('CfG_S12', {'pm1'}): 'CfG',
+    RealtimeTranslator.Key('CfG_S12', {'pm25'}): 'CfG',
 }
 
 
