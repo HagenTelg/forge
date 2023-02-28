@@ -5654,6 +5654,17 @@ radiation_data = {
             }, send
         ),
 
+        'fanstatus': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'Cg1_R81'): 'Cg1',
+                Name(station, 'raw', 'Cg2_R81'): 'Cg2',
+                Name(station, 'raw', 'Cf_R81'): 'Cf',
+                Name(station, 'raw', 'Ci_R81'): 'Ci',
+                Name(station, 'raw', 'Cui_R81'): 'Cui',
+                Name(station, 'raw', 'Cug_R81'): 'Cug',
+            }, send
+        ),
+
         'solar': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'Rdg_R81'): 'Rdg',

@@ -37,6 +37,7 @@ from .ozone.wind import Wind as OzoneWind
 from .ozone.editing.concentration import EditingOzoneConcentration
 
 from .radiation.ambient import Ambient as RadiationAmbient
+from .radiation.fans import FanStatus as RadiationFanStatus
 from .radiation.editing.albedo import EditingAlbedo as RadiationEditingAlbedo
 from .radiation.editing.infrared import EditingInfrared as RadiationEditingInfrared
 from .radiation.editing.infrared import EditingPyrgeometerTemperature as RadiationEditingPyrgeometerTemperature
@@ -150,6 +151,7 @@ radiation_views: typing.Dict[str, View] = {
     'radiation-editing-albedo': RadiationEditingAlbedo(),
     'radiation-editing-totalratio': RadiationEditingEditingTotalRatio(),
     'radiation-editing-ambient': RadiationAmbient('radiation-raw-ambient'),
+    'radiation-editing-fans': RadiationFanStatus('radiation-raw-fanstatus'),
     'radiation-editing-solarposition': SolarPosition(),
 }
 

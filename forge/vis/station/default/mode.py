@@ -140,6 +140,7 @@ radiation_modes: typing.Dict[str, Mode] = _construct_modes([
         Editing.Entry('radiation-editing-albedo', "Albedo"),
         Editing.Entry('radiation-editing-totalratio', "Total Ratio"),
         Editing.Entry('radiation-editing-ambient', "Ambient Conditions"),
+        Editing.Entry('radiation-editing-fans', "Fan Status"),
         Editing.Entry('radiation-editing-solarposition', "Solar Position"),
     ]),
 ])
