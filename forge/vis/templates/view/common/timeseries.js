@@ -718,6 +718,8 @@ var TimeSeriesCommon = {};
             }
 
             this._queuedDisplayUpdate = setTimeout(() => {
+                this._queuedDisplayUpdate = undefined;
+
                 // Plotly misbehaves for sequential redraws resulting in "phantom" data (see SPO optical, all of 2022)
                 this.layout.datarevision++;
                 Plotly.react(this.div, [], this.layout, this.config);

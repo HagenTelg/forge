@@ -1474,7 +1474,7 @@ class RealtimeReader(DataReader):
             super().record_break(start, end)
 
     class RealtimeStream(RealtimeRead):
-        def __init__(self, data: "RealtimeReader",  reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        def __init__(self, data: "RealtimeReader", reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
             super().__init__(reader, writer, data.station, data.data_name, stream_incoming=True)
             self.data = data
             self.discard_epoch_ms: int = data.realtime_start_ms
