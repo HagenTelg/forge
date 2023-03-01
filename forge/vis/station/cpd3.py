@@ -1524,7 +1524,7 @@ class RealtimeReader(DataReader):
         self.clip_end_epoch = rounded_end / 1000.0
 
     def apply_stream_parameters(self, stream: "RealtimeReader.RealtimeStream") -> None:
-        if self.data_name == 'aerosol-realtime-nephzero':
+        if self.data_name.startswith('aerosol-realtime-nephzero'):
             stream.data_break_threshold = 36 * 60 * 60 * 1000
             stream.data_break_epoch_ms = stream.discard_epoch_ms + stream.data_break_threshold
             stream.record_time_offset = 0
@@ -5105,7 +5105,6 @@ aerosol_data = {
             RealtimeTranslator.Key('BbsG_S11'): 'BbsG',
             RealtimeTranslator.Key('BbsR_S11'): 'BbsR',
         },
-        
         'scattering-pm10': {
             RealtimeTranslator.Key('BsB_S11', {'pm10'}): 'BsB',
             RealtimeTranslator.Key('BsG_S11', {'pm10'}): 'BsG',

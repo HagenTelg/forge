@@ -57,6 +57,10 @@ station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-nephelometerzero
                                     'aerosol-raw-nephelometerstatus')
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-nephelometerstatus2', "Ecotech Nephelometer Status"),
                                     'aerosol-raw-nephelometerzero2')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-nephelometerzero2', "Ecotech Nephelometer Zero"),
+                                    'aerosol-realtime-nephelometerstatus')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-nephelometerstatus2', "Ecotech Nephelometer Status"),
+                                    'aerosol-realtime-nephelometerzero2')
 
 
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:
