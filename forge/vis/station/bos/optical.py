@@ -24,3 +24,39 @@ class OpticalScatteringSecondary(TimeSeries):
         absorption.title = "Light Absorption"
         absorption.contamination = f'{mode}-contamination'
         self.graphs.append(absorption)
+
+
+class EditingScatteringSecondary(TimeSeries):
+    ThreeWavelength = Optical.ThreeWavelength
+
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
+        self.title = "Ecotech Total Light Scattering"
+
+        raw = self.ThreeWavelength(f'{profile}-raw-scattering2', 'Bs', 'Raw {code} ({size})')
+        raw.title = "Raw"
+        raw.contamination = f'{profile}-raw-contamination'
+        self.graphs.append(raw)
+
+        edited = self.ThreeWavelength(f'{profile}-editing-scattering2', 'Bs', 'Edited {code} ({size})')
+        edited.title = "Edited"
+        edited.contamination = f'{profile}-editing-contamination'
+        self.graphs.append(edited)
+
+
+class EditingBackScatteringSecondary(TimeSeries):
+    ThreeWavelength = Optical.ThreeWavelength
+
+    def __init__(self, profile: str = 'aerosol', **kwargs):
+        super().__init__(**kwargs)
+        self.title = "Ecotech Backwards-hemispheric Light Scattering"
+
+        raw = self.ThreeWavelength(f'{profile}-raw-scattering2', 'Bbs', 'Raw {code} ({size})')
+        raw.title = "Raw"
+        raw.contamination = f'{profile}-raw-contamination'
+        self.graphs.append(raw)
+
+        edited = self.ThreeWavelength(f'{profile}-editing-scattering2', 'Bbs', 'Edited {code} ({size})')
+        edited.title = "Edited"
+        edited.contamination = f'{profile}-editing-contamination'
+        self.graphs.append(edited)
