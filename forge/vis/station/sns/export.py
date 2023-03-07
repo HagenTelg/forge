@@ -42,6 +42,38 @@ station_profile_export['aerosol']['avgh'].insert(
 
 
 station_profile_export['aerosol']['raw'].insert(
+    DataExportList.Entry('aethalometer3', "Aethalometer (A42)", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplt', set(
+            [Name(station, 'raw', f'Ba{i + 1}_A42') for i in range(7)] +
+            [Name(station, 'raw', f'X{i + 1}_A42') for i in range(7)] +
+            [Name(station, 'raw', f'ZFACTOR{i + 1}_A42') for i in range(7)] +
+            [Name(station, 'raw', f'Ir{i + 1}_A42') for i in range(7)]
+        )
+    )),
+)
+station_profile_export['aerosol']['clean'].insert(
+    DataExportList.Entry('aethalometer3', "Aethalometer (A42)", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplt', set(
+            [Name(station, 'clean', f'Ba{i + 1}_A42') for i in range(7)] +
+            [Name(station, 'clean', f'X{i + 1}_A42') for i in range(7)] +
+            [Name(station, 'clean', f'ZFACTOR{i + 1}_A42') for i in range(7)] +
+            [Name(station, 'clean', f'Ir{i + 1}_A42') for i in range(7)]
+        ),
+    )),
+)
+station_profile_export['aerosol']['avgh'].insert(
+    DataExportList.Entry('aethalometer3', "Aethalometer (A42)", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'average', set(
+            [Name(station, 'avgh', f'Ba{i + 1}_A42') for i in range(7)] +
+            [Name(station, 'avgh', f'X{i + 1}_A42') for i in range(7)] +
+            [Name(station, 'avgh', f'ZFACTOR{i + 1}_A42') for i in range(7)] +
+            [Name(station, 'avgh', f'Ir{i + 1}_A42') for i in range(7)]
+        ),
+    )),
+)
+
+
+station_profile_export['aerosol']['raw'].insert(
     DataExportList.Entry('maap', "MAAP (A21)", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
         start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
             Name(station, 'raw', 'F1_A21'),
