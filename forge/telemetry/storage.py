@@ -4,9 +4,9 @@ import asyncio
 import time
 import datetime
 import ipaddress
+import re
 import sqlalchemy as db
 import sqlalchemy.orm as orm
-from collections import deque
 from base64 import b64encode, b64decode
 from json import dumps as to_json
 from json import loads as from_json
@@ -147,6 +147,19 @@ class _TelemetryLogAcquisition(_Base):
 
 def _key_to_column(key: PublicKey) -> str:
     return b64encode(key_to_bytes(key)).decode('ascii')
+
+
+_MATCH_STATION = re.compile(br'[A-Za-z][0-9A-Za-z_]{0,31}')
+
+
+def _is_valid_station(station: str) -> bool:
+    if not station:
+        return False
+    try:
+        encoded = station.encode('ascii')
+    except UnicodeEncodeError:
+        return False
+    return _MATCH_STATION.fullmatch(encoded) is not None
 
 
 class Interface:
@@ -303,7 +316,7 @@ class Interface:
 
         if address:
             host.remote_host = address
-        if station is not None:
+        if _is_valid_station(station):
             host.station = station
 
         return host
@@ -342,11 +355,9 @@ class Interface:
                     host.remote_host = address
                 station = telemetry.get('station')
                 if station is not None:
-                    station = str(station).strip()
-                    station = station[:32].lower()
-                    if station == '*':
-                        return False
-                    host.station = station
+                    station = str(station).strip().lower()
+                    if _is_valid_station(station):
+                        host.station = station
 
                 _LOGGER.debug(f"Performing direct update for {key} ({station}) from {address}")
                 self._dispatch_telemetry(orm_session, current_time, host, telemetry)
