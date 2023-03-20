@@ -47,19 +47,19 @@ station_profile_data['aerosol']['realtime']['cnc'] = {
 station_profile_data['aerosol']['clean']['cnc'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'clean', 'N_N41'): 'cnc',
-        Name(station, 'clean', 'N_N42'): 'cnc',
+        Name(station, 'clean', 'N_N42'): 'cnc2',
     }, send
 )
 station_profile_data['aerosol']['avgh']['cnc'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'avgh', 'N_N41'): 'cnc',
-        Name(station, 'avgh', 'N_N42'): 'cnc',
+        Name(station, 'avgh', 'N_N42'): 'cnc2',
     }, send
 )
 station_profile_data['aerosol']['editing']['cnc'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
     start_epoch_ms, end_epoch_ms, station, 'aerosol', {
         Name(station, 'clean', 'N_N41'): 'cnc',
-        Name(station, 'clean', 'N_N42'): 'cnc',
+        Name(station, 'clean', 'N_N42'): 'cnc2',
     }, send
 )
 
