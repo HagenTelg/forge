@@ -81,7 +81,7 @@ var TimeSeriesCommon = {};
     TimeSeriesCommon.installContamination = function(shapeHandler, record, yref) {
         const key = {};
         DataSocket.addLoadedRecord(record, (dataName) => { return new Contamination.DataStream(dataName); },
-            (start_ms, end_ms, flags) => {
+            (start_ms, end_ms) => {
                 let target = contaminationShapes.get(key);
                 if (target === undefined) {
                     target = [];

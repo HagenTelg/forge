@@ -10,10 +10,9 @@ var Contamination = {};
         incomingDataContent(content) {
             const start_ms = content.start_epoch_ms;
             const end_ms = content.end_epoch_ms;
-            const flags = content.flags;
 
             this.callbacks.forEach((cb) => {
-                cb(start_ms, end_ms, flags);
+                cb(start_ms, end_ms);
             });
         }
 

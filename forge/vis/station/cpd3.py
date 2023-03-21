@@ -1644,7 +1644,7 @@ class EditAvailable(DataStream):
 class ContaminationReader(DataStream):    
     class _State:
         def __init__(self):
-            self.active_contamination: typing.Set[str] = set()
+            self.active_contamination: bool = False
             self.active_start: typing.Optional[int] = None
             self.buffer: typing.List[typing.Dict[str, typing.Any]] = list()
 
@@ -1654,10 +1654,9 @@ class ContaminationReader(DataStream):
             self.buffer.append({
                 'start_epoch_ms': self.active_start,
                 'end_epoch_ms': end_ms,
-                #'flags': list(self.active_contamination),
             })
             self.active_start = None
-            self.active_contamination.clear()
+            self.active_contamination = False
 
         async def flush(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> None:
             for segment in self.buffer:
@@ -1665,19 +1664,26 @@ class ContaminationReader(DataStream):
             self.buffer.clear()
 
         def convert(self, start_ms: int, record: typing.Dict[Name, typing.Any]) -> None:
-            contamination_flags: typing.Set[str] = set()
-            for value in record.values():
-                if not isinstance(value, set):
-                    continue
-                for flag in value:
+            def any_contamination(flags):
+                if not isinstance(flags, set):
+                    return False
+                for flag in flags:
                     if flag.startswith('contam') or flag.startswith('Contam'):
-                        contamination_flags.add(flag)
-            if contamination_flags == self.active_contamination:
+                        return True
+                return False
+
+            have_contamination: bool = False
+            for value in record.values():
+                if not any_contamination(value):
+                    continue
+                have_contamination: bool = True
+                break
+            if have_contamination == self.active_contamination:
                 return
             self.complete(start_ms)
-            if len(contamination_flags) == 0:
+            if not have_contamination:
                 return
-            self.active_contamination = contamination_flags
+            self.active_contamination = have_contamination
             self.active_start = start_ms
 
         def record_break(self, start_ms: int) -> None:
