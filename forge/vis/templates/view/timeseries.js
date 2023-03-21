@@ -8,8 +8,8 @@ DataSocket.resetLoadedRecords();
 //{% for graph in view.graphs %}
 
 //{% if graph.contamination and not realtime %}
-shapeHandler.generators.push(TimeSeriesCommon.installContamination('{{ loop.index0 }}' * 1,
-    '{{ graph.contamination }}', 'y{% if loop.index > 1 %}{{ loop.index }}{% endif %}'));
+TimeSeriesCommon.installContamination(shapeHandler, '{{ graph.contamination }}',
+    'y{% if loop.index > 1 %}{{ loop.index }}{% endif %}');
 //{% endif %}
 
 //  {% for trace in graph.traces %}

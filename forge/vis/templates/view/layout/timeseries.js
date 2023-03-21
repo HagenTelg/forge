@@ -117,10 +117,11 @@ if (localStorage.getItem('forge-settings-plot-scroll')) {
 
 Plotly.newPlot(div, data, layout, config);
 
-const shapeHandler = new ShapeHandler(div);
+const replotController = new ReplotController(div, data, layout, config);
+const shapeHandler = new ShapeHandler(replotController);
 
 // {% if not realtime %}
-const traces = new TimeSeriesCommon.Traces(div, data, layout, config);
+const traces = new TimeSeriesCommon.Traces(replotController);
 // {% else %}
-const traces = new TimeSeriesCommon.RealtimeTraces(div, data, layout, config);
+const traces = new TimeSeriesCommon.RealtimeTraces(replotController);
 // {% endif %}

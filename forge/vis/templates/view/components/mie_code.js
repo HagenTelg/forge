@@ -400,7 +400,7 @@ var Mie = {};
                     continue;
                 }
 
-                function calculateField(fieldName, calculate) {
+                const calculateField = (fieldName, calculate) => {
                     if (fieldName === undefined) {
                         return;
                     }
@@ -419,7 +419,7 @@ var Mie = {};
                         return;
                     }
                     fieldData[timeIndex] = calculate();
-                }
+                };
 
                 this.wavelengths.forEach((outputs, wavelength) => {
                     calculateField(outputs.Bs, () => {

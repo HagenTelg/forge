@@ -4,8 +4,7 @@ TimeSeriesCommon.updateShapes = function() { shapeHandler.update(); }
 DataSocket.resetLoadedRecords();
 
 //{% if view.contamination %}
-shapeHandler.generators.push(TimeSeriesCommon.installContamination(1,
-    '{{ view.contamination }}', 'y'));
+TimeSeriesCommon.installContamination(shapeHandler, '{{ view.contamination }}', 'y');
 //{% endif %}
 
 

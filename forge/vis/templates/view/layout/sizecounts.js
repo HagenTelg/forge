@@ -83,7 +83,8 @@ if (localStorage.getItem('forge-settings-plot-scroll')) {
 
 Plotly.newPlot(div, data, layout, config);
 
-const shapeHandler = new ShapeHandler(div);
+const replotController = new ReplotController(div, data, layout, config);
+const shapeHandler = new ShapeHandler(replotController);
 
 // {% if not realtime %}
 const TracesBase = TimeSeriesCommon.Traces;
@@ -97,4 +98,4 @@ const traces = new (class extends TracesBase {
         bins.recalculateBins();
         super.applyUpdate();
     }
-})(div, data, layout, config);
+})(replotController);

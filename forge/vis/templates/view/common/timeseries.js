@@ -75,29 +75,11 @@ var TimeSeriesCommon = {};
     });
 
     const contaminationShapes = new Map();
-    let queuedContaminationUpdate = undefined;
-    function updateContaminationDisplay(immediate) {
-        if (!queuedContaminationUpdate) {
-            if (!immediate) {
-                return;
-            }
-            clearTimeout(queuedContaminationUpdate);
-            queuedContaminationUpdate = undefined;
-        }
-
-        let delay = 500;
-        if (immediate) {
-            delay = 0;
-        }
-
-        queuedContaminationUpdate = setTimeout(() => {
-            TimeSeriesCommon.updateShapes();
-        }, delay);
-    }
     TimeSeriesCommon.clearContamination = function() {
         contaminationShapes.clear();
     }
-    TimeSeriesCommon.installContamination = function(key, record, yref) {
+    TimeSeriesCommon.installContamination = function(shapeHandler, record, yref) {
+        const key = {};
         DataSocket.addLoadedRecord(record, (dataName) => { return new Contamination.DataStream(dataName); },
             (start_ms, end_ms, flags) => {
                 let target = contaminationShapes.get(key);
@@ -105,28 +87,35 @@ var TimeSeriesCommon = {};
                     target = [];
                     contaminationShapes.set(key, target);
                 }
-                target.push({
-                    type: 'line',
-                    layer: 'below',
-                    xref: 'x',
-                    yref: yref + ' domain',
-                    x0: DataSocket.toPlotTime(start_ms),
-                    x1: DataSocket.toPlotTime(end_ms),
-                    y0: 0.05,
-                    y1: 0.05,
-                    opacity: 0.9,
-                    line: {
-                        width: 5,
-                        color: '#000000',
-                    },
-                });
 
-                updateContaminationDisplay();
+                const x0 = DataSocket.toPlotTime(start_ms);
+                const x1 = DataSocket.toPlotTime(end_ms);
+                if (target.length > 0 && target[target.length-1].x1 === x0) {
+                    target[target.length-1].x1 = x1;
+                } else {
+                    target.push({
+                        type: 'line',
+                        layer: 'below',
+                        xref: 'x',
+                        yref: yref + ' domain',
+                        x0: DataSocket.toPlotTime(start_ms),
+                        x1: DataSocket.toPlotTime(end_ms),
+                        y0: 0.05,
+                        y1: 0.05,
+                        opacity: 0.9,
+                        line: {
+                            width: 5,
+                            color: '#000000',
+                        },
+                    });
+                }
+
+                shapeHandler.update();
             }, () => {
-                updateContaminationDisplay(true);
+                shapeHandler.update(true);
             });
 
-        return (() => {
+        shapeHandler.generators.push(() => {
             const shapes = contaminationShapes.get(key);
             if (shapes === undefined) {
                 return emptyShapes;
@@ -410,10 +399,14 @@ var TimeSeriesCommon = {};
                         if (this.contaminationSegments.length === 0) {
                             $('button.contamination-toggle.hidden').removeClass('hidden');
                         }
-                        this.contaminationSegments.push({
-                            start_ms: start_ms,
-                            end_ms: end_ms,
-                        });
+                        if (this.contaminationSegments.length > 0 && this.contaminationSegments[this.contaminationSegments.length-1].end_ms === start_ms) {
+                            this.contaminationSegments[this.contaminationSegments.length-1].end_ms = end_ms;
+                        } else {
+                            this.contaminationSegments.push({
+                                start_ms: start_ms,
+                                end_ms: end_ms,
+                            });
+                        }
                         traces.updateDisplay();
                     }, () => {
                         traces.updateDisplay(true);
@@ -681,51 +674,34 @@ var TimeSeriesCommon = {};
     }
 
     TimeSeriesCommon.Traces = class {
-        constructor(div, data, layout, config) {
-            this.div = div;
-            this.data = data;
-            this.layout = layout;
-            this.config = config;
+        constructor(replot) {
+            this._replot = replot;
             this._queuedDisplayUpdate = undefined;
             this._dataFilters = new Map();
 
             TimeSelect.onZoom('TimeSeriesTraces', () => {
                 this.updateDisplay(true);
             });
+
+            this._replot.handlers.push(() => {
+                this.applyUpdate();
+                return true;
+            });
         }
+
+        get div() { return this._replot.div; }
+        get data() { return this._replot.data; }
+        get layout() { return this._replot.layout; }
+        get config() { return this._replot.config; }
 
         applyUpdate() {
             this._dataFilters.forEach((handler, traceIndex) => {
                 handler.apply(this.data[traceIndex]);
             });
-
-            this.layout.datarevision++;
-            Plotly.react(this.div, this.data, this.layout, this.config);
         }
 
         updateDisplay(immediate) {
-            if (this._queuedDisplayUpdate) {
-                if (!immediate) {
-                    return;
-                }
-                clearTimeout(this._queuedDisplayUpdate);
-                this._queuedDisplayUpdate = undefined;
-            }
-
-            let delay = 500;
-            if (immediate) {
-                delay = 0;
-            }
-
-            this._queuedDisplayUpdate = setTimeout(() => {
-                this._queuedDisplayUpdate = undefined;
-
-                // Plotly misbehaves for sequential redraws resulting in "phantom" data (see SPO optical, all of 2022)
-                this.layout.datarevision++;
-                Plotly.react(this.div, [], this.layout, this.config);
-
-                this.applyUpdate();
-            }, delay);
+            this._replot.replot(immediate)
         }
 
         applyDataFilter(traceIndex, contaminationRecord) {
