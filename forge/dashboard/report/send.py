@@ -49,7 +49,7 @@ async def dashboard_report(code: str,
                            **kwargs) -> None:
     action = DashboardAction.from_args(station, code, **kwargs)
 
-    url = CONFIGURATION.get('DASHBOARD.REPORT.URL', kwargs.get('url'))
+    url = kwargs.get('url') or CONFIGURATION.get('DASHBOARD.REPORT.URL')
     if not url:
         if unreported_exception:
             raise RuntimeError("No dashboard reporting URL configured")
