@@ -2,7 +2,7 @@ import typing
 from forge.vis.view.solar import SolarPosition
 from ..default.view import View
 from . import Site
-from .radiation import EditingSolar, EditingIR, EditingPyranometerTemperature, EditingAlbedo, EditingTotalRatio
+from .radiation import EditingShortwave, EditingLongwave, EditingPyranometerTemperature, EditingAlbedo, EditingTotalRatio
 from .ambient import Ambient
 
 
@@ -16,8 +16,8 @@ sites: typing.List[Site] = [
 ]
 
 views: typing.Dict[str, View] = {
-    'radiation-editing-solar': EditingSolar(LATITUDE, LONGITUDE, 'radiation', sites),
-    'radiation-editing-ir': EditingIR(LATITUDE, LONGITUDE, 'radiation', sites),
+    'radiation-editing-shortwave': EditingShortwave(LATITUDE, LONGITUDE, 'radiation', sites),
+    'radiation-editing-longwave': EditingLongwave(LATITUDE, LONGITUDE, 'radiation', sites),
     'radiation-editing-pyranometertemperature': EditingPyranometerTemperature(LATITUDE, LONGITUDE, 'radiation', sites),
     'radiation-editing-albedo': EditingAlbedo(LATITUDE, LONGITUDE, 'radiation', sites),
     'radiation-editing-totalratio': EditingTotalRatio(LATITUDE, LONGITUDE, 'radiation', sites),

@@ -28,6 +28,18 @@ selections = [
     Selection("Concentration (EBC, Aethalometer)", [
         r'^X[BGRQ0-9]*c?_',
     ]),
+    Selection("Downwelling Radiation", [
+        r'^Rd.*_R',
+    ]),
+    Selection("Upwelling Radiation", [
+        r'^Ru.*_R',
+    ]),
+    Selection("Shortwave Radiation", [
+        r'^R.*[^i]_R',
+    ]),
+    Selection("Longwave Radiation", [
+        r'^R.*i_R',
+    ]),
     Selection("Wind speed and direction", [
         r'^W[SD][0-9]*_',
     ]),

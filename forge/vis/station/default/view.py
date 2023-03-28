@@ -36,13 +36,12 @@ from .ozone.thermo49 import Thermo49Status, Thermo49Cells
 from .ozone.wind import Wind as OzoneWind
 from .ozone.editing.concentration import EditingOzoneConcentration
 
+from .radiation.shortwave import Shortwave, ShortwaveSimplified
+from .radiation.longwave import Longwave, LongwaveSimplified, PyrgeometerTemperature
+from .radiation.ratio import Ratios as RadiationRatios
+from .radiation.status import Status as RadiationStatus
+from .radiation.compare import ShortwaveCompare
 from .radiation.ambient import Ambient as RadiationAmbient
-from .radiation.fans import FanStatus as RadiationFanStatus
-from .radiation.editing.albedo import EditingAlbedo as RadiationEditingAlbedo
-from .radiation.editing.infrared import EditingInfrared as RadiationEditingInfrared
-from .radiation.editing.infrared import EditingPyrgeometerTemperature as RadiationEditingPyrgeometerTemperature
-from .radiation.editing.ratio import EditingTotalRatio as RadiationEditingEditingTotalRatio
-from .radiation.editing.solar import EditingSolar as RadiationEditingSolar
 
 
 aerosol_views: typing.Dict[str, View] = {
@@ -145,14 +144,31 @@ met_views: typing.Dict[str, View] = {
     'met-avgh-pressure': MetPressure('met-avgh'),
 }
 radiation_views: typing.Dict[str, View] = {
-    'radiation-editing-solar': RadiationEditingSolar(),
-    'radiation-editing-ir': RadiationEditingInfrared(),
-    'radiation-editing-pyranometertemperature': RadiationEditingPyrgeometerTemperature(),
-    'radiation-editing-albedo': RadiationEditingAlbedo(),
-    'radiation-editing-totalratio': RadiationEditingEditingTotalRatio(),
-    'radiation-editing-ambient': RadiationAmbient('radiation-raw-ambient'),
-    'radiation-editing-fans': RadiationFanStatus('radiation-raw-fanstatus'),
+    'radiation-raw-shortwave': Shortwave('radiation-raw'),
+    'radiation-raw-longwave': Longwave('radiation-raw'),
+    'radiation-raw-ratio': RadiationRatios('radiation-editing'),
+    'radiation-raw-pyranometertemperature': PyrgeometerTemperature('radiation-raw'),
+    'radiation-raw-status': RadiationStatus('radiation-raw'),
+    'radiation-raw-shortwavecompare': ShortwaveCompare('radiation-raw'),
+    'radiation-raw-ambient': RadiationAmbient('radiation-raw'),
+    'radiation-raw-solarposition': SolarPosition(),
+
+    'radiation-editing-ratio': RadiationRatios('radiation-editing'),
+    'radiation-editing-shortwave': ShortwaveSimplified('radiation-editing'),
+    'radiation-editing-longwave': LongwaveSimplified('radiation-editing'),
+    'radiation-editing-pyranometertemperature': PyrgeometerTemperature('radiation-editing'),
+    'radiation-editing-shortwavecompare': ShortwaveCompare('radiation-editing'),
+    'radiation-editing-ambient': RadiationAmbient('radiation-editing'),
     'radiation-editing-solarposition': SolarPosition(),
+    
+    'radiation-clean-shortwave': Shortwave('radiation-clean'),
+    'radiation-clean-longwave': Longwave('radiation-clean'),
+    'radiation-clean-ratio': RadiationRatios('radiation-editing'),
+    'radiation-clean-pyranometertemperature': PyrgeometerTemperature('radiation-clean'),
+    'radiation-clean-status': RadiationStatus('radiation-clean'),
+    'radiation-clean-shortwavecompare': ShortwaveCompare('radiation-clean'),
+    'radiation-clean-ambient': RadiationAmbient('radiation-editing'),
+    'radiation-clean-solarposition': SolarPosition(),
 }
 
 

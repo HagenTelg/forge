@@ -4,8 +4,8 @@ from ..default.mode import Mode, Editing
 
 modes: typing.Dict[str, Mode] = {
     'radiation-editing': Editing('radiation-editing', "Editing", [
-        Editing.Entry('radiation-editing-solar', "Solar"),
-        Editing.Entry('radiation-editing-ir', "Infrared"),
+        Editing.Entry('radiation-editing-shortwave', "Shortwave"),
+        Editing.Entry('radiation-editing-longwave', "Longwave"),
         Editing.Entry('radiation-editing-pyranometertemperature', "Pyranometer Temperature"),
         Editing.Entry('radiation-editing-albedo', "Albedo"),
         Editing.Entry('radiation-editing-totalratio', "Total Ratio"),

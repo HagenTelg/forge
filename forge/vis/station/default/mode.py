@@ -133,15 +133,37 @@ met_modes: typing.Dict[str, Mode] = _construct_modes([
     ]),
 ])
 radiation_modes: typing.Dict[str, Mode] = _construct_modes([
+    Editing('radiation-raw', "Raw", [
+        Editing.Entry('radiation-raw-shortwave', "Shortwave Overview"),
+        Editing.Entry('radiation-raw-longwave', "Longwave Overview"),
+        Editing.Entry('radiation-raw-ratio', "Ratios"),
+        Editing.Entry('radiation-raw-pyranometertemperature', "Pyranometer Temperature"),
+        Editing.Entry('radiation-raw-status', "Status"),
+        Editing.Entry('radiation-raw-shortwavecompare', "Shortwave Test Comparison"),
+        Editing.Entry('radiation-raw-ambient', "Ambient Conditions"),
+        Editing.Entry('radiation-raw-solarposition', "Solar Position"),
+    ]),
     Editing('radiation-editing', "Editing", [
-        Editing.Entry('radiation-editing-solar', "Solar"),
-        Editing.Entry('radiation-editing-ir', "Infrared"),
+        Editing.Entry('radiation-raw-shortwave', "Shortwave Pre-QC Overview"),
+        Editing.Entry('radiation-raw-longwave', "Longwave Pre-QC Overview"),
+        Editing.Entry('radiation-editing-ratio', "Ratios"),
+        Editing.Entry('radiation-editing-shortwave', "Shortwave Post-QC"),
+        Editing.Entry('radiation-editing-longwave', "Longwave Post-QC"),
         Editing.Entry('radiation-editing-pyranometertemperature', "Pyranometer Temperature"),
-        Editing.Entry('radiation-editing-albedo', "Albedo"),
-        Editing.Entry('radiation-editing-totalratio', "Total Ratio"),
+        Editing.Entry('radiation-raw-status', "Status"),
+        Editing.Entry('radiation-editing-shortwavecompare', "Shortwave Test Comparison"),
         Editing.Entry('radiation-editing-ambient', "Ambient Conditions"),
-        Editing.Entry('radiation-editing-fans', "Fan Status"),
         Editing.Entry('radiation-editing-solarposition', "Solar Position"),
+    ]),
+    Editing('radiation-clean', "Clean", [
+        Editing.Entry('radiation-clean-shortwave', "Shortwave Overview"),
+        Editing.Entry('radiation-clean-longwave', "Longwave Overview"),
+        Editing.Entry('radiation-clean-ratio', "Ratios"),
+        Editing.Entry('radiation-clean-pyranometertemperature', "Pyranometer Temperature"),
+        Editing.Entry('radiation-clean-status', "Status"),
+        Editing.Entry('radiation-clean-shortwavecompare', "Shortwave Test Comparison"),
+        Editing.Entry('radiation-clean-ambient', "Ambient Conditions"),
+        Editing.Entry('radiation-clean-solarposition', "Solar Position"),
     ]),
 ])
 
@@ -205,7 +227,9 @@ def visible(station: str, mode_name: typing.Optional[str] = None) -> VisibleMode
         'met-avgh',
     ]),
     _assemble_mode("Radiation", [
+        'radiation-raw',
         'radiation-editing',
+        'radiation-clean',
     ]),
 
     return visible_modes

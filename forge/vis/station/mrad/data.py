@@ -11,7 +11,7 @@ sail_splash: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, t
             }, send
         ),
 
-        'solar': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'shortwave': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'Rdg_RMSURFRAD'): 'Rdg_RMSURFRAD',
                 Name(station, 'raw', 'Rug_RMSURFRAD'): 'Rug_RMSURFRAD',
@@ -27,7 +27,7 @@ sail_splash: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, t
             }, send
         ),
 
-        'ir': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        'longwave': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'raw', 'Rdi_RMSURFRAD'): 'Rdi_RMSURFRAD',
                 Name(station, 'raw', 'Rui_RMSURFRAD'): 'Rui_RMSURFRAD',
@@ -108,7 +108,7 @@ sail_splash: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, t
             }, send
         ),
 
-        'solar': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+        'shortwave': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'radiation', {
                 Name(station, 'clean', 'Rdg_RMSURFRAD'): 'Rdg_RMSURFRAD',
                 Name(station, 'clean', 'Rug_RMSURFRAD'): 'Rug_RMSURFRAD',
@@ -124,7 +124,7 @@ sail_splash: typing.Dict[str, typing.Dict[str, typing.Callable[[str, int, int, t
             }, send
         ),
 
-        'ir': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+        'longwave': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'radiation', {
                 Name(station, 'clean', 'Rdi_RMSURFRAD'): 'Rdi_RMSURFRAD',
                 Name(station, 'clean', 'Rui_RMSURFRAD'): 'Rui_RMSURFRAD',

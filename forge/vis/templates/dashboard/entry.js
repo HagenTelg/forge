@@ -42,8 +42,6 @@ const DashboardEntry = (function() {
 
         if (!currentLoadingDetailsRequest) {
             issueNextDetailsLoad();
-        } else {
-            console.log(currentLoadingDetailsRequest);
         }
     }
 

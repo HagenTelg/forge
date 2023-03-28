@@ -10,6 +10,7 @@ from ..default.met.editing.wind import EditingWindDirection as MetEditingWindDir
 from ..default.met.editing.temperature import EditingTemperature as MetEditingTemperature
 from ..default.met.editing.precipitation import EditingPrecipitation as MetEditingPrecipitation
 from ..default.met.editing.tower import EditingTowerTemperatureDifference as MetEditingTowerTemperatureDifference
+from ..default.radiation.ambient import Ambient as RadiationAmbient
 from .counts import ParticleConcentration, EditingParticleConcentration,  ADMagicCPC250StatusSecondary
 from .contamination import EditingContaminationDetails
 
@@ -25,31 +26,31 @@ station_views['aerosol-raw-cpcstatus2'] = ADMagicCPC250StatusSecondary('aerosol-
 station_views['aerosol-realtime-cpcstatus2'] = ADMagicCPC250StatusSecondary('aerosol-realtime', realtime=True)
 station_views['aerosol-editing-contaminationdetails'] = EditingContaminationDetails()
 
-measurements = OrderedDict([
+temperature_measurements = OrderedDict([
     ('{code}ambient', '{type} at 2m'),
     ('{code}2', '{type} at 10m'),
     ('{code}3', '{type} at 38m'),
 ])
-omit_traces = {'U2', 'TD2', 'U3', 'TD3'}
-station_views['met-raw-temperature'] = MetTemperature('met-raw-temperature', measurements=measurements,
-                                                      omit_traces=omit_traces)
-station_views['met-clean-temperature'] = MetTemperature('met-clean-temperature', measurements=measurements,
-                                                        omit_traces=omit_traces)
-station_views['met-avgh-temperature'] = MetTemperature('met-avgh-temperature', measurements=measurements,
-                                                       omit_traces=omit_traces)
+temperature_omit = {'U2', 'TD2', 'U3', 'TD3'}
+station_views['met-raw-temperature'] = MetTemperature('met-raw-temperature', measurements=temperature_measurements,
+                                                      omit_traces=temperature_omit)
+station_views['met-clean-temperature'] = MetTemperature('met-clean-temperature', measurements=temperature_measurements,
+                                                        omit_traces=temperature_omit)
+station_views['met-avgh-temperature'] = MetTemperature('met-avgh-temperature', measurements=temperature_measurements,
+                                                       omit_traces=temperature_omit)
 station_views['met-editing-temperature'] = MetEditingTemperature(measurements=OrderedDict([
     ('{code}ambient', '{mode} at 2m'),
     ('{code}2', '{mode} at 10m'),
     ('{code}3', '{mode} at 38m'),
 ]))
 
-measurements = OrderedDict([
+wind_measurements = OrderedDict([
     ('{code}ambient', '{type} at 10m'),
     ('{code}2', '{type} at 38m'),
 ])
-station_views['met-raw-wind'] = MetWind('met-raw-wind', measurements=measurements)
-station_views['met-clean-wind'] = MetWind('met-clean-wind', measurements=measurements)
-station_views['met-avgh-wind'] = MetWind('met-avgh-wind', measurements=measurements)
+station_views['met-raw-wind'] = MetWind('met-raw-wind', measurements=wind_measurements)
+station_views['met-clean-wind'] = MetWind('met-clean-wind', measurements=wind_measurements)
+station_views['met-avgh-wind'] = MetWind('met-avgh-wind', measurements=wind_measurements)
 measurements = OrderedDict([
     ('{code}ambient', '{mode} at 10m'),
     ('{code}2', '{mode} at 38m'),
@@ -64,6 +65,17 @@ station_views['met-avgh-precipitation'] = MetPrecipitation('met-avgh')
 
 station_views['met-raw-tower'] = MetTowerTemperatureDifference('met-raw')
 station_views['met-editing-tower'] = MetEditingTowerTemperatureDifference()
+
+
+station_views['radiation-raw-ambient'] = RadiationAmbient('radiation-raw', trh=temperature_measurements,
+                                                          winds=wind_measurements,
+                                                          omit_traces=temperature_omit)
+station_views['radiation-editing-ambient'] = RadiationAmbient('radiation-editing', trh=temperature_measurements,
+                                                              winds=wind_measurements,
+                                                              omit_traces=temperature_omit)
+station_views['radiation-clean-ambient'] = RadiationAmbient('radiation-clean', trh=temperature_measurements,
+                                                            winds=wind_measurements,
+                                                            omit_traces=temperature_omit)
 
 
 def get(station: str, view_name: str) -> typing.Optional[View]:

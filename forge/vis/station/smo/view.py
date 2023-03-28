@@ -5,6 +5,7 @@ from ..default.met.temperature import Temperature as MetTemperature
 from ..default.met.precipitation import Precipitation as MetPrecipitation
 from ..default.met.editing.precipitation import EditingPrecipitation as MetEditingPrecipitation
 from ..default.met.editing.temperature import EditingTemperature as MetEditingTemperature
+from ..default.radiation.ambient import Ambient as RadiationAmbient
 
 
 station_views = detach(aerosol_views, ozone_views, met_views, radiation_views)
@@ -29,6 +30,14 @@ station_views['met-raw-precipitation'] = MetPrecipitation('met-raw')
 station_views['met-clean-precipitation'] = MetPrecipitation('met-clean')
 station_views['met-editing-precipitation'] = MetEditingPrecipitation()
 station_views['met-avgh-precipitation'] = MetPrecipitation('met-avgh')
+
+
+station_views['radiation-raw-ambient'] = RadiationAmbient('radiation-raw', trh=measurements,
+                                                          omit_traces=omit_traces)
+station_views['radiation-editing-ambient'] = RadiationAmbient('radiation-editing', trh=measurements,
+                                                              omit_traces=omit_traces)
+station_views['radiation-clean-ambient'] = RadiationAmbient('radiation-clean', trh=measurements,
+                                                            omit_traces=omit_traces)
 
 
 def get(station: str, view_name: str) -> typing.Optional[View]:

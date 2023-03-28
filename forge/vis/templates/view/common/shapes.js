@@ -12,7 +12,6 @@ var ShapeHandler = (function() {
         _applyShapes() {
             const shapes = [];
             this.generators.forEach((gen) => {
-                console.log(gen);
                 const add = gen();
                 if (!add) {
                     return;

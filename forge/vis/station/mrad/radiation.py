@@ -3,13 +3,13 @@ from forge.vis.view.solar import SolarTimeSeries
 from . import Site
 
 
-class EditingSolar(SolarTimeSeries):
+class EditingShortwave(SolarTimeSeries):
     _RAW_FORMAT = '{site.name} Raw {parameter}'
     _EDITED_FORMAT = '{site.name} Edited {parameter} ({code}_{site.instrument_code})'
 
     def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site], **kwargs):
         super().__init__(latitude, longitude, **kwargs)
-        self.title = "Solar"
+        self.title = "Shortwave"
 
         raw = SolarTimeSeries.Graph()
         raw.title = "Raw"
@@ -24,38 +24,38 @@ class EditingSolar(SolarTimeSeries):
         for site in sites:
             trace = SolarTimeSeries.Trace(wm2)
             trace.legend = self._RAW_FORMAT.format(site=site, parameter="Downwelling Solar", code='Rdg')
-            trace.data_record = f'{profile}-raw-solar'
+            trace.data_record = f'{profile}-raw-shortwave'
             trace.data_field = f'Rdg_{site.instrument_code}'
             raw.traces.append(trace)
 
             trace = SolarTimeSeries.Trace(wm2)
             trace.legend = self._RAW_FORMAT.format(site=site, parameter="Upwelling Solar", code='Rug')
-            trace.data_record = f'{profile}-raw-solar'
+            trace.data_record = f'{profile}-raw-shortwave'
             trace.data_field = f'Rug_{site.instrument_code}'
             raw.traces.append(trace)
 
             trace = SolarTimeSeries.Trace(wm2)
             trace.legend = self._RAW_FORMAT.format(site=site, parameter="Direct Normal", code='Rdn')
-            trace.data_record = f'{profile}-raw-solar'
+            trace.data_record = f'{profile}-raw-shortwave'
             trace.data_field = f'Rdn_{site.instrument_code}'
             raw.traces.append(trace)
 
             trace = SolarTimeSeries.Trace(wm2)
             trace.legend = self._RAW_FORMAT.format(site=site, parameter="Diffuse", code='Rdf')
-            trace.data_record = f'{profile}-raw-solar'
+            trace.data_record = f'{profile}-raw-shortwave'
             trace.data_field = f'Rdf_{site.instrument_code}'
             raw.traces.append(trace)
 
             if site.include_spn1:
                 trace = SolarTimeSeries.Trace(wm2)
                 trace.legend = self._RAW_FORMAT.format(site=site, parameter="SPN1 Total", code='Rst')
-                trace.data_record = f'{profile}-raw-solar'
+                trace.data_record = f'{profile}-raw-shortwave'
                 trace.data_field = f'Rst_{site.instrument_code}'
                 raw.traces.append(trace)
                 
                 trace = SolarTimeSeries.Trace(wm2)
                 trace.legend = self._RAW_FORMAT.format(site=site, parameter="SPN1 Diffuse", code='Rsd')
-                trace.data_record = f'{profile}-raw-solar'
+                trace.data_record = f'{profile}-raw-shortwave'
                 trace.data_field = f'Rsd_{site.instrument_code}'
                 raw.traces.append(trace)
 
@@ -73,49 +73,49 @@ class EditingSolar(SolarTimeSeries):
         for site in sites:
             trace = SolarTimeSeries.Trace(wm2)
             trace.legend = self._EDITED_FORMAT.format(site=site, parameter="Downwelling Solar", code='Rdg')
-            trace.data_record = f'{profile}-editing-solar'
+            trace.data_record = f'{profile}-editing-shortwave'
             trace.data_field = f'Rdg_{site.instrument_code}'
             edited.traces.append(trace)
 
             trace = SolarTimeSeries.Trace(wm2)
             trace.legend = self._EDITED_FORMAT.format(site=site, parameter="Upwelling Solar", code='Rug')
-            trace.data_record = f'{profile}-editing-solar'
+            trace.data_record = f'{profile}-editing-shortwave'
             trace.data_field = f'Rug_{site.instrument_code}'
             edited.traces.append(trace)
 
             trace = SolarTimeSeries.Trace(wm2)
             trace.legend = self._EDITED_FORMAT.format(site=site, parameter="Direct Normal", code='Rdn')
-            trace.data_record = f'{profile}-editing-solar'
+            trace.data_record = f'{profile}-editing-shortwave'
             trace.data_field = f'Rdn_{site.instrument_code}'
             edited.traces.append(trace)
 
             trace = SolarTimeSeries.Trace(wm2)
             trace.legend = self._EDITED_FORMAT.format(site=site, parameter="Diffuse", code='Rdf')
-            trace.data_record = f'{profile}-editing-solar'
+            trace.data_record = f'{profile}-editing-shortwave'
             trace.data_field = f'Rdf_{site.instrument_code}'
             edited.traces.append(trace)
 
             if site.include_spn1:
                 trace = SolarTimeSeries.Trace(wm2)
                 trace.legend = self._EDITED_FORMAT.format(site=site, parameter="SPN1 Total", code='Rst')
-                trace.data_record = f'{profile}-editing-solar'
+                trace.data_record = f'{profile}-editing-shortwave'
                 trace.data_field = f'Rst_{site.instrument_code}'
                 edited.traces.append(trace)
 
                 trace = SolarTimeSeries.Trace(wm2)
                 trace.legend = self._EDITED_FORMAT.format(site=site, parameter="SPN1 Diffuse", code='Rsd')
-                trace.data_record = f'{profile}-editing-solar'
+                trace.data_record = f'{profile}-editing-shortwave'
                 trace.data_field = f'Rsd_{site.instrument_code}'
                 edited.traces.append(trace)
 
 
-class EditingIR(SolarTimeSeries):
+class EditingLongwave(SolarTimeSeries):
     _RAW_FORMAT = '{site.name} Raw {parameter}'
     _EDITED_FORMAT = '{site.name} Edited {parameter} ({code}_{site.instrument_code})'
 
     def __init__(self, latitude: float, longitude: float, profile: str, sites: typing.List[Site], **kwargs):
         super().__init__(latitude, longitude, **kwargs)
-        self.title = "Infrared"
+        self.title = "Longwave"
 
         raw = SolarTimeSeries.Graph()
         raw.title = "Raw"
@@ -130,13 +130,13 @@ class EditingIR(SolarTimeSeries):
         for site in sites:
             trace = SolarTimeSeries.Trace(wm2)
             trace.legend = self._RAW_FORMAT.format(site=site, parameter="Downwelling", code='Rdi')
-            trace.data_record = f'{profile}-raw-ir'
+            trace.data_record = f'{profile}-raw-longwave'
             trace.data_field = f'Rdi_{site.instrument_code}'
             raw.traces.append(trace)
 
             trace = SolarTimeSeries.Trace(wm2)
             trace.legend = self._RAW_FORMAT.format(site=site, parameter="Upwelling", code='Rui')
-            trace.data_record = f'{profile}-raw-ir'
+            trace.data_record = f'{profile}-raw-longwave'
             trace.data_field = f'Rui_{site.instrument_code}'
             raw.traces.append(trace)
 
@@ -154,13 +154,13 @@ class EditingIR(SolarTimeSeries):
         for site in sites:
             trace = SolarTimeSeries.Trace(wm2)
             trace.legend = self._EDITED_FORMAT.format(site=site, parameter="Downwelling", code='Rdi')
-            trace.data_record = f'{profile}-editing-ir'
+            trace.data_record = f'{profile}-editing-longwave'
             trace.data_field = f'Rdi_{site.instrument_code}'
             edited.traces.append(trace)
 
             trace = SolarTimeSeries.Trace(wm2)
             trace.legend = self._EDITED_FORMAT.format(site=site, parameter="Upwelling", code='Rui')
-            trace.data_record = f'{profile}-editing-ir'
+            trace.data_record = f'{profile}-editing-longwave'
             trace.data_field = f'Rui_{site.instrument_code}'
             edited.traces.append(trace)
 
