@@ -2,16 +2,11 @@ let TimeSelect = {};
 let TimeParse = {};
 (function() {
     function dayOfWeek(year, month, day) {
-        let date = new Date();
-        if (year) { date.setUTCFullYear(year); }
-        if (month) { date.setUTCMonth(month - 1); }
-        else { date.setUTCMonth(0); }
-        if (day) { date.setUTCDate(day); }
-        else { date.setUTCDate(1); }
-        date.setUTCMilliseconds(0);
-        date.setUTCSeconds(0);
-        date.setUTCMinutes(0);
-        date.setUTCHours(0);
+        const date = new Date(
+            year || (new Date()).getUTCFullYear(),
+            (month || 1) - 1,
+            day || 1
+        );
         return date.getUTCDay();
     }
 
@@ -235,19 +230,18 @@ let TimeParse = {};
             if (!isFinite(year) || year < 1970 || year > 2999) {
                 return undefined;
             }
-            date.setUTCFullYear(year);
 
             const month = parseInt(parts[1]);
             if (!isFinite(month) || month < 1 || month > 12) {
                 return undefined;
             }
-            date.setUTCMonth(month-1);
 
             const day = parseInt(parts[2]);
             if (!isFinite(day) || day < 1 || day > 31) {
                 return undefined;
             }
-            date.setUTCDate(day);
+
+            date = new Date(year, month-1, day);
 
             if (parts.length > 3) {
                 const hours = parseInt(parts[3]);

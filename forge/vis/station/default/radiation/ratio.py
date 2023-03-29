@@ -29,7 +29,7 @@ class Ratios(SolarTimeSeries):
         if (total < 50.0) {
             return undefined;
         }
-        return (direct * u0 + diffuse) / global;
+        return total / global;
     }
         return new GenericOperations.SingleOutput(dataName, calc, 'ratio', 'direct', 'diffuse', 'global', 'zsa');
     })"""
