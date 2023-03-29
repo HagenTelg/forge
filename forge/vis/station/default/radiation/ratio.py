@@ -12,6 +12,9 @@ class Ratios(SolarTimeSeries):
         if (!isFinite(direct) || !isFinite(diffuse) || !isFinite(global) || !isFinite(zsa)) {
             return undefined;
         }
+        if (zsa >= 93.0) {
+            return undefined;
+        }
         const u0 = Math.cos(zsa * Math.PI/180.0);
         if (direct <= 0.01 || direct > 1500.0) {
             return undefined;
@@ -20,6 +23,10 @@ class Ratios(SolarTimeSeries):
             return undefined;
         }
         if (global <= 0.01 || global > 1500 * 1.5 * u0 ** 1.2 + 100) {
+            return undefined;
+        }
+        const total = direct * u0 + diffuse;
+        if (total < 50.0) {
             return undefined;
         }
         return (direct * u0 + diffuse) / global;
@@ -36,9 +43,12 @@ function calc(total, global, zsa) {
     if (!isFinite(total) || !isFinite(global) || !isFinite(zsa)) {
         return undefined;
     }
+    if (zsa >= 93.0) {
+        return undefined;
+    }
     const u0 = Math.cos(zsa * Math.PI/180.0);
     const upper_limit = 1500 * 1.5 * u0 ** 1.2 + 100;
-    if (total <= 0.01 || total > upper_limit) {
+    if (total <= 50.0 || total > upper_limit) {
         return undefined;
     }
     if (global <= 0.01 || global > upper_limit) {
@@ -152,7 +162,7 @@ function calc(pir, temperature) {
 
         ratio = SolarTimeSeries.Axis()
         ratio.format_code = '.3f'
-        ratio.range = [0.0, 2.0]
+        ratio.range = [0.0, 1.5]
         albedo.axes.append(ratio)
 
         trace = SolarTimeSeries.Trace(ratio)

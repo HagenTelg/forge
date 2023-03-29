@@ -97,7 +97,7 @@ class Shortwave(SolarTimeSeries):
 
         ratio = SolarTimeSeries.Axis()
         ratio.format_code = '.3f'
-        ratio.range = [0.0, 2.0]
+        ratio.range = [0.0, 1.5]
         albedo.axes.append(ratio)
 
         trace = SolarTimeSeries.Trace(ratio)
