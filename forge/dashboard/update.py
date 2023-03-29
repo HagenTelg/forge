@@ -115,6 +115,10 @@ class DashboardSocket(AuthSocket):
         if not is_valid_code(entry_code):
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Invalid entry code")
 
+        if entry_code.startswith('example-'):
+            await websocket.send_json({'status': 'ok'})
+            return
+
         async def is_allowed():
             if self.origin and check_address(self.origin, station, entry_code):
                 return True
@@ -146,6 +150,9 @@ async def update(request: Request) -> Response:
     entry_code = data.get('code')
     if not is_valid_code(entry_code):
         raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Invalid entry code")
+
+    if entry_code.startswith('example-'):
+        return JSONResponse({'status': 'ok'})
 
     try:
         origin = ipaddress.ip_address(request.client.host)
