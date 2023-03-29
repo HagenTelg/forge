@@ -19,12 +19,6 @@ let layout = {
         ygap: 0.3,
     },
 
-    legend: {
-        groupclick: 'toggleitem',
-        tracegroupgap: 30,
-        traceorder: 'grouped',
-    },
-
     annotations: [
         //{% for graph in view.graphs %}{% if graph.display_title %}
         {
@@ -41,10 +35,11 @@ let layout = {
         //{% endif %}{% endfor %}
     ],
 
+    //{% set axis_loop = namespace(have_right=False) %}
     //{% for graph in view.graphs %}
     //  {% for axis in graph.axes %}
     "{{ view.axis_code(axis, base='yaxis') }}": {
-        side: '{% if axis.side %}{{ axis.side }}{% else %}{% if loop.index%2 == 1 %}left{% else %}right{% endif %}{% endif %}',
+        side: '{% if axis.side %}{{ axis.side }}{% else %}{% if loop.index%2 == 1 %}left{% else %}right{% set axis_loop.have_right = True %}{% endif %}{% endif %}',
         //{% if loop.index > 1 %}
         overlaying: '{{ view.axis_code(graph.axes[0]) }}',
         zeroline: false,
@@ -76,6 +71,15 @@ let layout = {
     },
     //  {% endfor %}
     //{% endfor %}
+
+    legend: {
+        groupclick: 'toggleitem',
+        tracegroupgap: 30,
+        traceorder: 'grouped',
+        //{% if axis_loop.have_right %}
+        x: 1.06,
+        //{% endif %}
+    },
 };
 
 let data = [

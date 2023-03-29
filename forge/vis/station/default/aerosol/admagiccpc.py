@@ -16,6 +16,22 @@ class ADMagicCPC200Status(TimeSeries):
 
         self.processing[f'{mode}-cpcstatus'] = self.CalculateMissing()
 
+        cpc_flow = TimeSeries.Graph()
+        cpc_flow.title = "Flow"
+        self.graphs.append(cpc_flow)
+
+        lpm = TimeSeries.Axis()
+        lpm.title = "lpm"
+        lpm.format_code = '.3f'
+        cpc_flow.axes.append(lpm)
+
+        sample = TimeSeries.Trace(lpm)
+        sample.legend = "Sample"
+        sample.data_record = f'{mode}-cpcstatus'
+        sample.data_field = 'Qsample'
+        cpc_flow.traces.append(sample)
+
+
         temperatures = TimeSeries.Graph()
         temperatures.title = "Temperature"
         self.graphs.append(temperatures)
@@ -74,22 +90,6 @@ class ADMagicCPC200Status(TimeSeries):
         temperatures.traces.append(cabinet)
 
 
-        dewpoint = TimeSeries.Graph()
-        dewpoint.title = "Dewpoint"
-        self.graphs.append(dewpoint)
-
-        degrees = TimeSeries.Axis()
-        degrees.title = "°C"
-        degrees.format_code = '.1f'
-        dewpoint.axes.append(degrees)
-
-        inlet = TimeSeries.Trace(degrees)
-        inlet.legend = "Inlet Dewpoint"
-        inlet.data_record = f'{mode}-cpcstatus'
-        inlet.data_field = 'TDinlet'
-        dewpoint.traces.append(inlet)
-
-
         rh = TimeSeries.Graph()
         rh.title = "Relative Humidity"
         self.graphs.append(rh)
@@ -106,20 +106,20 @@ class ADMagicCPC200Status(TimeSeries):
         rh.traces.append(inlet)
 
 
-        cpc_flow = TimeSeries.Graph()
-        cpc_flow.title = "Flow"
-        self.graphs.append(cpc_flow)
+        dewpoint = TimeSeries.Graph()
+        dewpoint.title = "Dewpoint"
+        self.graphs.append(dewpoint)
 
-        lpm = TimeSeries.Axis()
-        lpm.title = "lpm"
-        lpm.format_code = '.3f'
-        cpc_flow.axes.append(lpm)
+        degrees = TimeSeries.Axis()
+        degrees.title = "°C"
+        degrees.format_code = '.1f'
+        dewpoint.axes.append(degrees)
 
-        sample = TimeSeries.Trace(lpm)
-        sample.legend = "Sample"
-        sample.data_record = f'{mode}-cpcstatus'
-        sample.data_field = 'Qsample'
-        cpc_flow.traces.append(sample)
+        inlet = TimeSeries.Trace(degrees)
+        inlet.legend = "Inlet Dewpoint"
+        inlet.data_record = f'{mode}-cpcstatus'
+        inlet.data_field = 'TDinlet'
+        dewpoint.traces.append(inlet)
 
 
         pressure = TimeSeries.Graph()
@@ -162,6 +162,50 @@ class ADMagicCPC250Status(TimeSeries):
         self.title = "CPC Status"
 
         self.processing[f'{mode}-cpcstatus'] = self.CalculateMissing()
+
+
+        wick_laser = TimeSeries.Graph()
+        wick_laser.title = "Wick and Laser"
+        self.graphs.append(wick_laser)
+
+        wick_percent = TimeSeries.Axis()
+        wick_percent.title = "Wick Saturation (%)"
+        wick_percent.format_code = '.0f'
+        wick_laser.axes.append(wick_percent)
+
+        pulse_mV = TimeSeries.Axis()
+        pulse_mV.title = "Pulse Height (mV)"
+        pulse_mV.format_code = '.0f'
+        wick_laser.axes.append(pulse_mV)
+
+        wick = TimeSeries.Trace(wick_percent)
+        wick.legend = "Wick Saturation"
+        wick.data_record = f'{mode}-cpcstatus'
+        wick.data_field = 'PCTwick'
+        wick_laser.traces.append(wick)
+
+        pulse = TimeSeries.Trace(pulse_mV)
+        pulse.legend = "Pulse Height"
+        pulse.data_record = f'{mode}-cpcstatus'
+        pulse.data_field = 'Vpulse'
+        wick_laser.traces.append(pulse)
+
+
+        cpc_flow = TimeSeries.Graph()
+        cpc_flow.title = "Flow"
+        self.graphs.append(cpc_flow)
+
+        lpm = TimeSeries.Axis()
+        lpm.title = "lpm"
+        lpm.format_code = '.3f'
+        cpc_flow.axes.append(lpm)
+
+        sample = TimeSeries.Trace(lpm)
+        sample.legend = "Sample"
+        sample.data_record = f'{mode}-cpcstatus'
+        sample.data_field = 'Qsample'
+        cpc_flow.traces.append(sample)
+
 
         temperatures = TimeSeries.Graph()
         temperatures.title = "Temperature"
@@ -215,6 +259,22 @@ class ADMagicCPC250Status(TimeSeries):
         temperatures.traces.append(case)
 
 
+        rh = TimeSeries.Graph()
+        rh.title = "Relative Humidity"
+        self.graphs.append(rh)
+
+        rh_percent = TimeSeries.Axis()
+        rh_percent.title = "%"
+        rh_percent.format_code = '.1f'
+        rh.axes.append(rh_percent)
+
+        inlet = TimeSeries.Trace(rh_percent)
+        inlet.legend = "Inlet Humidity"
+        inlet.data_record = f'{mode}-cpcstatus'
+        inlet.data_field = 'Uinlet'
+        rh.traces.append(inlet)
+
+
         dewpoint = TimeSeries.Graph()
         dewpoint.title = "Dewpoint"
         self.graphs.append(dewpoint)
@@ -237,38 +297,6 @@ class ADMagicCPC250Status(TimeSeries):
         dewpoint.traces.append(inlet)
 
 
-        rh = TimeSeries.Graph()
-        rh.title = "Relative Humidity"
-        self.graphs.append(rh)
-
-        rh_percent = TimeSeries.Axis()
-        rh_percent.title = "%"
-        rh_percent.format_code = '.1f'
-        rh.axes.append(rh_percent)
-
-        inlet = TimeSeries.Trace(rh_percent)
-        inlet.legend = "Inlet Humidity"
-        inlet.data_record = f'{mode}-cpcstatus'
-        inlet.data_field = 'Uinlet'
-        rh.traces.append(inlet)
-
-
-        cpc_flow = TimeSeries.Graph()
-        cpc_flow.title = "Flow"
-        self.graphs.append(cpc_flow)
-
-        lpm = TimeSeries.Axis()
-        lpm.title = "lpm"
-        lpm.format_code = '.3f'
-        cpc_flow.axes.append(lpm)
-
-        sample = TimeSeries.Trace(lpm)
-        sample.legend = "Sample"
-        sample.data_record = f'{mode}-cpcstatus'
-        sample.data_field = 'Qsample'
-        cpc_flow.traces.append(sample)
-
-
         pressure = TimeSeries.Graph()
         pressure.title = "Pressure"
         self.graphs.append(pressure)
@@ -283,31 +311,4 @@ class ADMagicCPC250Status(TimeSeries):
         sample.data_record = f'{mode}-cpcstatus'
         sample.data_field = 'Psample'
         pressure.traces.append(sample)
-
-
-        wick_laser = TimeSeries.Graph()
-        wick_laser.title = "Wick and Laser"
-        self.graphs.append(wick_laser)
-
-        wick_percent = TimeSeries.Axis()
-        wick_percent.title = "Wick Saturation (%)"
-        wick_percent.format_code = '.0f'
-        wick_laser.axes.append(wick_percent)
-
-        pulse_mV = TimeSeries.Axis()
-        pulse_mV.title = "Pulse Height (mV)"
-        pulse_mV.format_code = '.0f'
-        wick_laser.axes.append(pulse_mV)
-
-        wick = TimeSeries.Trace(wick_percent)
-        wick.legend = "Wick Saturation"
-        wick.data_record = f'{mode}-cpcstatus'
-        wick.data_field = 'PCTwick'
-        wick_laser.traces.append(wick)
-
-        pulse = TimeSeries.Trace(pulse_mV)
-        pulse.legend = "Pulse Height"
-        pulse.data_record = f'{mode}-cpcstatus'
-        pulse.data_field = 'Vpulse'
-        wick_laser.traces.append(pulse)
 
