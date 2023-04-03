@@ -83,7 +83,7 @@ def parse_arguments():
                                 nargs='?')
 
     command_parser = subparsers.add_parser('update',
-                                           help="report failure")
+                                           help="update status without changing failure state")
     add_reporting_arguments(command_parser)
     command_parser.add_argument('code',
                                 help="entry type code")

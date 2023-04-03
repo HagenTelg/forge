@@ -91,7 +91,7 @@ async def dashboard_report(code: str,
                 _LOGGER.debug(f"Dashboard report complete for {action.code}")
                 return
             except:
-                pass
+                _LOGGER.debug(f"Dashboard report initial try failed for {action.code}", exc_info=True)
             await asyncio.sleep(10)
 
         try:
@@ -117,7 +117,7 @@ async def dashboard_report(code: str,
             _LOGGER.debug(f"Dashboard report complete for {action.code}")
             return
         except:
-            pass
+            _LOGGER.debug(f"Dashboard report initial try failed for {action.code}", exc_info=True)
         await asyncio.sleep(10)
 
     try:

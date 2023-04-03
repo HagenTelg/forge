@@ -9,6 +9,13 @@ from forge.dashboard import Severity as BaseSeverity, is_valid_station, is_valid
 
 
 class DashboardAction:
+    """A container for a dashboard update action
+
+        This class represents an action to be sent to the backend
+        to update the status of a single entry (station and code)
+        on the dashboard.
+        """
+
     class _Information:
         _ALLOW_EMPTY_CODE = False
 
@@ -30,6 +37,7 @@ class DashboardAction:
                 raise ValueError("data too long")
 
     class Notification(_Information):
+        """A notification about status at the time of reporting"""
         _ALLOW_EMPTY_CODE = True
 
         def __eq__(self, other):
@@ -41,6 +49,8 @@ class DashboardAction:
             return hash(self.code)
 
     class Watchdog(_Information):
+        """A watchdog that shows when not refreshed"""
+
         def __init__(self, code: str, severity: "DashboardAction.Severity",
                      data: typing.Optional[typing.Union[str, typing.Dict]] = None,
                      last_seen: typing.Optional[float] = None):
@@ -56,6 +66,8 @@ class DashboardAction:
             return hash(self.code)
 
     class Event(_Information):
+        """An event at a point in time"""
+
         def __init__(self, code: str, severity: "DashboardAction.Severity",
                      data: typing.Optional[typing.Union[str, typing.Dict]] = None,
                      occurred_at: typing.Optional[float] = None):
@@ -63,6 +75,8 @@ class DashboardAction:
             self.occurred_at = occurred_at
 
     class Condition(_Information):
+        """A condition spanning a continuous range of time"""
+
         def __init__(self, code: str, severity: "DashboardAction.Severity",
                      data: typing.Optional[typing.Union[str, typing.Dict]] = None,
                      start_time: typing.Optional[float] = None, end_time: typing.Optional[float] = None):
@@ -73,13 +87,35 @@ class DashboardAction:
             self.end_time = end_time
 
     def __init__(self, station: typing.Optional[str], code: str):
+        """Initialize an empty reporting action
+
+        The created action will change no state unless the various members are set
+
+        Attributes:
+            station (str): The station code, if applicable
+            code (str): The dashboard entry code, if applicable
+            update_time (float): The time of update, if unset then the current time is used
+            failed (bool): If set, then set the failure state
+            notifications (set[DashboardAction.Notification]): Any notification to set
+            clear_notifications (set[str]): If set, then only these notification are removed, instead of all prior ones
+            watchdogs (set[DashboardAction.Watchdog]): Any watchdogs to start or restart
+            clear_notifications (set[str]): Watchdogs to stop
+            events (list[DashboardAction.Event]): Events to add
+            conditions (list[DashboardAction.Condition]): Conditions to apply
+
+        :param station: reporting station code
+        :param code: dashboard entry code
+        """
         if station and not self._is_valid_station(station):
             raise ValueError("invalid station")
         if not self._is_valid_code(code):
             raise ValueError("invalid entry code")
         self.station = station
+
         if self.station:
             self.station = self.station.lower()
+            if self.station == 'default':
+                self.station = None
         self.code = code.lower()
 
         self.update_time: typing.Optional[float] = None
@@ -98,10 +134,19 @@ class DashboardAction:
 
     @classmethod
     def from_args(cls, station: typing.Optional[str], code: str, **kwargs) -> "DashboardAction":
+        """Construct a dashboard action from arguments.
+
+        See the module level documentation for the arguments accepted.
+
+        :param station: station code, if applicable
+        :param code: dashboard internal code
+        :param kwargs: arguments to assemble
+        :return: the action assembled from the kwargs
+        """
         act = cls(station, code)
 
         def to_time(raw) -> typing.Optional[float]:
-            if raw is None:
+            if not raw:
                 return None
             if isinstance(raw, bytes) or isinstance(raw, bytearray):
                 raw = raw.decode('ascii')
@@ -187,9 +232,10 @@ class DashboardAction:
                 if isinstance(raw, act.Watchdog):
                     act.watchdogs.add(raw)
                     continue
-                code, severity, data = parts_or_dict(to_iterable(raw, ':'), 'code', 'severity', 'data')
+                code, severity, data = parts_or_dict(to_iterable(raw, ':'), 'code', 'severity', 'data', 'last_seen')
                 severity = to_severity(severity, cls.Severity.ERROR)
-                act.watchdogs.add(cls.Watchdog(code, severity, data))
+                last_seen = to_time(last_seen)
+                act.watchdogs.add(cls.Watchdog(code, severity, data, last_seen))
         if 'watchdogs_to_clear' in kwargs:
             for watchdog in to_iterable(kwargs['watchdogs_to_clear'], ','):
                 act.clear_watchdogs.add(str(watchdog).lower())
@@ -220,6 +266,10 @@ class DashboardAction:
         return act
 
     def to_json(self) -> typing.Dict[str, typing.Any]:
+        """Convert the action into JSON for uploading
+
+        :return: a dict suitable for JSON encoding and upload
+        """
         result: typing.Dict[str, typing.Any] = {
             'code': self.code
         }

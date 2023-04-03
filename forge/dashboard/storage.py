@@ -21,7 +21,7 @@ _match_access = BaseAccessUser.wildcard_match_level
 class DashboardInterface(Interface):
     async def apply_action(self, action: DashboardAction) -> None:
         station = action.station
-        if not station:
+        if not station or station == 'default':
             station = ''
         elif not is_valid_station(station):
             raise ValueError("invalid station")
