@@ -262,13 +262,13 @@ class BasicRecord(BaseRecord):
 
     @classmethod
     def simple_override(cls, *args, template_base: typing.Optional[str] = None,
-                        **kwargs) -> typing.Type["BasicRecord"]:
+                        **kwargs) -> "BasicRecord":
         class Override(BasicRecord):
             DETAILS_TEMPLATE = template_base + ".html" if template_base is not None else cls.DETAILS_TEMPLATE
             EMAIL_TEXT_TEMPLATE = template_base + ".txt" if template_base is not None else cls.EMAIL_TEXT_TEMPLATE
             EMAIL_HTML_TEMPLATE = template_base + ".html" if template_base is not None else cls.EMAIL_HTML_TEMPLATE
             ENTRY = cls.ENTRY.simple_override(*args, **kwargs)
-        return Override
+        return Override()
 
     @staticmethod
     def format_email_time(epoch: float) -> str:
