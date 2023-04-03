@@ -84,7 +84,7 @@ let DataSocket = {};
             return undefined;
         }
         const parts = plot_time.trim().split(rePlotTimeSplit);
-        const date = new Date(
+        const date = Date.UTC(
             parseInt(parts[0]),
             (parseInt(parts[1]) || 1) - 1,
             parseInt(parts[2]) || 1,
