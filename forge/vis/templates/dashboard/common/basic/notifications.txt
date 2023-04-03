@@ -1,0 +1,32 @@
+{%- set SEVERITY_NAME = {
+    Severity.INFO: 'STATUS:',
+    Severity.WARNING: 'STATUS - WARNING:',
+    Severity.ERROR: 'STATUS - ERROR:',
+} -%}
+{%- set global_status = namespace(count=0) -%}
+{%- for i in notifications -%}
+{%-      if i.code|length != 0 -%}{%- continue -%}{%- endif -%}
+{%-      set global_status.count = global_status.count + 1 -%}
+{%-      if not i.detail -%}{%- continue -%}{%- endif %}
+
+{{ SEVERITY_NAME[i.severity] }} {% if "\n" in i.detail %}
+    {{ i.detail|replace("\n", "\n    ") }}
+{%- else %}{{ i.detail }}{% endif %}
+{%- endfor -%}
+{%- set SEVERITY_SUFFIX = {
+    Severity.INFO: '',
+    Severity.WARNING: ' - WARNING',
+    Severity.ERROR: ' - ERROR',
+} -%}
+{%- if notifications|length > global_status.count %}
+
+
+NOTIFICATIONS:
+{%-     for i in notifications -%}
+{%-         if i.code|length == 0 -%}{%- continue -%}{%- endif %}
+{{ i.display }}{{ SEVERITY_SUFFIX[i.severity] }}
+{%-         if i.detail %}
+    {{ i.detail|replace("\n", "\n    ") }}
+{%-         endif -%}
+{%-     endfor -%}
+{%- endif -%}

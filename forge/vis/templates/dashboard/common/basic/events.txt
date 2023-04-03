@@ -1,0 +1,14 @@
+{%- set SEVERITY_SUFFIX = {
+    Severity.INFO: '',
+    Severity.WARNING: ' - WARNING',
+    Severity.ERROR: ' - ERROR',
+} -%}
+{%- if events|length > 0 %}
+
+
+EVENTS:
+{%-     for i in events %}
+{{ i.occurred_at_iso8601 }}| {{ i.display }}{{ SEVERITY_SUFFIX[i.severity] }}{%- if i.detail %}
+                      {{ i.detail|replace("\n", "\n                      ") }}{%- endif -%}
+{%-     endfor -%}
+{%- endif -%}

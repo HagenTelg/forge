@@ -1,16 +1,19 @@
 import typing
 from forge.vis.dashboard import Record
-from forge.vis.dashboard.basic import BasicRecord, BasicEntry
+from forge.vis.dashboard.basic import BasicRecord
+from forge.vis.dashboard.fileingest import FileIngestRecord
+from forge.vis.dashboard.acquisition import AcquisitionIngestRecord
 
 
 code_records: typing.Dict[str, Record] = {
-    'acquisition-ingest-cpd3': BasicRecord.simple_override(
+    'acquisition-ingest-cpd3': AcquisitionIngestRecord.simple_override(
         name="CPD3 acquisition data processing",
     ),
-    'met-raw-ingest-cr1000': BasicRecord.simple_override(
-        name="Ingest GML observatories meteorological data",
+    'met-raw-ingest-cr1000': FileIngestRecord.simple_override(
+        name="Ingest observatories meteorological data",
+        offline=50 * 60 * 60,
     ),
-    'radiation-raw-ingest-scaled': BasicRecord.simple_override(
+    'radiation-raw-ingest-scaled': FileIngestRecord.simple_override(
         name="Ingest scaled radiation data",
     ),
     'radiation-editing-ingest-basemod': BasicRecord.simple_override(

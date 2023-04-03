@@ -181,8 +181,8 @@ def get(station: str, mode_name: str) -> typing.Optional[Mode]:
 
 def visible(station: str, mode_name: typing.Optional[str] = None) -> VisibleModes:
     lookup: typing.Callable[[str, str], typing.Optional[Mode]] = station_data(station, 'mode', 'get')
-    realtime_visible: typing.Callable[[str, str], typing.Optional[Mode]] = station_data(station, 'realtime', 'visible')
-    acquisition_visible: typing.Callable[[str, str], typing.Optional[Mode]] = station_data(station, 'acquisition', 'visible')
+    realtime_visible: typing.Callable[[str, str], bool] = station_data(station, 'realtime', 'visible')
+    acquisition_visible: typing.Callable[[str, str], bool] = station_data(station, 'acquisition', 'visible')
     visible_modes = VisibleModes()
 
     def _assemble_mode(display_name: str, mode_names: typing.List[str]):

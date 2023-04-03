@@ -1,0 +1,16 @@
+{%- set SEVERITY_SUFFIX = {
+    Severity.INFO: '',
+    Severity.WARNING: ' - WARNING',
+    Severity.ERROR: ' - ERROR',
+} -%}
+{%- if conditions|length > 0 %}
+
+
+CONDITIONS:
+{%-     for i in conditions %}
+{{ i.display }}{{ SEVERITY_SUFFIX[i.severity] }}: {{ i.total_display }} ({{ condition_percent(i) }}%)
+{%-         if i.detail %}
+    {{ i.detail|replace("\n", "\n    ") }}
+{%-         endif -%}
+{%-     endfor -%}
+{%- endif -%}

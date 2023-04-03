@@ -37,7 +37,7 @@ async def add_system_info(telemetry: typing.Dict[str, typing.Any]) -> None:
 async def add_lsb_info(telemetry: typing.Dict[str, typing.Any]) -> None:
     data = {}
     for line in await command_lines('lsb_release', '-a', silent=True):
-        fields = line.split(':', 2)
+        fields = line.split(':', 1)
         if len(fields) < 2:
             continue
         data[fields[0].strip()] = fields[1].strip()

@@ -1,0 +1,41 @@
+{% if events|length > 0 %}
+{% set SEVERITY_STYLE = [{
+    Severity.INFO: 'background-color: #f8f8f8;',
+    Severity.WARNING: 'background-color: #f8e800;',
+    Severity.ERROR: 'background-color: #ff4040;',
+},{
+    Severity.INFO: 'background-color: #f0f0f0;',
+    Severity.WARNING: 'background-color: #e8d800;',
+    Severity.ERROR: 'background-color: #e04040;',
+}] %}
+
+<table style="margin: 12px 0 2px 0; border-spacing: 0;">
+    <thead>
+        <tr><th colspan="4" style="text-align: left; font-size: 20px; font-weight: bold;">Events:</th></tr>
+    </thead>
+    <tbody>
+{% set event_loop = namespace(date=None) %}
+{% for i in events %}
+{% set row_date = format_date(i.occurred_at) %}
+{% set row_severity_style = SEVERITY_STYLE[loop.index0 % 2] %}
+        <tr class="hide-same-date" {% if row_date == event_loop.date %}style="display: none;"{% endif %}>
+{% set event_loop.date = row_date %}
+            <td style="font-size: 10px; width: 100%; border-bottom: 1px solid black;" colspan="4"
+                class="format-date" time="{{ i.occurred_at_ms }}">{{ row_date }}</td>
+        </tr>
+        <tr>
+            <td colspan="2" style="white-space: nowrap; font-family: monospace; {{ row_severity_style[i.severity] }}"
+                title="{{ i.occurred_at_iso8601 }}"
+                class="format-time" time="{{ i.occurred_at_ms }}">{{ format_time(i.occurred_at) }}</td>
+            <td colspan="2" style="white-space: nowrap; font-weight: bold; padding-left: 8px; width: 100%; {{ row_severity_style[i.severity] }}">{{ i.display }}</td>
+        </tr>
+        {% if i.detail %}
+        <tr>
+            <td style="width: 12px; {{ row_severity_style[i.severity] }}"></td>
+            <td style="padding-left: 8px; white-space: normal;" colspan="3">{% if "\n" in i.detail %}<pre>{% endif %}{{ i.detail }}{% if "\n" in i.detail %}</pre>{% endif %}</td>
+        </tr>
+        {% endif %}
+{% endfor %}
+    </tbody>
+</table>
+{% endif %}

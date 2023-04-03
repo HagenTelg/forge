@@ -1,0 +1,27 @@
+{% include 'dashboard/details/basic_header.html' %}
+{% include 'dashboard/common/basic/notifications.html' %}
+{% include 'dashboard/common/basic/watchdogs.html' %}
+{% include 'dashboard/common/basic/conditions.html' %}
+
+{% set event_sort = namespace(file_processed=[], other=[]) %}
+{% for i in events %}
+    {% if i.is_processed_file %}
+        {% do event_sort.file_processed.append(i) %}
+    {% else %}
+        {% do event_sort.other.append(i) %}
+    {% endif %}
+{% endfor %}
+
+{% with events = event_sort.other %}
+{% include 'dashboard/common/basic/events.html' %}
+{% endwith %}
+
+{% with files = event_sort.file_processed %}
+{% include 'dashboard/common/ingest/files.html' %}
+{% endwith %}
+
+<script>
+(function() {
+{% include 'dashboard/details/basic.js' %}
+})();
+</script>

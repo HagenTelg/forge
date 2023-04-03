@@ -10,6 +10,7 @@ _ROOT_DIRECTORY = os.path.abspath(os.path.dirname(__file__))
 TEMPLATE_ENV = Environment(
     loader=PackageLoader('forge.vis', 'templates'),
     autoescape=select_autoescape(['html', 'js', 'json']),
+    extensions=['jinja2.ext.do', 'jinja2.ext.loopcontrols'],
     enable_async=True,
 )
 TEMPLATE_ENV.globals['STATIONS'] = STATIONS

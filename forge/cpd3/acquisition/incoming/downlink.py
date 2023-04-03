@@ -256,7 +256,7 @@ class _AcquisitionTranslatorClient(AcquisitionClient):
             if override:
                 return self.translator.translator_shim(name, override)
 
-        variable_split = name.variable.split('_', 2)
+        variable_split = name.variable.split('_', 1)
         if len(variable_split) < 2:
             return self._BaseDispatch()
         variable_source = variable_split[0]

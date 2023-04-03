@@ -1,0 +1,13 @@
+{%- set SEVERITY_SUFFIX = {
+    Severity.INFO: '',
+    Severity.WARNING: ' - WARNING',
+    Severity.ERROR: ' - ERROR',
+} -%}
+{%- if files|length > 0 %}
+
+
+FILES PROCESSED:
+{%-     for i in files %}
+{{ i.occurred_at_iso8601 }}| {{ (i.file_name + SEVERITY_SUFFIX[i.severity]).ljust(40) }}| {{ i.file_size_display.ljust(8) }} | {{ i.elapsed_time_display.ljust(6) }}
+{%-     endfor -%}
+{%- endif -%}

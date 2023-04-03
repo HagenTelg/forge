@@ -1,0 +1,19 @@
+{%- include 'dashboard/email/basic_header.txt' -%}
+{%- include 'dashboard/common/basic/notifications.txt' -%}
+{%- include 'dashboard/common/basic/watchdogs.txt' -%}
+{%- include 'dashboard/common/basic/conditions.txt' -%}
+
+{%- set event_sort = namespace(file_processed=[], other=[]) -%}
+{%- for i in events -%}
+    {%- if i.is_processed_file -%}
+        {%- do event_sort.file_processed.append(i) -%}
+    {%- else -%}
+        {%- do event_sort.other.append(i) -%}
+    {%- endif -%}
+{%- endfor -%}
+{%- with events = event_sort.other -%}
+{%- include 'dashboard/common/basic/events.txt' -%}
+{%- endwith -%}
+{%- with files = event_sort.file_processed -%}
+{%- include 'dashboard/common/ingest/files.txt' -%}
+{%- endwith %}

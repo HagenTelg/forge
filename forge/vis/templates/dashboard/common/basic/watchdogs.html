@@ -1,0 +1,21 @@
+{% if watchdogs|length > 0 %}
+{% set SEVERITY_STYLE = {
+    Severity.INFO: 'margin-top: 2px; font-weight: bold;',
+    Severity.WARNING: 'margin-top: 2px; font-weight: bold; color: #c90;',
+    Severity.ERROR: 'margin-top: 2px; font-weight: bold; color: #c00;',
+} %}
+
+<div style="margin-top: 12px;">
+    <div style="font-size: 20px; font-weight: bold;">Watchdogs:</div>
+{% for i in watchdogs %}
+    <div style="{{ SEVERITY_STYLE[i.severity] }}" title="Last present: {{ i.last_seen_iso8601 }}" class="last-seen" last_seen="{{ i.last_seen_ms }}">{{ i.display }}</div>
+    {% if i.detail %}
+        {% if "\n" in i.detail %}
+            <pre style="margin-left: 16px;" title="Last present: {{ i.last_seen_iso8601 }}" class="last-seen" last_seen="{{ i.last_seen_ms }}">{{ i.detail }}</pre>
+        {% else %}
+            <div style="margin-left: 16px;" title="Last present: {{ i.last_seen_iso8601 }}" class="last-seen" last_seen="{{ i.last_seen_ms }}">{{ i.detail }}</div>
+        {% endif %}
+    {% endif %}
+{% endfor %}
+</div>
+{% endif %}

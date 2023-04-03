@@ -129,7 +129,7 @@ def parse_arguments():
                                 dest='json', action='store_true',
                                 help="output entry list in JSON")
     command_parser.add_argument('--details',
-                                dest='details', action='store_true',
+                                dest='include_details', action='store_true',
                                 help="output entry details")
     command_parser.add_argument('--sort',
                                 dest='sort', default='station,code',

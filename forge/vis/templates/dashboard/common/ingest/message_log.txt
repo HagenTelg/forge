@@ -1,0 +1,13 @@
+{%- set SEVERITY_PREFIX = {
+    Severity.INFO: '  ',
+    Severity.WARNING: 'E ',
+    Severity.ERROR: 'W ',
+} -%}
+{%- if messages|length > 0 %}
+
+
+MESSAGE LOG:
+{%-     for i in messages %}
+{{ i.occurred_at_iso8601 }}|{{ (SEVERITY_PREFIX[i.severity] + i.message_source).ljust(5) }}| {{ i.display|replace("\n", "\n                            ") }}
+{%-     endfor -%}
+{%- endif -%}

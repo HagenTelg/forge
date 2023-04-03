@@ -1,0 +1,17 @@
+{%- set SEVERITY_PREFIX = {
+    Severity.INFO: '',
+    Severity.WARNING: 'WARNING - ',
+    Severity.ERROR: 'ERROR - ',
+} -%}
+{%- if instruments|length > 0 %}
+
+{% for instrument_code in instruments.keys()|sort %}
+{{ instrument_code }} STATUS:
+{%-     for i in instruments[instrument_code] %}
+  {{ SEVERITY_PREFIX[i.severity] }}{{ i.display }}: {{ i.total_display }} ({{ condition_percent(i) }}%)
+{%-         if i.detail %}
+    {{ i.detail|replace("\n", "\n    ") }}
+{%-         endif -%}
+{%-     endfor -%}
+{%- endfor -%}
+{%- endif -%}

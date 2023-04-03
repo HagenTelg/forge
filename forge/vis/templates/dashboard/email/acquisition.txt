@@ -1,0 +1,53 @@
+{%- include 'dashboard/email/basic_header.txt' -%}
+{%- include 'dashboard/common/basic/notifications.txt' -%}
+{%- include 'dashboard/common/basic/watchdogs.txt' -%}
+
+{%- set condition_sort = namespace(instrument={}, other=[]) -%}
+{%- for i in conditions -%}
+    {%- if i.is_instrument_condition -%}
+        {%- set existing = condition_sort.instrument.get(i.instrument) -%}
+        {%- if not existing -%}
+            {%- do condition_sort.instrument.update({i.instrument: [i]}) -%}
+        {%- else -%}
+            {%- do existing.append(i) -%}
+        {%- endif -%}
+    {%- else -%}
+        {%- do condition_sort.other.append(i) -%}
+    {%- endif -%}
+{%- endfor -%}
+{%- with instruments = condition_sort.instrument -%}
+{%- include 'dashboard/common/ingest/instrument_conditions.txt' -%}
+{%- endwith -%}
+{%- with conditions = condition_sort.other -%}
+{%- include 'dashboard/common/basic/conditions.txt' -%}
+{%- endwith -%}
+
+{%- set event_sort = namespace(file_processed=[], message_log=[], communications_list={}, other=[]) -%}
+{%- for i in events -%}
+    {%- if i.is_processed_file -%}
+        {%- do event_sort.file_processed.append(i) -%}
+    {%- elif i.is_message_log -%}
+        {%- do event_sort.message_log.append(i) -%}
+    {%- elif i.is_communications_lost -%}
+        {%- set existing = event_sort.communications_list.get(i.display) -%}
+        {%- if not existing -%}
+            {%- do event_sort.communications_list.update({i.display: (i, 1)}) -%}
+        {%- else -%}
+            {%- do event_sort.communications_list.update({i.display: (i, existing[1] + 1)}) -%}
+        {%- endif -%}
+    {%- else -%}
+        {%- do event_sort.other.append(i) -%}
+    {%- endif -%}
+{%- endfor -%}
+{%- with communications_lost = event_sort.communications_list -%}
+{%- include 'dashboard/common/ingest/communications_lost.txt' -%}
+{%- endwith -%}
+{%- with messages = event_sort.message_log -%}
+{%- include 'dashboard/common/ingest/message_log.txt' -%}
+{%- endwith -%}
+{%- with events = event_sort.other -%}
+{%- include 'dashboard/common/basic/events.txt' -%}
+{%- endwith -%}
+{%- with files = event_sort.file_processed -%}
+{%- include 'dashboard/common/ingest/files.txt' -%}
+{%- endwith %}

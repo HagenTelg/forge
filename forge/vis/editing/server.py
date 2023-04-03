@@ -5,7 +5,6 @@ from starlette.authentication import requires
 from starlette.responses import Response, HTMLResponse
 from starlette.requests import Request
 from starlette.exceptions import HTTPException
-from jinja2 import TemplateNotFound
 from forge.const import STATIONS
 from forge.vis.util import package_template
 from .permissions import is_available, is_writable

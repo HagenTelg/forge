@@ -95,7 +95,7 @@ class Input(BaseInstrument.Input):
             return
 
         if isinstance(self.config, str):
-            fields = self.config.split(':', 2)
+            fields = self.config.split(':', 1)
             self.field.override_description = str(self.config)
             if len(fields) == 1:
                 self.instrument.context.bus.connect_data(None, fields[0], self._incoming_override)

@@ -112,7 +112,7 @@ class Converter:
         history = getattr(self.root, "history", None)
         if history is not None:
             for item in str(history).split('\n'):
-                processed_at, processed_by, processed_version, command = item.split(',', 4)
+                processed_at, processed_by, processed_version, command = item.split(',', 3)
                 processed_at = parse_iso8601_time(processed_at).timestamp()
                 self.processing_metadata.append({
                     "At": processed_at,
@@ -691,7 +691,7 @@ class DataRecord(RecordConverter):
                 if "_" not in variable_name:
                     variable_name = variable_name + code + "_" + self.record.converter.source
                 else:
-                    (prefix, suffix) = variable_name.split("_", 2)
+                    prefix, suffix = variable_name.split("_", 1)
                     variable_name = prefix + code + "_" + suffix
                 self.base_name.append(Name(self.record.converter.station, 'raw', variable_name))
 
@@ -867,7 +867,7 @@ class StateRecord(RecordConverter):
                 if "_" not in variable_name:
                     variable_name = variable_name + code + "_" + self.record.converter.source
                 else:
-                    (prefix, suffix) = variable_name.split("_", 2)
+                    prefix, suffix = variable_name.split("_", 1)
                     variable_name = prefix + code + "_" + suffix
                 self.base_name.append(Name(self.record.converter.station, 'raw', variable_name))
 

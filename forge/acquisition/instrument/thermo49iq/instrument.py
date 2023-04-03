@@ -179,7 +179,7 @@ class Instrument(ModbusInstrument):
         self.set_serial_number(serial_number)
 
         firmware_version = await self._read_string(self._Register.FIRMWARE_VERSION, 16)
-        parts = firmware_version.split(' ', 2)
+        parts = firmware_version.split(' ', 1)
         if len(parts) == 2 and "iQ" in parts[0]:
             self.set_instrument_info('model', parts[0])
             self.set_firmware_version(parts[1])

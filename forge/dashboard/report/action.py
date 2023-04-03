@@ -11,11 +11,10 @@ from forge.dashboard import Severity as BaseSeverity, is_valid_station, is_valid
 class DashboardAction:
     """A container for a dashboard update action
 
-        This class represents an action to be sent to the backend
-        to update the status of a single entry (station and code)
-        on the dashboard.
-        """
-
+    This class represents an action to be sent to the backend
+    to update the status of a single entry (station and code)
+    on the dashboard.
+    """
     class _Information:
         _ALLOW_EMPTY_CODE = False
 
@@ -50,7 +49,6 @@ class DashboardAction:
 
     class Watchdog(_Information):
         """A watchdog that shows when not refreshed"""
-
         def __init__(self, code: str, severity: "DashboardAction.Severity",
                      data: typing.Optional[typing.Union[str, typing.Dict]] = None,
                      last_seen: typing.Optional[float] = None):
@@ -67,7 +65,6 @@ class DashboardAction:
 
     class Event(_Information):
         """An event at a point in time"""
-
         def __init__(self, code: str, severity: "DashboardAction.Severity",
                      data: typing.Optional[typing.Union[str, typing.Dict]] = None,
                      occurred_at: typing.Optional[float] = None):
@@ -76,7 +73,6 @@ class DashboardAction:
 
     class Condition(_Information):
         """A condition spanning a continuous range of time"""
-
         def __init__(self, code: str, severity: "DashboardAction.Severity",
                      data: typing.Optional[typing.Union[str, typing.Dict]] = None,
                      start_time: typing.Optional[float] = None, end_time: typing.Optional[float] = None):
@@ -99,7 +95,7 @@ class DashboardAction:
             notifications (set[DashboardAction.Notification]): Any notification to set
             clear_notifications (set[str]): If set, then only these notification are removed, instead of all prior ones
             watchdogs (set[DashboardAction.Watchdog]): Any watchdogs to start or restart
-            clear_notifications (set[str]): Watchdogs to stop
+            clear_watchdogs (set[str]): Watchdogs to stop
             events (list[DashboardAction.Event]): Events to add
             conditions (list[DashboardAction.Condition]): Conditions to apply
 
@@ -232,7 +228,8 @@ class DashboardAction:
                 if isinstance(raw, act.Watchdog):
                     act.watchdogs.add(raw)
                     continue
-                code, severity, data = parts_or_dict(to_iterable(raw, ':'), 'code', 'severity', 'data', 'last_seen')
+                code, severity, data, last_seen = parts_or_dict(to_iterable(raw, ':'),
+                                                                'code', 'severity', 'data', 'last_seen')
                 severity = to_severity(severity, cls.Severity.ERROR)
                 last_seen = to_time(last_seen)
                 act.watchdogs.add(cls.Watchdog(code, severity, data, last_seen))

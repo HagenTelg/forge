@@ -1,6 +1,7 @@
 import typing
 from math import floor, ceil
 from forge.dashboard.database import Severity
+from forge.formattime import format_iso8601_time, format_simple_duration
 from .entry import Entry
 
 
@@ -14,6 +15,10 @@ class _CodedType:
     @property
     def display(self) -> str:
         return self.code
+
+    @property
+    def detail(self) -> typing.Optional[str]:
+        return self.data
 
 
 class Notification(_CodedType):
@@ -30,6 +35,10 @@ class Watchdog(_CodedType):
     def last_seen_ms(self) -> int:
         return int(round(self.last_seen * 1000.0))
 
+    @property
+    def last_seen_iso8601(self) -> str:
+        return format_iso8601_time(self.last_seen)
+
 
 class Event(_CodedType):
     def __init__(self, entry: Entry, code: str, severity: Severity, occurred_at: float,
@@ -40,6 +49,10 @@ class Event(_CodedType):
     @property
     def occurred_at_ms(self) -> int:
         return int(round(self.occurred_at * 1000.0))
+
+    @property
+    def occurred_at_iso8601(self) -> str:
+        return format_iso8601_time(self.occurred_at)
 
 
 class Condition(_CodedType):
@@ -55,9 +68,21 @@ class Condition(_CodedType):
         return int(floor(self.begin_present * 1000.0))
 
     @property
+    def begin_present_iso8601(self) -> str:
+        return format_iso8601_time(self.begin_present)
+
+    @property
     def end_present_ms(self) -> int:
         return int(ceil(self.end_present * 1000.0))
 
     @property
+    def end_present_iso8601(self) -> str:
+        return format_iso8601_time(self.end_present)
+
+    @property
     def total_ms(self) -> int:
         return int(ceil(self.total_seconds * 1000.0))
+
+    @property
+    def total_display(self) -> str:
+        return format_simple_duration(self.total_seconds)

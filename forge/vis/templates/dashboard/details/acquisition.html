@@ -1,0 +1,77 @@
+{% if station and (record.PLOT_MODE or (record.REALTIME_MODE and link_to_realtime) or (record.ACQUISITION_MODE and link_to_acquisition)) %}
+Station Data:
+{% if record.PLOT_MODE %}
+<a href="{{ request.url_for('mode', station=station, mode_name=record.PLOT_MODE) }}">General</a>
+{% endif %}
+{% if record.REALTIME_MODE and link_to_realtime %}
+<a href="{{ request.url_for('mode', station=station, mode_name=record.REALTIME_MODE) }}">Realtime</a>
+{% endif %}
+{% if record.ACQUISITION_MODE and link_to_acquisition %}
+<a href="{{ request.url_for('mode', station=station, mode_name=record.ACQUISITION_MODE) }}">Acquisition</a>
+{% endif %}
+{% endif %}
+
+{% include 'dashboard/common/basic/notifications.html' %}
+{% include 'dashboard/common/basic/watchdogs.html' %}
+
+{% set condition_sort = namespace(instrument={}, other=[]) %}
+{% for i in conditions %}
+    {% if i.is_instrument_condition %}
+        {% set existing = condition_sort.instrument.get(i.instrument) %}
+        {% if not existing %}
+            {% do condition_sort.instrument.update({i.instrument: [i]}) %}
+        {% else %}
+            {% do existing.append(i) %}
+        {% endif %}
+    {% else %}
+        {% do condition_sort.other.append(i) %}
+    {% endif %}
+{% endfor %}
+
+{% with instruments = condition_sort.instrument %}
+{% include 'dashboard/common/ingest/instrument_conditions.html' %}
+{% endwith %}
+
+{% with conditions = condition_sort.other %}
+{% include 'dashboard/common/basic/conditions.html' %}
+{% endwith %}
+
+{% set event_sort = namespace(file_processed=[], message_log=[], communications_list={}, other=[]) %}
+{% for i in events %}
+    {% if i.is_processed_file %}
+        {% do event_sort.file_processed.append(i) %}
+    {% elif i.is_message_log %}
+        {% do event_sort.message_log.append(i) %}
+    {% elif i.is_communications_lost %}
+        {% set existing = event_sort.communications_list.get(i.display) %}
+        {% if not existing %}
+            {% do event_sort.communications_list.update({i.display: (i, 1)}) %}
+        {% else %}
+            {% do event_sort.communications_list.update({i.display: (i, existing[1] + 1)}) %}
+        {% endif %}
+    {% else %}
+        {% do event_sort.other.append(i) %}
+    {% endif %}
+{% endfor %}
+
+{% with communications_lost = event_sort.communications_list %}
+{% include 'dashboard/common/ingest/communications_lost.html' %}
+{% endwith %}
+
+{% with messages = event_sort.message_log %}
+{% include 'dashboard/common/ingest/message_log.html' %}
+{% endwith %}
+
+{% with events = event_sort.other %}
+{% include 'dashboard/common/basic/events.html' %}
+{% endwith %}
+
+{% with files = event_sort.file_processed %}
+{% include 'dashboard/common/ingest/files.html' %}
+{% endwith %}
+
+<script>
+(function() {
+{% include 'dashboard/details/basic.js' %}
+})();
+</script>

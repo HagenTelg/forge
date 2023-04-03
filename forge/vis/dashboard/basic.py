@@ -6,7 +6,7 @@ from math import ceil, floor
 from starlette.requests import Request
 from starlette.responses import Response, HTMLResponse, JSONResponse
 from starlette.exceptions import HTTPException
-from forge.formattime import format_iso8601_time, format_time_of_day, format_date
+from forge.formattime import format_iso8601_time, format_time_of_day, format_date, format_simple_duration
 from forge.vis import CONFIGURATION
 from forge.vis.util import package_template
 from forge.dashboard.display import DisplayInterface
@@ -45,6 +45,10 @@ class BasicEntry(BaseEntry):
 
             return Override
 
+        @property
+        def affects_status(self) -> bool:
+            return True
+
     NOTIFICATION_CODES: typing.Dict[str, typing.Type["BasicEntry.Notification"]] = {}
 
     class Watchdog(BaseWatchdog):
@@ -70,6 +74,10 @@ class BasicEntry(BaseEntry):
 
             return Override
 
+        @property
+        def affects_status(self) -> bool:
+            return True
+
     WATCHDOG_CODES: typing.Dict[str, typing.Type["BasicEntry.Watchdog"]] = {}
 
     class Event(BaseEvent):
@@ -86,6 +94,10 @@ class BasicEntry(BaseEntry):
                     return name if name else self.code
 
             return Override
+
+        @property
+        def affects_status(self) -> bool:
+            return True
 
     EVENT_CODES: typing.Dict[str, typing.Type["BasicEntry.Event"]] = {}
 
@@ -104,6 +116,10 @@ class BasicEntry(BaseEntry):
                     return name if name else self.code
 
             return Override
+
+        @property
+        def affects_status(self) -> bool:
+            return True
 
     CONDITION_CODES: typing.Dict[str, typing.Type["BasicEntry.Condition"]] = {}
 
@@ -137,7 +153,7 @@ class BasicEntry(BaseEntry):
             result.update(override)
             return result
 
-        class Override(BasicEntry):
+        class Override(cls):
             OFFLINE_THRESHOLD = offline if offline is not None else cls.OFFLINE_THRESHOLD
             NOTIFICATION_CODES = override_dict(cls.NOTIFICATION_CODES, notifications)
             WATCHDOG_CODES = override_dict(cls.WATCHDOG_CODES, watchdogs)
@@ -146,36 +162,48 @@ class BasicEntry(BaseEntry):
 
             @property
             def display(self) -> typing.Optional[str]:
-                return name
+                return name if name else super().display
 
         return Override
+
+    def notification_for_code(self, code: str) -> typing.Type["BasicEntry.Notification"]:
+        return self.NOTIFICATION_CODES.get(code, self.Notification)
 
     def notifications(self, raw: typing.Iterable[DatabaseNotification]) -> typing.List["BasicEntry.Notification"]:
         result: typing.List["BasicEntry.Notification"] = list()
         for v in raw:
-            add = self.NOTIFICATION_CODES.get(v.code, self.Notification).from_db(self, v)
+            add = self.notification_for_code(v.code).from_db(self, v)
             if not add:
                 continue
             result.append(add)
         return result
+
+    def watchdog_for_code(self, code: str) -> typing.Type["BasicEntry.Watchdog"]:
+        return self.WATCHDOG_CODES.get(code, self.Watchdog)
 
     def watchdogs(self, raw: typing.Iterable[DatabaseNotification]) -> typing.List["BasicEntry.Watchdog"]:
         result: typing.List["BasicEntry.Watchdog"] = list()
         for v in raw:
-            add = self.WATCHDOG_CODES.get(v.code, self.Watchdog).from_db(self, v)
+            add = self.watchdog_for_code(v.code,).from_db(self, v)
             if not add:
                 continue
             result.append(add)
         return result
 
+    def event_for_code(self, code: str) -> typing.Type["BasicEntry.Event"]:
+        return self.EVENT_CODES.get(code, self.Event)
+
     def events(self, raw: typing.Iterable[DatabaseNotification]) -> typing.List["BasicEntry.Event"]:
         result: typing.List["BasicEntry.Event"] = list()
         for v in raw:
-            add = self.EVENT_CODES.get(v.code, self.Event).from_db(self, v)
+            add = self.event_for_code(v.code).from_db(self, v)
             if not add:
                 continue
             result.append(add)
         return result
+
+    def condition_for_code(self, code: str) -> typing.Type["BasicEntry.Condition"]:
+        return self.CONDITION_CODES.get(code, self.Condition)
 
     def conditions(self, raw: typing.Iterable[DatabaseCondition],
                    start_epoch: float) -> typing.List["BasicEntry.Condition"]:
@@ -195,8 +223,7 @@ class BasicEntry(BaseEntry):
                                       existing[2] + total_seconds, v)
 
         for begin_present, end_present, total_seconds, last in accumulate.values():
-            add = self.CONDITION_CODES.get(last.code, self.Condition).from_db(self, last, begin_present,
-                                                                              end_present, total_seconds)
+            add = self.condition_for_code(last.code).from_db(self, last, begin_present, end_present, total_seconds)
             if not add:
                 continue
             result.append(add)
@@ -221,6 +248,8 @@ class BasicEntry(BaseEntry):
                 return existing < incoming
 
             for check in entry.notifications(data.notifications):
+                if not check.affects_status:
+                    continue
                 if not is_more_severe(check.severity):
                     continue
                 information_severity = check.severity
@@ -228,6 +257,8 @@ class BasicEntry(BaseEntry):
                     return Status(information_severity, email)
 
             for check in entry.watchdogs(data.watchdogs):
+                if not check.affects_status:
+                    continue
                 if not is_more_severe(check.severity):
                     continue
                 information_severity = check.severity
@@ -235,6 +266,8 @@ class BasicEntry(BaseEntry):
                     return Status(information_severity, email)
 
             for check in entry.events(data.events):
+                if not check.affects_status:
+                    continue
                 if not is_more_severe(check.severity):
                     continue
                 information_severity = check.severity
@@ -242,6 +275,8 @@ class BasicEntry(BaseEntry):
                     return Status(information_severity, email)
 
             for check in entry.conditions(data.conditions, start_epoch):
+                if not check.affects_status:
+                    continue
                 if not is_more_severe(check.severity):
                     continue
                 information_severity = check.severity
@@ -263,7 +298,7 @@ class BasicRecord(BaseRecord):
     @classmethod
     def simple_override(cls, *args, template_base: typing.Optional[str] = None,
                         **kwargs) -> "BasicRecord":
-        class Override(BasicRecord):
+        class Override(cls):
             DETAILS_TEMPLATE = template_base + ".html" if template_base is not None else cls.DETAILS_TEMPLATE
             EMAIL_TEXT_TEMPLATE = template_base + ".txt" if template_base is not None else cls.EMAIL_TEXT_TEMPLATE
             EMAIL_HTML_TEMPLATE = template_base + ".html" if template_base is not None else cls.EMAIL_HTML_TEMPLATE
@@ -335,6 +370,11 @@ class BasicRecord(BaseRecord):
         conditions.sort(key=lambda x: (_SEVERITY_SORT[x.severity], x.display))
         events.sort(key=lambda x: (x.occurred_at, _SEVERITY_SORT[x.severity], x.display))
 
+        def condition_percent(condition: BasicEntry.Condition) -> str:
+            percent = round(condition.total_ms / (end_epoch_ms - start_epoch_ms))
+            percent = max(1, min(100, percent))
+            return str(percent)
+
         return HTMLResponse(await package_template('dashboard', 'details', self.DETAILS_TEMPLATE).render_async(
             request=request,
             db=db,
@@ -349,6 +389,11 @@ class BasicRecord(BaseRecord):
             events=events,
             conditions=conditions,
             Severity=Severity,
+            condition_percent=condition_percent,
+            format_interval=format_simple_duration,
+            format_datetime=format_iso8601_time,
+            format_date=format_date,
+            format_time=format_time_of_day,
             **kwargs
         ))
 
@@ -438,37 +483,30 @@ class BasicRecord(BaseRecord):
             if incoming < existing:
                 contents_severity = severity
 
-        if notifications:
-            apply_contents_severity(notifications[0].severity)
-        if watchdogs:
-            apply_contents_severity(watchdogs[0].severity)
-        if conditions:
-            apply_contents_severity(conditions[0].severity)
-        for e in events:
-            apply_contents_severity(e.severity)
+        for check in notifications:
+            if not check.affects_status:
+                continue
+            apply_contents_severity(check.severity)
+            break
+        for check in watchdogs:
+            if not check.affects_status:
+                continue
+            apply_contents_severity(check.severity)
+            break
+        for check in conditions:
+            if not check.affects_status:
+                continue
+            apply_contents_severity(check.severity)
+            break
+        for check in events:
+            if not check.affects_status:
+                continue
+            apply_contents_severity(check.severity)
 
         def condition_percent(condition: BasicEntry.Condition) -> str:
             percent = round(condition.total_ms / (end_epoch_ms - start_epoch_ms))
             percent = max(1, min(100, percent))
             return str(percent)
-
-        def format_interval(seconds) -> str:
-            seconds = int(floor(seconds))
-            if seconds < 1:
-                seconds = 1
-            if seconds < 99:
-                return str(seconds) + "S"
-
-            minutes = int(floor(seconds / 60))
-            if minutes < 99:
-                return str(minutes) + "M"
-
-            hours = int(floor(minutes / 60))
-            if hours < 99:
-                return str(hours) + "H"
-
-            days = int(floor(hours / 24))
-            return str(days) + "D"
 
         async def template_file(template) -> str:
             return await template.render_async(
@@ -487,7 +525,7 @@ class BasicRecord(BaseRecord):
                 Severity=Severity,
                 URL=CONFIGURATION.get("DASHBOARD.EMAIL.URL"),
                 condition_percent=condition_percent,
-                format_interval=format_interval,
+                format_interval=format_simple_duration,
                 format_datetime=format_iso8601_time,
                 format_date=format_date,
                 format_time=format_time_of_day,

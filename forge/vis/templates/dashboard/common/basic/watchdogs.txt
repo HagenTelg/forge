@@ -1,0 +1,16 @@
+{%- set SEVERITY_SUFFIX = {
+    Severity.INFO: '',
+    Severity.WARNING: ' - WARNING',
+    Severity.ERROR: ' - ERROR',
+} -%}
+{%- if watchdogs|length > 0 %}
+
+
+WATCHDOGS:
+{%-     for i in watchdogs %}
+{{ i.display }}{{ SEVERITY_SUFFIX[i.severity] }}
+{%-         if i.detail %}
+    {{ i.detail|replace("\n", "\n    ") }}
+{%-         endif -%}
+{%-     endfor -%}
+{%- endif -%}

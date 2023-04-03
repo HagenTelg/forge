@@ -143,7 +143,7 @@ def display_entries_text(entries: typing.List[typing.Dict]):
                 columns.append(add['code'])
                 columns.append(str(add['id']))
                 columns.append(add['severity'].name)
-                columns.append(f"{entry['last_seen']:%Y-%m-%d}")
+                columns.append(f"{add['last_seen']:%Y-%m-%d}")
 
                 for i in range(len(columns)):
                     details_column_widths[i] = max(details_column_widths[i], len(columns[i]))
@@ -158,7 +158,7 @@ def display_entries_text(entries: typing.List[typing.Dict]):
                 columns.append(add['code'])
                 columns.append(str(add['id']))
                 columns.append(add['severity'].name)
-                columns.append(f"{entry['occurred_at']:%Y-%m-%d}")
+                columns.append(f"{add['occurred_at']:%Y-%m-%d}")
 
                 for i in range(len(columns)):
                     details_column_widths[i] = max(details_column_widths[i], len(columns[i]))
@@ -173,7 +173,7 @@ def display_entries_text(entries: typing.List[typing.Dict]):
                 columns.append(add['code'])
                 columns.append(str(add['id']))
                 columns.append(add['severity'].name)
-                columns.append(f"{entry['start_time']:%Y-%m-%d}")
+                columns.append(f"{add['start_time']:%Y-%m-%d}")
 
                 for i in range(len(columns)):
                     details_column_widths[i] = max(details_column_widths[i], len(columns[i]))

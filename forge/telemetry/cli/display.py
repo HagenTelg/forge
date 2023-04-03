@@ -4,6 +4,7 @@ import datetime
 import re
 from math import isfinite
 from json import dump as json_dump
+from forge.formatsize import format_bytes
 
 
 def sort_hosts(sort_keys: typing.List[str], hosts: typing.List[typing.Dict]) -> None:
@@ -76,26 +77,6 @@ def display_hosts_text(hosts: typing.List[typing.Dict]) -> None:
         print_columns(*host['display_columns'])
 
 
-def _format_bytes(n: float) -> str:
-    if not isfinite(n):
-        return "---B"
-    divisor = 1
-    for u in ("B", "KiB", "MiB", "GiB", "TiB"):
-        divided = n / divisor
-        if divided > 999.0:
-            divisor *= 1024
-            continue
-
-        if divisor == 1:
-            return f"{divided:.0f} {u}"
-        elif divided <= 9.99:
-            return f"{divided:.2f} {u}"
-        elif divided <= 99.9:
-            return f"{divided:.1f} {u}"
-        else:
-            return f"{divided:.0f} {u}"
-
-
 def _display_log_text(events: typing.List[typing.Dict[str, typing.Any]], include_source=True,
                       prefix="") -> None:
     if not events:
@@ -154,14 +135,14 @@ def display_details_text(hosts: typing.List[typing.Dict]) -> None:
             print(f"Local login user: {host['login_user']}")
             print(f"         Updated: {host['last_update']['login']:%Y-%m-%d %H:%M:%S}")
         if host.get('memory_utilization'):
-            print(f"RAM: {host['memory_utilization'].get('usage_percent'):.1f}% of {_format_bytes(host['memory_utilization'].get('total_bytes'))}")
-            print(f"Swap: {host['memory_utilization'].get('swap_percent'):.1f}% of {_format_bytes(host['memory_utilization'].get('swap_bytes'))}")
+            print(f"RAM: {host['memory_utilization'].get('usage_percent'):.1f}% of {format_bytes(host['memory_utilization'].get('total_bytes'))}")
+            print(f"Swap: {host['memory_utilization'].get('swap_percent'):.1f}% of {format_bytes(host['memory_utilization'].get('swap_bytes'))}")
         if host.get('root_total_bytes') or host.get('root_used_percent'):
-            print(f"Disk space: {host.get('root_used_percent'):.1f}% of {_format_bytes(host.get('root_total_bytes'))}")
+            print(f"Disk space: {host.get('root_used_percent'):.1f}% of {format_bytes(host.get('root_total_bytes'))}")
         if host.get('disk_read') or host.get('disk_write'):
-            print(f"Disk utilization: Read {_format_bytes(host.get('disk_read'))}/s, Write {_format_bytes(host.get('disk_write'))}/s")
+            print(f"Disk utilization: Read {format_bytes(host.get('disk_read'))}/s, Write {format_bytes(host.get('disk_write'))}/s")
         if host.get('network_rx') or host.get('network_tx'):
-            print(f"Network: Rx {_format_bytes(host.get('network_rx'))}/s, Tx {_format_bytes(host.get('network_tx'))}/s")
+            print(f"Network: Rx {format_bytes(host.get('network_rx'))}/s, Tx {format_bytes(host.get('network_tx'))}/s")
         if host.get('cpu_total_utilization') or host.get('cpu_core_utilization'):
             print(f"CPU Utilization: {host['cpu_total_utilization']:.1f}% Total, {host['cpu_core_utilization']:.1f}% Core")
         if host.get('cpu_temperature'):

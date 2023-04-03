@@ -123,7 +123,7 @@ class Manager:
         for file in self.storage.iterdir():
             if not file.is_file():
                 continue
-            parts = file.name.split('.', 3)
+            parts = file.name.split('.', 2)
             if parts[0] != 'realtime':
                 continue
 

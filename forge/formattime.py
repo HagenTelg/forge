@@ -41,6 +41,31 @@ def format_iso8601_duration(duration: float, milliseconds: bool = False) -> str:
         return "PT" + content
 
 
+def format_simple_duration(duration: float, milliseconds: bool = False) -> str:
+    if duration < 1.0:
+        if not milliseconds:
+            return "1 S"
+        milliseconds = int(duration * 1000.0)
+        return f"{milliseconds}MS"
+
+    seconds = int(duration)
+    if seconds < 1:
+        seconds = 1
+    if seconds < 99:
+        return f"{seconds}S"
+
+    minutes = int(seconds / 60)
+    if minutes < 99:
+        return f"{minutes}M"
+
+    hours = int(minutes / 60)
+    if hours < 99:
+        return f"{hours}H"
+
+    days = int(hours / 24)
+    return f"{days}D"
+
+
 def _date(ts, delimiter: str = '-') -> str:
     return f"{ts.tm_year:04}{delimiter}{ts.tm_mon:02}{delimiter}{ts.tm_mday:02}"
 

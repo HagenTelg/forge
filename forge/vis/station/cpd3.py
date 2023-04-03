@@ -2329,9 +2329,9 @@ class AcquisitionTranslator(NativeAcquisitionTranslator):
                 source = {}
             serial_number = source.get('SerialNumber')
             if serial_number is None:
-                display_string = str(interface_info.get('WindowTitle', '')).split('#', 2)
+                display_string = str(interface_info.get('WindowTitle', '')).split('#', 1)
                 if len(display_string) < 1:
-                    display_string = str(interface_info.get('MenuEntry', '')).split('#', 2)
+                    display_string = str(interface_info.get('MenuEntry', '')).split('#', 1)
                 if len(display_string) > 1:
                     serial_number = display_string[1]
             return {
@@ -2575,7 +2575,7 @@ class AcquisitionTranslator(NativeAcquisitionTranslator):
             except ValueError:
                 pass
 
-            variable_split = name.variable.split('_', 2)
+            variable_split = name.variable.split('_', 1)
             if len(variable_split) < 2:
                 return None
             variable_source = variable_split[0]
@@ -2832,7 +2832,7 @@ class AcquisitionTranslator(NativeAcquisitionTranslator):
 
     @staticmethod
     def spancheck_results_shim(name: Name, target: typing.Callable[[typing.Any, typing.Any], None]) -> typing.Callable[[typing.Any, typing.Any], None]:
-        variable_split = name.variable.split('_', 2)
+        variable_split = name.variable.split('_', 1)
         if len(variable_split) < 2:
             return target
         interface_source = variable_split[1]

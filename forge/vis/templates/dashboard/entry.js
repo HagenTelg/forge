@@ -209,6 +209,16 @@ const DashboardEntry = (function() {
             );
         }
 
+        static formatUTCShortTime(epoch_ms) {
+            epoch_ms = Math.floor(epoch_ms);
+            const date = new Date(epoch_ms);
+            return (
+                date.getUTCHours().toString().padStart(2, '0') + ':' +
+                date.getUTCMinutes().toString().padStart(2, '0') + ':' +
+                date.getUTCSeconds().toString().padStart(2, '0') + 'Z'
+            );
+        }
+
         static formatInterval(interval_ms) {
             let seconds = Math.round(interval_ms / 1000);
             if (seconds < 1) {

@@ -1,0 +1,8 @@
+{%- if communications_lost|length > 0 %}
+
+
+INSTRUMENT COMMUNICATIONS LOSSES:
+{%- for i in communications_lost.keys()|sort %}
+{{ i.rjust(5) }}: {% if communications_lost[i][1] == 1 %}1 instance{% else %}{{ communications_lost[i][1] }} instances{% endif %}
+{%- endfor -%}
+{%- endif -%}
