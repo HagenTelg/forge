@@ -2,11 +2,11 @@ let TimeSelect = {};
 let TimeParse = {};
 (function() {
     function dayOfWeek(year, month, day) {
-        const date = Date.UTC(
+        const date = new Date(Date.UTC(
             year || (new Date()).getUTCFullYear(),
             (month || 1) - 1,
             day || 1
-        );
+        ));
         return date.getUTCDay();
     }
 
@@ -26,7 +26,7 @@ let TimeParse = {};
     }
 
     function startOfYear(year) {
-        return Date.UTC(year, 0).getTime();
+        return (new Date(Date.UTC(year, 0))).getTime();
     }
 
     function selectedYear(reference) {
@@ -233,7 +233,7 @@ let TimeParse = {};
                 return undefined;
             }
 
-            date = Date.UTC(year, month-1, day);
+            date = new Date(Date.UTC(year, month-1, day));
 
             if (parts.length > 3) {
                 const hours = parseInt(parts[3]);
