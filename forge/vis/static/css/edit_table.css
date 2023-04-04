@@ -94,11 +94,15 @@ table.edits > tbody > tr td.hidden {
   display: none;
 }
 
+table.edits > tbody > tr td {
+  vertical-align: top;
+}
 
 table.edits > tbody > tr td:nth-child(1),
 table.edits > tbody > tr td:nth-child(2),
 table.edits > tbody > tr td:nth-child(5) {
   font-family: monospace;
+  padding-top: 6px;
 }
 
 table.edits > tbody > tr.edit-deleted {
@@ -109,5 +113,5 @@ table.edits > tbody > tr.edit-other-type td:nth-child(3) {
 }
 
 table.edits > tbody > tr td:nth-child(8) {
-  white-space: pre;
+  white-space: pre-line;
 }

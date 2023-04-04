@@ -91,12 +91,19 @@ table.events > tbody > tr td.hidden {
 
 table.events > tbody > tr td:nth-child(1) {
   font-family: monospace;
+  vertical-align: top;
+  padding-top: 6px;
 }
 
 table.events > tbody > tr.event-system-type td:nth-child(2) {
   color: #f66;
+  vertical-align: top;
+}
+
+table.events > tbody > tr.event-system-type td:nth-child(3) {
+  vertical-align: top;
 }
 
 table.events > tbody > tr td:nth-child(4) {
-  white-space: pre;
+  white-space: pre-line;
 }
