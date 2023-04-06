@@ -4,7 +4,7 @@ from ..default.dashboard import code_records as base_code_records, record as bas
 
 code_records = dict(base_code_records)
 
-code_records['	radiation-raw-ingest-twst'] = FileIngestRecord.simple_override(
+code_records['radiation-raw-ingest-twst'] = FileIngestRecord.simple_override(
     name="Ingest TWST data",
 )
 
