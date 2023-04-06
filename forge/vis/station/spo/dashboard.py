@@ -5,7 +5,7 @@ from ..default.dashboard import code_records as base_code_records, record as bas
 code_records = dict(base_code_records)
 
 for code in ('acquisition-ingest-cpd3', 'met-raw-ingest-cr1000', 'radiation-raw-ingest-scaled'):
-    code_records[code] = base_code_records['code'].simple_override(
+    code_records[code] = base_code_records[code].simple_override(
         offline=50 * 60 * 60,
     )
 
