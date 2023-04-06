@@ -6,7 +6,7 @@ code_records = dict(base_code_records)
 
 code_records['aerosol-raw-ingest'] = FileIngestRecord.simple_override(
     name="Ingest uploaded FTP data",
-),
+)
 
 
 def record(station: typing.Optional[str], code: str) -> typing.Optional[Record]:

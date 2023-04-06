@@ -6,7 +6,7 @@ code_records = dict(base_code_records)
 
 code_records['	radiation-raw-ingest-twst'] = FileIngestRecord.simple_override(
     name="Ingest TWST data",
-),
+)
 
 
 def record(station: typing.Optional[str], code: str) -> typing.Optional[Record]:

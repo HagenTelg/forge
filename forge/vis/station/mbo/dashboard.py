@@ -6,10 +6,10 @@ code_records = dict(base_code_records)
 
 code_records['gas-raw-ingest-ccg'] = FileIngestRecord.simple_override(
     name="Ingest CCG gas data",
-),
+)
 code_records['met-raw-ingest-ccg'] = FileIngestRecord.simple_override(
     name="Ingest CCG meteorological data",
-),
+)
 
 
 def record(station: typing.Optional[str], code: str) -> typing.Optional[Record]:
