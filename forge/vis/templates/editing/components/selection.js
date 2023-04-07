@@ -203,7 +203,7 @@ class InstrumentSelectionShortcut {
         this.display = display;
         this.patterns = [];
         for (const pattern of patterns) {
-            this.patterns.push(new RegExp(patterns));
+            this.patterns.push(new RegExp(pattern));
         }
         this.instrument = undefined;
         this.require = undefined;

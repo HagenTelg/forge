@@ -75,9 +75,9 @@ instrument_selections = [
     InstrumentSelection("Optical", [
        r'^Bb?[sae]?c?[BGRQ0-9]*',
        r'^Xc?[BGRQ0-9]*',
-    ], instrument='^(S|A|E)'),
+    ], instrument='^(S|A|E)[0-9]+'),
     InstrumentSelection("Conditions", [
        r'^(?:T|P|U)1?',
-    ], require=r'^((P1?)|(T1?)|((Bb?[sae]?|X)[BGRQ0-9]*c?)){'),
+    ], require=r'^((P1?)|(T1?)|((Bb?[sae]?|X)[BGRQ0-9]*c?))'),
 ]
 
