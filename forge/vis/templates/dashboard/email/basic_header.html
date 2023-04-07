@@ -1,3 +1,4 @@
+<div>
 {% if entry.status == entry.Status.OFFLINE %}
 <span style="font-weight: bold; color: #c00;">OFFLINE SINCE</span>: {{ format_datetime(entry.updated) }}
 {% elif entry.status == entry.Status.FAILED %}
@@ -5,3 +6,4 @@
 {% else %}
 Last updated: {{ format_datetime(entry.updated) }}
 {% endif %}
+</div>
