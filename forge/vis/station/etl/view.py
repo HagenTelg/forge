@@ -1,6 +1,6 @@
 import typing
 from ..default.view import detach, View, aerosol_views
-from ..default.aerosol.aethalometer import AE31, AE31Status, AE31OpticalStatus
+from ..default.aerosol.aethalometer import AE31, AE31Status
 from ..default.aerosol.pressure import BasicPressure
 from ..default.aerosol.tsi377Xcpc import TSI3775CPCStatus
 from .counts import RealtimeParticleConcentration, EditingParticleConcentration
@@ -23,7 +23,6 @@ station_views['aerosol-raw-aethalometer'] = AE31('aerosol-raw')
 station_views['aerosol-raw-aethalometerstatus'] = AE31Status('aerosol-raw')
 station_views['aerosol-realtime-aethalometer'] = AE31('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-aethalometerstatus'] = AE31Status('aerosol-realtime', realtime=True)
-station_views['aerosol-editing-aethalometerstatus'] = AE31OpticalStatus('aerosol-editing')
 
 station_views['aerosol-raw-pressure'] = BasicPressure('aerosol-raw')
 station_views['aerosol-realtime-pressure'] = BasicPressure('aerosol-realtime', realtime=True)

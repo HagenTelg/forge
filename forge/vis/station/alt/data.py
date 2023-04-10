@@ -487,6 +487,8 @@ station_profile_data['aerosol']['realtime']['ae33status'] = {
     RealtimeTranslator.Key('T1_A82'): 'Tcontroller',
     RealtimeTranslator.Key('T2_A82'): 'Tsupply',
     RealtimeTranslator.Key('T3_A82'): 'Tled',
+    RealtimeTranslator.Key('Q1_A82'): 'Q1',
+    RealtimeTranslator.Key('Q2_A82'): 'Q2',
 }
 
 

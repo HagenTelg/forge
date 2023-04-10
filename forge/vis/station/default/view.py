@@ -6,7 +6,7 @@ from forge.processing.station.lookup import station_data
 from .aerosol.counts import ParticleConcentration
 from .aerosol.optical import Optical
 from .aerosol.green import Green
-from .aerosol.aethalometer import AethalometerOptical, AE33, AE33Status, AE33OpticalStatus
+from .aerosol.aethalometer import AethalometerOptical, AE33, AE33Status
 from .aerosol.intensive import Intensive
 from .aerosol.extensive import Extensive
 from .aerosol.flow import Flow
@@ -66,7 +66,6 @@ aerosol_views: typing.Dict[str, View] = {
     'aerosol-editing-backscattering': EditingBackScattering(),
     'aerosol-editing-absorption': EditingAbsorption(),
     'aerosol-editing-aethalometer': EditingAethalometer(),
-    'aerosol-editing-aethalometerstatus': AE33OpticalStatus('aerosol-editing'),
     'aerosol-editing-wind': Wind('aerosol-editing'),
     'aerosol-editing-intensive': Intensive('aerosol-editing'),
     'aerosol-editing-extensive': Extensive('aerosol-editing'),

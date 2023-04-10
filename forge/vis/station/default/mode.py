@@ -38,7 +38,6 @@ aerosol_modes: typing.Dict[str, Mode] = _construct_modes([
         Editing.Entry('aerosol-editing-backscattering', "Back Scattering"),
         Editing.Entry('aerosol-editing-absorption', "Absorption"),
         Editing.Entry('aerosol-editing-aethalometer', "Aethalometer"),
-        Editing.Entry('aerosol-editing-aethalometerstatus', "Aethalometer Status"),
         Editing.Entry('aerosol-editing-wind', "Wind"),
         Editing.Entry('aerosol-editing-intensive', "Intensive"),
         Editing.Entry('aerosol-editing-extensive', "Extensive"),

@@ -3,7 +3,7 @@ from ..default.view import detach, View, aerosol_views
 from ..default.aerosol.tsi3010cpc import TSI3010CPCStatus
 from ..default.aerosol.clap import CLAPStatus
 from ..default.aerosol.psap import PSAPStatus
-from ..default.aerosol.aethalometer import AE31, AE31Status, AE31OpticalStatus
+from ..default.aerosol.aethalometer import AE31, AE31Status
 from .optical import OpticalPSAP, EditingPSAP, OpticalCLAP, EditingCLAP, OpticalCOSMOS, EditingCOSMOS
 from .clap import CLAPStatusCOSMOS
 from .green import Green
@@ -44,7 +44,6 @@ station_views['aerosol-raw-aethalometer'] = AE31('aerosol-raw')
 station_views['aerosol-raw-aethalometerstatus'] = AE31Status('aerosol-raw')
 station_views['aerosol-realtime-aethalometer'] = AE31('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-aethalometerstatus'] = AE31Status('aerosol-realtime', realtime=True)
-station_views['aerosol-editing-aethalometerstatus'] = AE31OpticalStatus('aerosol-editing')
 
 station_views['aerosol-raw-green'] = Green('aerosol-raw')
 station_views['aerosol-realtime-green'] = Green('aerosol-realtime', realtime=True)

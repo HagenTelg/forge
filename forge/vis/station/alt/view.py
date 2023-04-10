@@ -4,8 +4,8 @@ from ..default.aerosol.pressure import BasicPressure
 from ..default.aerosol.psap import PSAPStatus
 from .counts import ParticleConcentration, EditingParticleConcentration, TSI3772CPCStatus, TSI3772CPCStatusSecondary
 from .clap import CLAPStatusSecondary
-from .aethalometer import AE31Optical, AE31, AE31Status, AE31OpticalStatus, EditingAE31
-from .aethalometer import AE33Optical, AE33, AE33Status, AE33OpticalStatus, EditingAE33
+from .aethalometer import AE31Optical, AE31, AE31Status, EditingAE31
+from .aethalometer import AE33Optical, AE33, AE33Status, EditingAE33
 from .green import Green
 from .optical import OpticalCLAPSecondary, OpticalPSAP, EditingCLAPSecondary, EditingPSAP
 from .smps import SMPSDistribution, SMPSCounts
@@ -48,7 +48,6 @@ station_views['aerosol-raw-ae31status'] = AE31Status('aerosol-raw')
 station_views['aerosol-realtime-ae31'] = AE31('aerosol-raw', realtime=True)
 station_views['aerosol-realtime-ae31status'] = AE31Status('aerosol-raw', realtime=True)
 station_views['aerosol-editing-ae31'] = EditingAE31()
-station_views['aerosol-editing-ae31status'] = AE31OpticalStatus('aerosol-editing')
 station_views['aerosol-clean-ae31'] = AE31Optical('aerosol-clean')
 station_views['aerosol-avgh-ae31'] = AE31Optical('aerosol-avgh')
 
@@ -57,7 +56,6 @@ station_views['aerosol-raw-ae33status'] = AE33Status('aerosol-raw')
 station_views['aerosol-realtime-ae33'] = AE33('aerosol-raw', realtime=True)
 station_views['aerosol-realtime-ae33status'] = AE33Status('aerosol-raw', realtime=True)
 station_views['aerosol-editing-ae33'] = EditingAE33()
-station_views['aerosol-editing-ae33status'] = AE33OpticalStatus('aerosol-editing')
 station_views['aerosol-clean-ae33'] = AE33Optical('aerosol-clean')
 station_views['aerosol-avgh-ae33'] = AE33Optical('aerosol-avgh')
 

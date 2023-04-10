@@ -4606,6 +4606,8 @@ aerosol_data = {
                 Name(station, 'raw', 'T1_A81'): 'Tcontroller',
                 Name(station, 'raw', 'T2_A81'): 'Tsupply',
                 Name(station, 'raw', 'T3_A81'): 'Tled',
+                Name(station, 'raw', 'Q1_A81'): 'Q1',
+                Name(station, 'raw', 'Q2_A81'): 'Q2',
             }, send
         ),
 
@@ -5325,6 +5327,8 @@ aerosol_data = {
             RealtimeTranslator.Key('T1_A81'): 'Tcontroller',
             RealtimeTranslator.Key('T2_A81'): 'Tsupply',
             RealtimeTranslator.Key('T3_A81'): 'Tled',
+            RealtimeTranslator.Key('Q1_A81'): 'Q1',
+            RealtimeTranslator.Key('Q2_A81'): 'Q2',
         },
 
         'cpcstatus': {

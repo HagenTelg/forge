@@ -75,6 +75,8 @@ station_profile_data['aerosol']['raw']['aethalometerstatus'] = lambda station, s
         Name(station, 'raw', 'T1_A41'): 'Tcontroller',
         Name(station, 'raw', 'T2_A41'): 'Tsupply',
         Name(station, 'raw', 'T3_A41'): 'Tled',
+        Name(station, 'raw', 'Q1_A41'): 'Q1',
+        Name(station, 'raw', 'Q2_A41'): 'Q2',
     }, send
 )
 station_profile_data['aerosol']['realtime']['aethalometer'] = dict(

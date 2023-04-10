@@ -18,7 +18,6 @@ station_modes['aerosol-raw'].remove('aerosol-raw-aethalometerstatus')
 station_modes['aerosol-realtime'].remove('aerosol-realtime-aethalometer')
 station_modes['aerosol-realtime'].remove('aerosol-realtime-aethalometerstatus')
 station_modes['aerosol-editing'].remove('aerosol-editing-aethalometer')
-station_modes['aerosol-editing'].remove('aerosol-editing-aethalometerstatus')
 station_modes['aerosol-clean'].remove('aerosol-clean-aethalometer')
 station_modes['aerosol-avgh'].remove('aerosol-avgh-aethalometer')
 

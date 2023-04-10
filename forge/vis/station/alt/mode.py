@@ -57,7 +57,6 @@ station_modes['aerosol-raw'].remove('aerosol-raw-aethalometerstatus')
 station_modes['aerosol-realtime'].remove('aerosol-realtime-aethalometer')
 station_modes['aerosol-realtime'].remove('aerosol-realtime-aethalometerstatus')
 station_modes['aerosol-editing'].remove('aerosol-editing-aethalometer')
-station_modes['aerosol-editing'].remove('aerosol-editing-aethalometerstatus')
 station_modes['aerosol-clean'].remove('aerosol-clean-aethalometer')
 station_modes['aerosol-avgh'].remove('aerosol-avgh-aethalometer')
 
@@ -71,8 +70,6 @@ station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-ae31st
                                          'aerosol-realtime-clapstatus')
 station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-ae31', "AE31"),
                                         'aerosol-editing-absorption')
-station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-ae31status', "AE31 Status"),
-                                        'aerosol-editing-ae31')
 station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-ae31', "AE31"),
                                       'aerosol-clean-green')
 station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-ae31', "AE31"),
@@ -89,8 +86,6 @@ station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-ae33st
                                          'aerosol-realtime-ae31status')
 station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-ae33', "AE33"),
                                         'aerosol-editing-ae31status')
-station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-ae33status', "AE33 Status"),
-                                        'aerosol-editing-ae33')
 station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-ae33', "AE33"),
                                       'aerosol-clean-ae31')
 station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-ae33', "AE33"),
@@ -100,7 +95,7 @@ station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-ae33', "AE33")
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-smps', "SMPS"),
                                     'aerosol-raw-ae33')
 station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-smps', "SMPS"),
-                                        'aerosol-editing-ae33status')
+                                        'aerosol-editing-ae33')
 station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-smps', "SMPS"),
                                       'aerosol-clean-ae33')
 station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-smps', "SMPS"),

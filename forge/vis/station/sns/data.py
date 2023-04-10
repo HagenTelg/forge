@@ -18,6 +18,8 @@ station_profile_data['aerosol']['raw']['aethalometerstatus'] = lambda station, s
         Name(station, 'raw', 'T1_A42'): 'Tcontroller',
         Name(station, 'raw', 'T2_A42'): 'Tsupply',
         Name(station, 'raw', 'T3_A42'): 'Tled',
+        Name(station, 'raw', 'Q1_A42'): 'Q1',
+        Name(station, 'raw', 'Q2_A42'): 'Q2',
     }, send
 )
 station_profile_data['aerosol']['realtime']['aethalometer'] = dict(
@@ -30,6 +32,8 @@ station_profile_data['aerosol']['realtime']['aethalometerstatus'] = {
     RealtimeTranslator.Key('T1_A42'): 'Tcontroller',
     RealtimeTranslator.Key('T2_A42'): 'Tsupply',
     RealtimeTranslator.Key('T3_A42'): 'Tled',
+    RealtimeTranslator.Key('Q1_A42'): 'Q1',
+    RealtimeTranslator.Key('Q2_A42'): 'Q2',
 }
 station_profile_data['aerosol']['clean']['aethalometer'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, dict(
