@@ -61,20 +61,26 @@ async def send_entry_emails(interface: ControlInterface, args) -> None:
         recipients = list(recipients)
         recipients.sort()
         reply_to = contents.reply_to
-        if reply_to:
-            reply_to = ', '.join(reply_to)
         subject = contents.subject
         if contents.expose_all_recipients:
             message = EmailMessage()
             message['Subject'] = subject
             message['To'] = ', '.join(recipients)
             if reply_to:
+                reply_to.update(recipients)
+                reply_to = list(reply_to)
+                reply_to.sort()
+                reply_to = ', '.join(reply_to)
                 message['Reply-To'] = reply_to
             message.set_content(contents.text)
             if contents.html:
                 message.add_alternative(contents.html, subtype='html')
             email_futures.append(send_email(message, CONFIGURATION.get('EMAIL')))
         else:
+            if reply_to:
+                reply_to = list(reply_to)
+                reply_to.sort()
+                reply_to = ', '.join(reply_to)
             for r in recipients:
                 message = EmailMessage()
                 message['Subject'] = subject

@@ -1,8 +1,8 @@
-{% if communications_lost|length > 0 %}
+{%- if communications_lost|length > 0 -%}
 <div style="margin-top: 12px;">
     <div style="font-size: 20px; font-weight: bold;">Instrument Communications Losses:</div>
-{% for i in communications_lost.keys()|sort %}
+{%- for i in communications_lost.keys()|sort -%}
     <div><span style="margin-top: 2px; font-weight: bold;">{{ i }}</span>: {% if communications_lost[i][1] == 1 %}1 instance{% else %}{{ communications_lost[i][1] }} instances{% endif %}</div>
-{% endfor %}
+{%- endfor -%}
 </div>
-{% endif %}
+{%- endif -%}

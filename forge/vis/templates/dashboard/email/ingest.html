@@ -1,31 +1,31 @@
 <!DOCTYPE html>
 <html>
   <body>
-{% include 'dashboard/email/basic_header.html' %}
-{% include 'dashboard/common/basic/notifications.html' %}
-{% include 'dashboard/common/basic/watchdogs.html' %}
-{% with include_present = True %}
-{% include 'dashboard/common/basic/conditions.html' %}
-{% endwith %}
+{%- include 'dashboard/email/basic_header.html' -%}
+{%- include 'dashboard/common/basic/notifications.html' -%}
+{%- include 'dashboard/common/basic/watchdogs.html' -%}
+{%- with include_present = True -%}
+{%- include 'dashboard/common/basic/conditions.html' -%}
+{%- endwith -%}
 
-{% set event_sort = namespace(file_processed=[], other=[]) %}
-{% for i in events %}
-    {% if i.is_processed_file %}
-        {% do event_sort.file_processed.append(i) %}
-    {% else %}
-        {% do event_sort.other.append(i) %}
-    {% endif %}
-{% endfor %}
+{%- set event_sort = namespace(file_processed=[], other=[]) -%}
+{%- for i in events -%}
+    {%- if i.is_processed_file -%}
+        {%- do event_sort.file_processed.append(i) -%}
+    {%- else -%}
+        {%- do event_sort.other.append(i) -%}
+    {%- endif -%}
+{%- endfor -%}
 
-{% with events = event_sort.other %}
-{% include 'dashboard/common/basic/events.html' %}
-{% endwith %}
+{%- with events = event_sort.other -%}
+{%- include 'dashboard/common/basic/events.html' -%}
+{%- endwith -%}
 
-{% with files = event_sort.file_processed %}
-{% include 'dashboard/common/ingest/files.html' %}
-{% endwith %}
+{%- with files = event_sort.file_processed -%}
+{%- include 'dashboard/common/ingest/files.html' -%}
+{%- endwith -%}
 
-{% include 'dashboard/email/basic_footer.html' %}
+{%- include 'dashboard/email/basic_footer.html' -%}
 
   </body>
 </html>

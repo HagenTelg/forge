@@ -3,6 +3,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 from forge.vis.station.lookup import station_data
 from forge.vis.mode.permissions import is_available as mode_available
+from forge.dashboard import CONFIGURATION
 from .basic import BasicEntry, DatabaseCondition, EmailContents
 from .fileingest import FileIngestEntry, FileIngestRecord
 
@@ -272,11 +273,25 @@ class AcquisitionIngestEntry(FileIngestEntry):
         return super().condition_for_code(code)
 
 
+class AcquisitionEmail(EmailContents):
+    @property
+    def reply_to(self) -> typing.Set[str]:
+        return set(CONFIGURATION.get(
+            'DASHBOARD.EMAIL.ACQUISITION.REPLY',
+            CONFIGURATION.get('DASHBOARD.EMAIL.REPLY', [])
+        ))
+
+    @property
+    def expose_all_recipients(self) -> bool:
+        return True
+
+
 class AcquisitionIngestRecord(FileIngestRecord):
     DETAILS_TEMPLATE = 'acquisition.html'
     EMAIL_TEXT_TEMPLATE = 'acquisition.txt'
     EMAIL_HTML_TEMPLATE = 'acquisition.html'
-    ENTRY: typing.Type[FileIngestEntry] = AcquisitionIngestEntry
+    ENTRY = AcquisitionIngestEntry
+    EMAIL_CONTENTS = AcquisitionEmail
     PLOT_MODE = 'aerosol-raw'
     ACQUISITION_MODE = 'acquisition'
     REALTIME_MODE = 'aerosol-realtime'

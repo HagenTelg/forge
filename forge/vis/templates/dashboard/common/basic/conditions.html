@@ -1,24 +1,24 @@
-{% if conditions|length > 0 %}
-{% set SEVERITY_STYLE = {
+{%- if conditions|length > 0 -%}
+{%- set SEVERITY_STYLE = {
     Severity.INFO: 'margin-top: 2px; font-weight: bold;',
     Severity.WARNING: 'margin-top: 2px; font-weight: bold; color: #c90;',
     Severity.ERROR: 'margin-top: 2px; font-weight: bold; color: #c00;',
-} %}
+} -%}
 
 <div style="margin-top: 12px;">
     <div style="font-size: 20px; font-weight: bold;">Conditions:</div>
-{% for i in conditions %}
+{%- for i in conditions -%}
     <div style="{{ SEVERITY_STYLE[i.severity] }}" class="condition-present"
          title="From: {{ i.begin_present_iso8601 }}&#10;To: {{ i.end_present_iso8601 }}"
          begin_present="{{ i.begin_present_ms }}" end_present="{{ i.end_present_ms }}"
-         total_ms="{{ i.total_ms }}">{{ i.display }}{% if include_present %}: {{ i.total_display }} ({{ condition_percent(i) }}%){% endif %}</div>
-    {% if i.detail %}
-        {% if "\n" in i.detail %}
-            <pre style="margin-left: 16px;">{{ i.detail }}</pre>
-        {% else %}
-            <div style="margin-left: 16px;">{{ i.detail }}</div>
-        {% endif %}
-    {% endif %}
-{% endfor %}
+         total_ms="{{ i.total_ms }}">{{ i.display|e }}{% if include_present %}: {{ i.total_display }} ({{ condition_percent(i) }}%){% endif %}</div>
+    {%- if i.detail -%}
+        {%- if "\n" in i.detail -%}
+            <pre style="margin-left: 16px;">{{ i.detail|e }}</pre>
+        {%- else -%}
+            <div style="margin-left: 16px;">{{ i.detail|e }}</div>
+        {%- endif -%}
+    {%- endif -%}
+{%- endfor -%}
 </div>
-{% endif %}
+{%- endif -%}

@@ -294,6 +294,7 @@ class BasicRecord(BaseRecord):
     EMAIL_HTML_TEMPLATE = 'basic.html'
     BADGE_TEMPLATE = 'basic.svg'
     ENTRY: typing.Type[BasicEntry] = BasicEntry
+    EMAIL_CONTENTS: typing.Type[EmailContents] = EmailContents
 
     @classmethod
     def simple_override(cls, *args, template_base: typing.Optional[str] = None,
@@ -448,6 +449,8 @@ class BasicRecord(BaseRecord):
         if resend:
             entry, notifications, watchdogs, events, conditions = await self.details_data(
                 db, station, entry_code, start_epoch_ms)
+            if not entry:
+                return None
 
             end_epoch = time.time()
             if entry.updated < end_epoch:
@@ -455,12 +458,12 @@ class BasicRecord(BaseRecord):
         else:
             entry, start_epoch, end_epoch, notifications, watchdogs, events, conditions = await self.email_data(
                 db, station, entry_code, start_epoch_ms)
+            if not entry:
+                return None
 
             check = int(floor(start_epoch * 1000.0))
             if start_epoch_ms > check:
                 start_epoch_ms = check
-        if not entry:
-            return None
 
         end_epoch_ms = int(ceil(end_epoch * 1000.0))
         if end_epoch_ms <= start_epoch_ms:
@@ -504,7 +507,8 @@ class BasicRecord(BaseRecord):
             apply_contents_severity(check.severity)
 
         def condition_percent(condition: BasicEntry.Condition) -> str:
-            percent = round(condition.total_ms / (end_epoch_ms - start_epoch_ms))
+            percent = condition.total_ms / (end_epoch_ms - start_epoch_ms)
+            percent = round(percent * 100.0)
             percent = max(1, min(100, percent))
             return str(percent)
 
@@ -534,7 +538,7 @@ class BasicRecord(BaseRecord):
 
         text = await template_file(package_template('dashboard', 'email', self.EMAIL_TEXT_TEMPLATE))
         html = await template_file(package_template('dashboard', 'email', self.EMAIL_HTML_TEMPLATE))
-        return EmailContents(entry, contents_severity, text, html)
+        return self.EMAIL_CONTENTS(entry, contents_severity, text, html)
 
     async def badge_data(self, db: DisplayInterface,
                          station: typing.Optional[str], entry_code: str) -> typing.Optional[BasicEntry]:

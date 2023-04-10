@@ -1,40 +1,40 @@
-{% set SEVERITY_STYLE = {
+{%- set SEVERITY_STYLE = {
     Severity.INFO: 'margin-top: 12px; font-weight: bold;',
     Severity.WARNING: 'margin-top: 12px; font-weight: bold; color: #c90;',
     Severity.ERROR: 'margin-top: 12px; font-weight: bold; color: #c00;',
-} %}
-{% set global_status = namespace(count=0) %}
-{% for i in notifications %}
-{% if i.code|length != 0 %}{% continue %}{% endif %}
-    {% set global_status.count = global_status.count + 1 %}
-    {% if not i.detail %}{% continue %}{% endif %}
+} -%}
+{%- set global_status = namespace(count=0) -%}
+{%- for i in notifications -%}
+{%- if i.code|length != 0 %}{% continue %}{% endif -%}
+    {%- set global_status.count = global_status.count + 1 -%}
+    {%- if not i.detail %}{% continue %}{% endif -%}
     <div style="{{ SEVERITY_STYLE[i.severity] }}">STATUS</div>
-    {% if "\n" in i.detail %}
-        <pre style="margin-top: 2px;">{{ i.detail }}</pre>
-    {% else %}
-        <div style="margin-top: 2px;">{{ i.detail }}</div>
-    {% endif %}
-{% endfor %}
+    {%- if "\n" in i.detail -%}
+        <pre style="margin-top: 2px;">{{ i.detail|e }}</pre>
+    {%- else -%}
+        <div style="margin-top: 2px;">{{ i.detail|e }}</div>
+    {%- endif -%}
+{%- endfor -%}
 
-{% if notifications|length > global_status.count %}
-{% set SEVERITY_STYLE = {
+{%- if notifications|length > global_status.count -%}
+{%- set SEVERITY_STYLE = {
     Severity.INFO: 'margin-top: 2px; font-weight: bold;',
     Severity.WARNING: 'margin-top: 2px; font-weight: bold; color: #c90;',
     Severity.ERROR: 'margin-top: 2px; font-weight: bold; color: #c00;',
-} %}
+} -%}
 
 <div style="margin-top: 12px;">
     <div style="font-size: 20px; font-weight: bold;">Notifications:</div>
-{% for i in notifications %}
-    {% if i.code|length == 0 %}{% continue %}{% endif %}
-    <div style="{{ SEVERITY_STYLE[i.severity] }}">{{ i.display }}</div>
-    {% if i.detail %}
-        {% if "\n" in i.detail %}
-            <pre style="margin-left: 16px;">{{ i.detail }}</pre>
-        {% else %}
-            <div style="margin-left: 16px;">{{ i.detail }}</div>
-        {% endif %}
-    {% endif %}
-{% endfor %}
+{%- for i in notifications -%}
+    {%- if i.code|length == 0 %}{% continue %}{% endif -%}
+    <div style="{{ SEVERITY_STYLE[i.severity] }}">{{ i.display|e }}</div>
+    {%- if i.detail -%}
+        {%- if "\n" in i.detail -%}
+            <pre style="margin-left: 16px;">{{ i.detail|e }}</pre>
+        {%- else -%}
+            <div style="margin-left: 16px;">{{ i.detail|e }}</div>
+        {%- endif -%}
+    {%- endif -%}
+{%- endfor -%}
 </div>
-{% endif %}
+{%- endif -%}
