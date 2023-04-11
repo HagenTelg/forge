@@ -144,6 +144,8 @@ class AcquisitionIngestEntry(FileIngestEntry):
         '-thermo49iq-lamp_current_alarm': InstrumentCondition.flag_override("Lamp current out of range"),
         '-thermo49iq-lamp_temperature_alarm': InstrumentCondition.flag_override("Lamp temperature out of range"),
         '-thermo49iq-sample_temperature_alarm': InstrumentCondition.flag_override("Sample temperature out of range"),
+
+        '-admagic250cpc-pulse_height_low': InstrumentCondition.flag_override("Pulse height low (less than 800mV)", "Wick wetting may be required"),
     }
 
     class FileProcessed(FileIngestEntry.FileProcessed):
