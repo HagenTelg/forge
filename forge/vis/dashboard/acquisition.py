@@ -1,4 +1,5 @@
 import typing
+from math import isfinite
 from starlette.requests import Request
 from starlette.responses import Response
 from forge.vis.station.lookup import station_data
@@ -195,6 +196,13 @@ class AcquisitionIngestEntry(FileIngestEntry):
                 return None
             if len(percent_error) != 6:
                 return None
+            for i in range(len(percent_error)):
+                try:
+                    percent_error[i] = float(i)
+                    if not isfinite(percent_error[i]):
+                        raise ValueError
+                except (ValueError, TypeError):
+                    percent_error[i] = None
 
             def percent_errors(errs):
                 return ", ".join([f"{e:4.1f}" if e is not None else "    " for e in errs])
