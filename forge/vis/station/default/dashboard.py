@@ -3,9 +3,11 @@ from forge.vis.dashboard import Record
 from forge.vis.dashboard.basic import BasicRecord
 from forge.vis.dashboard.fileingest import FileIngestRecord
 from forge.vis.dashboard.acquisition import AcquisitionIngestRecord
+from forge.vis.dashboard.telemetry import TelemetryRecord
 
 
 code_records: typing.Dict[str, Record] = {
+    TelemetryRecord.CODE: TelemetryRecord(),
     'acquisition-ingest-cpd3': AcquisitionIngestRecord.simple_override(
         name="CPD3 acquisition data processing",
     ),

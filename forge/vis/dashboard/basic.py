@@ -19,6 +19,7 @@ from .details import (Notification as BaseNotification, Watchdog as BaseWatchdog
 from .status import Status
 from .entry import Entry as BaseEntry
 from .email import EmailContents
+from .badge import assemble_badge_svg, assemble_badge_json
 
 
 _SEVERITY_SORT: typing.Dict[Severity, int] = {
@@ -232,9 +233,12 @@ class BasicEntry(BaseEntry):
 
     @classmethod
     async def get_status(cls, db: DisplayInterface, email: Status.Email,
-                         station: typing.Optional[str], code: str, start_epoch: float) -> typing.Optional["Status"]:
+                         station: typing.Optional[str], entry_code: str, start_epoch_ms: int,
+                         **kwargs) -> typing.Optional["Status"]:
+        start_epoch = start_epoch_ms / 1000.0
+
         def handle_result(data: DisplayInterface.EntryDetails) -> typing.Optional["Status"]:
-            entry: typing.Optional[BasicEntry] = cls.from_db(station, code, data.entry)
+            entry: typing.Optional[BasicEntry] = cls.from_db(station, entry_code, data.entry)
             if not entry:
                 return None
 
@@ -285,7 +289,10 @@ class BasicEntry(BaseEntry):
 
             return Status(information_severity, email)
 
-        return await db.entry_details(station, code, start_epoch, handle_result)
+        return await db.entry_details(station, entry_code, start_epoch, handle_result)
+
+    async def base_email_severity(self, **kwargs) -> typing.Optional[Severity]:
+        return None
 
 
 class BasicRecord(BaseRecord):
@@ -314,10 +321,8 @@ class BasicRecord(BaseRecord):
                     station: typing.Optional[str], code: str, **kwargs) -> typing.Optional[BasicEntry]:
         return self.ENTRY.from_db(station, code, db)
 
-    async def status(self, db: DisplayInterface, email: Status.Email,
-                     station: typing.Optional[str], entry_code: str, start_epoch_ms: int,
-                     **kwargs) -> typing.Optional[Status]:
-        return await self.ENTRY.get_status(db, email, station, entry_code, start_epoch_ms / 1000.0)
+    async def status(self, **kwargs) -> typing.Optional[Status]:
+        return await self.ENTRY.get_status(**kwargs)
 
     async def details_data(self, db: DisplayInterface,
                            station: typing.Optional[str], code: str, start_epoch_ms: int) -> typing.Tuple[
@@ -474,7 +479,12 @@ class BasicRecord(BaseRecord):
         conditions.sort(key=lambda x: (_SEVERITY_SORT[x.severity], x.display))
         events.sort(key=lambda x: (x.occurred_at, _SEVERITY_SORT[x.severity], x.display))
 
-        contents_severity: typing.Optional[Severity] = None
+        contents_severity: typing.Optional[Severity] = await entry.base_email_severity(
+            db=db,
+            station=station, entry_code=entry_code,
+            start_epoch_ms=start_epoch_ms, resend=resend,
+            **kwargs
+        )
 
         def apply_contents_severity(severity: Severity) -> None:
             nonlocal contents_severity
@@ -548,38 +558,19 @@ class BasicRecord(BaseRecord):
                           station: typing.Optional[str], entry_code: str, **kwargs) -> Response:
         entry = await self.badge_data(db, station, entry_code)
         if not entry:
-            return JSONResponse({'status': BasicEntry.Status.OFFLINE.value})
-        return JSONResponse({'status': entry.status.value})
+            entry = BasicEntry(station, entry_code, BasicEntry.Status.OFFLINE, time.time())
+        return assemble_badge_json(entry)
 
     async def badge_svg(self, request: Request, db: DisplayInterface,
                           station: typing.Optional[str], entry_code: str, **kwargs) -> Response:
         entry = await self.badge_data(db, station, entry_code)
         if not entry:
             entry = BasicEntry(station, entry_code, BasicEntry.Status.OFFLINE, time.time())
-
-        label = request.query_params.get('label')
-        if label is not None:
-            label = str(label)[:255]
-        else:
-            label = entry.display
-
-        status = request.query_params.get(entry.status.value)
-        if status is not None:
-            status = str(status)[:255]
-        else:
-            status = entry.status.name
-
-        return Response((await package_template('dashboard', 'badge', self.BADGE_TEMPLATE).render_async(
-            request=request,
+        return await assemble_badge_svg(
+            request, entry, self.BADGE_TEMPLATE,
             db=db,
-            record=self,
             station=station,
             code=entry_code,
-            entry=entry,
-            label=label,
-            status=status,
-            Severity=Severity,
-            ord=ord,
-            **kwargs
-        )).strip(), media_type='image/svg+xml')
-
+            record=self,
+            **kwargs,
+        )

@@ -13,6 +13,8 @@ from forge.vis.util import package_template
 from forge.vis.access.database import AccessUser as DatabaseUser, SubscriptionLevel
 from forge.dashboard import is_valid_station, is_valid_code
 from forge.dashboard.display import DisplayInterface
+from forge.telemetry.display import DisplayInterface as TelemetryInterface
+from forge.processing.control.display import DisplayInterface as ProcessingInterface
 from .permissions import dashboard_accessible, is_available
 from .assemble import list_entries, get_record
 from .status import Status
@@ -25,6 +27,8 @@ class _DashboardSocket(WebSocketEndpoint):
         super().__init__(*args, **kwargs)
         self._is_example: bool = False
         self.db: DisplayInterface = None
+        self.telemetry: typing.Optional[TelemetryInterface] = None
+        self.processing: typing.Optional[ProcessingInterface] = None
 
     @requires('authenticated')
     async def on_connect(self, websocket: WebSocket):
@@ -41,6 +45,8 @@ class _DashboardSocket(WebSocketEndpoint):
                 raise HTTPException(starlette.status.HTTP_403_FORBIDDEN, detail="Not available")
 
         self.db = websocket.scope['dashboard']
+        self.telemetry = websocket.scope.get('telemetry')
+        self.processing = websocket.scope.get('processing')
 
         await websocket.accept()
 
@@ -71,15 +77,15 @@ class _DashboardSocket(WebSocketEndpoint):
         else:
             email = SubscriptionLevel.OFF
 
-        return await record.status(db=self.db, email=email,
-                                   station=station, entry_code=code, start_epoch_ms=start_epoch_ms)
+        return await record.status(db=self.db, telemetry=self.telemetry, processing=self.processing,
+                                   email=email, station=station, entry_code=code, start_epoch_ms=start_epoch_ms)
 
     @requires('authenticated')
     async def on_receive(self, websocket: WebSocket, data: typing.Dict[str, typing.Any]):
         message_type = data['type']
         if message_type == 'list':
             if not self._is_example:
-                entries = await list_entries(self.db, websocket.user)
+                entries = await list_entries(self.db, self.telemetry, self.processing, websocket.user)
             else:
                 from .example import example_list
                 entries = example_list
@@ -171,7 +177,10 @@ async def _details(request: Request) -> Response:
     if record is None:
         raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail="No display available")
 
-    return await record.details(request, db=request.scope['dashboard'],
+    return await record.details(request,
+                                db=request.scope['dashboard'],
+                                telemetry=request.scope.get('telemetry'),
+                                processing=request.scope.get('processing'),
                                 station=station, entry_code=entry_code, start_epoch_ms=start_epoch_ms,
                                 uid=request.query_params.get('uid', '_'))
 
@@ -261,8 +270,13 @@ async def _badge_json(request: Request) -> Response:
     if record is None:
         raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail="No display available")
 
-    return await record.badge_json(request, db=request.scope['dashboard'],
-                                   station=station, entry_code=entry_code)
+    return await record.badge_json(
+        request,
+        db=request.scope['dashboard'],
+        telemetry=request.scope.get('telemetry'),
+        processing=request.scope.get('processing'),
+        station=station, entry_code=entry_code
+    )
 
 
 async def _badge_svg(request: Request) -> Response:
@@ -277,8 +291,13 @@ async def _badge_svg(request: Request) -> Response:
     if record is None:
         raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail="No display available")
 
-    return await record.badge_svg(request, db=request.scope['dashboard'],
-                                  station=station, entry_code=entry_code)
+    return await record.badge_svg(
+        request,
+        db=request.scope['dashboard'],
+        telemetry=request.scope.get('telemetry'),
+        processing=request.scope.get('processing'),
+        station=station, entry_code=entry_code
+    )
 
 
 class DatabaseMiddleware:

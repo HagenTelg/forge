@@ -2,6 +2,24 @@ const entry = document.getElementById('{{uid}}').entry;
 const display_start_ms = "{{ start_epoch_ms }}" * 1;
 const display_end_ms = "{{ end_epoch_ms }}" * 1;
 
+$(".update-time", entry.row_details).each(function() {
+    const update_time = this.getAttribute('update_time') * 1;
+    this.textContent = DashboardEntry.formatFullTime(update_time);
+
+    const now = Date.now();
+    const updated_ago_ms = now - update_time;
+    if (updated_ago_ms > 1000) {
+        this.title = "Updated " + DashboardEntry.formatInterval(updated_ago_ms) + " ago";
+    } else {
+        this.title = "Updated right now";
+    }
+});
+
+$(".time-offset", entry.row_details).each(function() {
+    const offset_ms = Math.abs(this.getAttribute('time_offset') * 1);
+    this.textContent = DashboardEntry.formatInterval(offset_ms);
+});
+
 $(".last-seen", entry.row_details).each(function() {
     this.title = "Last present: " + DashboardEntry.formatFullTime(this.getAttribute('last_seen'));
 });

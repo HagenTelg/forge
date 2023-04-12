@@ -1,0 +1,11 @@
+{%- set time_sync_error = entry.get_time_synchronization_error(telemetry, processing) -%}
+{%- if time_sync_error -%}
+<div style="margin-top: 12px;">
+<span style="font-weight: bold; color: #c00;">TIME SYNCHRONIZATION ERROR</span>: Station clock is
+{% if time_sync_error > 0 -%}
+{{ format_interval(time_sync_error) }} ahead of real time.
+{%- else -%}
+{{ format_interval(time_sync_error * -1) }} behind real time.
+{%- endif -%}
+</div>
+{%- endif -%}

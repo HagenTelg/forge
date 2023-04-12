@@ -21,6 +21,24 @@ async def send_entry_emails(interface: ControlInterface, args) -> None:
     if access_database_uri is None:
         access_database_uri = CONFIGURATION.AUTHENTICATION.DATABASE
     email_interface = EmailInterface(access_database_uri)
+    
+    telemetry_database_uri = args.telemetry_database_uri
+    if telemetry_database_uri is None:
+        telemetry_database_uri = CONFIGURATION.get("TELEMETRY.DATABASE")
+    if telemetry_database_uri:
+        from forge.telemetry.display import DisplayInterface as TelemetryInterface
+        telemetry_interface = TelemetryInterface(telemetry_database_uri)
+    else:
+        telemetry_interface = None
+    
+    processing_database_uri = args.processing_database_uri
+    if processing_database_uri is None:
+        processing_database_uri = CONFIGURATION.get("PROCESSING.CONTROL.DATABASE")
+    if processing_database_uri:
+        from forge.processing.control.display import DisplayInterface as ProcessingInterface
+        processing_interface = ProcessingInterface(processing_database_uri)
+    else:
+        processing_interface = None
 
     start_epoch = time.time() - float(args.interval) * 24 * 60 * 60
 
@@ -40,8 +58,12 @@ async def send_entry_emails(interface: ControlInterface, args) -> None:
             _LOGGER.debug(f"No record available for {(station or '').upper()}/{code}, email skipped")
             continue
 
-        contents = await record.email(db=interface, station=station, entry_code=code, resend=args.resend,
-                                      start_epoch_ms=int(floor(start_epoch * 1000.0)))
+        contents = await record.email(
+            db=interface,
+            telemetry=telemetry_interface,
+            processing=processing_interface,
+            station=station, entry_code=code, resend=args.resend, start_epoch_ms=int(floor(start_epoch * 1000.0))
+        )
         if not contents:
             _LOGGER.debug(f"No email for {(station or '').upper()}/{code}")
             continue
@@ -101,6 +123,24 @@ async def send_entry_emails(interface: ControlInterface, args) -> None:
 async def output_email_contents(interface: ControlInterface, args) -> None:
     from forge.vis.dashboard.assemble import get_record
 
+    telemetry_database_uri = args.telemetry_database_uri
+    if telemetry_database_uri is None:
+        telemetry_database_uri = CONFIGURATION.get("TELEMETRY.DATABASE")
+    if telemetry_database_uri:
+        from forge.telemetry.display import DisplayInterface as TelemetryInterface
+        telemetry_interface = TelemetryInterface(telemetry_database_uri)
+    else:
+        telemetry_interface = None
+
+    processing_database_uri = args.processing_database_uri
+    if processing_database_uri is None:
+        processing_database_uri = CONFIGURATION.get("PROCESSING.CONTROL.DATABASE")
+    if processing_database_uri:
+        from forge.processing.control.display import DisplayInterface as ProcessingInterface
+        processing_interface = ProcessingInterface(processing_database_uri)
+    else:
+        processing_interface = None
+
     station = args.email_station
     if station == '_':
         station = None
@@ -117,8 +157,12 @@ async def output_email_contents(interface: ControlInterface, args) -> None:
 
     start_epoch = time.time() - float(args.interval) * 24 * 60 * 60
 
-    contents = await record.email(db=interface, station=station, entry_code=code, resend=True,
-                                  start_epoch_ms=int(floor(start_epoch * 1000.0)))
+    contents = await record.email(
+        db=interface,
+        telemetry=telemetry_interface,
+        processing=processing_interface,
+        station=station, entry_code=code, resend=True, start_epoch_ms=int(floor(start_epoch * 1000.0))
+    )
     if not contents:
         _LOGGER.error(f"No email available for {(station or '').upper()}/{code}")
         exit(1)

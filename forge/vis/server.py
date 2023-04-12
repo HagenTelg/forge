@@ -139,4 +139,16 @@ if dashboard_uri is not None:
     middleware.append(Middleware(forge.vis.dashboard.server.DatabaseMiddleware, database_uri=dashboard_uri))
 
 
+telemetry_uri = CONFIGURATION.get('TELEMETRY.DATABASE')
+if telemetry_uri is not None:
+    from forge.telemetry.display import DatabaseMiddleware as TelemetryDatabase
+    middleware.append(Middleware(TelemetryDatabase, database_uri=telemetry_uri))
+
+
+processing_uri = CONFIGURATION.get('PROCESSING.CONTROL.DATABASE')
+if processing_uri is not None:
+    from forge.processing.control.display import DatabaseMiddleware as ProcessingDatabase
+    middleware.append(Middleware(ProcessingDatabase, database_uri=processing_uri))
+
+
 app = Starlette(routes=routes, middleware=middleware)

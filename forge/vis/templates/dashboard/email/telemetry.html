@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <body>
+Last seen: {{ format_datetime(entry.updated) }}
+</div>
+{%- if entry.status == entry.Status.FAILED %}
+<div style="margin-top: 12px;">Unable to associate telemetry with station.  This may be due to a mismatch in the authorization.</div>
+{% endif -%}
+{%- if entry.time_offset -%}
+<div style="margin-top: 12px;">
+<span style="font-weight: bold; color: #c00;">TIME SYNCHRONIZATION ERROR</span>: Station clock is
+{% if entry.time_offset > 0 -%}
+{{ format_interval(entry.time_offset) }} ahead of real time.
+{%- else -%}
+{{ format_interval(entry.time_offset * -1) }} behind real time.
+{%- endif -%}
+</div>
+{%- endif -%}
+
+{%- if not entry.have_authorization -%}
+<div style="margin-top: 12px;">No processing authorization set for the station.  Results may be incomplete.</div>
+{%- endif -%}
+  </body>
+</html>

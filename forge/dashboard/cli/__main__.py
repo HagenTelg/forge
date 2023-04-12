@@ -275,9 +275,15 @@ def parse_arguments():
     command_parser.add_argument('--sort',
                                 dest='sort', default='station,code',
                                 help="sort entries by field")
-    parser.add_argument('--access-database',
-                        dest='access_database_uri',
-                        help="access backend database URI")
+    command_parser.add_argument('--access-database',
+                                dest='access_database_uri',
+                                help="access backend database URI")
+    command_parser.add_argument('--processing-database',
+                                dest='processing_database_uri',
+                                help="processing control backend database URI")
+    command_parser.add_argument('--telemetry-database',
+                                dest='telemetry_database_uri',
+                                help="telemetry backend database URI")
 
     command_parser = subparsers.add_parser('email-reset',
                                            help="reset unsent email information")
@@ -294,6 +300,12 @@ def parse_arguments():
     command_parser.add_argument('--interval',
                                 dest='interval', type=float, default=1,
                                 help="minimum time in days to send for")
+    command_parser.add_argument('--processing-database',
+                                dest='processing_database_uri',
+                                help="processing control backend database URI")
+    command_parser.add_argument('--telemetry-database',
+                                dest='telemetry_database_uri',
+                                help="telemetry backend database URI")
     command_parser.add_argument('email_station',
                                 help="station code")
     command_parser.add_argument('email_code',

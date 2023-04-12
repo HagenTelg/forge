@@ -703,3 +703,84 @@ class ControlInterface:
                 orm_session.commit()
 
         return await self.db.execute(execute)
+
+
+class DisplayInterface:
+    def __init__(self, uri: str):
+        self.db = ORMDatabase(uri, _Base)
+
+    async def list_stations(self) -> typing.Set[str]:
+        def execute(engine: Engine) -> typing.Set[str]:
+            with Session(engine) as orm_session:
+                result: typing.Set[str] = set()
+                for v in orm_session.query(_Host.station.distinct()):
+                    result.add(v[0].lower())
+                return result
+
+        return await self.db.execute(execute)
+
+    @staticmethod
+    def _filter_keys(query, accepted_keys: typing.Optional[typing.Set[PublicKey]]):
+        if not accepted_keys:
+            return query
+        query = query.filter(db.or_(
+            *[_Host.public_key == _key_to_column(k) for k in accepted_keys]
+        ))
+        return query
+
+    async def get_last_seen(self, station: str,
+                            accepted_keys: typing.Optional[typing.Set[PublicKey]] = None) -> typing.Optional[datetime.datetime]:
+        station = station.lower()
+
+        def execute(engine: Engine):
+            with Session(engine) as orm_session:
+                query = orm_session.query(_Host).filter_by(station=station)
+                query = self._filter_keys(query, accepted_keys)
+                query = query.order_by(_Host.last_seen.desc())
+                host = query.first()
+                if host:
+                    return host.last_seen
+            return None
+
+        return await self.db.execute(execute)
+
+    async def get_status(self, station: str,
+                         accepted_keys: typing.Optional[typing.Set[PublicKey]] = None) -> typing.Tuple[typing.Optional[datetime.datetime], typing.Optional[int]]:
+        station = station.lower()
+
+        def execute(engine: Engine):
+            with Session(engine) as orm_session:
+                query = orm_session.query(_Host).filter_by(station=station)
+                query = self._filter_keys(query, accepted_keys)
+                query = query.order_by(_Host.last_seen.desc())
+                host = query.first()
+                if not host:
+                    return None, None
+
+                time_offset = orm_session.query(_TelemetryTimeOffset).filter_by(host_data=host.id).first()
+                if time_offset:
+                    time_offset = time_offset.offset
+                else:
+                    time_offset = None
+
+                return host.last_seen, time_offset
+
+        return await self.db.execute(execute)
+
+    async def get_time_offset(self, station: str,
+                              accepted_keys: typing.Optional[typing.Set[PublicKey]] = None) -> typing.Optional[int]:
+        station = station.lower()
+
+        def execute(engine: Engine):
+            with Session(engine) as orm_session:
+                query = orm_session.query(_TelemetryTimeOffset)
+                query = query.join(_Host)
+                query = query.filter(_Host.station == station)
+                query = self._filter_keys(query, accepted_keys)
+                query = query.order_by(_Host.last_seen.desc())
+                offset = query.first()
+                if not offset:
+                    return None
+                return offset.offset
+
+        return await self.db.execute(execute)

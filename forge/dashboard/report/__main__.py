@@ -25,9 +25,13 @@ def add_reporting_arguments(parser):
                         dest='unbounded_time', action='store_true',
                         help="disable time sanity limits")
 
-    parser.add_argument('--message',
-                        dest='status_message',
-                        help="status message text")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--message',
+                       dest='status_message',
+                       help="status message text")
+    group.add_argument('--unit-status',
+                       dest='unit_status',
+                       help="add systemd unit status text")
 
     parser.add_argument('--notifications',
                         dest='notifications', nargs='*',
@@ -94,6 +98,27 @@ def parse_arguments():
     return parser.parse_args()
 
 
+def unit_is_failed(unit_name: str) -> bool:
+    import dbus
+    bus = dbus.SystemBus()
+    proxy = bus.get_object('org.freedesktop.systemd1', '/org/freedesktop/systemd1')
+    try:
+        failed = proxy.ListUnitsFiltered(['failed'], dbus_interface='org.freedesktop.systemd1.Manager')
+    except dbus.DBusException:
+        return False
+    for u in failed:
+        if u[0] == unit_name:
+            return True
+    return False
+
+
+def unit_status_notification(unit_name: str) -> str:
+    import subprocess
+    proc = subprocess.run(['systemctl', 'status', '--lines=50', unit_name],
+                          stdout=subprocess.PIPE, stdin=subprocess.DEVNULL)
+    return proc.stdout.decode('utf-8')
+
+
 def populate_report_arguments(args) -> typing.Dict[str, typing.Any]:
     kwargs = dict()
     for a in ('url', 'key', 'bearer_token', 'update_time',
@@ -114,6 +139,23 @@ def populate_report_arguments(args) -> typing.Dict[str, typing.Any]:
         notifications.append({
             'code': '',
             'data': args.status_message,
+        })
+    elif args.unit_status:
+        notifications = kwargs.get('notifications')
+        if not notifications:
+            notifications = []
+        kwargs['notifications'] = notifications
+
+        unit_name = args.unit_status
+        if unit_is_failed(unit_name):
+            severity = 'error'
+        else:
+            severity = 'info'
+
+        notifications.append({
+            'code': '',
+            'severity': severity,
+            'data': unit_status_notification(unit_name),
         })
 
     return kwargs

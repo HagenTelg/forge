@@ -1251,7 +1251,7 @@ class EmailInterface:
                     if not can_access(orm_session, user):
                         continue
 
-                    result.add(user.email)
+                    result.add(user.email.lower())
 
             return result
 

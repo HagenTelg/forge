@@ -5,11 +5,19 @@ from starlette.responses import Response
 from forge.vis.station.lookup import station_data
 from forge.vis.mode.permissions import is_available as mode_available
 from forge.dashboard import CONFIGURATION
-from .basic import BasicEntry, DatabaseCondition, EmailContents
+from .basic import DisplayInterface, BasicEntry, DatabaseCondition, EmailContents, Status, Severity
 from .fileingest import FileIngestEntry, FileIngestRecord
+from .telemetry import get_station_time_offset, TelemetryInterface, ProcessingInterface
 
 
 class AcquisitionIngestEntry(FileIngestEntry):
+    TIME_UNSYNC_THRESHOLD = 2 * 60
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._time_synchronization_error_cached: typing.Optional[int] = None
+        self._time_synchronization_error_checked = False
+
     class CLAPFinalSpot(FileIngestEntry.Notification):
         @property
         def display(self) -> str:
@@ -282,14 +290,68 @@ class AcquisitionIngestEntry(FileIngestEntry):
                 return cond
         return super().condition_for_code(code)
 
+    async def get_time_synchronization_error(self,
+                                             telemetry: typing.Optional[TelemetryInterface],
+                                             processing: typing.Optional[ProcessingInterface]) -> typing.Optional[int]:
+        if self._time_synchronization_error_checked:
+            return self._time_synchronization_error_cached
+        self._time_synchronization_error_checked = True
+
+        if not self.station:
+            return None
+        if not self.TIME_UNSYNC_THRESHOLD:
+            return None
+        time_offset = await get_station_time_offset(telemetry, processing, self.station)
+        if not time_offset:
+            return None
+        if abs(time_offset) <= self.TIME_UNSYNC_THRESHOLD:
+            return None
+        self._time_synchronization_error_cached = time_offset
+        return time_offset
+
+    @classmethod
+    async def get_status(cls, station: typing.Optional[str],
+                         telemetry: typing.Optional[TelemetryInterface],
+                         processing: typing.Optional[ProcessingInterface],
+                         **kwargs) -> typing.Optional["Status"]:
+        status = await super(FileIngestEntry, cls).get_status(
+            station=station,
+            telemetry=telemetry,
+            processing=processing,
+            **kwargs
+        )
+        if not status or status.information == Severity.ERROR:
+            return status
+        if not station:
+            return status
+        if not cls.TIME_UNSYNC_THRESHOLD:
+            return status
+        time_offset = await get_station_time_offset(telemetry, processing, station)
+        if not time_offset:
+            return status
+        if abs(time_offset) <= cls.TIME_UNSYNC_THRESHOLD:
+            return status
+        status.information = Severity.ERROR
+        return status
+
+    async def base_email_severity(self,
+                                  telemetry: typing.Optional[TelemetryInterface],
+                                  processing: typing.Optional[ProcessingInterface],
+                                  **kwargs) -> typing.Optional[Severity]:
+        time_offset = await self.get_time_synchronization_error(telemetry, processing)
+        if time_offset:
+            return Severity.ERROR
+        return None
+
 
 class AcquisitionEmail(EmailContents):
     @property
     def reply_to(self) -> typing.Set[str]:
-        return set(CONFIGURATION.get(
+        emails = CONFIGURATION.get(
             'DASHBOARD.EMAIL.ACQUISITION.REPLY',
             CONFIGURATION.get('DASHBOARD.EMAIL.REPLY', [])
-        ))
+        )
+        return set([r.lower() for r in emails])
 
     @property
     def expose_all_recipients(self) -> bool:
@@ -337,7 +399,10 @@ class AcquisitionIngestRecord(FileIngestRecord):
             **kwargs
         )
 
-    async def email(self, station: typing.Optional[str], entry_code: str, **kwargs) -> typing.Optional[EmailContents]:
+    async def email(self,
+                    telemetry: typing.Optional[TelemetryInterface],
+                    processing: typing.Optional[ProcessingInterface],
+                    station: typing.Optional[str], entry_code: str, **kwargs) -> typing.Optional[EmailContents]:
         if station:
             link_to_acquisition = station_data(station, 'realtime', 'visible')(station, self.ACQUISITION_MODE)
             link_to_realtime = station_data(station, 'acquisition', 'visible')(station, self.REALTIME_MODE)
@@ -345,9 +410,15 @@ class AcquisitionIngestRecord(FileIngestRecord):
             link_to_acquisition = False
             link_to_realtime = False
 
-        return await super().email(
+        result = await super().email(
+            telemetry=telemetry, processing=processing,
             station=station, entry_code=entry_code,
             link_to_acquisition=link_to_acquisition,
             link_to_realtime=link_to_realtime,
             **kwargs
         )
+
+        time_error = await result.entry.get_time_synchronization_error(telemetry, processing)
+        if time_error:
+            result.severity = Severity.ERROR
+        return result

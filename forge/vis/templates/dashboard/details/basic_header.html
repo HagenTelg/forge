@@ -1,4 +1,3 @@
 <div>
-Last updated: <span id="{{uid}}_last_update"></span>
-<script>document.getElementById("{{uid}}_last_update").textContent = DashboardEntry.formatFullTime("{{ entry.updated_ms }}" * 1)</script>
+Last updated: <span class="update-time" update_time="{{ entry.updated_ms }}">{{ format_datetime(entry.updated) }}</span>
 </div>

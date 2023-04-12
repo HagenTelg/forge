@@ -27,7 +27,7 @@ class EmailContents:
 
     @property
     def reply_to(self) -> typing.Set[str]:
-        return set(CONFIGURATION.get('DASHBOARD.EMAIL.REPLY', []))
+        return set([r.lower() for r in CONFIGURATION.get('DASHBOARD.EMAIL.REPLY', [])])
 
     @property
     def send_to(self) -> typing.Set[str]:

@@ -7,6 +7,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy import event, create_engine
 from sqlalchemy.pool import SingletonThreadPool
 from sqlalchemy.orm import DeclarativeMeta
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.types import Text
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -18,6 +20,16 @@ def _set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
+
+
+@compiles(Text, "mysql")
+def _mysql_text(type_, compiler, **kw):
+    return "LONGTEXT"
+
+
+@compiles(Text, "mariadb")
+def _mariadb_text(type_, compiler, **kw):
+    return "LONGTEXT"
 
 
 class ORMDatabase:

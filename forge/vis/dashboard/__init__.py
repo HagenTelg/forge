@@ -10,6 +10,8 @@ if typing.TYPE_CHECKING:
 
 
 class Record(ABC):
+    DATABASE_LINKED: bool = True
+
     @abstractmethod
     async def entry(self, **kwargs) -> typing.Optional["Entry"]:
         pass
@@ -23,14 +25,14 @@ class Record(ABC):
         pass
 
     @abstractmethod
+    async def email(self, **kwargs) -> typing.Optional["EmailContents"]:
+        pass
+
+    @abstractmethod
     async def badge_json(self, request: Request, **kwargs) -> Response:
         pass
 
     @abstractmethod
     async def badge_svg(self, request: Request, **kwargs) -> Response:
-        pass
-
-    @abstractmethod
-    async def email(self, **kwargs) -> typing.Optional["EmailContents"]:
         pass
 
