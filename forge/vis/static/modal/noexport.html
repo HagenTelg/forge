@@ -1,0 +1,72 @@
+<style>
+.noexport-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.noexport-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 8px 0 0 16px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.noexport-info {
+  position: relative;
+  display: flex;
+  margin: 48px 16px 8px;
+  align-items: center;
+}
+
+.noexport-footer {
+  padding: 0;
+  margin: 0;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.noexport-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 20px;
+  background-color: transparent;
+  font-weight: bold;
+  font-family: inherit;
+  cursor: pointer;
+}
+.noexport-footer button:hover,
+.noexport-footer button:focus {
+  color: #000;
+  text-decoration: none;
+}
+
+
+</style>
+
+<form class="noexport-entry">
+  <div id="noexport-title" class="noexport-header">
+  </div>
+
+  <div id="noexport-details" class="noexport-info">
+      No data available for export.
+  </div>
+
+  <div class="noexport-footer">
+    <button id="noexport-ok">Ok</button>
+  </div>
+</form>
+
+<script>
+(function() {
+    $('#noexport-ok').click(function(event) {
+        event.preventDefault();
+        hideModal();
+    });
+})();
+</script>

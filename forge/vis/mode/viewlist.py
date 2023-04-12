@@ -23,6 +23,7 @@ class ViewList(Mode):
     def __init__(self, mode_name: str, display_name: str, views: typing.Optional[typing.List["ViewList.Entry"]] = None):
         super().__init__(mode_name, display_name)
         self.views: typing.List[ViewList.Entry] = views if views else list()
+        self.enable_export: bool = True
 
     def insert(self, entry: "ViewList.Entry", view_name: typing.Optional[str] = None, after=True):
         if not view_name:

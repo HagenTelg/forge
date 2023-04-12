@@ -28,6 +28,10 @@ station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-ccnsta
 
 station_modes['met-raw'].insert(ViewList.Entry('met-raw-tower', "Tower dT"))
 station_modes['met-editing'].insert(ViewList.Entry('met-editing-tower', "Tower dT"))
+# Disable per Betsy/Ian email 2023-04-12 so it hides from the station techs
+station_modes['met-raw'].enable_export = False
+station_modes['met-clean'].enable_export = False
+station_modes['met-avgh'].enable_export = False
 
 
 station_modes['acquisition'] = Acquisition()

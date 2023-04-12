@@ -7,14 +7,14 @@ from base64 import b64encode
 from starlette.routing import Route, BaseRoute, WebSocketRoute
 from starlette.authentication import requires
 from starlette.datastructures import URL
-from starlette.responses import Response, HTMLResponse, StreamingResponse
+from starlette.responses import Response, HTMLResponse, FileResponse, StreamingResponse
 from starlette.requests import Request
 from starlette.endpoints import WebSocketEndpoint
 from starlette.exceptions import HTTPException
 from starlette.websockets import WebSocket
 from forge.const import STATIONS
 from forge.vis import CONFIGURATION
-from forge.vis.util import package_template
+from forge.vis.util import package_template, package_data
 from .permissions import is_available
 from .assemble import visible_exports
 from .controller.manager import Manager, ExportedFile
@@ -214,7 +214,7 @@ async def _export_modal(request: Request) -> Response:
 
     exports = await visible_exports(station, mode_name)
     if not exports:
-        raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="No exports available")
+        return FileResponse(package_data('static', 'modal', 'noexport.html'), media_type="text/html")
 
     return HTMLResponse(await package_template('export', 'modal.html').render_async(
         request=request,
