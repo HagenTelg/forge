@@ -10,9 +10,9 @@
     {%- if not i.detail %}{% continue %}{% endif -%}
     <div style="{{ SEVERITY_STYLE[i.severity] }}">STATUS</div>
     {%- if "\n" in i.detail -%}
-        <pre style="margin-top: 2px;">{{ i.detail|e }}</pre>
+        <pre style="margin-top: 2px;">{{ i.detail }}</pre>
     {%- else -%}
-        <div style="margin-top: 2px;">{{ i.detail|e }}</div>
+        <div style="margin-top: 2px;">{{ i.detail }}</div>
     {%- endif -%}
 {%- endfor -%}
 
@@ -27,12 +27,12 @@
     <div style="font-size: 20px; font-weight: bold;">Notifications:</div>
 {%- for i in notifications -%}
     {%- if i.code|length == 0 %}{% continue %}{% endif -%}
-    <div style="{{ SEVERITY_STYLE[i.severity] }}">{{ i.display|e }}</div>
+    <div style="{{ SEVERITY_STYLE[i.severity] }}">{{ i.display }}</div>
     {%- if i.detail -%}
         {%- if "\n" in i.detail -%}
-            <pre style="margin-left: 16px;">{{ i.detail|e }}</pre>
+            <pre style="margin-left: 16px;">{{ i.detail }}</pre>
         {%- else -%}
-            <div style="margin-left: 16px;">{{ i.detail|e }}</div>
+            <div style="margin-left: 16px;">{{ i.detail }}</div>
         {%- endif -%}
     {%- endif -%}
 {%- endfor -%}

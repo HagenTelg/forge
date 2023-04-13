@@ -29,8 +29,8 @@
             <td style="white-space: nowrap; font-family: monospace; vertical-align: top; padding-top: 4px; {{ row_severity_style[i.severity] }}"
                 title="{{ i.occurred_at_iso8601 }}"
                 class="format-utc-time" time="{{ i.occurred_at_ms }}" utc_time>{{ format_time(i.occurred_at) }}</td>
-            <td style="white-space: nowrap; font-weight: bold; padding-left: 8px; vertical-align: top; {{ row_severity_style[i.severity] }}" title="Message source or author">{{ i.message_source|e }}</td>
-            <td style="white-space: pre-line; padding-left: 8px; width: 100%; {{ row_severity_style[i.severity] }}">{{ i.display|e }}</td>
+            <td style="white-space: nowrap; font-weight: bold; padding-left: 8px; vertical-align: top; {{ row_severity_style[i.severity] }}" title="Message source or author">{{ i.message_source }}</td>
+            <td style="white-space: pre-line; padding-left: 8px; width: 100%; {{ row_severity_style[i.severity] }}">{{ i.display }}</td>
         </tr>
 {%- endfor -%}
     </tbody>
