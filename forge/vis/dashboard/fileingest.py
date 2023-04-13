@@ -2,6 +2,7 @@ import typing
 from .basic import BasicEntry, BasicRecord, Severity
 from forge.formattime import format_simple_duration
 from forge.formatsize import format_bytes
+from html import escape as html_escape
 
 
 class FileIngestEntry(BasicEntry):
@@ -22,6 +23,12 @@ class FileIngestEntry(BasicEntry):
                 return "UNKNOWN"
             parts = self.data.split(',', 2)
             return parts[0]
+
+        @property
+        def html_file_name(self) -> str:
+            name = self.file_name
+            name = html_escape(name)
+            return name.replace('.', '<span>.</span>')
 
         @property
         def file_size(self) -> typing.Optional[int]:

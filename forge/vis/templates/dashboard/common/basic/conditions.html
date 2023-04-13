@@ -11,12 +11,12 @@
     <div style="{{ SEVERITY_STYLE[i.severity] }}" class="condition-present"
          title="From: {{ i.begin_present_iso8601 }}&#10;To: {{ i.end_present_iso8601 }}"
          begin_present="{{ i.begin_present_ms }}" end_present="{{ i.end_present_ms }}"
-         total_ms="{{ i.total_ms }}">{{ i.display|e }}{% if include_present %}: {{ i.total_display }} ({{ condition_percent(i) }}%){% endif %}</div>
+         total_ms="{{ i.total_ms }}">{{ i.display }}{% if include_present %}: {{ i.total_display }} ({{ condition_percent(i) }}%){% endif %}</div>
     {%- if i.detail -%}
         {%- if "\n" in i.detail -%}
-            <pre style="margin-left: 16px;">{{ i.detail|e }}</pre>
+            <pre style="margin-left: 16px;">{{ i.detail }}</pre>
         {%- else -%}
-            <div style="margin-left: 16px;">{{ i.detail|e }}</div>
+            <div style="margin-left: 16px;">{{ i.detail }}</div>
         {%- endif -%}
     {%- endif -%}
 {%- endfor -%}

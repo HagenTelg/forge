@@ -31,7 +31,7 @@
             <td style="white-space: nowrap; font-family: monospace; {{ row_severity_style[i.severity] }}"
                 title="{{ i.occurred_at_iso8601 }}"
                 class="format-time" time="{{ i.occurred_at_ms }}">{{ format_time(i.occurred_at) }}</td>
-            <td style="white-space: nowrap; font-weight: bold; font-family: monospace; padding-left: 8px; width: 100%;  {{ row_severity_style[i.severity] }}" {% if i.file_state_title %}title="{{ i.file_state_title }}"{% endif %}>{{ i.file_name|e|replace(".", "<span>.</span>") }}</td>
+            <td style="white-space: nowrap; font-weight: bold; font-family: monospace; padding-left: 8px; width: 100%; {{ row_severity_style[i.severity] }}" {% if i.file_state_title %}title="{{ i.file_state_title }}"{% endif %}>{{ i.html_file_name|safe }}</td>
             <td style=" white-space: nowrap; padding-left: 8px; {{ row_severity_style[i.severity] }}" title="File size">{{ i.file_size_display }}</td>
             <td style=" white-space: nowrap; padding-left: 8px; {{ row_severity_style[i.severity] }}" title="Time taken to process the file">{{ i.elapsed_time_display }}</td>
         </tr>

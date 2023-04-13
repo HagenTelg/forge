@@ -27,12 +27,12 @@
             <td colspan="2" style="white-space: nowrap; font-family: monospace; {{ row_severity_style[i.severity] }}"
                 title="{{ i.occurred_at_iso8601 }}"
                 class="format-time" time="{{ i.occurred_at_ms }}">{{ format_time(i.occurred_at) }}</td>
-            <td colspan="2" style="white-space: nowrap; font-weight: bold; padding-left: 8px; width: 100%; {{ row_severity_style[i.severity] }}">{{ i.display|e }}</td>
+            <td colspan="2" style="white-space: nowrap; font-weight: bold; padding-left: 8px; width: 100%; {{ row_severity_style[i.severity] }}">{{ i.display }}</td>
         </tr>
         {%- if i.detail -%}
         <tr>
             <td style="width: 12px; {{ row_severity_style[i.severity] }}"></td>
-            <td style="padding-left: 8px; white-space: normal;" colspan="3">{% if "\n" in i.detail %}<pre>{% endif %}{{ i.detail|e }}{% if "\n" in i.detail %}</pre>{% endif %}</td>
+            <td style="padding-left: 8px; white-space: normal;" colspan="3">{% if "\n" in i.detail %}<pre>{% endif %}{{ i.detail }}{% if "\n" in i.detail %}</pre>{% endif %}</td>
         </tr>
         {%- endif -%}
 {%- endfor -%}

@@ -1,7 +1,7 @@
 <h1>Forge Visualization Tool Access Requested</h1>
 
 <p>
-An access request has been submitted for <a href="mailto:{{ user.email|e }}">{{ user.name|e }}</a> requesting access to
+An access request has been submitted for <a href="mailto:{{ user.email }}">{{ user.name }}</a> requesting access to
   <b>{{ station|upper }}</b>.  If this is not a valid request, simply disregard this email.
 </p>
 
@@ -9,7 +9,7 @@ An access request has been submitted for <a href="mailto:{{ user.email|e }}">{{ 
 <p>
 The comment with the request was:
 </p>
-<blockquote>{{ comment|e }}</blockquote>
+<blockquote>{{ comment }}</blockquote>
 {% endif %}
 
 <p>
