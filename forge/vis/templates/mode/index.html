@@ -10,10 +10,22 @@
 <script>
 (function() {
     const lastMode = localStorage.getItem('forge-last-mode');
+    const defaultURL = "{{ request.url_for('mode', station=station, mode_name=default_mode.mode_name) }}";
     if (lastMode === null || lastMode.length === 0 || lastMode.startsWith('example-')) {
-        window.location.replace("{{ request.url_for('mode', station=station, mode_name=default_mode.mode_name) }}");
+        window.location.replace(defaultURL);
         return;
     }
+
+    const availableModes = [
+        // {% for mode in available_modes.all_available_modes(request, station) %}
+        "{{ mode }}",
+        // {% endfor %}
+    ];
+    if (!availableModes.includes(lastMode)) {
+        window.location.replace(defaultURL);
+        return;
+    }
+
     window.location.replace("{{ request.url_for('default_mode', station=station) }}/" + lastMode);
 })();
 </script>

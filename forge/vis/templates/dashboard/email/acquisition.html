@@ -7,11 +7,11 @@
 <div><span style="font-weight: bold; color: #c00;">FAILED AT</span>: {{ format_datetime(entry.updated) }}</div>
 {%- endif -%}
 
-{%- if station and URL and (record.PLOT_MODE or (record.REALTIME_MODE and link_to_realtime) or (record.ACQUISITION_MODE and link_to_acquisition)) -%}
+{%- if station and URL and (record.PLOT_MODE is defined or (record.REALTIME_MODE and link_to_realtime) or (record.ACQUISITION_MODE and link_to_acquisition)) -%}
 <div>
 Station Data:
-{%- if record.PLOT_MODE %}
-<a href="{{ URL }}/station/{{ station }}/{{ record.PLOT_MODE }}">General</a>
+{%- if record.PLOT_MODE is defined %}
+<a href="{{ URL }}/station/{{ station }}{% if record.PLOT_MODE %}/{{ record.PLOT_MODE }}{% endif %}">General</a>
 {%- endif -%}
 {%- if record.REALTIME_MODE and link_to_realtime %}
 <a href="{{ URL }}/station/{{ station }}/{{ record.REALTIME_MODE }}">Realtime</a>

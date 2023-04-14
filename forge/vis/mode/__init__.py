@@ -85,3 +85,14 @@ class VisibleModes:
                 if directives:
                     return directives
         return None
+
+    def all_available_modes(self, request: Request, station: str) -> typing.Set[str]:
+        result: typing.Set[str] = set()
+        for group in self.groups:
+            for mode in group.modes:
+                if mode in result:
+                    continue
+                if not request.user.allow_mode(station, mode.mode_name):
+                    continue
+                result.add(mode.mode_name)
+        return result

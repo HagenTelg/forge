@@ -61,10 +61,12 @@ async def _default_mode(request: Request) -> Response:
             except NoMatchFound:
                 raise HTTPException(starlette.status.HTTP_403_FORBIDDEN, detail="Invalid authentication")
         return RedirectResponse(request.url_for('request_access') + f"?station={station}")
+    available_modes = visible_modes(request, station, mode_name=mode_name)
     return HTMLResponse(await package_template('mode', 'index.html').render_async(
         request=request,
         station=station,
         default_mode=mode,
+        available_modes=available_modes,
     ))
 
 

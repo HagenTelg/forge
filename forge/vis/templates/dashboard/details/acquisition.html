@@ -1,7 +1,11 @@
-{% if station and (record.PLOT_MODE or (record.REALTIME_MODE and link_to_realtime) or (record.ACQUISITION_MODE and link_to_acquisition)) %}
+{% if station and (record.PLOT_MODE is defined or (record.REALTIME_MODE and link_to_realtime) or (record.ACQUISITION_MODE and link_to_acquisition)) %}
 Station Data:
-{% if record.PLOT_MODE %}
+{% if record.PLOT_MODE is defined %}
+{% if record.PLOT_MOD %}
 <a href="{{ request.url_for('mode', station=station, mode_name=record.PLOT_MODE) }}">General</a>
+{% else %}
+<a href="{{ request.url_for('default_mode', station=station) }}">General</a>
+{% endif %}
 {% endif %}
 {% if record.REALTIME_MODE and link_to_realtime %}
 <a href="{{ request.url_for('mode', station=station, mode_name=record.REALTIME_MODE) }}">Realtime</a>
