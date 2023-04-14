@@ -51,6 +51,19 @@ class AcquisitionIngestEntry(FileIngestEntry):
         def detail(self) -> typing.Optional[str]:
             return "Please change the filter."
 
+    class TAPFinalSpot(FileIngestEntry.Notification):
+        @property
+        def display(self) -> str:
+            try:
+                instrument, _ = self.code.split('-', 1)
+            except ValueError:
+                return "The TAP is on the final spot"
+            return f"TAP {instrument} is on the final spot"
+
+        @property
+        def detail(self) -> typing.Optional[str]:
+            return "Please change the filter."
+
     class DataWatchdog(FileIngestEntry.Watchdog):
         @property
         def display(self) -> str:
@@ -158,7 +171,7 @@ class AcquisitionIngestEntry(FileIngestEntry):
                 return None
             for i in range(len(percent_error)):
                 try:
-                    percent_error[i] = float(i)
+                    percent_error[i] = float(percent_error[i])
                     if not isfinite(percent_error[i]):
                         raise ValueError
                 except (ValueError, TypeError):
@@ -220,6 +233,8 @@ class AcquisitionIngestEntry(FileIngestEntry):
     def notification_for_code(self, code: str) -> typing.Type["BasicEntry.Notification"]:
         if code.endswith('-clap-finalspot'):
             return self.CLAPFinalSpot
+        elif code.endswith('-bmitap-finalspot'):
+            return self.TAPFinalSpot
         return super().notification_for_code(code)
 
     def watchdog_for_code(self, code: str) -> typing.Type["BasicEntry.Watchdog"]:

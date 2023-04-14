@@ -11,6 +11,9 @@ code_records: typing.Dict[str, Record] = {
     'acquisition-ingest-cpd3': AcquisitionIngestRecord.simple_override(
         name="CPD3 acquisition data processing",
     ),
+    'acquisition-ingest-cpd3-forge': AcquisitionIngestRecord.simple_override(
+        name="CPD3 Forge data processing",
+    ),
     'met-raw-ingest-cr1000': FileIngestRecord.simple_override(
         name="Ingest observatories meteorological data",
         offline=50 * 60 * 60,

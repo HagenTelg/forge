@@ -61,6 +61,8 @@ class BasicEntry(BaseEntry):
             age = (datetime.datetime.now(tz=datetime.timezone.utc) - last_seen).total_seconds()
             if age < cls.ALERT_THRESHOLD:
                 return None
+            if entry.status == BasicEntry.Status.OFFLINE:
+                return None
             return cls(entry, db.code, db.severity, last_seen.timestamp(), db.data)
 
         @classmethod

@@ -43,12 +43,9 @@ async def _upload_websocket(url: str, action: DashboardAction, private_key: Priv
                 raise Exception(f"Upload not accepted by the server: {status}")
 
 
-async def dashboard_report(code: str,
-                           station: typing.Optional[str] = None,
+async def dashboard_action(action: DashboardAction,
                            unreported_exception: bool = False,
                            **kwargs) -> None:
-    action = DashboardAction.from_args(station, code, **kwargs)
-
     url = kwargs.get('url') or CONFIGURATION.get('DASHBOARD.REPORT.URL')
     if not url:
         if unreported_exception:
@@ -130,6 +127,13 @@ async def dashboard_report(code: str,
             _LOGGER.error(f"Error during dashboard failure report for {action.code}", exc_info=True)
         else:
             _LOGGER.warning(f"Error during dashboard success report for {action.code}", exc_info=True)
+
+
+async def dashboard_report(code: str,
+                           station: typing.Optional[str] = None,
+                           **kwargs) -> None:
+    action = DashboardAction.from_args(station, code, **kwargs)
+    await dashboard_action(action, **kwargs)
 
 
 async def report_ok(code: str, station: typing.Optional[str] = None, **kwargs) -> None:
