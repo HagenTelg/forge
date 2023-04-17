@@ -54,7 +54,6 @@ class Shortwave(SolarTimeSeries):
 
         ratio = SolarTimeSeries.Axis()
         ratio.format_code = '.3f'
-        ratio.range = [0.0, 5.0]
         total_global.axes.append(ratio)
 
         trace = SolarTimeSeries.Trace(ratio)
@@ -79,7 +78,6 @@ class Shortwave(SolarTimeSeries):
 
         ratio = SolarTimeSeries.Axis()
         ratio.format_code = '.3f'
-        ratio.range = [0.0, 5.0]
         diffuse_global.axes.append(ratio)
 
         trace = SolarTimeSeries.Trace(ratio)
