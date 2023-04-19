@@ -20,11 +20,13 @@
 {%- for i in messages -%}
 {%- set row_date = format_date(i.occurred_at) -%}
 {%- set row_severity_style = SEVERITY_STYLE[loop.index0 % 2] -%}
-        <tr class="hide-same-date" {% if row_date == event_loop.date %}style="display: none;"{% endif %}>
-{%- set event_loop.date = row_date -%}
-            <td style="font-size: 10px; width: 100%; border-bottom: 1px solid black;" colspan="3"
-                class="format-utc-date" time="{{ i.occurred_at_ms }}">{{ row_date }}</td>
+{%- if not remove_same_date or row_date != event_loop.date -%}
+        <tr class="hide-same-date">
+            <td style="font-size: 10px; width: 100%; border-bottom: 1px solid black;" colspan="4"
+                class="format-date" time="{{ i.occurred_at_ms }}">{{ row_date }}</td>
         </tr>
+{%- endif -%}
+{%- set event_loop.date = row_date -%}
         <tr>
             <td style="white-space: nowrap; font-family: monospace; vertical-align: top; padding-top: 4px; {{ row_severity_style[i.severity] }}"
                 title="{{ i.occurred_at_iso8601 }}"

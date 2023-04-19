@@ -70,15 +70,15 @@ Station Data:
 {%- include 'dashboard/common/ingest/communications_lost.html' -%}
 {%- endwith -%}
 
-{%- with messages = event_sort.message_log -%}
+{%- with messages = event_sort.message_log, remove_same_date=True -%}
 {%- include 'dashboard/common/ingest/message_log.html' -%}
 {%- endwith -%}
 
-{%- with events = event_sort.other -%}
+{%- with events = event_sort.other, remove_same_date=True -%}
 {%- include 'dashboard/common/basic/events.html' -%}
 {%- endwith -%}
 
-{%- with files = event_sort.file_processed -%}
+{%- with files = event_sort.file_processed, remove_same_date=True -%}
 {%- include 'dashboard/common/ingest/files.html' -%}
 {%- endwith -%}
 

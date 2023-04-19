@@ -7,7 +7,9 @@
 {%- with include_present = True -%}
 {%- include 'dashboard/common/basic/conditions.html' -%}
 {%- endwith -%}
+{%- with remove_same_date = True -%}
 {%- include 'dashboard/common/basic/events.html' -%}
+{% endwith %}
 {%- include 'dashboard/email/basic_footer.html' -%}
   </body>
 </html>

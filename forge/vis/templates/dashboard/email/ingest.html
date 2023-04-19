@@ -17,11 +17,11 @@
     {%- endif -%}
 {%- endfor -%}
 
-{%- with events = event_sort.other -%}
+{%- with events = event_sort.other, remove_same_date=True -%}
 {%- include 'dashboard/common/basic/events.html' -%}
 {%- endwith -%}
 
-{%- with files = event_sort.file_processed -%}
+{%- with files = event_sort.file_processed, remove_same_date=True -%}
 {%- include 'dashboard/common/ingest/files.html' -%}
 {%- endwith -%}
 
