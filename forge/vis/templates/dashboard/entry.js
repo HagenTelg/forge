@@ -69,6 +69,7 @@ const DashboardEntry = (function() {
             this.sortData = [0, 0, this.station, this.code, entryData.updated_ms];
             this.emailSeverity = undefined;
 
+            this._visible = false;
             this._statusLoaded = false;
             this._detailsLoaded = false;
             this._status = new (class extends DashboardSocket.Status {
@@ -303,6 +304,16 @@ const DashboardEntry = (function() {
             this.startTime = startTime;
             this._statusLoaded = false;
             this._detailsLoaded = false;
+
+            if (!this._visible) {
+                return;
+            }
+            this._status.load();
+
+            if (this.row_details.classList.contains('hidden')) {
+                return;
+            }
+            loadDetails(this);
         }
 
         updateStatus(statusData) {
@@ -380,6 +391,8 @@ const DashboardEntry = (function() {
         }
 
         updateVisibility(visible) {
+            this._visible = visible;
+
             if (!visible) {
                 detailsLoadingQueue.delete(this);
                 return;

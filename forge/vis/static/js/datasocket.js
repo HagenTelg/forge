@@ -121,7 +121,7 @@ let DataSocket = {};
             function unpackArray(view, elementSize, unpacker) {
                 const total = view.byteLength / elementSize;
                 let result = [];
-                for (let i=0; i<total; i++) {
+                for (let i=0; i < total; i++) {
                     const offset = i * elementSize;
                     result.push(unpacker(view, offset));
                 }
@@ -173,7 +173,7 @@ let DataSocket = {};
 
                 if (fieldRaw.type === 'array') {
                     let values = [];
-                    for (let timeIndex=0; timeIndex<fieldRaw.values.length; timeIndex++) {
+                    for (let timeIndex=0; timeIndex < fieldRaw.values.length; timeIndex++) {
                         values.push(unpackArray(toDataView(fieldRaw.values[timeIndex]), 4, (view, offset) => {
                             return view.getFloat32(offset, true);
                         }));

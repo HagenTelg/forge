@@ -319,6 +319,7 @@ const timeSelectButton = document.getElementById("time_select");
 function updateDisplayedInterval() {
     timeSelectButton.textContent = "Display: " + TimeParse.toDisplayInterval(TimeSelect.interval_ms);
     updateStartTime();
+    updateVisibleEntries();
 }
 $(timeSelectButton).click(function(e) {
     showModal("{{ request.url_for('static', path='/modal/intervalselect.html') }}");
