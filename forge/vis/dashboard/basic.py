@@ -251,7 +251,7 @@ class BasicEntry(BaseEntry):
                     return True
                 existing = _SEVERITY_SORT[information_severity]
                 incoming = _SEVERITY_SORT[severity]
-                return existing < incoming
+                return incoming < existing
 
             for check in entry.notifications(data.notifications):
                 if not check.affects_status:
