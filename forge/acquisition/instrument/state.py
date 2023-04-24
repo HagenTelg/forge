@@ -40,7 +40,7 @@ class Persistent(BaseInstrument.Persistent):
         if deduplicate is None:
             deduplicate = not oneshot
         if deduplicate and self._deduplicate_value == value:
-            return
+            return self.value
 
         self.value = value
 

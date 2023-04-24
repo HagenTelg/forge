@@ -115,8 +115,8 @@ class Instrument(StreamingInstrument):
                 ratio = gas_rayleigh / air_rayleigh - 1.0
                 if not isfinite(ratio) or abs(ratio) < 0.01:
                     return nan
-                c_gas = (gas_measure - gas_dark) / self.gas_density
-                c_air = (air_measure - air_dark) / self.air_density
+                c_gas = self.to_stp(gas_measure - gas_dark, self.gas_density)
+                c_air = self.to_stp(air_measure - air_dark, self.air_density)
                 return (c_gas - c_air) / ratio
 
             def _calculate_K2(self, wavelength: float) -> float:
@@ -273,6 +273,8 @@ class Instrument(StreamingInstrument):
 
         async def set_filtered_air(self) -> None:
             await self.bus.set_bypass_held(False)
+            if not self.instrument.writer:
+                return
             async with self.instrument._pause_reports():
                 if not self.valve_overriden:
                     await self.instrument._ok_command(b"VZ\r")
@@ -284,6 +286,8 @@ class Instrument(StreamingInstrument):
 
         async def set_span_gas(self) -> None:
             await self.bus.set_bypass_held(True)
+            if not self.instrument.writer:
+                return
             async with self.instrument._pause_reports():
                 await self.instrument._ok_command(b"B0\r")
                 if self.instrument._spancheck_valve:
@@ -291,6 +295,8 @@ class Instrument(StreamingInstrument):
                     await self.instrument._ok_command(b"SX5000\r")
 
         def _restore_B(self) -> None:
+            if not self.instrument.writer:
+                return
             if self.instrument._apply_parameters:
                 if not self.instrument._apply_parameters.B:
                     self.instrument._apply_parameters.B = self.instrument.active_parameters.B
@@ -313,6 +319,8 @@ class Instrument(StreamingInstrument):
             self._restore_B()
             self.instrument.notify_spancheck(False)
             await self.bus.set_bypass_held(False)
+            if not self.instrument.writer:
+                return
             async with self.instrument._pause_reports():
                 if self.instrument._spancheck_valve:
                     await self.instrument._ok_command(b"SX0\r")
@@ -325,6 +333,8 @@ class Instrument(StreamingInstrument):
             self._restore_B()
             self.instrument.notify_spancheck(False)
             await self.bus.set_bypass_held(False)
+            if not self.instrument.writer:
+                return
             async with self.instrument._pause_reports():
                 await self.instrument._ok_command(b"Z\r")
                 # Don't need a valve command now, since the zero handles it
@@ -570,7 +580,7 @@ class Instrument(StreamingInstrument):
 
         self.active_parameters.record(self.context.data.constant_record("parameters"), dimension_wavelength)
 
-        self._zero_request: typing.Optional[bool] = None
+        self._zero_request = False
         self.context.bus.connect_command('start_zero', self.start_zero)
         self.context.bus.connect_command('set_parameters', self.set_parameters)
 
@@ -614,7 +624,7 @@ class Instrument(StreamingInstrument):
 
     async def start_communications(self) -> None:
         self.seen_BGR_reports.clear()
-        self._zero_request = None
+        self._zero_request = False
         self._spancheck.abort_desynchronized()
 
         if self._zero_schedule:
@@ -1049,11 +1059,14 @@ class Instrument(StreamingInstrument):
             now = time.time()
             zero = self._zero_schedule.current(now)
             if zero.activate(now):
-                _LOGGER.debug("Automatic zero scheduled")
-                self._zero_request = True
+                if self.data_sampling.value != self.SamplingMode.Normal:
+                    _LOGGER.debug("Ignoring scheduled zero while not in normal operating mode")
+                else:
+                    _LOGGER.debug("Automatic zero scheduled")
+                    self._zero_request = False
 
         if self._spancheck.is_running:
-            self._zero_request = None
+            self._zero_request = False
             return
 
         do_update = False
@@ -1065,12 +1078,18 @@ class Instrument(StreamingInstrument):
 
         async with self._pause_reports():
             if self._apply_parameters:
-                await self._set_pending_parameters()
-                self.data_parameters(self.active_parameters.persistent(), oneshot=True)
+                if self.writer:
+                    await self._set_pending_parameters()
+                    self.data_parameters(self.active_parameters.persistent(), oneshot=True)
+                else:
+                    _LOGGER.warning("Unable to change parameters")
             if self._zero_request:
-                self._zero_request = None
-                _LOGGER.debug("Sending zero start command")
-                await self._ok_command(b"Z\r")
+                self._zero_request = False
+                if self.writer:
+                    _LOGGER.debug("Sending zero start command")
+                    await self._ok_command(b"Z\r")
+                else:
+                    _LOGGER.warning("Unable to start zero")
 
     def start_zero(self, _) -> None:
         if self.data_sampling.value != self.SamplingMode.Normal:

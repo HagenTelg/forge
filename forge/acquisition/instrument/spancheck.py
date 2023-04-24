@@ -99,7 +99,7 @@ class Spancheck:
                 for i in range(len(self.result.wavelengths)):
                     data[str(int(self.result.wavelengths[i]))] = self.values[i]
                 return data
-                    
+
         @staticmethod
         def _density(t: float, p: float) -> float:
             if not isfinite(t) or not isfinite(p):
@@ -127,7 +127,9 @@ class Spancheck:
             return value * density
 
         def __init__(self, spancheck: "Spancheck", air: "Spancheck.Phase",
-                     gas: "Spancheck.Phase", gas_rayleigh_factor: float):
+                     gas: "Spancheck.Phase", gas_rayleigh_factor: float,
+                     measurement_stp_t: typing.Optional[float] = None,
+                     measurement_stp_p: typing.Optional[float] = None):
             self.air = air
             self.gas = gas
             self.gas_rayleigh_factor = gas_rayleigh_factor
@@ -145,10 +147,21 @@ class Spancheck:
             self.air_temperature = float(self.air.temperature)
             self.air_pressure = float(self.air.pressure)
             self.air_density = self._density(self.air_temperature, self.air_pressure)
+
+            if measurement_stp_t is None and measurement_stp_p is None:
+                air_normalization_density = self.air_density
+            else:
+                air_normalization_t = measurement_stp_t
+                if air_normalization_t is None:
+                    air_normalization_t = self.air_temperature
+                air_normalization_p = measurement_stp_p
+                if air_normalization_p is None:
+                    air_normalization_p = self.air_temperature
+                air_normalization_density = self._density(air_normalization_t, air_normalization_p)
             self.air_scattering = self.ForAngleWavelength(self, lambda angle, wavelength: (
                 self.to_stp(
                     float(self.air.wavelengths[wavelength].angles[angle].scattering),
-                    self.air_density
+                    air_normalization_density
                 )
             ))
             self.air_rayleigh_scattering = self.ForAngleWavelength(self, lambda angle, wavelength: (
@@ -158,10 +171,21 @@ class Spancheck:
             self.gas_temperature = float(self.gas.temperature)
             self.gas_pressure = float(self.gas.pressure)
             self.gas_density = self._density(self.gas_temperature, self.gas_pressure)
+            
+            if measurement_stp_t is None and measurement_stp_p is None:
+                gas_normalization_density = self.gas_density
+            else:
+                gas_normalization_t = measurement_stp_t
+                if gas_normalization_t is None:
+                    gas_normalization_t = self.gas_temperature
+                gas_normalization_p = measurement_stp_p
+                if gas_normalization_p is None:
+                    gas_normalization_p = self.gas_temperature
+                gas_normalization_density = self._density(gas_normalization_t, gas_normalization_p)
             self.gas_scattering = self.ForAngleWavelength(self, lambda angle, wavelength: (
                 self.to_stp(
                     float(self.gas.wavelengths[wavelength].angles[angle].scattering),
-                    self.gas_density
+                    gas_normalization_density
                 )
             ))
             self.gas_rayleigh_scattering = self.ForAngleWavelength(self, lambda angle, wavelength: (

@@ -3716,9 +3716,6 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'Zero': 'zero',
         'Spancheck': 'spancheck',
         'Calibration': 'calibration',
-        'Warmup': 'warmup',
-    }, zstate_set_warning={
-        'Warmup',
     }, command_map={
         'start_zero': 'StartZero',
         'start_spancheck': 'StartSpancheck',

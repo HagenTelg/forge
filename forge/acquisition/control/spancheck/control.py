@@ -29,13 +29,83 @@ class Control(BaseControl):
         AirSample = 'air_sample'
         Inactive = 'inactive'
 
+    class _Timing:
+        def __init__(self,
+                     gas_sample_seconds: typing.Optional[float],
+                     gas_flush_seconds: typing.Optional[float],
+                     air_sample_seconds: typing.Optional[float],
+                     air_flush_seconds: typing.Optional[float]):
+            self._gas_sample_seconds = gas_sample_seconds
+            self._gas_flush_seconds = gas_flush_seconds
+            self._air_sample_seconds = air_sample_seconds
+            self._air_flush_seconds = air_flush_seconds
+
+        @property
+        def gas_sample_seconds(self) -> float:
+            return self._gas_sample_seconds
+
+        @property
+        def gas_flush_seconds(self) -> float:
+            return self._gas_flush_seconds
+
+        @property
+        def air_sample_seconds(self) -> float:
+            return self._air_sample_seconds
+
+        @property
+        def air_flush_seconds(self) -> float:
+            return self._air_flush_seconds
+
+        def combine(self, other: typing.Optional["Control._Timing"]) -> "Control._Timing":
+            gas_sample_seconds = self.gas_sample_seconds
+            if not gas_sample_seconds or (other.gas_sample_seconds and gas_sample_seconds < other.gas_flush_seconds):
+                gas_sample_seconds = other.gas_sample_seconds
+            gas_flush_seconds = self.gas_flush_seconds
+            if not gas_flush_seconds or (other.gas_flush_seconds and gas_flush_seconds < other.gas_flush_seconds):
+                gas_flush_seconds = other.gas_flush_seconds
+            air_sample_seconds = self.air_sample_seconds
+            if not air_sample_seconds or (other.air_sample_seconds and air_sample_seconds < other.air_flush_seconds):
+                air_sample_seconds = other.air_sample_seconds
+            air_flush_seconds = self.air_flush_seconds
+            if not air_flush_seconds or (other.air_flush_seconds and air_flush_seconds < other.air_flush_seconds):
+                air_flush_seconds = other.air_flush_seconds
+            return Control._Timing(gas_sample_seconds, gas_flush_seconds, air_sample_seconds, air_flush_seconds)
+
+        def override(self, other: "Control._Timing") -> "Control._Timing":
+            return Control._Timing(
+                other.gas_sample_seconds or self.gas_sample_seconds,
+                other.gas_flush_seconds or self.gas_flush_seconds,
+                other.air_sample_seconds or self.air_sample_seconds,
+                other.air_flush_seconds or self.air_flush_seconds,
+            )
+
+    INSTRUMENT_TIMING = {
+        'tsi3563nephelometer': _Timing(GAS_SAMPLE_SECONDS, GAS_FLUSH_SECONDS, AIR_SAMPLE_SECONDS, AIR_FLUSH_SECONDS),
+        'ecotechnephelometer': _Timing(600.0, 480.0, AIR_SAMPLE_SECONDS, 480.0),
+    }
+
     def __init__(self):
         super().__init__()
 
-        self._gas_sample_seconds: float = CONFIGURATION.get("ACQUISITION.SPANCHECK.GAS.SAMPLE", self.GAS_SAMPLE_SECONDS)
-        self._gas_flush_seconds: float = CONFIGURATION.get("ACQUISITION.SPANCHECK.GAS.FLUSH", self.GAS_FLUSH_SECONDS)
-        self._air_sample_seconds: float = CONFIGURATION.get("ACQUISITION.SPANCHECK.AIR.SAMPLE", self.AIR_SAMPLE_SECONDS)
-        self._air_flush_seconds: float = CONFIGURATION.get("ACQUISITION.SPANCHECK.AIR.FLUSH", self.AIR_FLUSH_SECONDS)
+        self._override_timing = self._Timing(
+            CONFIGURATION.get("ACQUISITION.SPANCHECK.GAS.SAMPLE"),
+            CONFIGURATION.get("ACQUISITION.SPANCHECK.GAS.FLUSH"),
+            CONFIGURATION.get("ACQUISITION.SPANCHECK.AIR.SAMPLE"),
+            CONFIGURATION.get("ACQUISITION.SPANCHECK.AIR.FLUSH"),
+        )
+        self._default_timing = self._Timing(
+            self.GAS_SAMPLE_SECONDS,
+            self.GAS_FLUSH_SECONDS,
+            self.AIR_SAMPLE_SECONDS,
+            self.AIR_FLUSH_SECONDS,
+        ).override(self._override_timing)
+
+        self._gas_sample_seconds: float = self._default_timing.gas_sample_seconds
+        self._gas_flush_seconds: float = self._default_timing.gas_flush_seconds
+        self._air_sample_seconds: float = self._default_timing.air_sample_seconds
+        self._air_flush_seconds: float = self._default_timing.air_flush_seconds
+
+        self._source_timing: typing.Dict[str, Control._Timing] = dict()
 
         gas_factor = CONFIGURATION.get("ACQUISITION.SPANCHECK.GAS.TYPE", CO2)
         if isinstance(gas_factor, str):
@@ -101,9 +171,24 @@ class Control(BaseControl):
         self._percent_error[source] = percent_error
         self._broadcast_result()
 
+    def _update_instrument(self, source: str, message: typing.Dict[str, typing.Any]) -> None:
+        self._source_timing.pop(source, None)
+        if not isinstance(message, dict):
+            return
+        instrument_type = message.get('type')
+        if not instrument_type:
+            return
+        timing = self.INSTRUMENT_TIMING.get(instrument_type)
+        if not timing:
+            return
+        self._source_timing[source] = timing
+
     async def bus_message(self, source: str, record: str, message: typing.Any) -> None:
         if record == 'spancheck_result':
             self._process_result(source, message)
+            return
+        elif record == 'instrument':
+            self._update_instrument(source, message)
             return
 
         if record != 'command':
@@ -117,6 +202,20 @@ class Control(BaseControl):
                 return
             self._command_target = message.get('target')
             self._percent_error.clear()
+
+            if not self._command_target:
+                timing = self._default_timing
+                for merge in self._source_timing.values():
+                    timing = timing.combine(merge)
+            else:
+                timing = self._source_timing.get(self._command_target)
+                if not timing:
+                    timing = self._default_timing
+            timing = timing.override(self._override_timing)
+            self._gas_sample_seconds = timing.gas_sample_seconds
+            self._gas_flush_seconds = timing.gas_flush_seconds
+            self._air_sample_seconds = timing.air_sample_seconds
+            self._air_flush_seconds = timing.air_flush_seconds
 
             self._current_state = Control._State.GasAirFlush
             self._advance_time = time.monotonic() + self._air_flush_seconds

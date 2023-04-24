@@ -8,7 +8,7 @@ lookup: typing.Dict[str, CPD3Flag] = {
     'spancheck': CPD3Flag("Spancheck", "Spancheck in progress"),
     'calibration': CPD3Flag("Calibration", "Instrument calibration in progress"),
     'inconsistent_zero': CPD3Flag("InconsistentZero", "Inconsistent zeroing mode and data filter settings"),
-    'backscatter_fault': CPD3Flag("BackscatterFault", "Inconsistent zeroing mode and data filter settings", 0x00010000),
+    'backscatter_fault': CPD3Flag("BackscatterFault", "Instrument reporting a backscatter fault condition", 0x00010000),
     'backscatter_digital_fault': CPD3Flag("BackscatterDigitalFault", "Instrument reporting a backscatter digital IO fault condition", 0x00020000),
     'shutter_fault': CPD3Flag("ShutterFault", "Instrument reporting a shutter fault condition", 0x00040000),
     'light_source_fault': CPD3Flag("LightSourceFault", "Instrument reporting a light source fault condition", 0x00080000),
