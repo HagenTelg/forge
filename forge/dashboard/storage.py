@@ -186,11 +186,11 @@ class DashboardInterface(Interface):
                     if first_in_range:
                         # Merge existing by extending ranges
                         target = first_in_range
-                        if target.start_time > start_time:
+                        if target.start_time.replace(tzinfo=datetime.timezone.utc) > start_time:
                             target.start_time = start_time
-                        if target.end_time < end_time:
+                        if target.end_time.replace(tzinfo=datetime.timezone.utc) < end_time:
                             target.end_time = end_time
-                        if target.end_time < last_end_time:
+                        if target.end_time.replace(tzinfo=datetime.timezone.utc) < last_end_time:
                             target.end_time = last_end_time
                         _LOGGER.debug(f"Merged condition {code}")
                     else:
