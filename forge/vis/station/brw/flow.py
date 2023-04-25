@@ -24,10 +24,16 @@ class Flow(TimeSeries):
         system_flow.traces.append(sample_flow)
 
         filter_flow = TimeSeries.Trace(lpm)
-        filter_flow.legend = "Q_Q21 (filter)"
+        filter_flow.legend = "Q_Q21 (PMEL)"
         filter_flow.data_record = f'{mode}-flow'
         filter_flow.data_field = 'filter'
         system_flow.traces.append(filter_flow)
+
+        filter2_flow = TimeSeries.Trace(lpm)
+        filter2_flow.legend = "Q_Q31 (SCRIPPS)"
+        filter2_flow.data_record = f'{mode}-flow'
+        filter2_flow.data_field = 'filter2'
+        system_flow.traces.append(filter2_flow)
 
         stack_lpm = TimeSeries.Axis()
         stack_lpm.title = "Stack Flow (lpm)"
