@@ -175,7 +175,7 @@ class DashboardInterface(Interface):
                     query = query.filter(Condition.start_time <= end_time)
                     query = query.order_by(Condition.start_time.asc())
                     for existing in query:
-                        last_end_time = existing.end_time
+                        last_end_time = existing.end_time.replace(tzinfo=datetime.timezone.utc)
                         if not first_in_range:
                             first_in_range = existing
                             continue
