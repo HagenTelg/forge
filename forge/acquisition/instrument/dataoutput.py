@@ -86,6 +86,41 @@ def _configure_variable(var: Variable, source: BaseDataOutput.Field) -> None:
         var.setncattr(key, value)
 
 
+def _array_value_shape(value: typing.Collection) -> typing.List[int]:
+    try:
+        iter(value)
+        len(value)
+    except TypeError:
+        return []
+    result = [len(value)]
+    for dim in value:
+        dim_shape = _array_value_shape(dim)
+        if not dim_shape:
+            continue
+        while len(dim_shape) >= len(result):
+            result.append(0)
+        for i in range(len(dim_shape)):
+            result[i+1] = max(result[i+1], dim_shape[i])
+    return result
+
+
+def _array_value_normalize(value: typing.Collection, shape: typing.List[int],
+                           dtype: np.dtype = np.double, pad: typing.Any = nan) -> np.ndarray:
+    result = np.full(shape, pad, dtype=dtype)
+    if len(shape) == 1:
+        result[:len(value)] = value
+        return result
+
+    index = 0
+    for dim in value:
+        if index >= shape[0]:
+            break
+        result[index, ...] = _array_value_normalize(dim, shape[1:], dtype, pad)
+        index += 1
+
+    return result
+
+
 def _write_constants(target: Dataset, constants: typing.List[BaseDataOutput.Field]) -> None:
     for c in constants:
         if isinstance(c, BaseDataOutput.Float):
@@ -120,28 +155,49 @@ def _write_constants(target: Dataset, constants: typing.List[BaseDataOutput.Fiel
             constant_value = c.value
             if not constant_value:
                 continue
+            constant_shape = _array_value_shape(constant_value)
 
-            constant_dimension = c.dimension
-            if constant_dimension:
-                dim = target.dimensions.get(constant_dimension.name)
-                if dim is None:
-                    dim = target.createDimension(constant_dimension.name, len(constant_value))
-                    dvar = target.createVariable(dim.name, 'f8', (dim.name,), fill_value=nan)
-                else:
-                    dvar = target.variables[dim.name]
+            constant_dimensions = c.dimensions
+            var_dimensions = list()
+            if constant_dimensions:
+                if len(constant_dimensions) != len(constant_shape):
+                    raise ValueError(f"invalid number of dimensions ({len(constant_dimensions)} vs {len(constant_shape)}")
 
-                _configure_variable(dvar, constant_dimension)
+                for dimension_index in range(len(constant_dimensions)):
+                    declare_dimension = constant_dimensions[dimension_index]
+                    dim = target.dimensions.get(declare_dimension.name)
 
-                dimension_value = constant_dimension.value
-                if dimension_value:
-                    n_assign = min(len(constant_value), len(dimension_value))
-                    dvar[:n_assign] = dimension_value[:n_assign]
+                    if dim is None:
+                        dim = target.createDimension(declare_dimension.name, constant_shape[dimension_index])
+                        if isinstance(declare_dimension, BaseDataOutput.ArrayFloat):
+                            dvar = target.createVariable(dim.name, 'f8', (dim.name,), fill_value=nan)
+                        else:
+                            raise ValueError("unknown dimension type")
+                    else:
+                        dvar = target.variables[dim.name]
+
+                    _configure_variable(dvar, declare_dimension)
+
+                    dimension_value = declare_dimension.value
+
+                    if dimension_value:
+                        n_assign = min(constant_shape[dimension_index], len(dimension_value))
+                        dvar[:n_assign] = dimension_value[:n_assign]
+
+                    var_dimensions.append(dim)
             else:
-                dim = target.createDimension(c.name, len(constant_value))
+                for dimension_index in range(len(constant_shape)):
+                    dim = target.createDimension(
+                        c.name + (str(dimension_index) if dimension_index > 0 else ""),
+                        constant_shape[dimension_index]
+                    )
+                    var_dimensions.append(dim)
 
-            var = target.createVariable(c.name, 'f8', (dim.name,))
+            var = target.createVariable(c.name, 'f8', tuple([
+                d.name for d in var_dimensions
+            ]))
             _configure_variable(var, c)
-            var[:] = constant_value
+            var[:] = _array_value_normalize(constant_value, constant_shape)
         else:
             raise ValueError("unknown constant type")
 
@@ -295,64 +351,109 @@ class DataOutput(BaseDataOutput):
                 self.field = field
                 self.values = values
                 self.pad = pad_value
-                self.sizes: typing.Deque[int] = deque()
+                self.shapes: typing.Deque[typing.List[int]] = deque()
+
+                field_dimensions = self.field.dimensions
+                if field_dimensions:
+                    self.values = np.reshape(self.values, tuple([0] * (len(field_dimensions) + 1)))
 
             def pull_value(self) -> None:
                 v = self.field.value
                 if v is None:
                     v = []
-                add_length = len(v)
-                self.sizes.append(add_length)
-                if add_length > self.values.shape[1]:
-                    n_pad = add_length - self.values.shape[1]
-                    self.values = np.pad(self.values, ((0, 0), (0, n_pad)), 'constant', constant_values=self.pad)
-                elif add_length < self.values.shape[1]:
-                    n_pad = self.values.shape[1] - add_length
-                    v = v + [self.pad] * n_pad
+
+                add_shape = _array_value_shape(v)
+
+                if len(self.values.shape) != len(add_shape)+1:
+                    if self.values.shape[0] != 0:
+                        _LOGGER.warning(f"Dimensionality change detected {self.values.shape} to {add_shape}, existing data discarded")
+                    reshaped = [self.values.shape[0]]
+                    reshaped.extend(add_shape)
+                    self.values = np.full(reshaped, self.pad, dtype=self.values.dtype)
+                    fill_shapes = len(self.shapes)
+                    if fill_shapes > 0:
+                        self.shapes.clear()
+                        for i in range(fill_shapes):
+                            self.shapes.append([0] * len(add_shape))
+
+                self.shapes.append(add_shape)
+
+                pad_sizes = [0]
+                any_padded = False
+                for dimension_index in range(len(add_shape)):
+                    n_pad = add_shape[dimension_index] - self.values.shape[dimension_index+1]
+                    if n_pad > 0:
+                        pad_sizes.append(n_pad)
+                        any_padded = True
+                    else:
+                        pad_sizes.append(0)
+
+                if any_padded:
+                    self.values = np.pad(self.values, [(0, s) for s in pad_sizes],
+                                         'constant', constant_values=self.pad)
+
+                v = _array_value_normalize(v, self.values.shape[1:], self.values.dtype, self.pad)
+
                 self.values = np.concatenate((self.values, [v]))
 
             def remove_start(self, count: int) -> None:
-                try:
-                    if count >= len(self.sizes):
-                        self.sizes.clear()
-                        newsize = 0
-                    else:
-                        for i in range(count):
-                            self.sizes.popleft()
-                        newsize = max(self.sizes)
-                    self.values = np.delete(self.values, np.s_[:count], 0)
-                    if newsize < self.values.shape[1]:
-                        self.values = np.delete(self.values, np.s_[newsize:], 1)
-                except:
-                    _LOGGER.warning("ERR", exc_info=True)
-                    raise
+                newsize = [0] * (len(self.values.shape) - 1)
+                if count >= len(self.shapes):
+                    self.shapes.clear()
+                else:
+                    for i in range(count):
+                        self.shapes.popleft()
+                    for add_shape in self.shapes:
+                        for dimension_index in range(len(add_shape)):
+                            if dimension_index >= len(newsize):
+                                break
+                            newsize[dimension_index] = max(add_shape[dimension_index], newsize[dimension_index])
+                self.values = np.delete(self.values, np.s_[:count], 0)
+                for dimension_index in range(len(self.values.shape)):
+                    dimension_size = newsize[dimension_index]
+                    if dimension_size >= self.values.shape[dimension_index+1]:
+                        continue
+                    self.values = np.delete(self.values, np.s_[dimension_size:], 1)
 
             def create_variable(self, target: Dataset) -> None:
-                field_dimension = self.field.dimension
-                if field_dimension:
-                    dim = target.dimensions.get(field_dimension.name)
-                    if dim is None:
-                        dim = target.createDimension(field_dimension.name, self.values.shape[1])
-                        if isinstance(field_dimension, BaseDataOutput.ArrayFloat):
-                            dvar = target.createVariable(dim.name, self.values.dtype, (dim.name,), fill_value=nan)
+                field_dimensions = self.field.dimensions
+                var_dimensions = list()
+                if field_dimensions:
+                    for dimension_index in range(len(field_dimensions)):
+                        declare_dimension = field_dimensions[dimension_index]
+                        dimension_value = declare_dimension.value
+
+                        dim = target.dimensions.get(declare_dimension.name)
+                        if dim is None:
+                            dim = target.createDimension(declare_dimension.name, max(self.values.shape[dimension_index+1], 1))
+                            if isinstance(declare_dimension, BaseDataOutput.ArrayFloat):
+                                dvar = target.createVariable(dim.name, 'f8', (dim.name,), fill_value=nan)
+                            else:
+                                raise ValueError("unknown dimension type")
                         else:
-                            raise ValueError("unknown dimension type")
-                    else:
-                        dvar = target.variables[dim.name]
+                            dvar = target.variables[dim.name]
+                        var_dimensions.append(dim)
 
-                    _configure_variable(dvar, field_dimension)
+                        _configure_variable(dvar, declare_dimension)
 
-                    dimension_value = field_dimension.value
-                    if dimension_value:
-                        n_assign = min(len(dimension_value), self.values.shape[1], dim.size)
-                        dvar[:n_assign] = dimension_value[:n_assign]
+                        if dimension_value:
+                            n_assign = min(len(dimension_value), self.values.shape[dimension_index+1], dim.size)
+                            dvar[:n_assign] = dimension_value[:n_assign]
                 else:
-                    dim = target.createDimension(self.field.name, self.values.shape[1])
+                    for dimension_index in range(len(self.values.shape) - 1):
+                        dim = target.createDimension(
+                            self.field.name + (str(dimension_index) if dimension_index > 0 else ""),
+                            self.values.shape[dimension_index + 1]
+                        )
+                        var_dimensions.append(dim)
 
-                var = target.createVariable(self.field.name, self.values.dtype, (dim.name, 'time'),
+                dimension_names = [d.name for d in var_dimensions]
+                dimension_names.append('time')
+
+                var = target.createVariable(self.field.name, self.values.dtype, tuple(dimension_names),
                                             fill_value=self.pad)
                 _configure_variable(var, self.field)
-                var[:] = np.transpose(self.values)
+                var[:] = np.moveaxis(self.values, 0, -1)
 
         class _NetCDFVariableNative(_NetCDFVariable):
             def __init__(self, field: typing.Union[BaseDataOutput.String], data_type):
@@ -805,8 +906,23 @@ if __name__ == '__main__':
             return self._value
 
         @property
-        def dimension(self) -> typing.Optional["BaseDataOutput.ArrayFloat"]:
-            return self.dim
+        def dimensions(self) -> typing.Optional[typing.List["BaseDataOutput.ArrayFloat"]]:
+            return [self.dim]
+
+    class ConstantMatrixFloat(BaseDataOutput.ArrayFloat):
+        def __init__(self, name: str, value: typing.List):
+            super().__init__(name)
+            self._value = value
+            self.dim1: typing.Optional["BaseDataOutput.ArrayFloat"] = None
+            self.dim2: typing.Optional["BaseDataOutput.ArrayFloat"] = None
+
+        @property
+        def value(self) -> typing.List:
+            return self._value
+
+        @property
+        def dimensions(self) -> typing.Optional[typing.List["BaseDataOutput.ArrayFloat"]]:
+            return [self.dim1, self.dim2]
 
     class ConstantFlag(BaseDataOutput.Flag):
         def __init__(self, name: str, value: bool):
@@ -825,6 +941,10 @@ if __name__ == '__main__':
     af = ConstantArrayFloat('var3', [3.0, 4.0])
     af.dim = ConstantArrayFloat('afdim', [5.0, 6.0])
     rec.add_variable(af)
+    mf = ConstantMatrixFloat('var3', [[7.0, 8.0], [9.0, 10.0], [11.0, 13.0]])
+    mf.dim1 = ConstantArrayFloat('mfdim1', [14.0, 15.0])
+    mf.dim2 = ConstantArrayFloat('mfdim2', [16.0, 17.0, 18.0])
+    rec.add_variable(mf)
 
     rec(1658275200, 1658275260, 60.0, 30)
     rec(1658275260, 1658275320, 59.0, 29)

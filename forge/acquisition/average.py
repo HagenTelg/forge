@@ -34,7 +34,7 @@ class AverageRecord:
         def accumulate(self, seconds: float) -> None:
             pass
 
-        def complete(self) -> None:
+        def complete(self) -> typing.Any:
             pass
 
         def reset(self) -> None:
@@ -70,13 +70,14 @@ class AverageRecord:
             self._sum_times_seconds += self._pending_value * seconds
             self._count_seconds += seconds
 
-        def complete(self) -> None:
+        def complete(self) -> float:
             if self._count_seconds <= 0.0:
                 self.value = nan
             else:
                 self.value = self._sum_times_seconds / self._count_seconds
             self._sum_times_seconds: float = 0.0
             self._count_seconds: float = 0.0
+            return self.value
 
         def reset(self) -> None:
             self._pending_value = None
@@ -108,9 +109,10 @@ class AverageRecord:
             if self._pending_value:
                 self._average = True
 
-        def complete(self) -> None:
+        def complete(self) -> bool:
             self.value = self._average
             self._average = False
+            return self.value
 
         def reset(self) -> None:
             self._pending_value = False
@@ -153,9 +155,10 @@ class AverageRecord:
                 return
             self._first_valid = self._pending_value
 
-        def complete(self) -> None:
+        def complete(self) -> typing.Any:
             self.value = self._first_valid
             self._first_valid = None
+            return self.value
 
         def reset(self) -> None:
             self._pending_value = None
@@ -196,9 +199,10 @@ class AverageRecord:
                 return
             self._last_valid = self._pending_value
 
-        def complete(self) -> None:
+        def complete(self) -> typing.Any:
             self.value = self._last_valid
             self._last_valid = None
+            return self.value
 
         def reset(self) -> None:
             self._pending_value = None
@@ -237,12 +241,13 @@ class AverageRecord:
             else:
                 self._sum += self._pending_value
 
-        def complete(self) -> None:
+        def complete(self) -> float:
             if self._sum is None:
                 self.value = nan
             else:
                 self.value = self._sum
             self._sum = None
+            return self.value
 
         def reset(self) -> None:
             self._pending_value = None
@@ -329,17 +334,28 @@ class AverageRecord:
     class Array(Entry):
         def __init__(self, entry_type: typing.Type = None):
             super().__init__()
-            self.value: typing.List[float] = list()
+            self.value: typing.List = list()
             if entry_type is None:
                 entry_type = AverageRecord.Variable
             self._entry_type = entry_type
-            self._contents: typing.List[typing.Union[AverageRecord.Variable, AverageRecord.FirstValid,
-                                                     AverageRecord.LastValid, AverageRecord.Sum,
-                                                     AverageRecord.Rate]] = list()
+            self._contents: typing.List = list()
             self._pending_size: typing.Optional[int] = None
             self._largest_size: typing.Optional[int] = None
 
-        def __call__(self, contents: typing.List[float]) -> None:
+        @classmethod
+        def nested(cls, dimensions: int = 1, entry_type: typing.Type = None) -> "AverageRecord.Array":
+            while dimensions > 1:
+                def capture(t):
+                    class Nest(cls):
+                        def __init__(self):
+                            super().__init__(t)
+                    return Nest
+
+                entry_type = capture(entry_type)
+                dimensions -= 1
+            return cls(entry_type=entry_type)
+
+        def __call__(self, contents: typing.List) -> None:
             while len(contents) > len(self._contents):
                 self._contents.append(self._entry_type())
             for i in range(len(contents)):
@@ -367,21 +383,19 @@ class AverageRecord:
             for v in self._contents:
                 v.accumulate(seconds)
 
-        def complete(self) -> None:
+        def complete(self) -> typing.List:
             if not self._largest_size:
                 self._contents.clear()
             elif len(self._contents) > self._largest_size:
                 del self._contents[self._largest_size:]
 
-            for v in self._contents:
-                v.complete()
-
             self.value.clear()
             for v in self._contents:
-                self.value.append(float(v))
+                self.value.append(v.complete())
 
             self._pending_size = None
             self._largest_size = None
+            return self.value
 
         def reset(self) -> None:
             for v in self._contents:
@@ -389,13 +403,13 @@ class AverageRecord:
             self._pending_size = None
             self._largest_size = None
 
-    def array(self):
-        a = self.Array()
+    def array(self, dimensions: int = 1):
+        a = self.Array.nested(dimensions)
         self._entries.append(a)
         return a
 
-    def array_last_valid(self):
-        a = self.Array(AverageRecord.LastValid)
+    def array_last_valid(self, dimensions: int = 1):
+        a = self.Array.nested(dimensions, AverageRecord.LastValid)
         self._entries.append(a)
         return a
 

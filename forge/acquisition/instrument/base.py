@@ -71,11 +71,11 @@ class BaseDataOutput:
 
     class ArrayFloat(Field):
         @property
-        def value(self) -> typing.List[float]:
+        def value(self) -> typing.Union[typing.List[float], typing.List[typing.List]]:
             raise NotImplementedError
 
         @property
-        def dimension(self) -> typing.Optional["BaseDataOutput.ArrayFloat"]:
+        def dimensions(self) -> typing.Optional[typing.List["BaseDataOutput.ArrayFloat"]]:
             return None
 
     class Flag:

@@ -364,8 +364,8 @@ class Parameters:
                 return v 
 
             @property
-            def dimension(self) -> typing.Optional[BaseDataOutput.ArrayFloat]:
-                return self.wavelengths.data
+            def dimensions(self) -> typing.Optional[typing.List[BaseDataOutput.ArrayFloat]]:
+                return [self.wavelengths.data]
 
         target.constants.append(_Integer(self, "SMZ", {
             'long_name': "zero mode: 0=manual only, 1-24=autozero with average of last N zeros",

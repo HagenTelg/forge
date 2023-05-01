@@ -260,12 +260,13 @@ class StandardInstrument(BaseInstrument):
         self._inputs.append(i)
         return i
 
-    def input_array(self, name: str, send_to_bus: bool = True) -> ArrayInput:
+    def input_array(self, name: str, send_to_bus: bool = True, dimensions: int = 1) -> ArrayInput:
         if name in self._input_names:
             raise ValueError(f"duplicate input name {name}")
         self._input_names.add(name)
 
-        i = ArrayInput(self, name, self.context.config.section_or_constant('DATA', name), send_to_bus)
+        i = ArrayInput(self, name, self.context.config.section_or_constant('DATA', name),
+                       send_to_bus=send_to_bus, dimensions=dimensions)
         if not isinstance(i.config, LayeredConfiguration):
             i.field.add_comment(self.context.config.comment('DATA', name))
         self._inputs.append(i)
@@ -289,19 +290,22 @@ class StandardInstrument(BaseInstrument):
             attributes = dict()
         return VariableLastValid(self, source, name, code, attributes)
 
-    def variable_array(self, source: ArrayInput, dimension: typing.Optional[Dimension] = None,
+    def variable_array(self, source: ArrayInput,
+                       dimensions: typing.Optional[typing.Union[Dimension, typing.Iterable[Dimension]]] = None,
                        name: str = None, code: str = None,
                        attributes: typing.Dict[str, typing.Any] = None) -> ArrayVariable:
         if not attributes:
             attributes = dict()
-        return ArrayVariable(self, source, dimension, name, code, attributes)
+        return ArrayVariable(self, source, dimensions, name, code, attributes)
 
-    def variable_array_last_valid(self, source: ArrayInput, dimension: typing.Optional[Dimension] = None,
+    def variable_array_last_valid(self, source: ArrayInput,
+                                  dimensions: typing.Optional[
+                                      typing.Union[Dimension, typing.Iterable[Dimension]]] = None,
                                   name: str = None, code: str = None,
                                   attributes: typing.Dict[str, typing.Any] = None) -> ArrayVariableLastValid:
         if not attributes:
             attributes = dict()
-        return ArrayVariableLastValid(self, source, dimension, name, code, attributes)
+        return ArrayVariableLastValid(self, source, dimensions, name, code, attributes)
 
     def variable_number_concentration(self, source: Input, name: str = None, code: str = None,
                                       attributes: typing.Dict[str, typing.Any] = None) -> Variable:
@@ -526,40 +530,50 @@ class StandardInstrument(BaseInstrument):
     state_unsigned_integer = _declare_state_type(int, BaseDataOutput.UnsignedInteger)
     state_string = _declare_state_type(str, BaseDataOutput.String)
 
-    def state_array(self, source: Persistent, dimension: typing.Optional[Dimension] = None,
+    def state_array(self, source: Persistent,
+                    dimensions: typing.Optional[typing.Union[Dimension, typing.Iterable[Dimension]]] = None,
                     name: str = None, code: str = None,
                     attributes: typing.Dict[str, typing.Any] = None, automatic: bool = True):
+        if dimensions:
+            if isinstance(dimensions, Dimension):
+                dimensions = [dimensions]
+            else:
+                dimensions = list(dimensions)
+
         class StateHandler(State):
             class Field(BaseDataOutput.ArrayFloat):
                 def __init__(self, name: str):
                     super().__init__(name)
                     self.state: typing.Optional["StateHandler"] = None
-                    self.override: typing.Optional[typing.List[float]] = None
+                    self.override: typing.Optional[typing.Union[typing.List[float], typing.List[typing.List]]] = None
                     self.template = BaseDataOutput.Field.Template.STATE
 
                 @property
-                def value(self) -> typing.List[float]:
+                def value(self) -> typing.Union[typing.List[float], typing.List[typing.List]]:
                     if self.override is not None:
                         return self.override
                     return self.state.source.value
 
                 @property
-                def dimension(self) -> typing.Optional[BaseDataOutput.ArrayFloat]:
-                    if self.state.dimension:
-                        return self.state.dimension.data
+                def dimensions(self) -> typing.Optional[typing.List[BaseDataOutput.ArrayFloat]]:
+                    if self.state.dimensions:
+                        return [d.data for d in self.state.dimensions]
                     return None
 
-            def __init__(self, instrument: BaseInstrument, source: Persistent, dimension: typing.Optional[Dimension],
+            def __init__(self, instrument: BaseInstrument, source: Persistent,
+                         dimensions: typing.Optional[typing.Iterable[Dimension]],
                          name: str, code: typing.Optional[str], attributes: typing.Dict[str, typing.Any],
                          automatic: bool):
                 super().__init__(instrument, source, name, code, attributes, automatic)
-                self.dimension = dimension
+                self.dimensions = dimensions
 
-            def apply_override(self, value: typing.Optional[typing.List[float]]) -> None:
+            def apply_override(self, value: typing.Optional[typing.Union[typing.List[float],
+                                                                         typing.List[typing.List]]]) -> None:
                 self.data.override = value
+
         if not attributes:
             attributes = dict()
-        return StateHandler(self, source, dimension, name, code, attributes, automatic)
+        return StateHandler(self, source, dimensions, name, code, attributes, automatic)
 
     def state_enum(self, source: PersistentEnum, typename: typing.Optional[str] = None,
                    name: str = None, code: str = None,
@@ -585,12 +599,6 @@ class StandardInstrument(BaseInstrument):
                     return enum_type
 
                 @property
-                def dimension(self) -> typing.Optional[BaseDataOutput.ArrayFloat]:
-                    if self.state.dimension:
-                        return self.state.dimension.data
-                    return None
-
-                @property
                 def typename(self) -> str:
                     if typename:
                         return typename
@@ -610,10 +618,11 @@ class StandardInstrument(BaseInstrument):
         s.data.use_cut_size = False
         return s
 
-    def state_measurement_array(self, source: Persistent, dimension: typing.Optional[Dimension] = None,
+    def state_measurement_array(self, source: Persistent,
+                                dimensions: typing.Optional[typing.Union[Dimension, typing.Iterable[Dimension]]] = None,
                                 name: str = None, code: str = None,
                                 attributes: typing.Dict[str, typing.Any] = None, automatic: bool = True):
-        s = self.state_array(source, dimension, name, code, attributes, automatic)
+        s = self.state_array(source, dimensions, name, code, attributes, automatic)
         s.data.template = BaseDataOutput.Field.Template.STATE_MEASUREMENT
         s.data.use_cut_size = False
         return s

@@ -281,3 +281,34 @@ async def test_garble():
         await simulator_run
     except asyncio.CancelledError:
         pass
+
+
+@pytest.mark.asyncio
+async def test_polar():
+    simulator: Simulator = None
+    instrument: Instrument = None
+    simulator, instrument = await create_streaming_instrument(Instrument, Simulator, config={
+        'ZERO': False,
+        'REPORT_INTERVAL': 3.0,
+    })
+    bus: BusInterface = instrument.context.bus
+    persistent: PersistentInterface = instrument.context.persistent
+    simulator.make_polar()
+
+    simulator_run = asyncio.ensure_future(simulator.run())
+    instrument_run = asyncio.ensure_future(instrument.run())
+
+    await wait_cancelable(bus.wait_for_communicating(), 30)
+
+    assert await bus.value('BsB') == simulator.data_Bs[0]
+
+    instrument_run.cancel()
+    simulator_run.cancel()
+    try:
+        await instrument_run
+    except asyncio.CancelledError:
+        pass
+    try:
+        await simulator_run
+    except asyncio.CancelledError:
+        pass

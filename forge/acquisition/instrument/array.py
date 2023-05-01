@@ -7,37 +7,44 @@ from .dimension import Dimension
 from .variable import InputFieldControl
 
 
-def _normalize_array(value: typing.Iterable[float]) -> typing.List[float]:
-    result: typing.List[float] = list()
+def _normalize_array(value: typing.Iterable,
+                     dimensions: int = 1) -> typing.Union[typing.List[float], typing.List[typing.List]]:
+    result = list()
     for v in value:
-        if v is None:
-            v = nan
-        else:
-            v = float(v)
-            if not isfinite(v):
+        try:
+            if v is None:
                 v = nan
+            else:
+                v = float(v)
+                if not isfinite(v):
+                    v = nan
+        except TypeError:
+            if dimensions == 1:
+                raise
+            v = _normalize_array(v, dimensions=dimensions-1)
         result.append(v)
     return result
 
 
 class ArrayInput(BaseInstrument.Input):
     def __init__(self, instrument: BaseInstrument, name: str, config: LayeredConfiguration,
-                 send_to_bus: bool = True):
+                 dimensions: int = 1, send_to_bus: bool = True):
         super().__init__(instrument, name)
         self.instrument = instrument
         self.config = config
+        self.dimensions = dimensions
         self.send_to_bus = send_to_bus
 
-        self.value: typing.List[float] = list()
+        self.value: typing.Union[typing.List[float], typing.List[typing.List]] = list()
         self._queued_data: typing.Optional[typing.List[float]] = None
         self.attached_to_record: bool = False
-        self._queued_unaveraged: typing.Optional[typing.List[float]] = None
+        self._queued_unaveraged: typing.Optional[typing.Union[typing.List[float], typing.Collection[typing.List]]] = None
 
         self._overridden = False
-        self._override_value: typing.List[float] = list()
+        self._override_value: typing.Union[typing.List[float], typing.List[typing.List]] = list()
 
         self.calibration: typing.List[float] = list()
-        self.constant: typing.Optional[typing.List[float]] = None
+        self.constant: typing.Optional[typing.Union[typing.List[float], typing.List[typing.List]]] = None
         self.field = InputFieldControl()
 
         if isinstance(self.config, str):
@@ -51,7 +58,7 @@ class ArrayInput(BaseInstrument.Input):
             return
 
         if isinstance(self.config, list):
-            self._override_value = _normalize_array(self.config)
+            self._override_value = _normalize_array(self.config, dimensions=self.dimensions)
             self._overridden = True
             return
 
@@ -72,7 +79,7 @@ class ArrayInput(BaseInstrument.Input):
 
         constant = self.config.get('CONSTANT')
         if constant:
-            self._override_value = _normalize_array(constant)
+            self._override_value = _normalize_array(constant, dimensions=self.dimensions)
             self._overridden = True
 
             self.field.add_comment(self.config.comment('CONSTANT'))
@@ -106,13 +113,19 @@ class ArrayInput(BaseInstrument.Input):
             use_standard_pressure = bool(use_standard_pressure)
             self.use_standard_pressure = use_standard_pressure
 
-    def _convert_value(self, value: float) -> float:
-        if value is None:
-            value = nan
-        else:
-            value = float(value)
-            if not isfinite(value):
+    def _convert_value(self, value: typing.Union[float, typing.Iterable]) -> typing.Union[float, typing.Collection]:
+        try:
+            if value is None:
                 value = nan
+            else:
+                value = float(value)
+                if not isfinite(value):
+                    value = nan
+        except TypeError:
+            result = list()
+            for nest in value:
+                result.append(self._convert_value(nest))
+            return result
 
         if self.calibration:
             result = 0.0
@@ -124,13 +137,13 @@ class ArrayInput(BaseInstrument.Input):
 
         return value
 
-    def __call__(self, value: typing.Iterable[float]) -> typing.Iterable[float]:
+    def __call__(self, value: typing.Iterable) -> typing.Iterable:
         if self._overridden:
             value = self._override_value
         elif value is None:
             value = []
         else:
-            value = _normalize_array(value)
+            value = _normalize_array(value, dimensions=self.dimensions)
 
         self.value.clear()
         for v in value:
@@ -152,7 +165,7 @@ class ArrayInput(BaseInstrument.Input):
             self._override_value = []
             return
         try:
-            self._override_value = _normalize_array(value)
+            self._override_value = _normalize_array(value, dimensions=self.dimensions)
         except (ValueError, TypeError):
             return
 
@@ -190,22 +203,28 @@ class ArrayVariable(BaseInstrument.Variable):
             return self.variable.value
 
         @property
-        def dimension(self) -> typing.Optional["BaseDataOutput.ArrayFloat"]:
-            if self.variable.dimension:
-                return self.variable.dimension.data
+        def dimensions(self) -> typing.Optional[typing.List["BaseDataOutput.ArrayFloat"]]:
+            if self.variable.dimensions:
+                return [d.data for d in self.variable.dimensions]
             return None
 
-    def __init__(self, instrument: BaseInstrument, source: ArrayInput, dimension: typing.Optional[Dimension],
+    def __init__(self, instrument: BaseInstrument, source: ArrayInput,
+                 dimensions: typing.Optional[typing.Union[Dimension, typing.Iterable[Dimension]]],
                  name: str, code: typing.Optional[str], attributes: typing.Dict[str, typing.Any]):
         super().__init__(instrument, name or source.name, code, attributes)
         self.data.variable = self
-        self.dimension = dimension
+        if isinstance(dimensions, Dimension):
+            self.dimensions = [dimensions]
+        else:
+            self.dimensions = list(dimensions)
+        if len(self.dimensions) != source.dimensions:
+            raise TypeError(f"expected {source.dimensions} but {len(self.dimensions)} provided")
         self.source = source
         self.average: typing.Optional[AverageRecord.Array] = None
         source.field.apply(self.data, source.calibration)
 
     @property
-    def value(self) -> typing.List[float]:
+    def value(self) -> typing.Union[typing.List[float], typing.List[typing.List]]:
         if not self.average:
             return []
         return self.average.value
@@ -230,7 +249,7 @@ class ArrayVariable(BaseInstrument.Variable):
 
     def attach_to_record(self, record: BaseInstrument.Record) -> None:
         if self.average is None:
-            self.average = record.average.array()
+            self.average = record.average.array(dimensions=len(self.dimensions))
         elif not record.average.has_entry(self.average):
             raise ValueError(f"variable {self.name} from {self.source.name} attached to multiple records")
         self.source.attached_to_record = True
@@ -245,7 +264,7 @@ class ArrayVariableLastValid(ArrayVariable):
 
     def attach_to_record(self, record: BaseInstrument.Record) -> None:
         if self.average is None:
-            self.average = record.average.array_last_valid()
+            self.average = record.average.array_last_valid(dimensions=len(self.dimensions))
         elif not record.average.has_entry(self.average):
             raise ValueError(f"variable {self.name} from {self.source.name} attached to multiple records")
         self.source.attached_to_record = True

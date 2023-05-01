@@ -166,8 +166,7 @@ class Report(BaseInstrument.Report):
         for v in variables:
             if v is None:
                 continue
-            self.variables.append(v)
-            self.record.attach_variable(v)
+            self.attach_variable(v)
 
         for v in auxiliary_variables:
             if v is None:
@@ -184,6 +183,10 @@ class Report(BaseInstrument.Report):
         self.record.reports.add(self)
         if automatic:
             self.record.automatic_reports.add(self)
+
+    def attach_variable(self, variable: BaseInstrument.Variable) -> None:
+        self.variables.append(variable)
+        self.record.attach_variable(variable)
 
     def __repr__(self) -> str:
         return "Report(" + repr(self.variables) + "," + repr(self.flags) + ")"

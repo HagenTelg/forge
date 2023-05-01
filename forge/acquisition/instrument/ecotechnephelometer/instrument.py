@@ -4,6 +4,7 @@ import asyncio
 import time
 import enum
 import re
+import forge.data.structure.variable as netcdf_var
 from math import nan, isfinite
 from forge.tasks import wait_cancelable
 from forge.units import ONE_ATM_IN_HPA
@@ -11,10 +12,11 @@ from forge.acquisition import LayeredConfiguration
 from forge.acquisition.schedule import Schedule
 from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError, BaseDataOutput, BaseBusInterface
 from ..parse import parse_number, parse_time, parse_flags_bits
-from ..state import Persistent
+from ..state import Persistent, ChangeEvent
 from ..variable import Input
 from ..array import ArrayInput
 from ..spancheck import Spancheck as SpancheckController
+from ..record import Report
 
 _LOGGER = logging.getLogger(__name__)
 _INSTRUMENT_TYPE = __name__.split('.')[-2]
@@ -282,6 +284,8 @@ class Instrument(StreamingInstrument):
                     f"Spancheck completed with an average error of {average_error:.1f}%",
                     result_data)
 
+                spancheck.instrument.data_PCTnc(self.percent_error.values)
+
                 if self.angle_total is not None:
                     try:
                         spancheck.instrument.data_PCTc([
@@ -457,6 +461,7 @@ class Instrument(StreamingInstrument):
         self._sleep_time: float = 0.0
         self._instrument_update_time: float = 3.0
         self._instrument_polar: bool = self._polar_mode
+        self._polar_data_declared: bool = False
         if self._polar_mode:
             self._instrument_update_time = 60.0
         if self._report_interval:
@@ -532,7 +537,7 @@ class Instrument(StreamingInstrument):
         self.data_wavelength([wl for wl, _ in self.WAVELENGTHS])
         self.data_Bs = self.input_array("Bs")  # Sent to the bus because it has the zero data removed
         self.data_Bbs = self.input_array("Bbs")
-        # self.data_Bsn = self.input_array("Bsn", send_to_bus=False)
+        self.data_Bsn = self.input_array("Bsn", send_to_bus=False, dimensions=2)
         self.data_Bsw = self.persistent("Bsw", send_to_bus=False)
         self.data_Bbsw = self.persistent("Bbsw", send_to_bus=False)
         self.data_Bsnw = self.persistent("Bsnw", send_to_bus=False)
@@ -543,6 +548,7 @@ class Instrument(StreamingInstrument):
         self.data_Cf = self.input_array("Cf", send_to_bus=False)
         self.data_PCTc = self.persistent("PCTc", send_to_bus=False)
         self.data_PCTbc = self.persistent("PCTbc", send_to_bus=False)
+        self.data_PCTnc = self.persistent("PCTnc", send_to_bus=False)
         self.data_Cc = self.persistent("Cc", send_to_bus=False)
         self.data_Cbc = self.persistent("Cbc", send_to_bus=False)
         self.data_Bsnw_base = self.persistent("Bsnwx", send_to_bus=False)
@@ -559,7 +565,7 @@ class Instrument(StreamingInstrument):
         self._apply_spancheck_calibration_request: bool = False
         self.context.bus.connect_command('apply_spancheck_calibration', self.apply_spancheck_calibration)
 
-        dimension_wavelength = self.dimension_wavelength(self.data_wavelength)
+        self.dimension_wavelength = self.dimension_wavelength(self.data_wavelength)
         self.bit_flags: typing.Dict[int, Instrument.Notification] = dict()
 
         self._instrument_stp_variables: typing.List[Instrument.Variable] = list()
@@ -571,8 +577,8 @@ class Instrument(StreamingInstrument):
             return s
 
         self.instrument_report = self.report(
-            at_instrument_stp(self.variable_total_scattering(self.data_Bs, dimension_wavelength, code="Bs")),
-            at_instrument_stp(self.variable_back_scattering(self.data_Bbs, dimension_wavelength, code="Bbs")),
+            at_instrument_stp(self.variable_total_scattering(self.data_Bs, self.dimension_wavelength, code="Bs")),
+            at_instrument_stp(self.variable_back_scattering(self.data_Bbs, self.dimension_wavelength, code="Bbs")),
 
             self.variable_air_pressure(self.data_Psample, "sample_pressure", code="P",
                                        attributes={'long_name': "measurement cell pressure"}),
@@ -588,17 +594,17 @@ class Instrument(StreamingInstrument):
                 'units': "Hz",
                 'C_format': "%7.0f"
             }),
-            self.variable_array(self.data_Cs, dimension_wavelength, "scattering_counts", code="Cs", attributes={
+            self.variable_array(self.data_Cs, self.dimension_wavelength, "scattering_counts", code="Cs", attributes={
                 'long_name': "total scattering photon count rate",
                 'units': "Hz",
                 'C_format': "%7.0f"
             }),
-            self.variable_array(self.data_Cbs, dimension_wavelength, "backscattering_counts", code="Cbs", attributes={
+            self.variable_array(self.data_Cbs, self.dimension_wavelength, "backscattering_counts", code="Cbs", attributes={
                 'long_name': "backwards hemispheric scattering photon count rate",
                 'units': "Hz",
                 'C_format': "%7.0f"
             }),
-            self.variable_array(self.data_Cf, dimension_wavelength, "reference_counts", code="Cf", attributes={
+            self.variable_array(self.data_Cf, self.dimension_wavelength, "reference_counts", code="Cf", attributes={
                 'long_name': "reference shutter photon count rate",
                 'units': "Hz",
                 'C_format': "%7.0f"
@@ -651,8 +657,8 @@ class Instrument(StreamingInstrument):
             self.state_pressure(self.data_Pzero, "zero_pressure", code="Pw", attributes={
                 'long_name': "measurement cell pressure during the zero"
             }),
-            at_instrument_stp(self.state_wall_total_scattering(self.data_Bsw, dimension_wavelength, code="Bsw")),
-            at_instrument_stp(self.state_wall_back_scattering(self.data_Bbsw, dimension_wavelength, code="Bbsw")),
+            at_instrument_stp(self.state_wall_total_scattering(self.data_Bsw, self.dimension_wavelength, code="Bsw")),
+            at_instrument_stp(self.state_wall_back_scattering(self.data_Bbsw, self.dimension_wavelength, code="Bbsw")),
             name="zero",
         )
         self.zero_state.data_record.standard_temperature = 0.0
@@ -665,25 +671,25 @@ class Instrument(StreamingInstrument):
 
         self.spancheck_state = self.change_event(
             at_stp(self.state_measurement_array(
-                self.data_PCTc, dimension_wavelength, "scattering_percent_error", code="PCTc", attributes={
+                self.data_PCTc, self.dimension_wavelength, "scattering_percent_error", code="PCTc", attributes={
                     'long_name': "spancheck total light scattering percent error",
                     'units': "%",
                     'C_format': "%6.2f"
                 })),
             at_stp(self.state_measurement_array(
-                self.data_PCTbc, dimension_wavelength, "backscattering_percent_error", code="PCTbc", attributes={
+                self.data_PCTbc, self.dimension_wavelength, "backscattering_percent_error", code="PCTbc", attributes={
                     'long_name': "spancheck backwards hemispheric light scattering percent error",
                     'units': "%",
                     'C_format': "%6.2f"
                 })),
             at_stp(self.state_measurement_array(
-                self.data_Cc, dimension_wavelength, "scattering_sensitivity_factor", code="Cc", attributes={
+                self.data_Cc, self.dimension_wavelength, "scattering_sensitivity_factor", code="Cc", attributes={
                     'long_name': "total photon count rate attributable to Rayleigh scattering by air at STP",
                     'units': "Hz",
                     'C_format': "%7.1f"
                 })),
             at_stp(self.state_measurement_array(
-                self.data_Cbc, dimension_wavelength, "backscattering_sensitivity_factor", code="Cbc", attributes={
+                self.data_Cbc, self.dimension_wavelength, "backscattering_sensitivity_factor", code="Cbc", attributes={
                     'long_name': "backwards hemispheric photon count rate attributable to Rayleigh scattering by air at STP",
                     'units': "Hz",
                     'C_format': "%7.1f"
@@ -721,6 +727,49 @@ class Instrument(StreamingInstrument):
         record.constants.append(_StringValue(self, '_ee_value', "instrument_parameters", {
             'long_name': "instrument response to the EE command",
         }))
+
+    def _declare_polar(self) -> None:
+        if self._polar_data_declared:
+            return
+        self._polar_data_declared = True
+
+        self.dimension_angle = self.dimension(self.data_angle, "angle", code="Bn", attributes={
+            'long_name': "polar scattering start angle (zero is total scattering)",
+            'units': "degrees",
+            'C_format': "%2.0f"
+        })
+
+        var = self.variable_array(self.data_Bsn, [self.dimension_angle, self.dimension_wavelength],
+                                  "polar_scattering_coefficient", code="Bsn", attributes={
+                'long_name': "polar light scattering coefficient",
+                'units': "Mm-1",
+                'C_format': "%7.2f"
+            })
+        self._instrument_stp_variables.append(var)
+        var.data.use_standard_pressure = True
+        var.data.use_standard_temperature = True
+        self.instrument_report.attach_variable(var)
+
+        var = self.state_measurement_array(self.data_Bsnw, [self.dimension_angle, self.dimension_wavelength],
+                                           "wall_polar_scattering_coefficient", code="Bsnw", attributes={
+                'long_name': "polar light scattering coefficient from wall signal",
+                'units': "Mm-1",
+                'C_format': "%7.2f"
+            })
+        self._instrument_stp_variables.append(var)
+        var.data.use_standard_pressure = True
+        var.data.use_standard_temperature = True
+        self.zero_state.attach(var)
+
+        var = self.state_measurement_array(self.data_PCTnc, [self.dimension_angle, self.dimension_wavelength],
+                                           "polar_scattering_percent_error", code="PCTnc", attributes={
+                'long_name': "spancheck polar light scattering percent error",
+                'units': "%",
+                'C_format': "%6.2f"
+            })
+        var.data.use_standard_pressure = True
+        var.data.use_standard_temperature = True
+        self.spancheck_state.attach(var)
 
     def _find_angle(self, target: float) -> typing.Optional[int]:
         for angle in range(len(self.data_angle.value)):
@@ -909,12 +958,12 @@ class Instrument(StreamingInstrument):
         self.data_Tzero(zero_temperature, oneshot=True)
         self.data_Pzero(zero_pressure, oneshot=True)
 
-        # if self._is_polar and Bsnw:
-        #     for wavelength in range(len(self.data_Bsnw_wavelength)):
-        #         self.data_Bsnw_wavelength[wavelength]([angle[wavelength] for angle in Bsnw], oneshot=True)
-        #     Bsnw = self.data_Bsnw([
-        #         [c.value[angle] for c in self.data_Bsnw_wavelength] for angle in range(len(Bsnw))
-        #     ], oneshot=True)
+        if Bsnw:
+            for wavelength in range(len(self.data_Bsnw_wavelength)):
+                self.data_Bsnw_wavelength[wavelength]([angle[wavelength] for angle in Bsnw], oneshot=True)
+            Bsnw = self.data_Bsnw([
+                [c.value[angle] for c in self.data_Bsnw_wavelength] for angle in range(len(Bsnw))
+            ], oneshot=True)
 
         angle = self._total_scattering_index
         if angle is not None and angle < len(Bsnw):
@@ -1532,6 +1581,9 @@ class Instrument(StreamingInstrument):
     def _output_data(self) -> None:
         sampling_mode = self.SamplingMode.Normal
 
+        if self._is_polar:
+            self._declare_polar()
+
         if self.data_major_state.value in (self.MajorState.ZeroCalibration,
                                            self.MajorState.ZeroAdjust,
                                            self.MajorState.ZeroCheck):
@@ -1576,18 +1628,18 @@ class Instrument(StreamingInstrument):
             self.data_Bs([float(c) for c in self.data_Bs_wavelength])
             if self._have_backscatter:
                 self.data_Bbs([float(c) for c in self.data_Bbs_wavelength])
-            # if self._is_polar:
-            #     self.data_Bsn([
-            #         [c for c in wavelength.value] for wavelength in self.data_Bsn_wavelength
-            #     ])
+            self.data_Bsn([
+                [wavelength.value[angle] for wavelength in self.data_Bsn_wavelength]
+                for angle in range(len(self.data_angle.value))
+            ])
         else:
             self.data_Bs([nan for _ in self.data_Bs_wavelength])
             if self._have_backscatter:
                 self.data_Bbs([nan for _ in self.data_Bbs_wavelength])
-            # if self._is_polar:
-            #     self.data_Bsn([
-            #         [nan for _ in wavelength.value] for wavelength in self.data_Bsn_wavelength
-            #     ])
+            self.data_Bsn([
+                [nan for _ in self.data_Bsn_wavelength]
+                for _ in range(len(self.data_angle.value))
+            ])
 
         self.data_Cf([float(v) for v in self.data_Cf_wavelength])
         self.data_Cs([float(v) for v in self.data_Cs_wavelength])
