@@ -199,7 +199,8 @@ class AnalogOutput:
                                                    name=aot.config.get('FIELD'),
                                                    code=name,
                                                    attributes=aot.attributes)
-            if not save_value:
+
+            if not save_value or aot.persistent.value is None:
                 initial = aot.config.get('INITIAL')
                 if initial is not None:
                     aot.persistent(float(initial), oneshot=True)
