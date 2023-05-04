@@ -405,6 +405,7 @@ class Instrument(StreamingInstrument):
 
             if self.set_hardware_flow_calibration and not self._flow_calibration_equal(
                     current_calibration, self.set_hardware_flow_calibration):
+                original_calibration = current_calibration
                 for t in range(5):
                     self.writer.write(b"flow=" +
                                       b",".join([(b"%.8e" % c) for c in self.set_hardware_flow_calibration]) +
@@ -416,17 +417,21 @@ class Instrument(StreamingInstrument):
                     data: bytes = await wait_cancelable(self.read_line(), 3.0)
                     current_calibration = self._parse_flow_calibration(data)
                     if self._flow_calibration_equal(current_calibration, self.set_hardware_flow_calibration):
+                        self.context.bus.log(f"Hardware flow calibration changed.", {
+                            "configured_calibration": self.set_hardware_flow_calibration,
+                            "original_calibration": original_calibration,
+                        })
+                        _LOGGER.debug("Changed hardware flow calibration")
                         break
 
                     await self.drain_reader(1.0)
                 else:
-                    self.context.bus.log(
-                        f"Unable to change hardware flow calibration.",
-                        {
-                            "configured_calibration": self.set_hardware_flow_calibration,
-                            "read_calibration": current_calibration,
-                        }, type=BaseBusInterface.LogType.ERROR)
-                    _LOGGER.warning(f"Error applying configured hardware flow calibration")
+                    self.context.bus.log(f"Unable to change hardware flow calibration.", {
+                        "configured_calibration": self.set_hardware_flow_calibration,
+                        "read_calibration": current_calibration,
+                        "original_calibration": original_calibration,
+                    }, type=BaseBusInterface.LogType.ERROR)
+                    _LOGGER.warning("Error applying configured hardware flow calibration")
 
             if current_calibration:
                 self.variable_Q.data.attributes['hardware_calibration_polynomial'] = current_calibration
