@@ -62,7 +62,7 @@ class Instrument(StreamingInstrument):
             return cls(name, config, instrument.input(name), instrument._lookup_controller(address))
 
     class _AnalogOutput(AnalogOutput):
-        RESTORE_VALUE = True
+        REMEMBER_CHANGES = True
 
         def __init__(self, name: str, config: LayeredConfiguration, instrument: "Instrument",
                      controller: "Instrument._Controller"):

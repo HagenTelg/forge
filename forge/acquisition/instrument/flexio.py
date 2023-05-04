@@ -97,7 +97,7 @@ class AnalogInput:
 
 
 class AnalogOutput:
-    RESTORE_VALUE = False
+    REMEMBER_CHANGES = False
 
     def __init__(self, name: str, config: LayeredConfiguration):
         self.name = name
@@ -187,7 +187,7 @@ class AnalogOutput:
                 aot.persistent = instrument.persistent(name, send_to_bus=False, save_value=False)
                 continue
 
-            save_value = bool(aot.config.get('RESTORE_VALUE', default=cls.RESTORE_VALUE))
+            save_value = bool(aot.config.get('REMEMBER_CHANGES', default=cls.REMEMBER_CHANGES))
 
             if not aot.config.get('ENABLE_LOGGING'):
                 aot.persistent = instrument.persistent(name, send_to_bus=False, save_value=save_value)
@@ -213,7 +213,7 @@ class AnalogOutput:
 
 
 class DigitalOutput:
-    RESTORE_VALUE = False
+    REMEMBER_CHANGES = False
 
     def __init__(self, name: str, config: LayeredConfiguration):
         self.name = name
@@ -327,7 +327,7 @@ class DigitalOutput:
                 dot.persistent = instrument.persistent(name, send_to_bus=False, save_value=False)
                 continue
 
-            save_value = bool(dot.config.get('RESTORE_VALUE', default=cls.RESTORE_VALUE))
+            save_value = bool(dot.config.get('REMEMBER_CHANGES', default=cls.REMEMBER_CHANGES))
 
             dot.persistent = instrument.persistent(name, send_to_bus=False, save_value=save_value)
             if not save_value:
