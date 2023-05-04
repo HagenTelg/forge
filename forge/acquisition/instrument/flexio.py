@@ -1,5 +1,6 @@
 import typing
 import asyncio
+import re
 from math import isfinite
 from forge.acquisition import LayeredConfiguration
 from .standard import StandardInstrument
@@ -70,6 +71,14 @@ class AnalogInput:
             'sample_q': instrument.variable_sample_flow,
             'delta_pressure': instrument.variable_delta_pressure,
             'dp': instrument.variable_delta_pressure,
+            'none': instrument.variable,
+        }
+        name_match: typing.Dict[re.Pattern, typing.Callable] = {
+            re.compile(r'^T\d*(?:_|$)'): instrument.variable_temperature,
+            re.compile(r'^U\d*(?:_|$)'): instrument.variable_rh,
+            re.compile(r'^Pd\d*(?:_|$)'): instrument.variable_delta_pressure,
+            re.compile(r'^P\d*(?:_|$)'): instrument.variable_pressure,
+            re.compile(r'^Q\d*(?:_|$)'): instrument.variable_flow,
         }
 
         analog_inputs: typing.List["AnalogInput"] = list()
@@ -85,10 +94,16 @@ class AnalogInput:
 
             _merge_attribute(ain.config, ain.attributes)
 
+            default_variable = instrument.variable
+            for pattern, value in name_match.items():
+                if not pattern.search(name):
+                    continue
+                default_variable = value
+                break
             type_name = ain.config.get('TYPE')
             if isinstance(type_name, str):
                 type_name = type_name.lower()
-            create = type_map.get(type_name, instrument.variable)
+            create = type_map.get(type_name, default_variable)
             ain.variable = create(ain.input,
                                   name=ain.config.get('FIELD'),
                                   code=name,
