@@ -20,6 +20,7 @@ from starlette.datastructures import URL
 from forge.authsocket import PublicKey, PrivateKey, key_to_bytes
 from forge.processing.transfer import CONFIGURATION
 from forge.processing.transfer.completion import completion_directory
+from forge.dashboard.report import report_ok, report_failed
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -91,7 +92,7 @@ async def upload_to_url(url: URL, file: Path, contents: typing.BinaryIO, compres
         raise ValueError("Unsupported URL scheme")
 
 
-async def prepare_file(file: Path, private_key: PrivateKey, compression: str) -> typing.Tuple[bytes, typing.BinaryIO]:
+async def prepare_file(file: Path, private_key: PrivateKey, compression: str) -> typing.Tuple[bytes, typing.BinaryIO, int]:
     if compression == 'zstd':
         with file.open('rb') as input_file:
             upload_file: typing.BinaryIO = TemporaryFile()
@@ -101,15 +102,17 @@ async def prepare_file(file: Path, private_key: PrivateKey, compression: str) ->
 
     upload_file.seek(0)
     hasher = sha512()
+    total_size = 0
     while True:
         chunk = upload_file.read(65536)
         if not chunk:
             break
         hasher.update(chunk)
+        total_size += len(chunk)
 
     upload_file.seek(0)
     signature = private_key.sign(hasher.digest())
-    return signature, upload_file
+    return signature, upload_file, total_size
 
 
 def accept_file(file: Path, args) -> bool:
@@ -135,20 +138,18 @@ def parse_arguments():
                         dest='debug', action='store_true',
                         help="enable debug output")
 
-    default_url = CONFIGURATION.get('PROCESSING.UPLOAD.URL')
-    if isinstance(default_url, str):
-        default_url = [default_url]
-    elif not isinstance(default_url, list):
-        default_url = None
     parser.add_argument('--server',
                         help="upload server URL",
-                        default=default_url,)
-                        #nargs=default_url and '*' or '+')
+                        action='append')
 
     parser.add_argument('--station',
                         dest='station', type=str,
                         default=CONFIGURATION.get("ACQUISITION.STATION", 'nil').lower(),
                         help="station code")
+
+    parser.add_argument('--dashboard',
+                        dest='dashboard', type=str,
+                        help="dashboard notification code")
 
     parser.add_argument('--modified',
                         dest='modified', type=float,
@@ -242,6 +243,19 @@ def main():
     if not upload_files:
         _LOGGER.info("No files to upload, exiting")
         exit(7)
+        return
+
+    servers = args.server
+    if not servers:
+        servers = CONFIGURATION.get('PROCESSING.UPLOAD.URL')
+        if isinstance(servers, str):
+            servers = servers
+        elif not isinstance(servers, list):
+            servers = None
+    if not servers:
+        _LOGGER.error("No server to upload to")
+        exit(1)
+        return
 
     _LOGGER.info(f"Starting upload of {len(upload_files)} file(s)")
 
@@ -262,9 +276,9 @@ def main():
 
     async def run():
         for file in upload_files:
-            signature, contents = await prepare_file(file, key, args.compression)
+            begin_time = time.monotonic()
+            signature, contents, file_size = await prepare_file(file, key, args.compression)
 
-            upload_ok = False
             for url in args.server:
                 url = URL(url=url)
                 if '{file}' in url.path:
@@ -279,17 +293,36 @@ def main():
                 except UploadRejected:
                     _LOGGER.error(f"Upload of {file} rejected, further attempts aborted")
                     contents.close()
+
+                    if args.dashboard:
+                        await report_failed(args.dashboard, args.station, notifications=[{
+                            "code": "",
+                            "severity": "error",
+                            "data": "File upload not authorized."
+                        }])
+
                     exit(4)
+                    return
                 except:
                     _LOGGER.warning(f"Upload to {repr(url)} failed", exc_info=True)
                     continue
-                upload_ok = True
+
+                break
+            else:
+                _LOGGER.error(f"Upload of {file} failed")
+                contents.close()
+
+                if args.dashboard:
+                    await report_failed(args.dashboard, args.station, notifications=[{
+                        "code": "",
+                        "severity": "error",
+                        "data": "Unable to reach any data upload destination servers."
+                    }])
+
+                exit(1)
+                return
 
             contents.close()
-
-            if not upload_ok:
-                _LOGGER.error(f"Upload of {file} failed")
-                exit(1)
 
             if args.completed:
                 target_dir = completion_directory(args.completed, upload_key, args.station, args.type)
@@ -300,6 +333,14 @@ def main():
                     move_file(str(file), str(target_file))
                 except IOError:
                     _LOGGER.warning(f"Failed to move {file} to completed location {target_file}", exc_info=True)
+
+            if args.dashboard:
+                elapsed = time.monotonic() - begin_time
+                await report_ok(args.dashboard, args.station, events=[{
+                    "code": "file-processed",
+                    "severity": "info",
+                    "data": f"{file.name,file_size,int(elapsed*1000)}"
+                }])
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
