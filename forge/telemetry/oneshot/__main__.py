@@ -14,6 +14,7 @@ from os.path import exists as file_exists
 from json import dumps as to_json
 from starlette.datastructures import URL
 from forge.authsocket import WebsocketJSON as AuthSocket, PublicKey, PrivateKey, key_to_bytes
+from forge.dashboard.report import report_ok
 from forge.telemetry import CONFIGURATION
 from forge.telemetry.assemble import complete as assemble_telemetry
 from forge.telemetry.assemble.station import get_station
@@ -41,6 +42,10 @@ def parse_arguments():
     parser.add_argument('--debug',
                         dest='debug', action='store_true',
                         help="enable debug output")
+
+    parser.add_argument('--dashboard',
+                        dest='dashboard', type=str,
+                        help="dashboard notification code")
 
     parser.add_argument('--time-output',
                         dest='time_output',
@@ -195,6 +200,9 @@ def main():
                         }))
                 except (ValueError, TypeError):
                     pass
+
+            if args.dashboard:
+                await report_ok(args.dashboard)
 
             return True
 

@@ -14,6 +14,7 @@ from dynaconf.constants import DEFAULT_SETTINGS_FILES
 from starlette.datastructures import URL
 from forge.tasks import background_task
 from forge.authsocket import WebsocketJSON as AuthSocket, PrivateKey
+from forge.dashboard.report import report_ok
 from forge.telemetry.assemble import complete as assemble_complete_telemetry
 from forge.telemetry.assemble.station import get_station
 
@@ -75,6 +76,9 @@ class UplinkConnection:
                 'telemetry': await assemble_complete_telemetry(),
             })
             _last_full_telemetry = time.monotonic()
+
+            if self.args.dashboard:
+                await report_ok(self.args.dashboard)
         else:
             time_since_send = time.monotonic() - _last_full_telemetry
             if time_since_send > 3600:
@@ -83,6 +87,9 @@ class UplinkConnection:
                     'telemetry': await assemble_complete_telemetry(),
                 })
                 _last_full_telemetry = time.monotonic()
+
+                if self.args.dashboard:
+                    await report_ok(self.args.dashboard)
 
         while True:
             if self.args.level > 1:
@@ -98,6 +105,8 @@ class UplinkConnection:
                 'telemetry': await assemble_complete_telemetry(),
             })
             _last_full_telemetry = time.monotonic()
+            if self.args.dashboard:
+                await report_ok(self.args.dashboard)
 
     async def _send_basic_telemetry(self):
         from forge.telemetry.assemble.memory import add_memory_utilization
@@ -301,6 +310,10 @@ def main():
     parser.add_argument('--key',
                         dest='key',
                         help="system key file")
+
+    parser.add_argument('--dashboard',
+                        dest='dashboard', type=str,
+                        help="dashboard notification code")
 
     parser.add_argument('--time-output',
                         dest='time_output',

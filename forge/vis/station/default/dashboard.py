@@ -20,6 +20,9 @@ code_records: typing.Dict[str, Record] = {
     'acquisition-transfer-backup': FileIngestRecord.simple_override(
         name="Acquisition computer backup transfer",
     ),
+    'acquisition-telemetry-uplink': BasicRecord.simple_override(
+        name="Telemetry uplink",
+    ),
     'met-raw-ingest-cr1000': FileIngestRecord.simple_override(
         name="Ingest observatories meteorological data",
         offline=50 * 60 * 60,
