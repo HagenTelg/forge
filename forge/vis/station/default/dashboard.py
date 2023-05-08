@@ -23,6 +23,10 @@ code_records: typing.Dict[str, Record] = {
     'acquisition-telemetry-uplink': BasicRecord.simple_override(
         name="Telemetry uplink",
     ),
+    'acquisition-telemetry-tunnel': BasicRecord.simple_override(
+        name="Fallback SSH remote access",
+        offline=4 * 60 * 60,
+    ),
     'met-raw-ingest-cr1000': FileIngestRecord.simple_override(
         name="Ingest observatories meteorological data",
         offline=50 * 60 * 60,

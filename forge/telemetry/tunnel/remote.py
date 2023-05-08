@@ -13,6 +13,7 @@ from dynaconf.constants import DEFAULT_SETTINGS_FILES
 from starlette.datastructures import URL
 from forge.tasks import background_task
 from forge.authsocket import WebsocketBinary as AuthSocket, PrivateKey, key_to_bytes
+from forge.dashboard.report import report_ok
 from .protocol import ToRemotePacketType, FromRemotePacketType
 
 CONFIGURATION = Dynaconf(
@@ -144,32 +145,47 @@ class UplinkConnection:
         else:
             raise ValueError("Invalid packet type")
 
-    async def run(self):
+    async def run(self, dashboard_code: typing.Optional[str]):
         timeout = aiohttp.ClientTimeout(connect=30, sock_read=60)
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.ws_connect(str(self.url)) as websocket:
-                self.websocket = websocket
-                await AuthSocket.client_handshake(self.websocket, self.key)
-                _LOGGER.info(f"Tunnel connected to {self.url}")
+        dashboard_task: typing.Optional[asyncio.Task] = None
+        try:
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                async with session.ws_connect(str(self.url)) as websocket:
+                    self.websocket = websocket
+                    await AuthSocket.client_handshake(self.websocket, self.key)
+                    _LOGGER.info(f"Tunnel connected to {self.url}")
 
-                async for msg in self.websocket:
-                    if msg.type == aiohttp.WSMsgType.BINARY:
-                        await self._dispatch_packet(msg.data)
-                    elif msg.type == aiohttp.WSMsgType.ERROR:
-                        _LOGGER.debug(f"Websocket error {msg}")
-                        return
+                    if dashboard_code:
+                        async def report_dashboard():
+                            while True:
+                                await report_ok(dashboard_code)
+                                await asyncio.sleep(3600)
+                        dashboard_task = background_task(report_dashboard())
+
+                    async for msg in self.websocket:
+                        if msg.type == aiohttp.WSMsgType.BINARY:
+                            await self._dispatch_packet(msg.data)
+                        elif msg.type == aiohttp.WSMsgType.ERROR:
+                            _LOGGER.debug(f"Websocket error {msg}")
+                            return
+        finally:
+            if dashboard_task:
+                try:
+                    dashboard_task.cancel()
+                except:
+                    pass
 
     def disconnect(self):
         for connection in self._connections.values():
             connection.disconnect()
 
 
-async def run(key: PrivateKey, url: URL, ssh_port: int):
+async def run(key: PrivateKey, url: URL, ssh_port: int, dashboard_code: typing.Optional[str]):
     while True:
         uplink = UplinkConnection(key, url, ssh_port)
         try:
             try:
-                await uplink.run()
+                await uplink.run(dashboard_code)
             except:
                 _LOGGER.info(f"Connection to {url} terminated", exc_info=True)
         finally:
@@ -222,6 +238,10 @@ def main():
                         dest='systemd', action='store_true',
                         help="enable systemd service integration")
 
+    parser.add_argument('--dashboard',
+                        dest='dashboard', type=str,
+                        help="dashboard notification code")
+
     parser.add_argument('--ssh-port',
                         dest='ssh_port', type=int, default=22,
                         help="local SSH port")
@@ -273,7 +293,7 @@ def main():
 
         background_task(heartbeat())
 
-    background_task(run(key, url, args.ssh_port))
+    background_task(run(key, url, args.ssh_port, args.dashboard))
     loop.add_signal_handler(signal.SIGINT, loop.stop)
     loop.add_signal_handler(signal.SIGTERM, loop.stop)
     loop.run_forever()
