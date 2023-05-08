@@ -181,7 +181,7 @@ class AcquisitionIngestEntry(FileIngestEntry):
                 return ", ".join([f"{e:4.1f}" if e is not None else "    " for e in errs])
             return (
                     "Total scattering errors: " + percent_errors(percent_error[0:3]) + "\n" +
-                    "Back scattering errors:  " + percent_errors(percent_error[0:3])
+                    "Back scattering errors:  " + percent_errors(percent_error[3:6])
             )
 
     class CommunicationsLost(BasicEntry.Event):
