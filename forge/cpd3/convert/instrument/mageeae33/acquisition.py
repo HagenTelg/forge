@@ -64,9 +64,9 @@ class FilterRecord(StateRecord):
 
             for i in range(len(self.record.times)):
                 v = dict()
-                v['In1'] = raw_converter(self.variable[..., i])
+                v['In1'] = raw_converter(self.variable[i, ...])
                 if self.spot_two:
-                    v['In2'] = raw_converter(self.spot_two[..., i])
+                    v['In2'] = raw_converter(self.spot_two[i, ...])
                 result.append((Identity(name=self.base_name,
                                         start=self.record.times[i][0], end=self.record.times[i][1]), v))
 

@@ -3,28 +3,42 @@ import netCDF4
 import forge.cpd3.variant as cpd3_variant
 from math import isfinite
 from forge.cpd3.identity import Identity, Name
-from ..default.converter import Converter as BaseConverter, DataRecord as BaseRecord, RecordConverter, StateRecord
+from ..default.converter import Converter as BaseConverter, DataRecord as BaseRecord, VariableConverter, RecordConverter, StateRecord
 
 
 class DataRecord(BaseRecord):
+    def __init__(self, converter: BaseConverter, group: netCDF4.Group, at_stp: bool):
+        super().__init__(converter, group)
+        self.at_stp = at_stp
+
     class FlagsConverter(BaseRecord.FlagsConverter):
         def metadata(self) -> cpd3_variant.Metadata:
             meta: cpd3_variant.MetadataFlags = super().metadata()
-            meta.children["STP"] = {
-                "Origin": ["forge.cpd3.convert.instrument"],
-                "Bits": 0x0200,
-                "Description": "Data reported at STP",
-            }
+            if self.record.at_stp:
+                meta.children["STP"] = {
+                    "Origin": ["forge.cpd3.convert.instrument"],
+                    "Bits": 0x0200,
+                    "Description": "Data reported at STP",
+                }
             return meta
 
         def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) -> None:
             flags: typing.List[typing.Tuple[Identity, typing.Any]] = list()
             super().convert(flags)
-            for _, s in flags:
-                if not isinstance(s, set):
-                    continue
-                s.add("STP")
+            if self.record.at_stp:
+                for _, s in flags:
+                    if not isinstance(s, set):
+                        continue
+                    s.add("STP")
             result.extend(flags)
+
+
+class PolarStateRecord(StateRecord):
+    def variable_converter(self, variable: netCDF4.Variable) -> typing.Optional[VariableConverter]:
+        # Conversions handled by the non-polar records
+        if variable.name in ("angle", "zero_temperature", "zero_pressure"):
+            return None
+        return super().variable_converter(variable)
 
 
 class Parameters(RecordConverter):
@@ -70,15 +84,22 @@ class Parameters(RecordConverter):
 
 class Converter(BaseConverter):
     def record_converter(self, group: netCDF4.Group) -> typing.Optional[RecordConverter]:
-        if group.name == "zero":
-            return StateRecord(self, group)
-        elif group.name == "data":
+        if group.name == "data":
             standard_t = group.variables.get("standard_temperature")
             standard_p = group.variables.get("standard_pressure")
-            if standard_t is not None and isfinite(float(standard_t[0])) and standard_p is not None and isfinite(float(standard_p[0])):
-                return DataRecord(self, group)
+            return DataRecord(
+                self, group,
+                standard_t is not None and isfinite(float(standard_t[0])) and
+                standard_p is not None and isfinite(float(standard_p[0]))
+            )
+        elif group.name == "zero":
+            return StateRecord(self, group)
         elif group.name == "spancheck":
             return StateRecord(self, group)
+        elif group.name == "polar_zero":
+            return PolarStateRecord(self, group)
+        elif group.name == "polar_spancheck":
+            return PolarStateRecord(self, group)
         elif group.name == "parameters":
             return Parameters(self, group)
         return super().record_converter(group)

@@ -168,7 +168,11 @@ class RecordConverter:
 
         wavelengths = self.group.variables.get("wavelength")
         if wavelengths is not None:
-            def lookup_code(wl: float) -> typing.Optional[str]:
+            def lookup_code(wl) -> typing.Optional[str]:
+                if wl is None:
+                    return None
+                if getattr(wl, 'mask', False):
+                    return None
                 if not isfinite(wl):
                     return None
                 for code, min, max in self._WAVELENGTH_CODES:
@@ -263,6 +267,17 @@ class VariableConverter:
             else:
                 meta["Comment"] = str(comment)
 
+    @staticmethod
+    def convert_float(v) -> float:
+        if v is None:
+            return nan
+        if getattr(v, 'mask', False):
+            return nan
+        v = float(v)
+        if not isfinite(v):
+            return nan
+        return v
+
     class ConversionType(enum.Enum):
         FLOAT = enum.auto()
         INTEGER = enum.auto()
@@ -271,18 +286,8 @@ class VariableConverter:
 
         @property
         def converter(self) -> typing.Callable[[typing.Any], typing.Any]:
-            def float_converter(v) -> float:
-                if v is None:
-                    return nan
-                if getattr(v, 'mask', False):
-                    return nan
-                v = float(v)
-                if not isfinite(v):
-                    return nan
-                return v
-
             if self == self.FLOAT:
-                return float_converter
+                return VariableConverter.convert_float
             elif self == self.INTEGER:
                 def c(v):
                     if v is None:
@@ -300,7 +305,7 @@ class VariableConverter:
                     return str(v)
                 return c
             elif self == self.ARRAYFLOAT:
-                return lambda v: [float_converter(i) for i in v]
+                return lambda v: [VariableConverter.convert_float(i) for i in v]
             else:
                 raise ValueError("invalid conversion type")
 
@@ -444,7 +449,7 @@ class DataRecord(RecordConverter):
                       c: typing.Callable[[typing.Any], typing.Any],
                       use_cut_size: bool = True) -> None:
         for i in range(len(self.times)):
-            v = c(variable[..., i])
+            v = c(variable[i, ...])
             flavors = name.flavors
             if use_cut_size:
                 flavors = flavors | self.times[i][2]
@@ -695,10 +700,12 @@ class DataRecord(RecordConverter):
                     variable_name = prefix + code + "_" + suffix
                 self.base_name.append(Name(self.record.converter.station, 'raw', variable_name))
 
+            self.wavelength_dimension_index: int = self.variable.dimensions.index("wavelength")
+
             self.wavelengths: typing.List[float] = list()
             wavelengths = self.variable.group().variables["wavelength"]
             for i in range(len(wavelengths)):
-                self.wavelengths.append(float(wavelengths[i]))
+                self.wavelengths.append(self.convert_float(wavelengths[i]))
 
         @property
         def conversion_type(self) -> VariableConverter.ConversionType:
@@ -717,8 +724,12 @@ class DataRecord(RecordConverter):
             base_converter = self.conversion_type.converter
 
             def index_converter(i: int) -> typing.Callable[[typing.Any], typing.Any]:
-                def cnv(v: typing.Any) -> typing.Any:
-                    return base_converter(v[i, ...])
+                def cnv(v: np.ndarray) -> typing.Any:
+                    return base_converter(
+                        v[tuple([
+                            np.s_[:] if dimension != self.wavelength_dimension_index else i
+                            for dimension in range(1, len(v.shape) + 1)
+                        ])])
                 return cnv
 
             for i in range(len(self.base_name)):
@@ -806,7 +817,7 @@ class StateRecord(RecordConverter):
                       name: Name, variable: Variable,
                       c: typing.Callable[[typing.Any], typing.Any]) -> None:
         for i in range(len(self.times)):
-            v = c(variable[..., i])
+            v = c(variable[i, ...])
             result.append((Identity(name=name, start=self.times[i][0], end=self.times[i][1]), v))
 
     class GenericConverter(VariableConverter):
@@ -871,10 +882,12 @@ class StateRecord(RecordConverter):
                     variable_name = prefix + code + "_" + suffix
                 self.base_name.append(Name(self.record.converter.station, 'raw', variable_name))
 
+            self.wavelength_dimension_index: int = self.variable.dimensions.index("wavelength")
+
             self.wavelengths: typing.List[float] = list()
             wavelengths = self.variable.group().variables["wavelength"]
             for i in range(len(wavelengths)):
-                self.wavelengths.append(float(wavelengths[i]))
+                self.wavelengths.append(self.convert_float(wavelengths[i]))
 
         @property
         def conversion_type(self) -> VariableConverter.ConversionType:
@@ -889,7 +902,11 @@ class StateRecord(RecordConverter):
 
             def index_converter(i: int) -> typing.Callable[[typing.Any], typing.Any]:
                 def cnv(v: typing.Any) -> typing.Any:
-                    return base_converter(v[i, ...])
+                    return base_converter(
+                        v[tuple([
+                            np.s_[:] if dimension != self.wavelength_dimension_index else i
+                            for dimension in range(1, len(v.shape) + 1)
+                        ])])
                 return cnv
 
             for i in range(len(self.base_name)):

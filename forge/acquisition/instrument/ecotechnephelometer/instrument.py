@@ -461,7 +461,6 @@ class Instrument(StreamingInstrument):
         self._sleep_time: float = 0.0
         self._instrument_update_time: float = 3.0
         self._instrument_polar: bool = self._polar_mode
-        self._polar_data_declared: bool = False
         if self._polar_mode:
             self._instrument_update_time = 60.0
         if self._report_interval:
@@ -640,6 +639,7 @@ class Instrument(StreamingInstrument):
         )
         self.instrument_report.record.data_record.standard_temperature = 0.0
         self.instrument_report.record.data_record.standard_pressure = ONE_ATM_IN_HPA
+        self.polar_report: typing.Optional[Report] = None
 
         self.instrument_state = self.change_event(
             self.state_enum(self.data_sampling, attributes={
@@ -663,6 +663,7 @@ class Instrument(StreamingInstrument):
         )
         self.zero_state.data_record.standard_temperature = 0.0
         self.zero_state.data_record.standard_pressure = ONE_ATM_IN_HPA
+        self.polar_zero_state: typing.Optional[ChangeEvent] = None
 
         def at_stp(s):
             s.data.use_standard_pressure = True
@@ -698,6 +699,7 @@ class Instrument(StreamingInstrument):
         )
         self.spancheck_state.data_record.standard_temperature = 0.0
         self.spancheck_state.data_record.standard_pressure = ONE_ATM_IN_HPA
+        self.polar_spancheck_state: typing.Optional[ChangeEvent] = None
 
         self._zero_request: bool = False
         self.context.bus.connect_command('start_zero', self.start_zero)
@@ -729,9 +731,8 @@ class Instrument(StreamingInstrument):
         }))
 
     def _declare_polar(self) -> None:
-        if self._polar_data_declared:
+        if self.polar_report:
             return
-        self._polar_data_declared = True
 
         self.dimension_angle = self.dimension(self.data_angle, "angle", code="Bn", attributes={
             'long_name': "polar scattering start angle (zero is total scattering)",
@@ -746,20 +747,30 @@ class Instrument(StreamingInstrument):
                 'C_format': "%7.2f"
             })
         self._instrument_stp_variables.append(var)
-        var.data.use_standard_pressure = True
-        var.data.use_standard_temperature = True
-        self.instrument_report.attach_variable(var)
+        var.data.use_standard_pressure = self._instrument_stp_variables[0].data.use_standard_pressure
+        var.data.use_standard_temperature = self._instrument_stp_variables[0].data.use_standard_temperature
+        self.polar_report = self.report(var)
 
         var = self.state_measurement_array(self.data_Bsnw, [self.dimension_angle, self.dimension_wavelength],
-                                           "wall_polar_scattering_coefficient", code="Bsnw", attributes={
+                                           "polar_wall_scattering_coefficient", code="Bsnw", attributes={
                 'long_name': "polar light scattering coefficient from wall signal",
                 'units': "Mm-1",
                 'C_format': "%7.2f"
             })
         self._instrument_stp_variables.append(var)
-        var.data.use_standard_pressure = True
-        var.data.use_standard_temperature = True
-        self.zero_state.attach(var)
+        var.data.use_standard_pressure = self._instrument_stp_variables[0].data.use_standard_pressure
+        var.data.use_standard_temperature = self._instrument_stp_variables[0].data.use_standard_temperature
+        self.polar_zero_state = self.change_event(
+            self.state_temperature(self.data_Tzero, "zero_temperature", attributes={
+                'long_name': "measurement cell temperature during the zero"
+            }),
+            self.state_pressure(self.data_Pzero, "zero_pressure", attributes={
+                'long_name': "measurement cell pressure during the zero"
+            }),
+            var,
+            name="polar_zero")
+        self.polar_zero_state.data_record.standard_temperature = self.zero_state.data_record.standard_temperature
+        self.polar_zero_state.data_record.standard_pressure = self.zero_state.data_record.standard_pressure
 
         var = self.state_measurement_array(self.data_PCTnc, [self.dimension_angle, self.dimension_wavelength],
                                            "polar_scattering_percent_error", code="PCTnc", attributes={
@@ -769,7 +780,9 @@ class Instrument(StreamingInstrument):
             })
         var.data.use_standard_pressure = True
         var.data.use_standard_temperature = True
-        self.spancheck_state.attach(var)
+        self.polar_spancheck_state = self.change_event(var, name="polar_spancheck")
+        self.polar_spancheck_state.data_record.standard_temperature = 0.0
+        self.polar_spancheck_state.data_record.standard_pressure = ONE_ATM_IN_HPA
 
     def _find_angle(self, target: float) -> typing.Optional[int]:
         for angle in range(len(self.data_angle.value)):
@@ -1053,6 +1066,9 @@ class Instrument(StreamingInstrument):
                 self.instrument_report.record.data_record.standard_pressure = ONE_ATM_IN_HPA
                 self.zero_state.data_record.standard_temperature = stp_t
                 self.zero_state.data_record.standard_pressure = ONE_ATM_IN_HPA
+                if self.polar_zero_state:
+                    self.polar_zero_state.data_record.standard_temperature = stp_t
+                    self.polar_zero_state.data_record.standard_pressure = ONE_ATM_IN_HPA
             else:
                 for var in self._instrument_stp_variables:
                     var.data.use_standard_pressure = True
@@ -1061,6 +1077,9 @@ class Instrument(StreamingInstrument):
                 self.instrument_report.record.data_record.standard_pressure = None
                 self.zero_state.data_record.standard_temperature = None
                 self.zero_state.data_record.standard_pressure = None
+                if self.polar_zero_state:
+                    self.polar_zero_state.data_record.standard_temperature = None
+                    self.polar_zero_state.data_record.standard_pressure = None
 
         filter_mode = parameters.get(b"filtering method")
         if filter_mode:
@@ -1649,6 +1668,8 @@ class Instrument(StreamingInstrument):
             self.data_Cbr([float(v) for v in self.data_Cbr_wavelength])
 
         self.instrument_report()
+        if self.polar_report:
+            self.polar_report()
 
     async def communicate(self) -> None:
         await self._spancheck()

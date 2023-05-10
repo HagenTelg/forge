@@ -152,22 +152,20 @@ class ChangeEvent(BaseInstrument.ChangeEvent):
 
         self.state: typing.List[BaseInstrument.State] = list()
 
-        self.field_names: typing.Set[str] = set()
+        field_names: typing.Set[str] = set()
         for s in state:
             if s is None:
                 continue
-            self.attach(s)
 
-    def attach(self, state: State) -> None:
-        if state.data.name in self.field_names:
-            raise ValueError(f"duplicate variable {repr(s)} in record {self.name}")
-        self.field_names.add(state.data.name)
+            if s.data.name in field_names:
+                raise ValueError(f"duplicate variable {repr(s)} in record {self.name}")
+            field_names.add(s.data.name)
 
-        self.state.append(state)
-        if state.automatic:
-            state.source.on_update.append(self)
+            self.state.append(s)
+            if s.automatic:
+                s.source.on_update.append(self)
 
-        self.data_record.add_variable(state.data)
+            self.data_record.add_variable(s.data)
 
     def __repr__(self) -> str:
         return "ChangeEvent(" + repr(self.state) + ")"

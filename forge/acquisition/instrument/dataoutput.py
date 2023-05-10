@@ -409,11 +409,11 @@ class DataOutput(BaseDataOutput):
                                 break
                             newsize[dimension_index] = max(add_shape[dimension_index], newsize[dimension_index])
                 self.values = np.delete(self.values, np.s_[:count], 0)
-                for dimension_index in range(len(self.values.shape)):
+                for dimension_index in range(len(newsize)):
                     dimension_size = newsize[dimension_index]
                     if dimension_size >= self.values.shape[dimension_index+1]:
                         continue
-                    self.values = np.delete(self.values, np.s_[dimension_size:], 1)
+                    self.values = np.delete(self.values, np.s_[dimension_size:], dimension_index+1)
 
             def create_variable(self, target: Dataset) -> None:
                 field_dimensions = self.field.dimensions
@@ -432,13 +432,14 @@ class DataOutput(BaseDataOutput):
                                 raise ValueError("unknown dimension type")
                         else:
                             dvar = target.variables[dim.name]
-                        var_dimensions.append(dim)
 
                         _configure_variable(dvar, declare_dimension)
 
                         if dimension_value:
                             n_assign = min(len(dimension_value), self.values.shape[dimension_index+1], dim.size)
                             dvar[:n_assign] = dimension_value[:n_assign]
+
+                        var_dimensions.append(dim)
                 else:
                     for dimension_index in range(len(self.values.shape) - 1):
                         dim = target.createDimension(
@@ -447,13 +448,12 @@ class DataOutput(BaseDataOutput):
                         )
                         var_dimensions.append(dim)
 
-                dimension_names = [d.name for d in var_dimensions]
-                dimension_names.append('time')
+                dimension_names = ['time'] + [d.name for d in var_dimensions]
 
                 var = target.createVariable(self.field.name, self.values.dtype, tuple(dimension_names),
                                             fill_value=self.pad)
                 _configure_variable(var, self.field)
-                var[:] = np.moveaxis(self.values, 0, -1)
+                var[:] =self.values
 
         class _NetCDFVariableNative(_NetCDFVariable):
             def __init__(self, field: typing.Union[BaseDataOutput.String], data_type):
