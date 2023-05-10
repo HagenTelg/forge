@@ -89,10 +89,10 @@ def _configure_variable(var: Variable, source: BaseDataOutput.Field) -> None:
 def _array_value_shape(value: typing.Collection) -> typing.List[int]:
     try:
         iter(value)
-        len(value)
+        dimension_length = len(value)
     except TypeError:
         return []
-    result = [len(value)]
+    result = [dimension_length]
     for dim in value:
         dim_shape = _array_value_shape(dim)
         if not dim_shape:
@@ -107,6 +107,12 @@ def _array_value_shape(value: typing.Collection) -> typing.List[int]:
 def _array_value_normalize(value: typing.Collection, shape: typing.List[int],
                            dtype: np.dtype = np.double, pad: typing.Any = nan) -> np.ndarray:
     result = np.full(shape, pad, dtype=dtype)
+    try:
+        iter(value)
+        len(value)
+    except TypeError:
+        return result
+
     if len(shape) == 1:
         result[:len(value)] = value
         return result
@@ -172,7 +178,7 @@ def _write_constants(target: Dataset, constants: typing.List[BaseDataOutput.Fiel
                         if isinstance(declare_dimension, BaseDataOutput.ArrayFloat):
                             dvar = target.createVariable(dim.name, 'f8', (dim.name,), fill_value=nan)
                         else:
-                            raise ValueError("unknown dimension type")
+                            raise ValueError(f"unknown dimension type on {c.field.name}/{dim.name}")
                     else:
                         dvar = target.variables[dim.name]
 
@@ -363,10 +369,13 @@ class DataOutput(BaseDataOutput):
                     v = []
 
                 add_shape = _array_value_shape(v)
+                if add_shape == [0] and len(self.values.shape) > 1:
+                    # This happens when bypassed, so just continue with nothing changed
+                    add_shape = self.values.shape[1:]
 
                 if len(self.values.shape) != len(add_shape)+1:
                     if self.values.shape[0] != 0:
-                        _LOGGER.warning(f"Dimensionality change detected {self.values.shape} to {add_shape}, existing data discarded")
+                        _LOGGER.warning(f"Dimensionality change detected on {self.field.name} from {self.values.shape} to {tuple(add_shape)}, existing data discarded")
                     reshaped = [self.values.shape[0]]
                     reshaped.extend(add_shape)
                     self.values = np.full(reshaped, self.pad, dtype=self.values.dtype)
@@ -419,24 +428,27 @@ class DataOutput(BaseDataOutput):
                 field_dimensions = self.field.dimensions
                 var_dimensions = list()
                 if field_dimensions:
-                    for dimension_index in range(len(field_dimensions)):
+                    for dimension_index in range(min(len(field_dimensions), len(self.values.shape) - 1)):
                         declare_dimension = field_dimensions[dimension_index]
                         dimension_value = declare_dimension.value
 
                         dim = target.dimensions.get(declare_dimension.name)
                         if dim is None:
-                            dim = target.createDimension(declare_dimension.name, max(self.values.shape[dimension_index+1], 1))
+                            dimension_length = max(self.values.shape[dimension_index+1], 1)
+                            if dimension_value:
+                                dimension_length = max(dimension_length, len(dimension_value))
+                            dim = target.createDimension(declare_dimension.name, dimension_length)
                             if isinstance(declare_dimension, BaseDataOutput.ArrayFloat):
                                 dvar = target.createVariable(dim.name, 'f8', (dim.name,), fill_value=nan)
                             else:
-                                raise ValueError("unknown dimension type")
+                                raise ValueError(f"unknown dimension type on {self.field.name}/{dim.name}")
                         else:
                             dvar = target.variables[dim.name]
 
                         _configure_variable(dvar, declare_dimension)
 
                         if dimension_value:
-                            n_assign = min(len(dimension_value), self.values.shape[dimension_index+1], dim.size)
+                            n_assign = min(len(dimension_value), dim.size)
                             dvar[:n_assign] = dimension_value[:n_assign]
 
                         var_dimensions.append(dim)
@@ -444,7 +456,7 @@ class DataOutput(BaseDataOutput):
                     for dimension_index in range(len(self.values.shape) - 1):
                         dim = target.createDimension(
                             self.field.name + (str(dimension_index) if dimension_index > 0 else ""),
-                            self.values.shape[dimension_index + 1]
+                            max(self.values.shape[dimension_index + 1], 1)
                         )
                         var_dimensions.append(dim)
 
@@ -453,7 +465,16 @@ class DataOutput(BaseDataOutput):
                 var = target.createVariable(self.field.name, self.values.dtype, tuple(dimension_names),
                                             fill_value=self.pad)
                 _configure_variable(var, self.field)
-                var[:] =self.values
+
+                if self.values.shape[0] == 0:
+                    # May not have been shaped into something compatible with the number of dimensions yet
+                    return
+
+                assign_indices = [np.s_[:]]
+                for dimension_index in range(1, len(self.values.shape)):
+                    assign_indices.append(np.s_[:min(self.values.shape[dimension_index],
+                                                     var_dimensions[dimension_index-1].size)])
+                var[:] = self.values[tuple(assign_indices)]
 
         class _NetCDFVariableNative(_NetCDFVariable):
             def __init__(self, field: typing.Union[BaseDataOutput.String], data_type):
@@ -573,7 +594,7 @@ class DataOutput(BaseDataOutput):
             elif isinstance(field, BaseDataOutput.Enum):
                 self.variables.append(self._NetCDFVariableEnum(field))
             else:
-                raise ValueError("unknown field type")
+                raise ValueError(f"unknown field type on {field.name}")
 
         def add_flag(self, source: "BaseDataOutput.Flag") -> None:
             for f in self.flags:

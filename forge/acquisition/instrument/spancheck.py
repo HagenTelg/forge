@@ -281,14 +281,14 @@ class Spancheck:
             return
 
         if action == 'abort':
-            self._measurement = Spancheck._MeasurementPhase.Inactive
             self._gas_measurement = None
             self._air_measurement = None
             self._pending_operations.append(self.abort)
+            self._pending_operations.append(self._to_inactive)
             _LOGGER.debug("Spancheck aborting")
         elif action == 'complete':
-            self._measurement = Spancheck._MeasurementPhase.Inactive
             self._pending_operations.append(self.complete)
+            self._pending_operations.append(self._to_inactive)
             _LOGGER.debug("Spancheck completed normally")
         elif action == 'air_flush':
             self._measurement = Spancheck._MeasurementPhase.Active
@@ -339,6 +339,10 @@ class Spancheck:
     @property
     def is_running(self) -> bool:
         return self._measurement != Spancheck._MeasurementPhase.Inactive
+
+    async def _to_inactive(self) -> None:
+        # Make sure we do this after complete, so we don't have a "gap" of valid between complete into blanking
+        self._measurement = Spancheck._MeasurementPhase.Inactive
 
     def abort_desynchronized(self) -> bool:
         if self._measurement == Spancheck._MeasurementPhase.Inactive:

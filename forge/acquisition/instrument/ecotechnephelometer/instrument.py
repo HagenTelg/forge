@@ -284,7 +284,7 @@ class Instrument(StreamingInstrument):
                     f"Spancheck completed with an average error of {average_error:.1f}%",
                     result_data)
 
-                spancheck.instrument.data_PCTnc(self.percent_error.values)
+                spancheck.instrument.data_PCTnc(self.percent_error.values, oneshot=True)
 
                 if self.angle_total is not None:
                     try:
@@ -968,6 +968,9 @@ class Instrument(StreamingInstrument):
 
     def _process_zero(self, Bsnw: typing.List[typing.List[float]],
                       zero_temperature: float, zero_pressure: float) -> None:
+        if self._is_polar:
+            self._declare_polar()
+
         self.data_Tzero(zero_temperature, oneshot=True)
         self.data_Pzero(zero_pressure, oneshot=True)
 
