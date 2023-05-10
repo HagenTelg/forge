@@ -29,6 +29,10 @@ def pressure_Pa_to_hPa(p: float) -> float:
     return p / 100.0
 
 
+def pressure_kPa_to_hPa(p: float) -> float:
+    return p * 10.0
+
+
 def pressure_mmHg_to_hPa(p: float) -> float:
     return p * 1.33322387415
 

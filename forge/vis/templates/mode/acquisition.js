@@ -502,7 +502,7 @@ $(document).ready(function() {
 
     function saveDisplays() {
         const data = [];
-        for (let i=0; i<displayContent.children.length; i++) {
+        for (let i=0; i < displayContent.children.length; i++) {
             const display = displayContent.children[i];
             const context = display.context;
 
@@ -600,7 +600,7 @@ $(document).ready(function() {
             }
 
             let restoreIndex = 0;
-            for (; restoreIndex<restoreData.length; restoreIndex++) {
+            for (; restoreIndex < restoreData.length; restoreIndex++) {
                 if (matchSavedDisplay(restoreData[restoreIndex], this)) {
                     break;
                 }
@@ -614,7 +614,7 @@ $(document).ready(function() {
                     for (let checkIndex=restoreIndex-1; checkIndex>=0; checkIndex--) {
                         const checkRestore = restoreData[checkIndex];
 
-                        for (let i=0; i<displayContent.children.length; i++) {
+                        for (let i=0; i < displayContent.children.length; i++) {
                             const display = displayContent.children[i];
                             if (matchSavedDisplay(checkRestore, display.context)) {
                                 return i+1;
@@ -626,7 +626,7 @@ $(document).ready(function() {
                 }
 
                 function searchForward() {
-                    for (let checkIndex=restoreIndex+1; checkIndex<restoreData.length; checkIndex++) {
+                    for (let checkIndex=restoreIndex+1; checkIndex < restoreData.length; checkIndex++) {
                         const checkRestore = restoreData[checkIndex];
 
                         for (let i=displayContent.children.length-1; i>=0; i--) {
@@ -699,7 +699,7 @@ $(document).ready(function() {
 
             let displayEntries = [];
             let hiddenEntries = [];
-            for (let i=0; i<displayContent.childNodes.length; i++) {
+            for (let i=0; i < displayContent.childNodes.length; i++) {
                 let r = displayContent.childNodes[i];
                 if (r.style.display === 'none') {
                     hiddenEntries.push(r);
@@ -709,7 +709,7 @@ $(document).ready(function() {
             }
 
             let targetIndex = -1;
-            for (let i=0; i<displayEntries.length; i++) {
+            for (let i=0; i < displayEntries.length; i++) {
                 const display = displayEntries[i];
                 if (display === this.root) {
                     targetIndex = i;
@@ -859,7 +859,7 @@ $(document).ready(function() {
             $(button).click(function(event) {
                 event.preventDefault();
 
-                for (let i=0; i<displayContent.children.length; i++) {
+                for (let i=0; i < displayContent.children.length; i++) {
                     const display = displayContent.children[i];
                     if (display.context.source !== context.source) {
                         continue;
@@ -983,7 +983,7 @@ $(document).ready(function() {
         }
 
         let haveError = false;
-        for (let i=0; i<eventLogEntries.rows.length; i++) {
+        for (let i=0; i < eventLogEntries.rows.length; i++) {
             const tr = eventLogEntries.rows[i];
 
             if (tr.event.level === 'error') {
@@ -1203,7 +1203,7 @@ $(document).ready(function() {
             return;
         }
 
-        for (let i=0; i<displayContent.children.length; i++) {
+        for (let i=0; i < displayContent.children.length; i++) {
             const display = displayContent.children[i];
             const context = display.context;
             const hotkey = context.instrument_info.display_letter;

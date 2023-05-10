@@ -204,6 +204,20 @@ Q = 1.536 # 2022-12-09/PJS@BOS
 - Display letter: C
 - Default flow: 1.4210 lpm
 
+## TSI 4000 and 5000 series Mass Flow Meter
+
+```toml
+[instrument.Q61]
+type = "tsimfm"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+display_letter = "F"
+[instrument.Q61.data]
+Q = [ -0.046, 1.6624 ] # 2015-05-05 PJS@MLO
+```
+
+- Instrument baud rate: 38400
+
 ## Azonix 𝜇MAC 1050
 
 ```toml
@@ -278,7 +292,7 @@ calibration = [-40, 100]
 - Instrument baud rate: 115200
 - Display letter: U
 
-# Love PID Controller Box
+## Love PID Controller Box
 
 ```toml
 [instrument.X2]
