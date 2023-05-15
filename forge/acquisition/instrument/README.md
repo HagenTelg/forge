@@ -188,6 +188,22 @@ serial_number = 1077
 - Spancheck CO<sub>2</sub> sample: 300 seconds, flush: 600 seconds
 - Spancheck air sample: 600 seconds, flush: 180 seconds
 
+## TSI 3010 CPC
+
+```toml
+[instrument.N71]
+type = "tsi3010cpc"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+serial_number = 2217
+[instrument.N71.data]
+Q = 0.979 # 200128/JPS@APP
+```
+
+- Instrument baud rate: 9600 (7 data bits, even parity)
+- Display letter: C
+- Default flow: 1.0 lpm
+
 ## TSI 3760 CPC
 
 ```toml
