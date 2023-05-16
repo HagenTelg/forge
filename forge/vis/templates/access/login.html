@@ -158,6 +158,7 @@ function showResetPassword() {
     }
 
     document.getElementById('reset-password-modal').style.display = 'block';
+    resetVerify();
 }
 
 function showCreateAccount() {
@@ -175,6 +176,7 @@ function showCreateAccount() {
 
     document.getElementById('confirm_password').value = '';
     document.getElementById('create-account-modal').style.display = 'block';
+    createVerify();
 }
 
 function loginVerify() {
