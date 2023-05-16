@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import logging
+import typing
 from base64 import b64encode, b64decode
 from forge.crypto import PublicKey, key_to_bytes
 from forge.dashboard import CONFIGURATION
@@ -10,7 +11,7 @@ from .interface import ControlInterface, Severity, is_valid_code, is_valid_stati
 from .display import display_entries_json, display_entries_text, display_access_json, display_access_text, sort_entries, sort_access
 
 
-def add_entry_selection_arguments(parser):
+def add_entry_selection_arguments(parser, default_watchdog_timeout: typing.Optional[float] = 26):
     parser.add_argument('--entry',
                         dest='entry', type=int,
                         help="a specific entry ID number")
@@ -54,7 +55,7 @@ def add_entry_selection_arguments(parser):
                         help="match watchdog code")
     parser.add_argument('--watchdog-timeout',
                         dest='watchdog_timeout', type=float,
-                        default=26.0,
+                        default=default_watchdog_timeout,
                         help="watchdog timeout in hours")
 
     parser.add_argument('--event',
@@ -124,13 +125,37 @@ def parse_arguments():
 
     command_parser = subparsers.add_parser('list',
                                            help="list dashboard entries")
-    add_entry_selection_arguments(command_parser)
+    add_entry_selection_arguments(command_parser, default_watchdog_timeout=None)
     command_parser.add_argument('--json',
                                 dest='json', action='store_true',
                                 help="output entry list in JSON")
     command_parser.add_argument('--details',
-                                dest='include_details', action='store_true',
+                                dest='show_details', action='store_true',
                                 help="output entry details")
+    command_parser.add_argument('--show-notifications',
+                                dest='show_notifications', action='store_true', default=None,
+                                help="show notifications")
+    command_parser.add_argument('--hide-notifications',
+                                dest='show_notifications', action='store_false', default=None,
+                                help="do not show notifications")
+    command_parser.add_argument('--show-watchdogs',
+                                dest='show_watchdogs', action='store_true', default=None,
+                                help="show watchdogs")
+    command_parser.add_argument('--hide-watchdogs',
+                                dest='show_watchdogs', action='store_false', default=None,
+                                help="do not show watchdogs")
+    command_parser.add_argument('--show-events',
+                                dest='show_events', action='store_true', default=None,
+                                help="show events")
+    command_parser.add_argument('--hide-events',
+                                dest='show_events', action='store_false', default=None,
+                                help="do not show events")
+    command_parser.add_argument('--show-conditions',
+                                dest='show_conditions', action='store_true', default=None,
+                                help="show conditions")
+    command_parser.add_argument('--hide-conditions',
+                                dest='show_conditions', action='store_false', default=None,
+                                help="do not show conditions")
     command_parser.add_argument('--sort',
                                 dest='sort', default='station,code',
                                 help="sort entries by field")
@@ -175,6 +200,16 @@ def parse_arguments():
                                 dest='stale_conditions', action='store_false',
                                 help="do not remove stale conditions")
     command_parser.set_defaults(stale_conditions=True)
+
+    command_parser = subparsers.add_parser('stop-watchdog',
+                                           help="remove and stop watchdogs")
+    add_entry_selection_arguments(command_parser)
+    command_parser.add_argument('--multiple',
+                                dest='multiple', action='store_true',
+                                help="required if a single entry is not selected or all watchdogs are selected")
+    command_parser.add_argument('stop',
+                                nargs='*',
+                                help="the watchdog codes to stop")
 
     command_parser = subparsers.add_parser('report-ok',
                                            help="report an entry as nominal")
@@ -317,6 +352,8 @@ def parse_arguments():
         parser.error("--multiple required without --entry")
     if args.command == 'purge-stale' and args.entry is None and not args.multiple:
         parser.error("--multiple required without --entry")
+    if args.command == 'stop-watchdog' and (args.entry is None or not args.stop) and not args.multiple:
+        parser.error("--multiple required without --entry or when selecting all watchdogs")
     if args.command == 'report-ok' or args.command == 'report-failed':
         if args.report_station and args.report_station != '_' and not is_valid_station(args.report_station):
             parser.error("invalid station code")
@@ -383,7 +420,30 @@ def main():
         interface = ControlInterface(database_uri)
 
         if args.command == 'list':
-            entries = await interface.list_filtered(**vars(args))
+            include_notifications = False
+            include_watchdogs = False
+            include_events = False
+            include_conditions = False
+            if args.show_details:
+                include_notifications = True
+                include_watchdogs = True
+                include_events = True
+                include_conditions = True
+            if args.show_notifications is not None:
+                include_notifications = args.show_notifications
+            if args.show_watchdogs is not None:
+                include_watchdogs = args.show_watchdogs
+            if args.show_events is not None:
+                include_events = args.show_events
+            if args.show_conditions is not None:
+                include_conditions = args.show_conditions
+            entries = await interface.list_filtered(
+                include_notifications=include_notifications,
+                include_watchdogs=include_watchdogs,
+                include_events=include_events,
+                include_conditions=include_conditions,
+                **vars(args)
+            )
             sort_keys = args.sort.split(',')
             if len(sort_keys) <= 0 or len(sort_keys[0]) <= 0:
                 sort_keys = []
@@ -402,6 +462,8 @@ def main():
             purge_events = args.stale_events
             purge_conditions = args.stale_conditions
             await interface.purge_stale(threshold, purge_watchdogs, purge_events, purge_conditions, **vars(args))
+        elif args.command == 'stop-watchdog':
+            await interface.stop_watchdogs(args.stop, **vars(args))
         elif args.command == 'report-ok':
             station = args.report_station
             if station == '_':

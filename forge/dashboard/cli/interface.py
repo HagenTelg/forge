@@ -2,6 +2,7 @@ import typing
 import asyncio
 import datetime
 import logging
+import sqlalchemy as db
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from forge.crypto import PublicKey
@@ -40,8 +41,9 @@ class ControlInterface(DisplayInterface):
 
     @staticmethod
     def _watchdog_filter(query, **kwargs):
-        query = query.filter(Watchdog.last_seen <= ControlInterface._to_time(kwargs['watchdog_timeout'], 3600))
-        if kwargs.get('watchdog_severity'):
+        if kwargs.get('watchdog_timeout') is not None:
+            query = query.filter(Watchdog.last_seen <= ControlInterface._to_time(kwargs['watchdog_timeout'], 3600))
+        if kwargs.get('watchdog_severity') is not None:
             query = query.filter(Watchdog.severity == Severity(kwargs['watchdog_severity']))
         if kwargs.get('watchdog_code') is not None:
             query = ControlInterface._code_filter(query, Watchdog.code, kwargs['watchdog_code'])
@@ -147,7 +149,12 @@ class ControlInterface(DisplayInterface):
 
         return query
 
-    async def list_filtered(self, include_details: bool = False, **kwargs) -> typing.List[typing.Dict[str, typing.Any]]:
+    async def list_filtered(self,
+                            include_notifications: bool = False,
+                            include_watchdogs: bool = False,
+                            include_events: bool = False,
+                            include_conditions: bool = False,
+                            **kwargs) -> typing.List[typing.Dict[str, typing.Any]]:
         def execute(engine: Engine):
             result: typing.List[typing.Dict[str, typing.Any]] = list()
             with Session(engine) as orm_session:
@@ -160,7 +167,7 @@ class ControlInterface(DisplayInterface):
                         'updated': entry.updated,
                     }
 
-                    if include_details:
+                    if include_notifications:
                         notifications = list()
                         for add in self._notification_filter(orm_session.query(Notification).filter_by(
                                 entry=entry.id), **kwargs):
@@ -171,7 +178,8 @@ class ControlInterface(DisplayInterface):
                                 'data': add.data,
                             })
                         data['notifications'] = notifications
-                        
+
+                    if include_watchdogs:
                         watchdogs = list()
                         for add in self._watchdog_filter(orm_session.query(Watchdog).filter_by(
                                 entry=entry.id), **kwargs):
@@ -183,7 +191,8 @@ class ControlInterface(DisplayInterface):
                                 'data': add.data,
                             })
                         data['watchdogs'] = watchdogs
-                        
+
+                    if include_events:
                         events = list()
                         for add in self._event_filter(orm_session.query(Event).filter_by(
                                 entry=entry.id), **kwargs):
@@ -195,7 +204,8 @@ class ControlInterface(DisplayInterface):
                                 'data': add.data,
                             })
                         data['events'] = events
-                        
+
+                    if include_conditions:
                         conditions = list()
                         for add in self._condition_filter(orm_session.query(Condition).filter_by(
                                 entry=entry.id), **kwargs):
@@ -265,6 +275,31 @@ class ControlInterface(DisplayInterface):
                         if conditions:
                             apply_conditions(orm_session.query(Condition).filter_by(entry=entry.id))
                             _LOGGER.debug(f"Removing conditions for {entry.station.upper()}/{entry.code} before {threshold}")
+
+                orm_session.commit()
+
+        await self.db.execute(execute)
+
+    async def stop_watchdogs(self, remove_codes: typing.Optional[typing.List[str]], **kwargs) -> None:
+        def execute(engine: Engine):
+            with Session(engine) as orm_session:
+                def remove_watchdogs(query):
+                    if remove_codes:
+                        query = query.filter(db.or_(*[
+                            Watchdog.code.ilike(c) if '%' in c
+                            else Watchdog.code == c.lower()
+                            for c in remove_codes
+                        ]))
+                    query.delete(synchronize_session=False)
+
+                entry_query = self._select_entries(orm_session, **kwargs)
+                if entry_query.whereclause is None:
+                    remove_watchdogs(orm_session.query(Watchdog))
+                    _LOGGER.debug("Removing all selected watchdogs")
+                else:
+                    for entry in entry_query:
+                        remove_watchdogs(orm_session.query(Watchdog).filter_by(entry=entry.id))
+                        _LOGGER.debug(f"Removing watchdogs for {entry.station.upper()}/{entry.code}")
 
                 orm_session.commit()
 
