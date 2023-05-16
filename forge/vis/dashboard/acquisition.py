@@ -123,6 +123,12 @@ class AcquisitionIngestEntry(FileIngestEntry):
         def file_state_title(self) -> typing.Optional[str]:
             return "File corrupted"
 
+        @property
+        def affects_status(self) -> bool:
+            if not self.file_size:
+                return False
+            return super().affects_status
+
     class FileError(FileIngestEntry.FileProcessed):
         @property
         def file_state_title(self) -> typing.Optional[str]:
