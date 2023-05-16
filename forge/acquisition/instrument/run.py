@@ -72,46 +72,55 @@ def instrument_config(args: argparse.Namespace) -> LayeredConfiguration:
     return LayeredConfiguration(*roots, toml=toml)
 
 
-def average_config(args: argparse.Namespace) -> LayeredConfiguration:
+def _global_section_override(args: argparse.Namespace, section: str) -> LayeredConfiguration:
     roots: typing.List[dict] = list()
 
-    instrument_local = CONFIGURATION.get("INSTRUMENT." + args.identifier + ".AVERAGE")
+    instrument_local = CONFIGURATION.get("INSTRUMENT." + args.identifier + "." + section)
     toml = None
     if instrument_local is not None:
         roots.append(instrument_local)
-        toml = LayeredConfiguration.configuration_toml("INSTRUMENT." + args.identifier + ".AVERAGE")
+        toml = LayeredConfiguration.configuration_toml("INSTRUMENT." + args.identifier + "." + section)
 
-    global_config = CONFIGURATION.get("ACQUISITION.AVERAGE")
+    global_config = CONFIGURATION.get("ACQUISITION." + section)
     if global_config is not None:
         roots.append(global_config)
         if toml is None:
-            toml = LayeredConfiguration.configuration_toml("ACQUISITION.AVERAGE")
+            toml = LayeredConfiguration.configuration_toml("ACQUISITION." + section)
 
     return LayeredConfiguration(*roots, toml=toml)
+
+
+def average_config(args: argparse.Namespace) -> LayeredConfiguration:
+    return _global_section_override(args, "AVERAGE")
 
 
 def cutsize_config(args: argparse.Namespace) -> LayeredConfiguration:
-    roots: typing.List[dict] = list()
-
-    instrument_local = CONFIGURATION.get("INSTRUMENT." + args.identifier + ".CUT_SIZE")
-    toml = None
-    if instrument_local is not None:
-        roots.append(instrument_local)
-        toml = LayeredConfiguration.configuration_toml("INSTRUMENT." + args.identifier + ".CUT_SIZE")
-
-    global_config = CONFIGURATION.get("ACQUISITION.CUT_SIZE")
-    if global_config is not None:
-        roots.append(global_config)
-        if toml is None:
-            toml = LayeredConfiguration.configuration_toml("ACQUISITION.CUT_SIZE")
-
-    return LayeredConfiguration(*roots, toml=toml)
+    return _global_section_override(args, "CUT_SIZE")
 
 
 def bus_interface(args: argparse.Namespace) -> BaseBusInterface:
     from .businterface import BusInterface
 
-    return BusInterface(args.identifier, CONFIGURATION.get("ACQUISITION.BUS", '/run/forge-acquisition-bus.socket'))
+    interface = BusInterface(args.identifier, CONFIGURATION.get("ACQUISITION.BUS", '/run/forge-acquisition-bus.socket'))
+
+    bypass_config = _global_section_override(args, "BYPASS")
+    enabled = bypass_config.constant()
+    if enabled is not None:
+        if not enabled:
+            interface.bypass_only_source = set()
+        elif isinstance(enabled, list):
+            interface.bypass_only_source = set()
+            for v in enabled:
+                interface.bypass_only_source.add(v)
+    else:
+        for v in bypass_config.get("IGNORE_FROM", default=[]):
+            interface.bypass_ignore_source.add(v)
+        for v in bypass_config.get("ONLY_FROM", default=[]):
+            if interface.bypass_only_source is None:
+                interface.bypass_only_source = set()
+            interface.bypass_only_source.add(v)
+
+    return interface
 
 
 def data_directories(args: argparse.Namespace) -> typing.Tuple[typing.Optional[Path], typing.Optional[Path]]:

@@ -28,6 +28,7 @@ class BusInterface(BaseBusInterface):
 
         self._bypass_held: typing.Set[str] = set()
         self.bypass_ignore_source: typing.Set[str] = set()
+        self.bypass_only_source: typing.Optional[typing.Set[str]] = set()
 
         self._command_dispatch: typing.Dict[str, typing.List[typing.Callable[[typing.Any], None]]] = dict()
 
@@ -48,6 +49,8 @@ class BusInterface(BaseBusInterface):
 
     def _handle_bypass(self, source: str, state: bool) -> None:
         if source in self.bypass_ignore_source:
+            return
+        elif self.bypass_only_source is not None and source not in self.bypass_only_source:
             return
 
         was_bypassed = bool(self._bypass_held)
