@@ -446,21 +446,27 @@ class AccessController(BaseAccessController):
 
         challenge_token = token_urlsafe(32)
         challenge_created = False
+        other_login = False
 
         def execute(engine: Engine):
             nonlocal challenge_token
             nonlocal challenge_created
+            nonlocal other_login
 
             now = datetime.datetime.now(tz=datetime.timezone.utc)
             valid_until = now + datetime.timedelta(minutes=30)
 
             any_hit = False
+            any_login = False
             with Session(engine) as orm_session:
                 orm_session.query(_PasswordResetChallenge).filter(_PasswordResetChallenge.valid_until < now).delete()
 
                 for user in orm_session.query(_User).filter_by(email=email):
                     auth_entry = orm_session.query(_AuthPassword).filter_by(user=user.id).one_or_none()
                     if auth_entry is None:
+                        if not any_login:
+                            if orm_session.query(_AuthOpenIDConnect).filter_by(user=user.id).one_or_none() is not None:
+                                any_login = True
                         continue
                     any_hit = True
                     challenge = _PasswordResetChallenge(user=user.id, token=challenge_token, valid_until=valid_until)
@@ -468,6 +474,7 @@ class AccessController(BaseAccessController):
 
                 orm_session.commit()
                 challenge_created = any_hit
+                other_login = any_login
 
         await self.db.execute(execute)
 
@@ -477,7 +484,7 @@ class AccessController(BaseAccessController):
             template_context = {
                 'request': request,
                 'email': email,
-                'reset_url': request.url_for('reset_password') + f'?token={challenge_token}',
+                'reset_url': str(request.url_for('reset_password')) + f'?token={challenge_token}',
             }
 
             message = EmailMessage()
@@ -487,6 +494,22 @@ class AccessController(BaseAccessController):
                 'access', 'password_reset_email.txt').render_async(template_context))
             message.add_alternative(await package_template(
                 'access', 'password_reset_email.html').render_async(template_context), subtype='html')
+            send_email(message, CONFIGURATION.get('EMAIL'))
+        elif other_login:
+            _LOGGER.debug(f"Sending other login password reset notification")
+
+            template_context = {
+                'request': request,
+                'email': email,
+            }
+
+            message = EmailMessage()
+            message['Subject'] = "Forge Visualization Tool Password Unavailable"
+            message['To'] = email
+            message.set_content(await package_template(
+                'access', 'password_unavailable_email.txt').render_async(template_context))
+            message.add_alternative(await package_template(
+                'access', 'password_unavailable_email.html').render_async(template_context), subtype='html')
             send_email(message, CONFIGURATION.get('EMAIL'))
 
         return HTMLResponse(await package_template('access', 'password_reset_challenge.html').render_async(
