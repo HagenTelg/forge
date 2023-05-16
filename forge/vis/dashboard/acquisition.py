@@ -13,18 +13,6 @@ from .fileingest import FileIngestEntry, FileIngestRecord
 from .telemetry import get_station_time_offset, TelemetryInterface, ProcessingInterface
 
 
-def _get_dashboard_flag(station: typing.Optional[str], condition_code: str) -> typing.Optional[DashboardFlag]:
-    try:
-        instrument_id, instrument_type, flag = condition_code.split('-', 2)
-    except ValueError:
-        return None
-    if station:
-        return processing_data(station, 'instrument', 'dashboard_flag')(
-            station, instrument_id, instrument_type, flag)
-    else:
-        return processing_instrument(instrument_type, 'flags', 'dashboard_flags').get(flag)
-
-
 class AcquisitionIngestEntry(FileIngestEntry):
     TIME_UNSYNC_THRESHOLD = 2 * 60
 
@@ -45,7 +33,7 @@ class AcquisitionIngestEntry(FileIngestEntry):
                 instrument, _ = self.code.split('-', 1)
             except ValueError:
                 return "The CLAP is on the final spot"
-            return f"CLAP {instrument} is on the final spot"
+            return f"CLAP {instrument.upper()} is on the final spot"
 
         @property
         def detail(self) -> typing.Optional[str]:
@@ -58,7 +46,7 @@ class AcquisitionIngestEntry(FileIngestEntry):
                 instrument, _ = self.code.split('-', 1)
             except ValueError:
                 return "The TAP is on the final spot"
-            return f"TAP {instrument} is on the final spot"
+            return f"TAP {instrument.upper()} is on the final spot"
 
         @property
         def detail(self) -> typing.Optional[str]:
@@ -71,7 +59,7 @@ class AcquisitionIngestEntry(FileIngestEntry):
                 instrument, _ = self.code.split('-', 1)
             except ValueError:
                 return super().display
-            return f"{instrument} has stopped reporting data"
+            return f"{instrument.upper()} has stopped reporting data"
 
         @property
         def detail(self) -> typing.Optional[str]:
@@ -97,7 +85,7 @@ class AcquisitionIngestEntry(FileIngestEntry):
         def instrument(self) -> str:
             try:
                 instrument, _, flag = self.code.split('-', 2)
-                return instrument
+                return instrument.upper()
             except ValueError:
                 pass
             return ""
@@ -108,7 +96,7 @@ class AcquisitionIngestEntry(FileIngestEntry):
                 instrument, _, flag = self.code.split('-', 2)
             except ValueError:
                 return super().display
-            return self.DISPLAY_TEXT.format(instrument=instrument, flag=flag)
+            return self.DISPLAY_TEXT.format(instrument=instrument.upper(), flag=flag)
 
         @property
         def detail(self) -> typing.Optional[str]:
@@ -157,7 +145,7 @@ class AcquisitionIngestEntry(FileIngestEntry):
                 instrument, _ = self.code.split('-', 1)
             except ValueError:
                 return f"Spancheck - {self.percent_error:.1f}% average error"
-            return f"{instrument} Spancheck - {self.percent_error:.1f}% average error"
+            return f"{instrument.upper()} Spancheck - {self.percent_error:.1f}% average error"
 
         @property
         def detail(self) -> typing.Optional[str]:
@@ -195,7 +183,7 @@ class AcquisitionIngestEntry(FileIngestEntry):
                 instrument, _ = self.code.split('-', 1)
             except ValueError:
                 return super().display
-            return instrument
+            return instrument.upper()
 
     class MessageLog(BasicEntry.Event):
         @property
@@ -257,6 +245,7 @@ class AcquisitionIngestEntry(FileIngestEntry):
                 instrument_id, instrument_type, flag = code.split('-', 2)
             except ValueError:
                 return None
+            instrument_id = instrument_id.upper()
             return self._lookup_dashboard_flag(self.station, instrument_id, instrument_type, flag)
 
         dashboard_flag = lookup_flag()

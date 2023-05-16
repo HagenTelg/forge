@@ -26,7 +26,7 @@ class DashboardAction:
             else:
                 if not DashboardAction._is_valid_code(code):
                     raise ValueError(f"invalid code {code}")
-                self.code: str = code
+                self.code: str = code.lower()
             self.severity = severity
             if data is not None and not isinstance(data, str):
                 data = dumps(data)
