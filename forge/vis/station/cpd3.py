@@ -3027,6 +3027,32 @@ class DataExportList(ExportList):
         return None
 
 
+class NativeExport(Export):
+    def __init__(self, start_epoch_ms: int, end_epoch_ms: int, directory: str, station: str, archive: str):
+        self.station = station
+        self.start_epoch = int(floor(start_epoch_ms / 1000.0))
+        self.end_epoch = int(ceil(end_epoch_ms / 1000.0))
+        self.directory = directory
+        self.archive = archive
+
+    def export_file_name(self) -> typing.Optional[str]:
+        ts = time.gmtime(self.start_epoch)
+        return f"{self.station.upper()}-{self.archive.upper()}_{ts.tm_year:04}{ts.tm_mon:02}{ts.tm_mday:02}.c3r"
+
+    async def __call__(self) -> Export.Result:
+        _LOGGER.debug(f"Starting native export for {self.start_epoch},{self.end_epoch}")
+
+        target_file = (Path(self.directory) / self.export_file_name()).open('wb')
+        exporter = await asyncio.create_subprocess_exec(_interface, 'archive_read',
+                                                        str(self.start_epoch), str(self.end_epoch),
+                                                        f"{self.station}:{self.archive}:",
+                                                        f"{self.station}:{self.archive}_meta:",
+                                                        stdout=target_file,
+                                                        stdin=asyncio.subprocess.DEVNULL)
+        await exporter.communicate()
+        return Export.Result()
+
+
 def export_profile_lookup(station: str, mode_name: str, lookup) -> typing.Optional[DataExportList]:
     components = mode_name.split('-', 2)
     if len(components) != 2:

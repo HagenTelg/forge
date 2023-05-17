@@ -1,5 +1,5 @@
 import typing
-from ..cpd3 import Export, ExportList, DataExportList, DataExport, Name, export_profile_get, export_profile_lookup, detach, profile_export
+from ..cpd3 import Export, ExportList, DataExportList, DataExport, NativeExport, Name, export_profile_get, export_profile_lookup, detach, profile_export
 
 
 station_profile_export = detach(profile_export)
@@ -152,6 +152,23 @@ station_profile_export['aerosol']['avgh']['aethalometer'].data = lambda station,
         [Name(station, 'avgh', f'ZFACTOR{i + 1}_A82') for i in range(7)] +
         [Name(station, 'avgh', f'Ir{i + 1}_A82') for i in range(7)]
     )
+)
+
+
+station_profile_export['aerosol']['raw'].insert(
+    DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
+        start_epoch_ms, end_epoch_ms, directory, station, 'raw',
+    )),
+)
+station_profile_export['aerosol']['clean'].insert(
+    DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
+        start_epoch_ms, end_epoch_ms, directory, station, 'clean',
+    )),
+)
+station_profile_export['aerosol']['avgh'].insert(
+    DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
+        start_epoch_ms, end_epoch_ms, directory, station, 'avgh',
+    )),
 )
 
 
