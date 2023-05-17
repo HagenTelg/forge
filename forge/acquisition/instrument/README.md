@@ -26,6 +26,18 @@ cut_size = false
 - Instrument baud rate: 115200
 - Display letter: C
 
+## BMI MCPC 1710
+
+```toml
+[instruments.N71]
+type = "bmi1710cpc"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+- Instrument baud rate: 38400
+- Display letter: C
+
 ## BMI TAP
 
 ```toml

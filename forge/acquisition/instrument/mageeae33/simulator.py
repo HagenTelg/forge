@@ -1,6 +1,7 @@
 import typing
 import asyncio
 import time
+from forge.units import flow_lpm_to_ccm
 from forge.acquisition.instrument.streaming import StreamingSimulator
 
 
@@ -85,9 +86,9 @@ class Simulator(StreamingSimulator):
                 f"{self.data_Ips[i]} "
             ).encode('ascii'))
         self.writer.write((
-            f"{self.data_Q1 * 1000.0} "
-            f"{self.data_Q2 * 1000.0} "
-            f"{(self.data_Q1 + self.data_Q2) * 1000.0} "
+            f"{flow_lpm_to_ccm(self.data_Q1)} "
+            f"{flow_lpm_to_ccm(self.data_Q2)} "
+            f"{flow_lpm_to_ccm(self.data_Q1 + self.data_Q2)} "
             f"101325 "  # Flow standard pressure
             f"0 "  # Flow standard temperature
             f"0 "  # Biomass Burning %

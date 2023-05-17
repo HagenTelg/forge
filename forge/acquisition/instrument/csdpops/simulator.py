@@ -1,6 +1,7 @@
 import typing
 import asyncio
 import time
+from forge.units import flow_lpm_to_ccs
 from forge.acquisition.instrument.streaming import StreamingSimulator
 
 
@@ -13,7 +14,7 @@ class Simulator(StreamingSimulator):
 
         self.data_N = 1234.0
         self.data_Q = 0.15
-        self.data_C = self.data_N * self.data_Q * 1000.0 / 60.0
+        self.data_C = int(self.data_N * flow_lpm_to_ccs(self.data_Q))
         self.data_baseline = 10
         self.data_baseline_threshold = 11
         self.data_baseline_stddev = 12
@@ -32,7 +33,7 @@ class Simulator(StreamingSimulator):
 
         self.data_Cb = []
         self.data_dN = []
-        ccs = self.data_Q * 1000.0 / 60.0
+        ccs = self.data_Q * flow_lpm_to_ccs(self.data_Q)
         for i in range(10):
             Cb = (i + 1) * 5
             self.data_Cb.append(Cb)
@@ -60,7 +61,7 @@ class Simulator(StreamingSimulator):
                 f"{self.data_pump_on_time},"
                 "0,"
                 f"{self.data_peak_width},"
-                f"{self.data_Q * 1000.0 / 60.0},"
+                f"{flow_lpm_to_ccs(self.data_Q)},"
                 f"{self.data_pump_feedback},"
                 f"{self.data_Tlaser},"
                 f"{self.data_laser_feedback},"

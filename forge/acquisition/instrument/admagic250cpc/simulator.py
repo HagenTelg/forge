@@ -1,6 +1,7 @@
 import typing
 import asyncio
 import time
+from forge.units import flow_lpm_to_ccm, flow_lpm_to_ccs
 from forge.acquisition.instrument.streaming import StreamingSimulator
 
 
@@ -13,7 +14,7 @@ class Simulator(StreamingSimulator):
 
         self.data_N = 1234.0
         self.data_Q = 0.2
-        self.data_C = self.data_N * self.data_Q * 1000.0
+        self.data_C = int(self.data_N * flow_lpm_to_ccs(self.data_Q))
         self.data_P = 980.0
         self.data_Vpulse = 2123.0
         self.data_PCTwick = 95.0
