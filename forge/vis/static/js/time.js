@@ -587,11 +587,11 @@ let TimeParse = {};
     TimeSelect.start_ms = TimeParse.parseTime(queryParameters.get('start'));
     TimeSelect.end_ms = TimeParse.parseTime(queryParameters.get('end'));
     if (isFinite(TimeSelect.start_ms) && !isFinite(TimeSelect.end_ms)) {
-        TimeSelect.end_ms = TimeParse.parseTime(
+        TimeSelect.end_ms = TimeParse.parseTime(queryParameters.get('end') ||
             TimeParse.getImpliedOffset(queryParameters.get('start'), TimeSelect.start_ms),
             TimeSelect.start_ms, 1);
     } else if (!isFinite(TimeSelect.start_ms) && isFinite(TimeSelect.end_ms)) {
-        TimeSelect.start_ms = TimeParse.parseTime(
+        TimeSelect.start_ms = TimeParse.parseTime(queryParameters.get('start') ||
             TimeParse.getImpliedOffset(queryParameters.get('end'), TimeSelect.end_ms),
             TimeSelect.end_ms, -1);
     }
