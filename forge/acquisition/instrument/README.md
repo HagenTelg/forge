@@ -33,6 +33,19 @@ cut_size = false
 type = "bmi1710cpc"
 serial_port = "/dev/serial/by-id/..."
 cut_size = false
+serial_number = 123
+```
+
+- Instrument baud rate: 38400
+- Display letter: C
+
+## BMI MCPC 1720
+
+```toml
+[instruments.N71]
+type = "bmi1720cpc"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
 ```
 
 - Instrument baud rate: 38400
