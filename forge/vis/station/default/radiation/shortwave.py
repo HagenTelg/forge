@@ -6,13 +6,17 @@ from .ratio import Ratios
 class Shortwave(SolarTimeSeries):
     INSTRUMENTS = (
         ("Downwelling Shortwave", "Rdg"),
-        ("Downwelling Shortwave Auxiliary", "Rdg2"),
+        ("Downwelling Shortwave Auxiliary 2", "Rdg2"),
+        ("Downwelling Shortwave Auxiliary 3", "Rdg3"),
         ("Upwelling Shortwave", "Rug"),
-        ("Upwelling Shortwave Auxiliary", "Rug2"),
+        ("Upwelling Shortwave Auxiliary 2", "Rug2"),
+        ("Upwelling Shortwave Auxiliary 3", "Rug3"),
         ("Direct Normal", "Rdn"),
-        ("Direct Normal Auxiliary", "Rdn2"),
+        ("Direct Normal Auxiliary 2", "Rdn2"),
+        ("Direct Normal Auxiliary 3", "Rdn3"),
         ("Diffuse", "Rdf"),
-        ("Diffuse Auxiliary", "Rdf2"),
+        ("Diffuse Auxiliary 2", "Rdf2"),
+        ("Diffuse Auxiliary 3", "Rdf3"),
         ("SPN1 Total", "Rst"),
         ("SPN1 Diffuse", "Rsd"),
         ("Ultraviolet", "Rv"),
@@ -21,7 +25,6 @@ class Shortwave(SolarTimeSeries):
 
     CalculateDirectDiffuseGlobal = Ratios.CalculateDirectDiffuseGlobal
     CalculateTotalGlobal = Ratios.CalculateTotalGlobal
-    CalculateDiffuseGlobal = Ratios.CalculateDiffuseGlobal
     CalculateAlbedo = Ratios.CalculateAlbedo
 
     def __init__(self, mode: str, latitude: typing.Optional[float] = None, longitude: typing.Optional[float] = None,
@@ -69,24 +72,6 @@ class Shortwave(SolarTimeSeries):
         trace.data_field = 'ratio'
         total_global.traces.append(trace)
         self.processing[trace.data_record] = self.CalculateTotalGlobal()
-
-
-        diffuse_global = SolarTimeSeries.Graph()
-        diffuse_global.title = "Diffuse/Global"
-        diffuse_global.contamination = f'{mode}-contamination'
-        self.graphs.append(diffuse_global)
-
-        ratio = SolarTimeSeries.Axis()
-        ratio.format_code = '.3f'
-        ratio.range = [0.0, 5.0]
-        diffuse_global.axes.append(ratio)
-
-        trace = SolarTimeSeries.Trace(ratio)
-        trace.legend = "Diffuse / Global"
-        trace.data_record = f'{mode}-diffuseratio'
-        trace.data_field = 'ratio'
-        diffuse_global.traces.append(trace)
-        self.processing[trace.data_record] = self.CalculateDiffuseGlobal()
 
 
         albedo = SolarTimeSeries.Graph()

@@ -5,9 +5,11 @@ from forge.vis.view.solar import SolarTimeSeries
 class ShortwaveCompare(SolarTimeSeries):
     INSTRUMENTS = (
         ("Downwelling Shortwave", "Rdg"),
-        ("Downwelling Shortwave Auxiliary", "Rdg2"),
+        ("Downwelling Shortwave Auxiliary 2", "Rdg2"),
+        ("Downwelling Shortwave Auxiliary 3", "Rdg3"),
         ("Upwelling Shortwave", "Rug"),
-        ("Upwelling Shortwave Auxiliary", "Rug2"),
+        ("Upwelling Shortwave Auxiliary 2", "Rug2"),
+        ("Upwelling Shortwave Auxiliary 3", "Rug3"),
         ("Direct Normal", "Rdn"),
         ("Direct Normal Auxiliary", "Rdn2"),
         ("Diffuse", "Rdf"),

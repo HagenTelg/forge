@@ -9,7 +9,12 @@ class Longwave(SolarTimeSeries):
         ("Upwelling", "Rui"),
     )
 
-    LongwaveTemperature = Ratios.CalculatePIRTemperature
+    TEMPERATURE_CONTENTS = (
+        ("Downwelling PIR Case", "Tdic"),
+        ("Downwelling PIR Dome", "Tdid"),
+        ("Upwelling PIR Case", "Tuic"),
+        ("Upwelling PIR Dome", "Tuid"),
+    )
 
     def __init__(self, mode: str, latitude: typing.Optional[float] = None, longitude: typing.Optional[float] = None,
                  **kwargs):
@@ -33,23 +38,28 @@ class Longwave(SolarTimeSeries):
             trace.data_field = field
             longwave.traces.append(trace)
 
+        temperatures = SolarTimeSeries.Graph()
+        temperatures.title = "Temperature"
+        temperatures.contamination = f'{mode}-contamination'
+        self.graphs.append(temperatures)
 
-        pir_temperature = SolarTimeSeries.Graph()
-        pir_temperature.title = "Downwelling PIR/Air Temperature"
-        pir_temperature.contamination = f'{mode}-contamination'
-        self.graphs.append(pir_temperature)
+        T_C = SolarTimeSeries.Axis()
+        T_C.title = "°C"
+        T_C.format_code = '.1f'
+        temperatures.axes.append(T_C)
 
-        ratio = SolarTimeSeries.Axis()
-        ratio.title = "W/m² / K"
-        ratio.format_code = '.3f'
-        pir_temperature.axes.append(ratio)
+        for title, field in self.TEMPERATURE_CONTENTS:
+            trace = SolarTimeSeries.Trace(T_C)
+            trace.legend = title
+            trace.data_record = f'{mode}-pyranometertemperature'
+            trace.data_field = field
+            temperatures.traces.append(trace)
 
-        trace = SolarTimeSeries.Trace(ratio)
-        trace.legend = "Longwave/Temperature"
-        trace.data_record = f'{mode}-pirdownratio'
-        trace.data_field = 'ratio'
-        pir_temperature.traces.append(trace)
-        self.processing[trace.data_record] = self.LongwaveTemperature()
+        trace = SolarTimeSeries.Trace(T_C)
+        trace.legend = "Ambient"
+        trace.data_record = f'{mode}-temperature'
+        trace.data_field = "Tambient"
+        temperatures.traces.append(trace)
 
 
 class LongwaveSimplified(Longwave):
@@ -65,7 +75,6 @@ class PyrgeometerTemperature(SolarTimeSeries):
         ("Downwelling PIR Dome", "Tdid"),
         ("Upwelling PIR Case", "Tuic"),
         ("Upwelling PIR Dome", "Tuid"),
-        ("Ambient", "Tambient"),
     )
 
     def __init__(self, mode: str, latitude: typing.Optional[float] = None, longitude: typing.Optional[float] = None,
@@ -88,3 +97,9 @@ class PyrgeometerTemperature(SolarTimeSeries):
             trace.data_record = f'{mode}-pyranometertemperature'
             trace.data_field = field
             temperatures.traces.append(trace)
+
+        trace = SolarTimeSeries.Trace(T_C)
+        trace.legend = "Ambient"
+        trace.data_record = f'{mode}-temperature'
+        trace.data_field = "Tambient"
+        temperatures.traces.append(trace)
