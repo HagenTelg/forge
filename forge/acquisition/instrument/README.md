@@ -213,6 +213,19 @@ serial_number = 1077
 - Spancheck CO<sub>2</sub> sample: 300 seconds, flush: 600 seconds
 - Spancheck air sample: 600 seconds, flush: 180 seconds
 
+## TSI 377x CPC
+
+```toml
+[instrument.N71]
+type = "tsi377xcpc"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+- Instrument baud rate: 115200
+- Display letter: C
+- Flow rate depends on instrument type, calibration needs to be for the total flow (sample and bypass)
+
 ## TSI 3010 CPC
 
 ```toml
