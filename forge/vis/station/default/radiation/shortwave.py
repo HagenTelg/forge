@@ -6,17 +6,9 @@ from .ratio import Ratios
 class Shortwave(SolarTimeSeries):
     INSTRUMENTS = (
         ("Downwelling Shortwave", "Rdg"),
-        ("Downwelling Shortwave Auxiliary 2", "Rdg2"),
-        ("Downwelling Shortwave Auxiliary 3", "Rdg3"),
         ("Upwelling Shortwave", "Rug"),
-        ("Upwelling Shortwave Auxiliary 2", "Rug2"),
-        ("Upwelling Shortwave Auxiliary 3", "Rug3"),
         ("Direct Normal", "Rdn"),
-        ("Direct Normal Auxiliary 2", "Rdn2"),
-        ("Direct Normal Auxiliary 3", "Rdn3"),
         ("Diffuse", "Rdf"),
-        ("Diffuse Auxiliary 2", "Rdf2"),
-        ("Diffuse Auxiliary 3", "Rdf3"),
         ("SPN1 Total", "Rst"),
         ("SPN1 Diffuse", "Rsd"),
         ("Ultraviolet", "Rv"),
