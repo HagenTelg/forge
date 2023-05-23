@@ -97,4 +97,3 @@ class ShortwaveSimplified(Shortwave):
                  **kwargs):
         super().__init__(mode, latitude, longitude, **kwargs)
         self.graphs.pop()
-        self.graphs.pop()

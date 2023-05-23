@@ -11,9 +11,9 @@ class ShortwaveCompare(SolarTimeSeries):
         ("Upwelling Shortwave Auxiliary 2", "Rug2"),
         ("Upwelling Shortwave Auxiliary 3", "Rug3"),
         ("Direct Normal", "Rdn"),
-        ("Direct Normal Auxiliary", "Rdn2"),
+        ("Direct Normal Auxiliary 2", "Rdn2"),
         ("Diffuse", "Rdf"),
-        ("Diffuse Auxiliary", "Rdf2"),
+        ("Diffuse Auxiliary 2", "Rdf2"),
     )
 
     def __init__(self, mode: str, latitude: typing.Optional[float] = None, longitude: typing.Optional[float] = None,
