@@ -224,7 +224,7 @@ cut_size = false
 
 - Instrument baud rate: 115200
 - Display letter: C
-- Flow rate depends on instrument type, calibration needs to be for the total flow (sample and bypass)
+- Flow rate depends on instrument type, calibration is for the sample/nozzle flow only
 
 ## TSI 3010 CPC
 
@@ -257,6 +257,19 @@ Q = 1.536 # 2022-12-09/PJS@BOS
 - Instrument baud rate: 9600
 - Display letter: C
 - Default flow: 1.4210 lpm
+
+## TSI 3781 CPC
+
+```toml
+[instrument.N71]
+type = "tsi377xcpc"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+- Instrument baud rate: 115200
+- Display letter: C
+- Default flow: 0.12 lpm
 
 ## TSI 4000 and 5000 series Mass Flow Meter
 

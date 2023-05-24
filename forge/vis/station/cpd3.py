@@ -4093,8 +4093,7 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         AcquisitionTranslator.Variable('P'): 'P',
         AcquisitionTranslator.Variable('PCT'): 'PCTnozzle',
         AcquisitionTranslator.Variable('A'): 'Alaser',
-        AcquisitionTranslator.Variable('ZND'): 'Ndisplay',
-        AcquisitionTranslator.Variable('ZQ'): 'Qdisplay',
+        AcquisitionTranslator.Variable('ZQ'): 'Qinstrument',
     }, flags_notifications={
         'ConcentrationOutOfRange': 'concentration_out_of_range',
         'SampleFlowError': 'sample_flow_error',
