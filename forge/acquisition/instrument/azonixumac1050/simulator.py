@@ -11,7 +11,7 @@ class Simulator(StreamingSimulator):
         super().__init__(reader, writer)
 
         self._sequence_number: int = 0
-        self._crc = crc.CrcCalculator(crc.Configuration(
+        self._crc = crc.Calculator(crc.Configuration(
             width=16,
             polynomial=0x8005,
             init_value=0,
@@ -43,7 +43,7 @@ class Simulator(StreamingSimulator):
 
         received_crc = await self.reader.readexactly(2)
         received_crc = struct.unpack('<H', received_crc)[0]
-        expected_crc = self._crc.calculate_checksum(header + payload)
+        expected_crc = self._crc.checksum(header + payload)
         if received_crc != expected_crc:
             raise ValueError
 
@@ -70,7 +70,7 @@ class Simulator(StreamingSimulator):
         if payload:
             frame = frame + payload
         self.writer.write(frame)
-        frame_crc = self._crc.calculate_checksum(frame)
+        frame_crc = self._crc.checksum(frame)
         self.writer.write(struct.pack('<H', frame_crc))
         await self.writer.drain()
 
@@ -86,7 +86,7 @@ class Simulator(StreamingSimulator):
             error_code
         )
         self.writer.write(frame)
-        frame_crc = self._crc.calculate_checksum(frame)
+        frame_crc = self._crc.checksum(frame)
         self.writer.write(struct.pack('<H', frame_crc))
         await self.writer.drain()
 

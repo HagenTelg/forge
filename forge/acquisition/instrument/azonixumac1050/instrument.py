@@ -148,7 +148,7 @@ class Instrument(StreamingInstrument):
         self._address: int = int(context.config.get('ADDRESS', default=0))
         self._sleep_time: float = 0.0
         self._sequence_number: int = 0
-        self._crc = crc.CrcCalculator(crc.Configuration(
+        self._crc = crc.Calculator(crc.Configuration(
             width=16,
             polynomial=0x8005,
             init_value=0,
@@ -283,7 +283,7 @@ class Instrument(StreamingInstrument):
                             )
         if payload:
             frame = frame + payload
-        packet_crc = self._crc.calculate_checksum(frame)
+        packet_crc = self._crc.checksum(frame)
         self.writer.write(frame + struct.pack('<H', packet_crc))
 
         seq = self._sequence_number
@@ -305,7 +305,7 @@ class Instrument(StreamingInstrument):
 
         received_crc = await self.reader.readexactly(2)
         received_crc = struct.unpack('<H', received_crc)[0]
-        calculated_crc = self._crc.calculate_checksum(header + payload)
+        calculated_crc = self._crc.checksum(header + payload)
         if received_crc != calculated_crc:
             raise CommunicationsError(f"CRC mismatch, calculated {calculated_crc:04X} but got {received_crc:04X}")
 
