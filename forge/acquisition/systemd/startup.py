@@ -1,5 +1,6 @@
 import typing
 import logging
+import time
 import dbus
 import os
 import sys
@@ -247,7 +248,16 @@ def need_pressure_bypass_control() -> bool:
 
 
 def start_all_control() -> None:
-    start_control("restart")
+    try:
+        start_control("restart")
+    except dbus.exceptions.DBusException:
+        _LOGGER.debug("Retrying initial unit startup", exc_info=True)
+        unit_name = f"forge-control-restart.service"
+        release_transient_unit(unit_name)
+        time.sleep(0.5)
+        release_transient_unit(unit_name)
+        time.sleep(0.5)
+        start_control("restart")
 
     cutsize = CONFIGURATION.get("ACQUISITION.CUTSIZE")
     if cutsize and not CutSize(LayeredConfiguration(cutsize)).constant_size:
