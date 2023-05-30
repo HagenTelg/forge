@@ -471,8 +471,8 @@ class SerialPortContext(StreamingContext):
                             self._rs485.rts_level_for_tx and 1 or 0,
                             self._rs485.rts_level_for_rx and 1 or 0,
                             self._rs485.loopback and 1 or 0,
-                            self._rs485.delay_before_tx,
-                            self._rs485.delay_before_rx
+                            float(self._rs485.delay_before_tx or 0),
+                            float(self._rs485.delay_before_rx or 0)
                         ))
         except (IOError, NameError):
             _LOGGER.warning("Failed to send control packet", exc_info=True)
