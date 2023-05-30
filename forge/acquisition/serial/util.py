@@ -17,8 +17,8 @@ def standard_termios(tio) -> None:
     tio[TCAttr.c_iflag.value] &= ~(termios.BRKINT | termios.PARMRK | termios.ISTRIP | termios.INLCR |
                                    termios.IGNCR | termios.ICRNL)
     tio[TCAttr.c_iflag.value] |= termios.IGNBRK
-    tio[TCAttr.c_lflag.value] &= ~(termios.ICANON | termios.ECHO | termios.ECHOE | termios.ISIG | termios.IEXTEN)
     tio[TCAttr.c_oflag.value] &= ~termios.OPOST
-    tio[TCAttr.c_cflag.value] |= termios.CREAD
+    tio[TCAttr.c_cflag.value] |= termios.CREAD | termios.CLOCAL
+    tio[TCAttr.c_lflag.value] &= ~(termios.ICANON | termios.ECHO | termios.ECHOE | termios.ISIG | termios.IEXTEN)
     tio[TCAttr.c_cc.value][termios.VMIN] = 0
     tio[TCAttr.c_cc.value][termios.VTIME] = 0

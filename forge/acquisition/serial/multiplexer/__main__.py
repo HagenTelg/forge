@@ -78,6 +78,7 @@ class Upstream:
                 if (mask & select.POLLIN) and self.data_to_downstream is None:
                     try:
                         self.data_to_downstream = os.read(self._fd, 65536)
+                        print(self.data_to_downstream)
                     except OSError as e:
                         if e.errno != errno.EAGAIN and e.errno != errno.ETIMEDOUT:
                             raise
@@ -111,11 +112,11 @@ class Upstream:
         tio_base = termios.tcgetattr(self._fd)
         tio[TCAttr.c_cflag] &= ~termios.CSIZE
         tio[TCAttr.c_cflag] |= (tio_base[TCAttr.c_cflag] & termios.CSIZE)
-        tio[TCAttr.c_iflag] &= ~(termios.PARENB | termios.PARODD)
-        tio[TCAttr.c_iflag] |= (tio_base[TCAttr.c_cflag] & (termios.PARENB | termios.PARODD))
+        tio[TCAttr.c_cflag] &= ~(termios.PARENB | termios.PARODD)
+        tio[TCAttr.c_cflag] |= (tio_base[TCAttr.c_cflag] & (termios.PARENB | termios.PARODD))
         if CMSPAR:
-            tio[TCAttr.c_iflag] &= ~CMSPAR
-            tio[TCAttr.c_iflag] |= (tio_base[TCAttr.c_iflag] & CMSPAR)
+            tio[TCAttr.c_cflag] &= ~CMSPAR
+            tio[TCAttr.c_cflag] |= (tio_base[TCAttr.c_cflag] & CMSPAR)
 
         standard_termios(tio)
         termios.tcsetattr(self._fd, termios.TCSANOW, tio)
@@ -166,19 +167,19 @@ class Upstream:
         tio = termios.tcgetattr(self._fd)
         standard_termios(tio)
 
-        tio[TCAttr.c_iflag] &= ~(termios.INPCK | termios.ISTRIP | termios.PARENB | termios.PARODD)
+        tio[TCAttr.c_cflag] &= ~(termios.PARENB | termios.PARODD)
         if CMSPAR:
-            tio[TCAttr.c_iflag] &= ~CMSPAR
+            tio[TCAttr.c_cflag] &= ~CMSPAR
         if parity == Parity.NONE:
             pass
         elif parity == Parity.EVEN:
-            tio[TCAttr.c_iflag] |= termios.PARENB
+            tio[TCAttr.c_cflag] |= termios.PARENB
         elif parity == Parity.ODD:
-            tio[TCAttr.c_iflag] |= (termios.PARENB | termios.PARODD)
+            tio[TCAttr.c_cflag] |= (termios.PARENB | termios.PARODD)
         elif CMSPAR and parity == Parity.MARK:
-            tio[TCAttr.c_iflag] |= (termios.PARENB | CMSPAR | termios.PARODD)
+            tio[TCAttr.c_cflag] |= (termios.PARENB | CMSPAR | termios.PARODD)
         elif CMSPAR and parity == Parity.SPACE:
-            tio[TCAttr.c_iflag] |= (termios.PARENB | CMSPAR)
+            tio[TCAttr.c_cflag] |= (termios.PARENB | CMSPAR)
         else:
             _LOGGER.warning(f"Unsupported parity {parity}")
 
@@ -280,9 +281,9 @@ class Upstream:
         # Since we do not get bytesize/parity from the downstream, set it to 8/N (what the psuedoterminal always reads)
         tio[TCAttr.c_cflag] &= ~termios.CSIZE
         tio[TCAttr.c_cflag] |= termios.CS8
-        tio[TCAttr.c_iflag] &= ~(termios.INPCK | termios.ISTRIP | termios.PARENB | termios.PARODD)
+        tio[TCAttr.c_cflag] &= ~(termios.PARENB | termios.PARODD)
         if CMSPAR:
-            tio[TCAttr.c_iflag] &= ~CMSPAR
+            tio[TCAttr.c_cflag] &= ~CMSPAR
 
         termios.tcsetattr(self._fd, termios.TCSANOW, tio)
 
