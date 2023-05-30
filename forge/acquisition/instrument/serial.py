@@ -396,7 +396,7 @@ class SerialPortContext(StreamingContext):
         if isinstance(rs485_config, bool) and not rs485_config:
             self._rs485 = False
         elif rs485_config is not None:
-            if self._rs485 is None:
+            if not isinstance(self._rs485, RS485Settings):
                 self._rs485 = RS485Settings()
             if isinstance(rs485_config, dict):
                 rts_level_for_tx = rs485_config.get("RTS_LEVEL_FOR_TX")
