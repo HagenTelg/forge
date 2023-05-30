@@ -349,26 +349,24 @@ class Instrument(StreamingInstrument):
         if not self.writer:
             raise CommunicationsError
 
-        await self.drain_reader(0.5)
+        await self.drain_reader(1.0)
 
         await self._send_packet(self._Command.RESET)
         try:
             await wait_cancelable(self._receive_packet(), 2.0)
         except (asyncio.TimeoutError, TimeoutError, CommunicationsError):
             _LOGGER.debug("Software reset failed, trying DTR and RTS cycle", exc_info=True)
-            await asyncio.sleep(1.0)
+            await self.drain_reader(1.0)
             await self. _try_hardware_reset()
             await self._send_packet(self._Command.RESET)
             await wait_cancelable(self._receive_packet(), 2.0)
 
-        await asyncio.sleep(1.0)
+        await self.drain_reader(1.0)
 
         seq = await self._send_packet(self._Command.CNFGLD, struct.pack('<B', 1))
-        await self.writer.drain()
         await wait_cancelable(self._receive_packet(seq), 2.0)
 
         seq = await self._send_packet(self._Command.REV)
-        await self.writer.drain()
         response = await wait_cancelable(self._receive_packet(seq), 2.0)
         if response:
             hit = _FIRMWARE_VERSION_MATCH.search(response)
