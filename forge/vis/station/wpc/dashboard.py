@@ -2,7 +2,7 @@ import typing
 from ..default.dashboard import detach_irregular_reporting, record as base_record, Record
 
 
-code_records = detach_irregular_reporting(threshold=50 * 60 * 60)
+code_records = detach_irregular_reporting()
 
 
 def record(station: typing.Optional[str], code: str) -> typing.Optional[Record]:

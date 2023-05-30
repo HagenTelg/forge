@@ -40,6 +40,22 @@ code_records: typing.Dict[str, Record] = {
 }
 
 
+def detach_irregular_reporting(threshold: float = 0) -> typing.Dict[str, Record]:
+    result = dict(code_records)
+    for code in (
+            'acquisition-ingest-cpd3',
+            'acquisition-ingest-cpd3-forge',
+            'acquisition-transfer-data',
+            'acquisition-transfer-backup',
+            'acquisition-telemetry-uplink',
+            'acquisition-telemetry-tunnel',
+            'met-raw-ingest-cr1000',
+            'radiation-raw-ingest-scaled',
+    ):
+        result[code] = result[code].simple_override(offline=threshold)
+    return result
+
+
 _default_record = BasicRecord()
 
 
