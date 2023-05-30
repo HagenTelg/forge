@@ -213,12 +213,15 @@ class ArrayVariable(BaseInstrument.Variable):
                  name: str, code: typing.Optional[str], attributes: typing.Dict[str, typing.Any]):
         super().__init__(instrument, name or source.name, code, attributes)
         self.data.variable = self
-        if isinstance(dimensions, Dimension):
-            self.dimensions = [dimensions]
+        if dimensions is not None:
+            if isinstance(dimensions, Dimension):
+                self.dimensions = [dimensions]
+            else:
+                self.dimensions = list(dimensions)
+            if len(self.dimensions) != source.dimensions:
+                raise TypeError(f"expected {source.dimensions} but {len(self.dimensions)} provided")
         else:
-            self.dimensions = list(dimensions)
-        if len(self.dimensions) != source.dimensions:
-            raise TypeError(f"expected {source.dimensions} but {len(self.dimensions)} provided")
+            self.dimensions = None
         self.source = source
         self.average: typing.Optional[AverageRecord.Array] = None
         source.field.apply(self.data, source.calibration)
@@ -249,7 +252,7 @@ class ArrayVariable(BaseInstrument.Variable):
 
     def attach_to_record(self, record: BaseInstrument.Record) -> None:
         if self.average is None:
-            self.average = record.average.array(dimensions=len(self.dimensions))
+            self.average = record.average.array(dimensions=len(self.dimensions) if self.dimensions else self.source.dimensions)
         elif not record.average.has_entry(self.average):
             raise ValueError(f"variable {self.name} from {self.source.name} attached to multiple records")
         self.source.attached_to_record = True

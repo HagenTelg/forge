@@ -28,7 +28,7 @@ async def test_communications():
     await wait_cancelable(bus.wait_for_communicating(), 30)
 
     assert await bus.value('raw') == simulator.value
-    assert await bus.value('setpoint') == simulator.setpoint
+    assert await bus.state('setpoint') == simulator.setpoint
     assert await bus.value('control') == simulator.output
     assert await bus.value('T_V11') == 25.0
     assert (await bus.value('value'))[2] == 25.0
