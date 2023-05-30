@@ -685,7 +685,7 @@ class Instrument(StreamingInstrument):
             await self._ok_command(b"UZ1\r")
 
             ts = time.gmtime()
-            await self._ok_command(f"STT,{ts.tm_year},{ts.tm_mon},{ts.tm_mday},"
+            await self._ok_command(f"STT{ts.tm_year},{ts.tm_mon},{ts.tm_mday},"
                              f"{ts.tm_hour},{ts.tm_min},{ts.tm_sec}\r".encode('ascii'))
 
             await self.active_parameters.read(self._read_parameter)
