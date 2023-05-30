@@ -136,6 +136,8 @@ def start_instrument_serial(source: str, instrument_unit_name: str) -> typing.Op
     if not physical_port:
         return None
     if isinstance(physical_port, dict):
+        if CONFIGURATION.get(f"INSTRUMENT.{source}.SERIAL_PORT.DIRECT"):
+            return None
         physical_port = CONFIGURATION.get(f"INSTRUMENT.{source}.SERIAL_PORT.PORT")
     if not physical_port:
         return None

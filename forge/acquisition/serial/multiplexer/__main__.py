@@ -107,19 +107,17 @@ class Upstream:
         self._write_buffer += data
 
     def termios_from_downstream(self, tio) -> None:
-        standard_termios(tio)
-
         # Pseudoterminals do not propagate bytesize/parity, so preserve the existing setting
         tio_base = termios.tcgetattr(self._fd)
         tio[TCAttr.c_cflag] &= ~termios.CSIZE
         tio[TCAttr.c_cflag] |= (tio_base[TCAttr.c_cflag] & termios.CSIZE)
-        tio[TCAttr.c_iflag] &= ~(termios.INPCK | termios.ISTRIP | termios.PARENB | termios.PARODD)
-        tio[TCAttr.c_iflag] |= (tio_base[TCAttr.c_cflag] & (termios.INPCK | termios.ISTRIP | termios.PARENB |
-                                                            termios.PARODD))
+        tio[TCAttr.c_iflag] &= ~(termios.PARENB | termios.PARODD)
+        tio[TCAttr.c_iflag] |= (tio_base[TCAttr.c_cflag] & (termios.PARENB | termios.PARODD))
         if CMSPAR:
             tio[TCAttr.c_iflag] &= ~CMSPAR
             tio[TCAttr.c_iflag] |= (tio_base[TCAttr.c_iflag] & CMSPAR)
 
+        standard_termios(tio)
         termios.tcsetattr(self._fd, termios.TCSANOW, tio)
 
     def set_baud(self, baud: int) -> None:
