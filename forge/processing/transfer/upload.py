@@ -277,7 +277,7 @@ def main():
             begin_time = time.monotonic()
             signature, contents, file_size = await prepare_file(file, key, args.compression)
 
-            for url in args.server:
+            for url in servers:
                 url = URL(url=url)
                 if '{file}' in url.path:
                     url = url.replace(path=url.path.replace('{file}', file.name))
