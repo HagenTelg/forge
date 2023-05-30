@@ -432,8 +432,8 @@ class SerialPortContext(StreamingContext):
 
         bytesize = self._serial_args.get('bytesize')
         parity = self._serial_args.get('parity')
-        if (not bytesize or bytesize == serial.EIGHTBITS) and \
-                (not parity or parity == serial.PARITY_NONE) and \
+        if (bytesize is None or bytesize == serial.EIGHTBITS) and \
+                (parity is None or parity == serial.PARITY_NONE) and \
                 self._rs485 is None:
             return
 

@@ -252,12 +252,19 @@ def launch(instrument: typing.Type[StreamingInstrument]) -> None:
         if tcp:
             from .tcp import TCPContext
             if isinstance(tcp, str):
-                (host, port) = tcp.split(':')
+                if tcp.startswith('['):
+                    (host, port) = tcp.split(']')
+                    host = host[1:-1]
+                    if port.startswith(':'):
+                        port = port[1:]
+                else:
+                    (host, port) = tcp.split(':')
+                port = int(port.strip())
                 ssl = None
                 always_reset = True
             else:
                 host = str(tcp.get("HOST"))
-                port = int(tcp.get("PORT"))
+                port = int(tcp.get("PORT").strip())
                 ssl = tcp.get("SSL") or None
                 retain = tcp.get("RETRY_RETAIN_CONNECTION")
                 if retain is None:
