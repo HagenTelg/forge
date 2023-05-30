@@ -186,8 +186,6 @@ def parse_arguments():
 
     if not args.directory and not args.file:
         parser.error("At least one directory or file is required")
-    if not args.server:
-        parser.error("An upload URL is required")
 
     return args
 
