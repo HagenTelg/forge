@@ -177,10 +177,12 @@ class Upstream:
             tio[TCAttr.c_iflag] |= termios.PARENB
         elif parity == Parity.ODD:
             tio[TCAttr.c_iflag] |= (termios.PARENB | termios.PARODD)
-        elif parity == Parity.MARK:
+        elif CMSPAR and parity == Parity.MARK:
             tio[TCAttr.c_iflag] |= (termios.PARENB | CMSPAR | termios.PARODD)
-        elif parity == Parity.SPACE:
+        elif CMSPAR and parity == Parity.SPACE:
             tio[TCAttr.c_iflag] |= (termios.PARENB | CMSPAR)
+        else:
+            _LOGGER.warning(f"Unsupported parity {parity}")
 
         termios.tcsetattr(self._fd, termios.TCSANOW, tio)
 
