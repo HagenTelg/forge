@@ -999,7 +999,7 @@ class Instrument(StreamingInstrument):
 
     async def _ee(self, force_zero_update: bool = False) -> None:
         self.writer.write(b"EE\r")
-        lines = await self.read_multiple_lines(total=10.0, first=2.0, tail=0.5)
+        lines = await self.read_multiple_lines(total=10.0, first=2.0, tail=1.0)
 
         self._ee_value = "\n".join([
             l.decode('utf-8', errors='backslashreplace') for l in lines
