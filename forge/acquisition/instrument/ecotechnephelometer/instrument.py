@@ -1324,7 +1324,7 @@ class Instrument(StreamingInstrument):
 
             await self._command_delay()
             ts = time.gmtime()
-            self.writer.write(f"**{self._address}S,"
+            self.writer.write(f"**{self._address}S"
                               f"{ts.tm_hour:02}{ts.tm_min:02}{ts.tm_sec:02}"
                               f"{ts.tm_mday:02}{ts.tm_mon:02}{ts.tm_year%100:02}\r".encode('ascii'))
             await self.writer.drain()
