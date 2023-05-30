@@ -393,6 +393,10 @@ class SerialPortContext(StreamingContext):
         self._serial_args['exclusive'] = False
 
         self._rs485: typing.Optional[typing.Union[RS485Settings, bool]] = self._serial_args.pop('rs485', None)
+        if not self._rs485:
+            self._rs485 = None
+        elif not isinstance(self._rs485, RS485Settings):
+            self._rs485 = RS485Settings()
         if isinstance(rs485_config, bool) and not rs485_config:
             self._rs485 = False
         elif rs485_config is not None:
