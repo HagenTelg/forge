@@ -37,7 +37,7 @@ class Control(BaseControl):
 
     def __init__(self):
         super().__init__()
-        cutsize = CONFIGURATION.get("ACQUISITION.CUTSIZE")
+        cutsize = CONFIGURATION.get("ACQUISITION.CUT_SIZE")
         if not cutsize:
             self.cycle = self._Cycle(None, True)
         else:

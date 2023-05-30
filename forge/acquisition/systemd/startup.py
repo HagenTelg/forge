@@ -259,7 +259,7 @@ def start_all_control() -> None:
         time.sleep(0.5)
         start_control("restart")
 
-    cutsize = CONFIGURATION.get("ACQUISITION.CUTSIZE")
+    cutsize = CONFIGURATION.get("ACQUISITION.CUT_SIZE")
     if cutsize and not CutSize(LayeredConfiguration(cutsize)).constant_size:
         start_control("impactorcycle")
 
