@@ -6,6 +6,8 @@ def record_times(start_times: np.array,
                  expected_record_interval: typing.Optional[typing.Union[float, int]] = None,
                  file_start_time: typing.Optional[typing.Union[float, int]] = None,
                  file_end_time: typing.Optional[typing.Union[float, int]] = None) -> np.array:
+    if start_times.shape[0] == 0:
+        return np.array([])
     final_end_time = start_times[-1]
     if expected_record_interval:
         final_end_time = start_times[-1] + expected_record_interval
