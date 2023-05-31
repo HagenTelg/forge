@@ -44,6 +44,9 @@ class Instrument(StreamingInstrument):
         if not self.data_N.field.comment and self.data_Q.field.comment:
             self.data_N.field.comment = self.data_Q.field.comment
 
+        self.notify_sample_flow_out_of_range = self.notification("sample_flow_out_of_range", is_warning=True)
+        self.sample_flow_out_of_range_valid: bool = True
+
         self.bit_flags: typing.Dict[int, Instrument.Notification] = dict()
         self.instrument_report = self.report(
             self.variable_number_concentration(self.data_N, code="N"),
@@ -101,7 +104,7 @@ class Instrument(StreamingInstrument):
                 self.flag_bit(self.bit_flags, 0x008000, "fram_data_invalid"),
                 # 0x010000 reserved
                 self.flag_bit(self.bit_flags, 0x020000, "thermistor_fault", is_warning=True),
-                self.flag_bit(self.bit_flags, 0x040000, "sample_flow_out_of_range", is_warning=True),
+                self.flag(self.notify_sample_flow_out_of_range, 0x040000),
                 # 0x080000 reserved
                 self.flag_bit(self.bit_flags, 0x100000, "ic2_multiplexer_error"),
                 self.flag_bit(self.bit_flags, 0x200000, "low_clock_battery"),
@@ -153,7 +156,13 @@ class Instrument(StreamingInstrument):
                 elif line.startswith(b"Serial Number:"):
                     self.set_serial_number(line[14:].strip())
                 elif line.startswith(b"FW Ver:"):
-                    self.set_firmware_version(line[7:].strip())
+                    ver = line[7:].strip()
+                    self.set_firmware_version(ver)
+                    # Randomly set and so not valid on this firmware
+                    if ver == b'3.03a':
+                        self.sample_flow_out_of_range_valid = False
+                    else:
+                        self.sample_flow_out_of_range_valid = True
 
             ts = time.gmtime()
             self.writer.write(f"rtc,{ts.tm_hour:02}:{ts.tm_min:02}:{ts.tm_sec:02}\r".encode('ascii'))
@@ -236,6 +245,10 @@ class Instrument(StreamingInstrument):
         if serial_number:
             self.set_serial_number(serial_number)
 
-        parse_flags_bits(flags, self.bit_flags)
+        flags = parse_flags_bits(flags, self.bit_flags)
+        if self.sample_flow_out_of_range_valid and (flags & 0x040000) != 0:
+            self.notify_sample_flow_out_of_range(True)
+        else:
+            self.notify_sample_flow_out_of_range(False)
 
         self.instrument_report()
