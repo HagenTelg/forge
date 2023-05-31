@@ -1,5 +1,6 @@
 import typing
 import netCDF4
+from math import isfinite
 import forge.cpd3.variant as cpd3_variant
 from forge.cpd3.identity import Identity, Name
 from ..default.converter import Converter as BaseConverter, RecordConverter, StateRecord
@@ -123,11 +124,15 @@ class Parameters(RecordConverter):
                 val = SV[idx]
                 if val.mask:
                     continue
+                if not isfinite(val * 1):
+                    continue
                 result["SV" + code] = int(val)
 
         def set_calibration(source: netCDF4.Variable, idx: int, code: str, field: str, convert: typing.Callable):
             val = source[idx]
             if val.mask:
+                return
+            if not isfinite(val * 1):
                 return
             val = convert(val)
 
