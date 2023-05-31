@@ -19,11 +19,17 @@
 (function() {
     // {{ '\n' }}{% include 'global/calculations/pitot_flow.js' %}
 
+    const VARIABLE_NAME = "Pd_P01";
+
     const context = document.getElementById('{{uid}}').context;
     context.hide();
 
     const formatter = context.createNodeFormatter(document.getElementById('{{uid}}_pitotflow'));
-    context.addSourceTarget((value) => {
+    context.addDataTarget((source, inputValues) => {
+        if (!inputValues.has(VARIABLE_NAME)) {
+            return;
+        }
+        const value = inputValues.get(VARIABLE_NAME);
         if (value === null || !isFinite(value)) {
             context.hide();
             return;
@@ -31,6 +37,6 @@
 
         context.show();
         formatter(calculatePitotFlow(value, stackPitotArea, 273.15, 1013.25));
-    }, '_pitot', 'pitot');
+    });
 })();
 </script>

@@ -21,13 +21,13 @@ var PitotFlow = {};
             let outputFlow = record.get(this.outputFlow);
             if (!outputFlow) {
                 outputFlow = [];
-                for (let i=0; i<inputPressure.length; i++) {
+                for (let i=0; i < inputPressure.length; i++) {
                     outputFlow.push(undefined);
                 }
                 record.set(this.outputFlow, outputFlow);
             }
 
-            for (let timeIndex=0; timeIndex<inputPressure.length; timeIndex++) {
+            for (let timeIndex=0; timeIndex < inputPressure.length; timeIndex++) {
                 const dP = inputPressure[timeIndex];
                 outputFlow[timeIndex] = calculatePitotFlow(dP, stackPitotArea, 273.15, 1013.25);
             }

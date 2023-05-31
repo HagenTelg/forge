@@ -114,7 +114,7 @@ let AcquisitionSocket = {};
             if (simple) {
                 const fields = simple.fields;
                 const data = toDataView(simple.values);
-                for (let i=0; i<fields.length; i++) {
+                for (let i=0; i < fields.length; i++) {
                     const offset = i * 4;
                     const value = data.getFloat32(offset, true);
                     values.set(fields[i], value);
@@ -125,13 +125,13 @@ let AcquisitionSocket = {};
             if (array) {
                 const fields = array.fields;
                 const contents = array.contents;
-                for (let i=0; i<fields.length; i++) {
+                for (let i=0; i < fields.length; i++) {
                     const data = toDataView(contents[i]);
                     const decoded = [];
                     values.set(fields[i], decoded);
 
                     const total = data.byteLength / 4;
-                    for (let j=0; j<total; j++) {
+                    for (let j=0; j < total; j++) {
                         const offset = j * 4;
                         const value = data.getFloat32(offset, true);
                         decoded.push(value);
@@ -443,7 +443,7 @@ let AcquisitionSocket = {};
             dataTargetContexts.add(this._context);
             target.push((source, inputValues) => {
                 const args = [];
-                for (let i=0; i<values.length; i++) {
+                for (let i=0; i < values.length; i++) {
                     const fieldName = values[i];
                     if (!inputValues.has(fieldName)) {
                         continue;
@@ -469,7 +469,7 @@ let AcquisitionSocket = {};
             if (cached) {
                 const args = [];
                 const expireTime = Date.now() - 2 * 60 * 1000;
-                for (let i=0; i<values.length; i++) {
+                for (let i=0; i < values.length; i++) {
                     const fieldName = values[i];
                     const cachedValue = cached.get(fieldName);
                     if (!cachedValue) {
