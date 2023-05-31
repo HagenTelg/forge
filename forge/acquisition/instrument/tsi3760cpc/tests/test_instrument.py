@@ -67,3 +67,31 @@ async def test_flow_configuration():
     except asyncio.CancelledError:
         pass
 
+
+@pytest.mark.asyncio
+async def test_no_corruption():
+    simulator: Simulator = None
+    instrument: Instrument = None
+    simulator, instrument = await create_streaming_instrument(Instrument, Simulator)
+    bus: BusInterface = instrument.context.bus
+    simulator.delimiter = b'\r'
+
+    simulator_run = asyncio.ensure_future(simulator.run())
+    instrument_run = asyncio.ensure_future(instrument.run())
+
+    await wait_cancelable(bus.wait_for_communicating(), 30)
+
+    assert await bus.value('N') == simulator.data_N1
+    assert await bus.value('C') == simulator.data_C1
+
+    instrument_run.cancel()
+    simulator_run.cancel()
+    try:
+        await instrument_run
+    except asyncio.CancelledError:
+        pass
+    try:
+        await simulator_run
+    except asyncio.CancelledError:
+        pass
+

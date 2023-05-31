@@ -12,7 +12,7 @@ _INSTRUMENT_TYPE = __name__.split('.')[-2]
 #  \r\X  1234   1\r\X
 #  \r\X\n  1234   1\r\X\n
 # Where \X is apparently an uninitialized (random) byte.
-_MATCH_LINE = re.compile(rb".? *(\d+ +\d+) *")
+_MATCH_LINE = re.compile(rb"(?:. +)?(\d+ +\d+)(?: +.)?")
 _FIELD_SPLIT = re.compile(rb" +")
 
 
