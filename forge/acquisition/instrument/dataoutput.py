@@ -472,9 +472,13 @@ class DataOutput(BaseDataOutput):
 
                 assign_indices = [np.s_[:]]
                 for dimension_index in range(1, len(self.values.shape)):
-                    assign_indices.append(np.s_[:min(self.values.shape[dimension_index],
-                                                     var_dimensions[dimension_index-1].size)])
-                var[:] = self.values[tuple(assign_indices)]
+                    dimension_size = min(self.values.shape[dimension_index], var_dimensions[dimension_index-1].size)
+                    # Input may currently be empty, but have dimensions
+                    if dimension_size == 0:
+                        return
+
+                    assign_indices.append(np.s_[:dimension_size])
+                var[tuple(assign_indices)] = self.values[tuple(assign_indices)]
 
         class _NetCDFVariableNative(_NetCDFVariable):
             def __init__(self, field: typing.Union[BaseDataOutput.String], data_type):
@@ -799,7 +803,11 @@ class DataOutput(BaseDataOutput):
         if self._data_updated:
             self._data_updated.clear()
 
-        write_replace_file(str(self._active_output_file), str(self._working_directory), self.write_file)
+        try:
+            write_replace_file(str(self._active_output_file), str(self._working_directory), self.write_file)
+        except:
+            _LOGGER.error("Error writing file", exc_info=True)
+            raise
 
         _LOGGER.debug("Data flush completed")
 
