@@ -248,15 +248,18 @@ def need_pressure_bypass_control() -> bool:
 
 
 def start_all_control() -> None:
-    try:
-        start_control("restart")
-    except dbus.exceptions.DBusException:
-        _LOGGER.debug("Retrying initial unit startup", exc_info=True)
-        unit_name = f"forge-control-restart.service"
-        release_transient_unit(unit_name)
-        time.sleep(0.5)
-        release_transient_unit(unit_name)
-        time.sleep(0.5)
+    for _ in range(5):
+        try:
+            start_control("restart")
+        except dbus.exceptions.DBusException:
+            _LOGGER.debug("Control start failed, retrying", exc_info=True)
+            release_transient_unit("forge-control-restart.service")
+            time.sleep(1)
+            release_transient_unit("forge-control-restart.service")
+            time.sleep(5)
+            continue
+        break
+    else:
         start_control("restart")
 
     cutsize = CONFIGURATION.get("ACQUISITION.CUT_SIZE")

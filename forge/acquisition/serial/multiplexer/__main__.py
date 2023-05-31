@@ -78,7 +78,6 @@ class Upstream:
                 if (mask & select.POLLIN) and self.data_to_downstream is None:
                     try:
                         self.data_to_downstream = os.read(self._fd, 65536)
-                        print(self.data_to_downstream)
                     except OSError as e:
                         if e.errno != errno.EAGAIN and e.errno != errno.ETIMEDOUT:
                             raise
