@@ -20,6 +20,14 @@ _INSTRUMENT_TYPE = __name__.split('.')[-2]
 _FIRMWARE_VERSION_MATCH = re.compile(br'Rev\.?\s*(\d+\.\d+)', re.IGNORECASE)
 
 
+# crc 1.0 compat
+CrcCalculator = getattr(crc, "Calculator", None)
+if not CrcCalculator:
+    CrcCalculator = crc.CrcCalculator
+if not getattr(CrcCalculator, 'checksum', None):
+    setattr(CrcCalculator, 'checksum', getattr(CrcCalculator, 'calculate_checksum'))
+
+
 class Instrument(StreamingInstrument):
     INSTRUMENT_TYPE = _INSTRUMENT_TYPE
     MANUFACTURER = "Azonix"
@@ -148,7 +156,7 @@ class Instrument(StreamingInstrument):
         self._address: int = int(context.config.get('ADDRESS', default=0))
         self._sleep_time: float = 0.0
         self._sequence_number: int = 0
-        self._crc = crc.Calculator(crc.Configuration(
+        self._crc = CrcCalculator(crc.Configuration(
             width=16,
             polynomial=0x8005,
             init_value=0,

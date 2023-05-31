@@ -13,6 +13,14 @@ from .flag import Flag, Notification
 _LOGGER = logging.getLogger(__name__)
 
 
+# crc 1.0 compat
+CrcCalculator = getattr(crc, "Calculator", None)
+if not CrcCalculator:
+    CrcCalculator = crc.CrcCalculator
+if not getattr(CrcCalculator, 'checksum', None):
+    setattr(CrcCalculator, 'checksum', getattr(CrcCalculator, 'calculate_checksum'))
+
+
 class ModbusExceptionCode(enum.IntEnum):
     ILLEGAL_FUNCTION = 1
     ILLEGAL_DATA_ADDRESS = 2
@@ -140,7 +148,7 @@ class ModbusInstrument(StreamingInstrument):
                 mode = getattr(self, 'SERIAL_MODE', ModbusProtocol.ASCII)
 
         if mode == ModbusProtocol.RTU:
-            self._rtu_crc = crc.CrcCalculator(crc.Configuration(
+            self._rtu_crc = CrcCalculator(crc.Configuration(
                 width=16,
                 polynomial=0x8005,
                 init_value=0xFFFF,
@@ -185,7 +193,7 @@ class ModbusInstrument(StreamingInstrument):
             await asyncio.sleep(self._rtu_silence_time)
         packet = struct.pack('>BB', self.station_address, function_code) + data
         self.writer.write(packet)
-        calculated_crc = self._rtu_crc.calculate_checksum(packet)
+        calculated_crc = self._rtu_crc.checksum(packet)
         self.writer.write(struct.pack('<H', calculated_crc))  # CRC is little endian
 
     async def _read_rtu_frame(self, expected_function_code: int, length: int) -> bytes:
@@ -198,7 +206,7 @@ class ModbusInstrument(StreamingInstrument):
             length = 1
 
         packet = packet + (await self.reader.readexactly(length + 2))
-        calculated_crc = self._rtu_crc.calculate_checksum(packet[:-2])
+        calculated_crc = self._rtu_crc.checksum(packet[:-2])
         response_crc = struct.unpack('<H', packet[-2:])[0]  # CRC is little endian
         if calculated_crc != response_crc:
             raise CommunicationsError(f"CRC mismatch in {packet}, calculated {calculated_crc:04X} but got {response_crc:04X}")
@@ -446,7 +454,7 @@ class ModbusSimulator(StreamingSimulator):
         self.protocol: ModbusProtocol = ModbusProtocol.ASCII
         self.station_address: int = 255
 
-        self._rtu_crc = crc.CrcCalculator(crc.Configuration(
+        self._rtu_crc = CrcCalculator(crc.Configuration(
             width=16,
             polynomial=0x8005,
             init_value=0xFFFF,
@@ -543,7 +551,7 @@ class ModbusSimulator(StreamingSimulator):
             data = await self._read_inner_data(function_code, self.reader.readexactly)
             received_crc = struct.unpack('<H', await self.reader.readexactly(2))[0]  # CRC is little endian
             frame = header + data
-            calculated_crc = self._rtu_crc.calculate_checksum(frame)
+            calculated_crc = self._rtu_crc.cchecksum(frame)
             if received_crc != calculated_crc:
                 raise ValueError(f"CRC mismatch {calculated_crc:04X} vs {received_crc:04X} for {frame}")
             if address != 255 and self.station_address != 255 and address != self.station_address:
@@ -581,7 +589,7 @@ class ModbusSimulator(StreamingSimulator):
             self.writer.write(b':' + frame.hex().encode('ascii') + b'\r\n')
         elif self.protocol == ModbusProtocol.RTU:
             frame = struct.pack('>BB', self.station_address, function_code) + data
-            calculated_crc = self._rtu_crc.calculate_checksum(frame)
+            calculated_crc = self._rtu_crc.checksum(frame)
             frame = frame + struct.pack('<H', calculated_crc)  # CRC is little endian
             self.writer.write(frame)
         elif self.protocol == ModbusProtocol.TCP:

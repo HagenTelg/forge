@@ -6,12 +6,20 @@ import crc
 from forge.acquisition.instrument.streaming import StreamingSimulator
 
 
+# crc 1.0 compat
+CrcCalculator = getattr(crc, "Calculator", None)
+if not CrcCalculator:
+    CrcCalculator = crc.CrcCalculator
+if not getattr(CrcCalculator, 'checksum', None):
+    setattr(CrcCalculator, 'checksum', getattr(CrcCalculator, 'calculate_checksum'))
+
+
 class Simulator(StreamingSimulator):
     def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         super().__init__(reader, writer)
 
         self._sequence_number: int = 0
-        self._crc = crc.Calculator(crc.Configuration(
+        self._crc = CrcCalculator(crc.Configuration(
             width=16,
             polynomial=0x8005,
             init_value=0,
