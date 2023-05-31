@@ -1,9 +1,26 @@
 import typing
 import asyncio
-from ..cpd3 import Export, NativeExport, ExportList, DataExportList, export_profile_get, export_profile_lookup, detach, profile_export
+from ..cpd3 import Name, Export, DataExport, NativeExport, ExportList, DataExportList, export_profile_get, export_profile_lookup, detach, profile_export
 
 station_profile_export = detach(profile_export)
 
+
+station_profile_export['aerosol']['raw'].insert(
+    DataExportList.Entry('ambient', "Ambient Meteorological", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+            Name(station, 'raw', 'WS_XM1'), Name(station, 'raw', 'WD_XM1'),
+            Name(station, 'raw', 'WS_XM3'), Name(station, 'raw', 'WD_XM3'),
+            Name(station, 'raw', 'WI_XM1'), Name(station, 'raw', 'WI_XM2'),
+            Name(station, 'raw', 'WX1_XM2'), Name(station, 'raw', 'WX2_XM2'),
+            Name(station, 'raw', 'T1_XM1'), Name(station, 'raw', 'U1_XM1'), Name(station, 'raw', 'TD1_XM1'),
+            Name(station, 'raw', 'T1_XM2'),
+            Name(station, 'raw', 'P_XM1'),
+            Name(station, 'raw', 'VA_XM1'),
+            Name(station, 'raw', 'WZ_XM2'),
+            Name(station, 'raw', 'ZWSGust_XM1'),
+        },
+    ))
+)
 
 station_profile_export['aerosol']['raw'].insert(
     DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
