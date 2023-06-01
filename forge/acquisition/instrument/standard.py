@@ -9,7 +9,7 @@ from .variable import Input, Variable, VariableRate, VariableLastValid, Variable
 from .array import ArrayInput, ArrayVariable, ArrayVariableLastValid
 from .flag import Notification, Flag
 from .dimension import Dimension
-from .record import Report, Record
+from .record import Report, Record, DownstreamRecord
 from .state import Persistent, PersistentEnum, State, ChangeEvent
 
 
@@ -461,24 +461,38 @@ class StandardInstrument(BaseInstrument):
         f = self.flag(n, preferred_bit=bit)
         return f
 
+    def _configure_record(self, record: Record) -> None:
+        # Make the assumption that anything with a cut size is on the system bypass (meaning bypassed while
+        # acquisition is offline), so it would need a spinup flush too
+        if not record.cutsize.constant_size:
+            default_spinup = self._bypass_flush_time
+        else:
+            default_spinup = 0.0
+        spinup_time = parse_interval(self.context.average_config.get("SPINUP_TIME"), default=default_spinup)
+        if spinup_time > 0.0:
+            record.average.start_flush(spinup_time)
+
+        self._records.append(record)
+
     def record(self, name: str = "data", apply_cutsize: bool = True, automatic: bool = True) -> Record:
         if name in self._record_names:
             raise ValueError(f"duplicate record name {name}")
         self._record_names.add(name)
 
         r = Record(self, name, apply_cutsize, automatic)
+        self._configure_record(r)
+        return r
 
-        # Make the assumption that anything with a cut size is on the system bypass (meaning bypassed while
-        # acquisition is offline), so it would need a spinup flush too
-        if not r.cutsize.constant_size:
-            default_spinup = self._bypass_flush_time
-        else:
-            default_spinup = 0.0
-        spinup_time = parse_interval(self.context.average_config.get("SPINUP_TIME"), default=default_spinup)
-        if spinup_time > 0.0:
-            r.average.start_flush(spinup_time)
+    def record_downstream(self, name: str = "data", upstream_name: str = "upstream", automatic: bool = True) -> DownstreamRecord:
+        if name in self._record_names or name == upstream_name:
+            raise ValueError(f"duplicate record name {name}")
+        if upstream_name in self._record_names:
+            raise ValueError(f"duplicate record name {upstream_name}")
+        self._record_names.add(name)
+        self._record_names.add(upstream_name)
 
-        self._records.append(r)
+        r = DownstreamRecord(self, name, upstream_name, automatic)
+        self._configure_record(r)
         return r
 
     def report(self, *fields: BaseInstrument.Variable,
@@ -717,11 +731,11 @@ class StandardInstrument(BaseInstrument):
 
         averaging_enabled = not is_bypassed
         for rec in self._records:
-            rec.average.set_averaging(averaging_enabled)
+            rec.set_averaging(averaging_enabled)
 
         if not is_bypassed and was_bypassed:
             for rec in self._records:
-                rec.average.start_flush(self._bypass_flush_time)
+                rec.start_flush(self._bypass_flush_time)
 
     async def emit(self) -> None:
         if self._instrument_info_updated:

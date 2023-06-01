@@ -115,6 +115,17 @@ class Record(BaseInstrument.Record):
         self._queued = False
         self.average.reset()
 
+    def set_averaging(self, enabled: bool) -> None:
+        self.average.set_averaging(enabled)
+
+    def start_flush(self, duration: float, now: float = None) -> None:
+        self.average.start_flush(duration, now=now)
+
+    def attach_report(self, report: "Report", automatic: bool = True) -> None:
+        self.reports.add(report)
+        if automatic:
+            self.automatic_reports.add(report)
+
     def attach_variable(self, var: BaseInstrument.Variable) -> None:
         if var in self.auxiliary_variables:
             raise ValueError(f"variable {repr(var)} already a display variable in record {self.name}")
@@ -151,6 +162,69 @@ class Record(BaseInstrument.Record):
         self.auxiliary_variables.add(var)
 
 
+class DownstreamRecord(Record):
+    def __init__(self, instrument: BaseInstrument, name: str, upstream_name: str, automatic: bool):
+        super().__init__(instrument, name, True, automatic)
+        self.upstream_record: typing.Optional[Record] = None
+        self.upstream_name = upstream_name
+
+    def _create_upstream(self) -> None:
+        if self.upstream_record is not None:
+            return
+        self.upstream_record = Record(self.instrument, self.upstream_name, False, self.automatic)
+        self.upstream_record.reports.update(self.reports)
+        self.upstream_record.automatic_reports.update(self.automatic_reports)
+
+        # Explicitly not on the cut size, so assume no flush needed on startup due to un-bypass
+        spinup_time = parse_interval(self.instrument.context.average_config.get("SPINUP_TIME"), default=0)
+        if spinup_time > 0.0:
+            self.upstream_record.average.start_flush(spinup_time)
+
+    def __call__(self) -> None:
+        super()()
+        if self.upstream_record:
+            self.upstream_record()
+
+    def report_generated(self, report: BaseInstrument.Report) -> None:
+        super().report_generated(report)
+        if self.upstream_record:
+            self.upstream_record.report_generated(report)
+
+    async def emit(self, now: float) -> bool:
+        did_emit = False
+        if self.upstream_record:
+            did_emit = (await self.upstream_record.emit(now)) or did_emit
+        did_emit = (await super().emit(now)) or did_emit
+        return did_emit
+
+    def drop_queued(self) -> None:
+        super().drop_queued()
+
+    # Note: we don't need to override the averaging/flush since the upstream isn't affected by the bypass to
+    # begin with
+
+    def attach_report(self, report: "Report", automatic: bool = True) -> None:
+        super().attach_report(report, automatic)
+        if self.upstream_record:
+            self.upstream_record.attach_report(report, automatic)
+
+    def attach_variable(self, var: BaseInstrument.Variable) -> None:
+        if var.data.use_cut_size is not None and not var.data.use_cut_size:
+            if not self.cutsize.constant_size or self._active_size.size != CutSize.Size.WHOLE:
+                self._create_upstream()
+                self.upstream_record.attach_variable(var)
+                return
+        super().attach_variable(var)
+
+    def attach_auxiliary_variable(self, var: BaseInstrument.Variable) -> None:
+        if var.data.use_cut_size is not None and not var.data.use_cut_size:
+            if not self.cutsize.constant_size or self._active_size.size != CutSize.Size.WHOLE:
+                self._create_upstream()
+                self.upstream_record.attach_auxiliary_variable(var)
+                return
+        super().attach_auxiliary_variable(var)
+
+
 class Report(BaseInstrument.Report):
     def __init__(self, instrument: BaseInstrument, record: Record,
                  variables: typing.Iterable[BaseInstrument.Variable],
@@ -181,9 +255,7 @@ class Report(BaseInstrument.Report):
             self.flags.append(f)
             self.record.attach_flag(f)
 
-        self.record.reports.add(self)
-        if automatic:
-            self.record.automatic_reports.add(self)
+        self.record.attach_report(self, automatic)
 
     def __repr__(self) -> str:
         return "Report(" + repr(self.variables) + "," + repr(self.flags) + ")"

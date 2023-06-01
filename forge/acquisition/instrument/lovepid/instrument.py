@@ -315,6 +315,8 @@ class Instrument(StreamingInstrument):
                 'long_name': "raw controller values",
                 'C_format': "%5.2f"
             }),
+
+            record=self.record_downstream(),
         )
 
         setpoints: typing.List[State] = list()

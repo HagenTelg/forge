@@ -136,6 +136,8 @@ class Converter:
             return None
         if group.name == "data":
             return DataRecord(self, group)
+        elif group.name == "upstream":
+            return DataRecord(self, group)
         elif group.name == "state":
             return StateRecord(self, group)
         raise ValueError(f"unrecognized group {group.name}")

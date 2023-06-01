@@ -549,3 +549,7 @@ class AverageRecord:
         end_time = now + duration
         if not self._flush_end_time or end_time > self._flush_end_time:
             self._flush_end_time = end_time
+
+    @property
+    def flush_end_time(self) -> typing.Optional[float]:
+        return self._flush_end_time
