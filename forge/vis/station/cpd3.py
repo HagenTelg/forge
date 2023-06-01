@@ -4133,7 +4133,6 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         AcquisitionTranslator.Variable('A'): 'Alaser',
         AcquisitionTranslator.Variable('V1'): 'Vphotodetector',
         AcquisitionTranslator.Variable('V2'): 'Vpulse',
-        AcquisitionTranslator.Variable('ZND'): 'Ndisplay',
     }, flags_notifications={
         'SaturatorTemperatureError': 'saturator_temperature_out_of_range',
         'GrowthTubeTemperatureError': 'growth_tube_temperature_out_of_range',
@@ -4145,7 +4144,7 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'ConcentrationOutOfRange': 'concentration_out_of_range',
         'PulseHeightFault': 'pulse_height_error',
         'AbsolutePressureError': 'pressure_out_of_range',
-        'NozzlePressureError': 'pressure_pressure_error',
+        'NozzlePressureError': 'nozzle_pressure_error',
         'WarmUpInProgress': 'warmup',
     }, flags_set_warning={
         'SaturatorTemperatureError',

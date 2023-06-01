@@ -1,0 +1,78 @@
+import asyncio
+import typing
+import pytest
+from forge.tasks import wait_cancelable
+from forge.acquisition.instrument.testing import create_streaming_instrument, BusInterface
+from forge.acquisition.instrument.tsi3783cpc.simulator import Simulator
+from forge.acquisition.instrument.tsi3783cpc.instrument import Instrument
+
+
+@pytest.mark.asyncio
+async def test_communications():
+    simulator: Simulator = None
+    instrument: Instrument = None
+    simulator, instrument = await create_streaming_instrument(Instrument, Simulator)
+    bus: BusInterface = instrument.context.bus
+
+    simulator_run = asyncio.ensure_future(simulator.run())
+    instrument_run = asyncio.ensure_future(instrument.run())
+
+    await wait_cancelable(bus.wait_for_communicating(), 30)
+
+    assert await bus.value('N') == simulator.data_N
+    assert await bus.value('C') == simulator.data_C
+    assert await bus.value('P') == simulator.data_P
+    assert await bus.value('Pvacuum') == simulator.data_Pvacuum
+    assert await bus.value('Qinlet') == simulator.data_Qinlet
+    assert await bus.value('Tinlet') == simulator.data_Tinlet
+    assert await bus.value('Tsaturator') == simulator.data_Tsaturator
+    assert await bus.value('Tgrowth') == simulator.data_Tgrowth
+    assert await bus.value('Toptics') == simulator.data_Toptics
+    assert await bus.value('Tseparator') == simulator.data_Tseparator
+    assert await bus.value('Tcabinet') == simulator.data_Tcabinet
+    assert await bus.value('Alaser') == simulator.data_Alaser
+    assert await bus.value('PCTnozzle') == simulator.data_PCTnozzle
+    assert await bus.value('Vphotodetector') == simulator.data_Vphotodetector
+    assert await bus.value('Vpulse') == simulator.data_Vpulse
+
+    instrument_run.cancel()
+    simulator_run.cancel()
+    try:
+        await instrument_run
+    except asyncio.CancelledError:
+        pass
+    try:
+        await simulator_run
+    except asyncio.CancelledError:
+        pass
+
+
+@pytest.mark.asyncio
+async def test_flow_configuration():
+    simulator: Simulator = None
+    instrument: Instrument = None
+    simulator, instrument = await create_streaming_instrument(Instrument, Simulator, config={
+        'DATA': {
+            'Q': 0.24,
+        },
+    })
+    bus: BusInterface = instrument.context.bus
+
+    simulator_run = asyncio.ensure_future(simulator.run())
+    instrument_run = asyncio.ensure_future(instrument.run())
+
+    await wait_cancelable(bus.wait_for_communicating(), 30)
+
+    assert await bus.value('N') == simulator.data_N / 2.0
+
+    instrument_run.cancel()
+    simulator_run.cancel()
+    try:
+        await instrument_run
+    except asyncio.CancelledError:
+        pass
+    try:
+        await simulator_run
+    except asyncio.CancelledError:
+        pass
+

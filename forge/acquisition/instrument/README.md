@@ -262,7 +262,20 @@ Q = 1.536 # 2022-12-09/PJS@BOS
 
 ```toml
 [instrument.N71]
-type = "tsi377xcpc"
+type = "tsi3781cpc"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+- Instrument baud rate: 115200
+- Display letter: C
+- Default flow: 0.12 lpm
+
+## TSI 3783 CPC
+
+```toml
+[instrument.N71]
+type = "tsi3783cpc"
 serial_port = "/dev/serial/by-id/..."
 cut_size = false
 ```
