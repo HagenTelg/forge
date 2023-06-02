@@ -24,7 +24,7 @@ station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-cpcsta
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-hurricane', "Hurricane Hardened"),
                                     'aerosol-raw-umacstatus')
-station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-raw-hurricane', "Hurricane Hardened"),
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-hurricane', "Hurricane Hardened"),
                                          'aerosol-realtime-umacstatus')
 
 station_modes['acquisition'] = Acquisition()
