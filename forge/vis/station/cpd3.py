@@ -2797,6 +2797,15 @@ class AcquisitionTranslator(NativeAcquisitionTranslator):
         return y
 
     @staticmethod
+    def pitot_shim(target: typing.Callable[[typing.Any, typing.Any], None]) -> typing.Callable[
+        [typing.Any, typing.Any], None]:
+        def shim(result, value):
+            result['_pitot']['Pd_P01'] = value
+            return target(result, value)
+
+        return shim
+
+    @staticmethod
     def spancheck_state_shim(target: typing.Callable[[typing.Any, typing.Any], None]) -> typing.Callable[[typing.Any, typing.Any], None]:
         def shim(result, value):
             if isinstance(value, dict):
@@ -2841,7 +2850,9 @@ class AcquisitionTranslator(NativeAcquisitionTranslator):
         return shim
 
     def translator_shim(self, name: Name, target: typing.Callable[[typing.Any, typing.Any], None]) -> typing.Callable[[typing.Any, typing.Any], None]:
-        if name.variable.startswith('ZSPANCHECKSTATE_'):
+        if name.variable == 'Pd_P01':
+            return self.pitot_shim(target)
+        elif name.variable.startswith('ZSPANCHECKSTATE_'):
             return self.spancheck_state_shim(target)
         elif name.variable.startswith('ZSPANCHECK_'):
             return self.spancheck_results_shim(name, target)
