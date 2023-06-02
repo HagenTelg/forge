@@ -5,6 +5,20 @@ from ..cpd3 import Name, Export, DataExport, NativeExport, ExportList, DataExpor
 station_profile_export = detach(profile_export)
 
 
+
+station_profile_export['aerosol']['raw'].insert(
+    DataExportList.Entry('hurricane', "Hurricane Hardened", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+            Name(station, 'raw', 'T_S81'),
+            Name(station, 'raw', 'U_S81'),
+            Name(station, 'raw', 'P_S81'),
+            Name(station, 'raw', 'Ipa_S81'), Name(station, 'raw', 'Ipb_S81'),
+            Name(station, 'raw', 'ZXa_S81'), Name(station, 'raw', 'ZXb_S81'),
+            Name(station, 'raw', 'WD_XM3'), Name(station, 'raw', 'WS_XM3'),
+        },
+    ))
+)
+
 station_profile_export['aerosol']['raw'].insert(
     DataExportList.Entry('ambient', "Ambient Meteorological", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
         start_epoch_ms, end_epoch_ms, directory, 'unsplt', {

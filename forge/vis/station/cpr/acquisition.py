@@ -42,6 +42,10 @@ class PWRgateInterface(AcquisitionTranslator.Interface):
 station_acquisition_translator.interfaces.append(PWRgateInterface())
 
 
+def visible(station: str, mode_name: typing.Optional[str] = None) -> bool:
+    return True
+
+
 def display(station: str, display_type: str, source: typing.Optional[str]) -> typing.Optional[Display]:
     d = _type_display.get(display_type)
     if d:
