@@ -226,6 +226,20 @@ cut_size = false
 - Display letter: C
 - Flow rate depends on instrument type, calibration is for the sample/nozzle flow only
 
+## TSI 302x CPC
+
+```toml
+[instrument.N71]
+type = "tsi302xcpc"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+serial_number = 2217
+```
+
+- Instrument baud rate: 9600 (7 data bits, even parity)
+- Display letter: C
+- Default flow: 0.3 lpm (3022) or 0.03 lpm (3025), calibration is for the sample flow only
+
 ## TSI 3010 CPC
 
 ```toml

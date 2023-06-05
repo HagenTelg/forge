@@ -140,7 +140,7 @@ class Instrument(StreamingInstrument):
         data: bytes = await wait_cancelable(self.read_line(), 2.0)
         if data != b"ERROR":
             try:
-                self.set_instrument_info('calibration', data.decode('utf-8'))
+                self.set_instrument_info('calibration', data.decode('utf-8', 'backslashreplace'))
             except UnicodeError as e:
                 raise CommunicationsError from e
 

@@ -4035,6 +4035,24 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'LampCurrentAlarm',
     }),
 
+    AcquisitionTranslator.Component('acquire_tsi_cpc302x', 'tsi302xcpc', variable_map={
+        AcquisitionTranslator.Variable('N'): 'N',
+        AcquisitionTranslator.Variable('C'): 'C',
+        AcquisitionTranslator.Variable('T1'): 'Tsaturator',
+        AcquisitionTranslator.Variable('T2'): 'Tcondenser',
+        AcquisitionTranslator.Variable('T3'): 'Toptics',
+        AcquisitionTranslator.Variable('Q'): 'Q',
+        AcquisitionTranslator.Variable('ZQ'): 'Qinstrument',
+    }, flags_notifications={
+        'LiquidLow': 'liquid_low',
+        'InstrumentNotReady': 'not_ready',
+    }, flags_set_warning={
+        'LiquidLow',
+        'InstrumentNotReady',
+    }, command_map={
+        'fill': 'Fill',
+    }),
+
     AcquisitionTranslator.Component('acquire_tsi_cpc377x', 'tsi377xcpc', variable_map={
         AcquisitionTranslator.Variable('N'): 'N',
         AcquisitionTranslator.Variable('C'): 'C',

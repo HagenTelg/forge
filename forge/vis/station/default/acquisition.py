@@ -24,6 +24,7 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3010cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3781cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3783cpc'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('tsi302xcpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('admagic200cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('admagic250cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('bmi1710cpc'))
@@ -57,6 +58,7 @@ class Acquisition(BaseAcquisition):
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3010cpc', priority=4000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3781cpc', priority=4000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3783cpc', priority=4000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('tsi302xcpc', priority=4000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('admagic200cpc', priority=4000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('admagic250cpc', priority=4000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('bmi1710cpc', priority=4000))
@@ -97,6 +99,7 @@ _type_summary: typing.Dict[str, SummaryItem] = {
     'tsi3010cpc': ParameterSummary('cpc', {'instrument': "TSI 3010"}),
     'tsi3781cpc': ParameterSummary('cpc', {'instrument': "TSI 3781"}),
     'tsi3783cpc': ParameterSummary('cpc', {'instrument': "TSI 3783"}),
+    'tsi302xcpc': ParameterSummary('cpc', {'instrument': "TSI 302x"}),
     'admagic200cpc': ParameterSummary('cpc', {'instrument': "Magic 200"}),
     'admagic250cpc': ParameterSummary('cpc', {'instrument': "Magic 250"}),
     'bmi1710cpc': ParameterSummary('cpc', {'instrument': "BMI 1710"}),
