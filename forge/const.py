@@ -30,6 +30,7 @@ STATIONS = frozenset({
     'kps',
     'kwj',
     'lab',
+    'lau',
     'lln',
     'mbo',
     'mlo',
