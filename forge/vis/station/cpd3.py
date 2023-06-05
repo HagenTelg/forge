@@ -2169,6 +2169,7 @@ class RealtimeTranslator(NativeRealtimeTranslator):
             "Toptics": "T4",
             "Theatsink": "T5",
             "Tcase": "T6",
+            "Tboard": "T7",
             "Uinlet": "Uu",
             "TDinlet": "TDu",
             "TDgrowth": "TD1",

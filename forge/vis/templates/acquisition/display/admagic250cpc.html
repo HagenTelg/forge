@@ -1,7 +1,19 @@
-<div class="display-container collapsable collapsed">
+<div class="display-container collapsable collapsed{% if writable %} menu{% endif %}">
     <div class="header communication-state warning-state format-source" instrument="Aerosol Dynamics Magic 250"></div>
 
     {% include 'acquisition/display/header_buttons.html' %}
+
+    {% if writable %}
+    <div class="menu communication-state hide-false">
+        <button class="menu mdi mdi-menu" title="Instrument actions"></button>
+        <ul class="menu menu-below">
+            <li><button id="{{uid}}_set_parameters"
+                        title="Change instrument parameters.">Set Parameters</button></li>
+            <li><button id="{{uid}}_set_wick_dry"
+                        title="Set parameters for wick drying mode.">Start Wick Drying Mode</button></li>
+        </ul>
+    </div>
+    {% endif %}
 
     {% include 'acquisition/display/nocommunication_content.html' %}
 
@@ -10,10 +22,10 @@
             <tr> <td>Concentration (cm⁻³)</td>              <td class="value-formatted" field="N" rightpad="2"></td> </tr>
             <tr> <td>Count rate (Hz)</td>                   <td class="value-formatted" field="C" decimals="0" rightpad="4"></td> </tr>
             <tr> <td>Wick saturation (%)</td>               <td class="value-formatted" field="PCTwick" decimals="0" rightpad="4"></td> </tr>
+            <tr> <td>Wick ADC</td>                          <td class="value-formatted" field="Cwick" decimals="0" rightpad="4"></td> </tr>
             <tr> <td>Pulse height (mV)</td>                 <td class="value-formatted" field="Vpulse" decimals="0" rightpad="4"></td> </tr>
-            <tr> <td>Sample flow (lpm)</td>                 <td class="value-formatted" field="Q" decimals="3"></td> </tr>
-            <tr> <td>Instrument flow (lpm)</td>             <td class="value-formatted" field="Qinstrument" decimals="3"></td> </tr>
             <tr> <td>Pressure (hPa)</td>                    <td class="value-formatted" field="P" rightpad="2"></td> </tr>
+            <tr> <td>Power Supply (V)</td>                  <td class="value-formatted" field="Vpwr" rightpad="2"></td> </tr>
         </tbody>
     </table>
 
@@ -37,22 +49,34 @@
             <tr> <th colspan="2">Humidity</th> </tr>
         </thead>
         <tbody>
-            <tr> <td>Inlet (°C)</td>                <td class="value-formatted" field="Uinlet" rightpad="2"></td> </tr>
+            <tr> <td>Inlet (%)</td>                 <td class="value-formatted" field="Uinlet" rightpad="2"></td> </tr>
             <tr> <td>Inlet dewpoint (°C)</td>       <td class="value-formatted" field="TDinlet" rightpad="2"></td> </tr>
             <tr> <td>Growth tube dewpoint (°C)</td> <td class="value-formatted" field="TDgrowth" rightpad="2"></td> </tr>
         </tbody>
     </table>
 
+    <table class="content display-data communication-state hide-false">
+        <thead>
+            <tr> <th colspan="2">Flow</th> </tr>
+        </thead>
+        <tbody>
+            <tr> <td>Sample flow (lpm)</td>                 <td class="value-formatted" field="Q" decimals="3"></td> </tr>
+            <tr> <td>Instrument flow (lpm)</td>             <td class="value-formatted" field="Qinstrument" decimals="3"></td> </tr>
+            <tr> <td>Temperature of Sensor (°C)</td>        <td class="value-formatted" field="Tboard" rightpad="2"></td> </tr>
+            <tr> <td>Differential Pressure (hPa)</td>       <td class="value-formatted" field="PDflow" rightpad="2"></td> </tr>
+        </tbody>
+    </table>
+
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="conditioner_temperature_out_of_range">Conditioner (1st stage) temperature out of range</div>
+         notification="conditioner_temperature_out_of_range">Conditioner (1st stage) temperature out of range (&gt;1.25 °C)</div>
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="initiator_temperature_out_of_range">Initiator (2nd stage) temperature out of range</div>
+         notification="initiator_temperature_out_of_range">Initiator (2nd stage) temperature out of range (&gt;1.25 °C)</div>
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="moderator_temperature_out_of_range">Moderator (3rd stage) temperature out of range</div>
+         notification="moderator_temperature_out_of_range">Moderator (3rd stage) temperature out of range (&gt;1.25 °C)</div>
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="optics_temperature_out_of_range">Optics head temperature out of range</div>
+         notification="optics_temperature_out_of_range">Optics head temperature out of range (&gt;1.25 °C)</div>
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="wick_sensor_out_of_range">Wick sensor reading out of range</div>
+         notification="wick_sensor_out_of_range">Wick sensor reading out of range (&gt;100 % or &lt;0 %)</div>
     <div class="content display-data communication-state notification-state hide-false warning"
          notification="sample_flow_out_of_range">Sample flow out of range</div>
     <div class="content display-data communication-state notification-state hide-false warning"
@@ -60,26 +84,32 @@
     <div class="content display-data communication-state notification-state hide-false warning"
          notification="pump_off">Pump off</div>
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="rh_sensor_error">RH sensor error</div>
+         notification="rh_sensor_error">RH sensor error (no RH reading)</div>
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="overheat">Overheating detected, TECs and optics turned off</div>
+         notification="overheat">Overheating detected (case&gt;50 °C, optics&gt;50 °C, or heatsink&gt;60 °C), TECs and optics turned off</div>
     <div class="content display-data communication-state notification-state hide-false warning"
          notification="dry_wick">Wick dry, wick recovery mode active</div>
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="fallback_humidifier_dewpoint">Using fallback dewpoint estimation due to RH sensor error</div>
+         notification="fallback_humidifier_dewpoint">Using fallback dewpoint estimation due to RH sensor error (assuming RH = 80%, T = case)</div>
     <div class="content display-data communication-state notification-state hide-false warning"
-         notification="thermistor_fault">Thermistor fault detected, check connections</div>
+         notification="thermistor_fault">Thermistor fault detected, check connections (temperatures suspect)</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="differential_pressure_saturated">Differential pressure sensor saturated (flow incorrect)</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="laser_diode_fault">Laser diode disconnected or failed</div>
 
     <div class="content display-data communication-state notification-state hide-false"
          notification="rh_data_stale">RH data not updated since the last read</div>
     <div class="content display-data communication-state notification-state hide-false"
-         notification="i2c_communication_error">I²C communication error</div>
+         notification="i2c_communication_error">I²C communication error with temperature or RH sensors</div>
     <div class="content display-data communication-state notification-state hide-false"
          notification="ic2_multiplexer_error">I²C multiplexer error</div>
     <div class="content display-data communication-state notification-state hide-false"
-         notification="dewpoint_calculation_error">Dewpoint calculation error</div>
+         notification="dewpoint_calculation_error">Dewpoint calculation error (contact manufacturer)</div>
     <div class="content display-data communication-state notification-state hide-false"
          notification="flash_full">Flash memory full</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="flash_size_error">Flash size error (contact manufacturer)</div>
     <div class="content display-data communication-state notification-state hide-false"
          notification="fram_data_invalid">FRAM data invalid</div>
     <div class="content display-data communication-state notification-state hide-false"
@@ -97,5 +127,37 @@
 (function() {
     const context = document.getElementById('{{uid}}').context;
     context.standardMode();
+
+    let currentParameters = {};
+
+    $('#{{uid}}_set_parameters').click(function(event) {
+        event.preventDefault();
+
+        ACTION_PROMPT_DATA = {
+            source: context.source,
+            parameters: currentParameters,
+        };
+        showModal("{{ request.url_for('static', path='/modal/ad250params.html') }}");
+    });
+    $('#{{uid}}_set_wick_dry').click(function(event) {
+        event.preventDefault();
+
+        ACTION_PROMPT_DATA = {
+            source: context.source,
+            parameters: currentParameters,
+            apply: {
+                tcon: { mode: "A", setpoint: 30.0 },
+                tmod: { mode: "A", setpoint: 30.0 },
+                wdry: 0,
+                wmax: 1023,
+            },
+            hideSave: true,
+        };
+        showModal("{{ request.url_for('static', path='/modal/ad250params.html') }}");
+    });
+
+    context.addSourceTarget((value) => {
+        currentParameters = value;
+    }, context.source, 'parameters');
 })();
 </script>

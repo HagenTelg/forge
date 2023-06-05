@@ -258,6 +258,12 @@ class ADMagicCPC250Status(TimeSeries):
         case.data_field = 'Tcase'
         temperatures.traces.append(case)
 
+        board = TimeSeries.Trace(degrees)
+        board.legend = "Board dP sensor"
+        board.data_record = f'{mode}-cpcstatus'
+        board.data_field = 'Tboard'
+        temperatures.traces.append(board)
+
 
         rh = TimeSeries.Graph()
         rh.title = "Relative Humidity"

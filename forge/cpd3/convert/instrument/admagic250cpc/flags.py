@@ -24,4 +24,6 @@ lookup: typing.Dict[str, CPD3Flag] = {
     'ic2_multiplexer_error': CPD3Flag("I2CMultiplexerError", "I²C multiplexer error", 0x1000000000),
     'low_clock_battery': CPD3Flag("LowClockBattery", "Low clock battery", 0x2000000000),
     'clock_stopped': CPD3Flag("ClockStopped", "Instrument clock stopped", 0x4000000000),
+    'differential_pressure_saturated': CPD3Flag("DifferentialPressureSaturated", "Differential pressure sensor saturated", 0x8000000000),
+    'laser_diode_fault': CPD3Flag("LaserDiodeFault", "Laser diode fault", 0x10000000000),
 }

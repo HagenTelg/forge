@@ -1,0 +1,501 @@
+<style>
+.ad250params-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.ad250params-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 8px 0 0 16px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.ad250params-footer {
+  padding: 0;
+  margin: 0;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.ad250params-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 20px;
+  background-color: transparent;
+  font-weight: bold;
+  font-family: inherit;
+  cursor: pointer;
+}
+.ad250params-footer button:hover,
+.ad250params-footer button:focus {
+  color: #000;
+  text-decoration: none;
+}
+.ad250params-footer button[disabled] {
+  background-color: #004099;
+  color: #999;
+  cursor: not-allowed;
+}
+
+
+table.ad250params-info {
+  display: flex;
+  position: relative;
+  margin: 48px 16px 8px;
+  align-items: center;
+  border: none;
+  border-spacing: 0;
+}
+table.ad250params-info > tbody > tr > td {
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+table.ad250params-info > tbody > tr > td:nth-child(1) {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: baseline;
+  padding-right: 4px;
+}
+table.ad250params-info > tbody > tr > td:last-child {
+  padding-left: 10px;
+}
+
+.ad250params-info input[type="text"] {
+  border: none;
+  border-bottom: 2px solid black;
+  padding: 2px 10px;
+  margin: 0;
+  box-sizing: border-box;
+  width: 100%;
+}
+.ad250params-info input[type="text"].invalid {
+  border-bottom: 2px solid red;
+}
+
+.ad250params-info select {
+  border: none;
+  box-sizing: border-box;
+  min-width: 100px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #0080ff;
+  color: white;
+  cursor: pointer;
+  flex-shrink: 0;
+  text-align: left;
+  padding: 4px 10px;
+  display: block;
+}
+
+
+</style>
+
+<form class="ad250params-entry">
+  <div id="ad250params-title" class="ad250params-header">Set MAGIC 250 CPC Parameters</div>
+
+  <table class="ad250params-info">
+    <tbody>
+      <tr>
+        <td><label for="ad250params_wmax">wmax</label></td>
+        <td colspan="2"><input id="ad250params_wmax" type="text"></td>
+        <td><label for="ad250params_wmax">Raw wick sensor reading corresponding to 0% saturation</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_wmin">wmin</label></td>
+        <td colspan="2"><input id="ad250params_wmin" type="text"></td>
+        <td><label for="ad250params_wmin">Raw wick sensor reading corresponding to 100% saturation</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_wdry">wdry</label></td>
+        <td colspan="2"><input id="ad250params_wdry" type="text"></td>
+        <td><label for="ad250params_wdry">Wick saturation that will trigger wick recovery mode (%)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_wwet">wwet</label></td>
+        <td colspan="2"><input id="ad250params_wwet" type="text"></td>
+        <td><label for="ad250params_wwet">Wick saturation that will exit wick recovery mode (%)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_wtrg">wtrg</label></td>
+        <td colspan="2"><input id="ad250params_wtrg" type="text"></td>
+        <td><label for="ad250params_wtrg">Target wick saturation (%)</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="ad250params_dthr">dthr</label></td>
+        <td colspan="2"><input id="ad250params_dthr" type="text"></td>
+        <td><label for="ad250params_dthr">Detector particle counting threshold (mV)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_dthr2">dthr2</label></td>
+        <td colspan="2"><input id="ad250params_dthr2" type="text"></td>
+        <td><label for="ad250params_dthr2">Upper detector threshold (mV)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_pht">pht</label></td>
+        <td colspan="2"><input id="ad250params_pht" type="text"></td>
+        <td><label for="ad250params_pht">Target percentage of particles above threshold (%)</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="ad250params_doslope">doslope</label></td>
+        <td colspan="2"><input id="ad250params_doslope" type="text"></td>
+        <td><label for="ad250params_doslope">Slope of the detector offset to laser power (mV/mW)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_doint">doint</label></td>
+        <td colspan="2"><input id="ad250params_doint" type="text"></td>
+        <td><label for="ad250params_doint">Intercept of the detector offset to laser power (mV)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_doff">doff</label></td>
+        <td colspan="2"><input id="ad250params_doff" type="text"></td>
+        <td><label for="ad250params_doff">Detector offset (mV)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_dvlt">dvlt</label></td>
+        <td colspan="2"><input id="ad250params_dvlt" type="text"></td>
+        <td><label for="ad250params_dvlt">Detector voltage (V)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_lset">lset</label></td>
+        <td colspan="2"><input id="ad250params_lset" type="text"></td>
+        <td><label for="ad250params_lset">Laser power (μW)</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="ad250params_qcf">qcf</label></td>
+        <td colspan="2"><input id="ad250params_qcf" type="text"></td>
+        <td><label for="ad250params_qcf">Flow calibration factor</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_qtrg">qtrg</label></td>
+        <td colspan="2"><input id="ad250params_qtrg" type="text"></td>
+        <td><label for="ad250params_qtrg">Target volumetric flow rate (cm<sup>3</sup>/min)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_qset">qset</label></td>
+        <td colspan="2"><input id="ad250params_qset" type="text"></td>
+        <td><label for="ad250params_qset">Pump power (%)</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="ad250params_wgn">wgn</label></td>
+        <td colspan="2"><input id="ad250params_wgn" type="text"></td>
+        <td><label for="ad250params_wgn">Feedback gain used in the moderator setpoint calculation (c°C/%)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_mrefint">mrefint</label></td>
+        <td colspan="2"><input id="ad250params_mrefint" type="text"></td>
+        <td><label for="ad250params_mrefint">Moderator reference intercept parameter in setpoint calculation (°C)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_mrefslope">mrefslope</label></td>
+        <td colspan="2"><input id="ad250params_mrefslope" type="text"></td>
+        <td><label for="ad250params_mrefslope">Moderator reference slope parameter in setpoint calculation (°C/°C)</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="ad250params_heff">heff</label></td>
+        <td colspan="2"><input id="ad250params_heff" type="text"></td>
+        <td><label for="ad250params_heff">Humidifier effectiveness parameter in dewpoint estimator</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_hmax">hmax</label></td>
+        <td colspan="2"><input id="ad250params_hmax" type="text"></td>
+        <td><label for="ad250params_hmax">Maximum expected RH from humidifier parameter in dewpoint estimator (%)</label></td>
+      </tr>
+
+      <tr>
+        <td><label for="ad250params_tcon">Tcon</label></td>
+        <td><input id="ad250params_tcon" type="text"></td>
+        <td>
+          <select id="ad250params_tcon_mode" title="Select the control mode">
+            <option value="A" title="Control to an absolute temperature">Absolute</option>
+            <option value="R" title="Control relative to another temperature">Relative</option>
+          </select>
+        </td>
+        <td><label for="ad250params_tcon">Conditioner Temperature Setting (°C)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_tini">Tini</label></td>
+        <td><input id="ad250params_tini" type="text"></td>
+        <td>
+          <select id="ad250params_tini_mode" title="Select the control mode">
+            <option value="A" title="Control to an absolute temperature">Absolute</option>
+            <option value="R" title="Control relative to another temperature">Relative</option>
+          </select>
+        </td>
+        <td><label for="ad250params_tini">Initiator Temperature Setting (°C)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_tmod">Tmod</label></td>
+        <td><input id="ad250params_tmod" type="text"></td>
+        <td>
+          <select id="ad250params_tmod_mode" title="Select the control mode">
+            <option value="A" title="Control to an absolute temperature">Absolute</option>
+            <option value="R" title="Control relative to another temperature">Relative</option>
+          </select>
+        </td>
+        <td><label for="ad250params_tmod">Moderator Temperature Setting (°C)</label></td>
+      </tr>
+      <tr>
+        <td><label for="ad250params_topt">Topt</label></td>
+        <td><input id="ad250params_topt" type="text"></td>
+        <td>
+          <select id="ad250params_topt_mode" title="Select the control mode">
+            <option value="A" title="Control to an absolute temperature">Absolute</option>
+            <option value="R" title="Control relative to another temperature">Relative</option>
+          </select>
+        </td>
+        <td><label for="ad250params_topt">Optics Temperature Setting (°C)</label></td>
+      </tr>
+
+    </tbody>
+  </table>
+
+  <div class="ad250params-footer">
+    <button id="ad250params-ok" title="Apply parameters changes">Apply</button>
+    <button id="ad250params-save" title="Apply parameters changes">Apply &amp; Persist</button>
+    <button id="ad250params-cancel">Cancel</button>
+  </div>
+</form>
+
+<script>
+var ACTION_PROMPT_DATA;
+(function() {
+    if (!ACTION_PROMPT_DATA) {
+        console.error("No action prompt data set");
+        return;
+    }
+    const data = ACTION_PROMPT_DATA;
+    ACTION_PROMPT_DATA = undefined;
+
+    const okButton = document.getElementById('ad250params-ok');
+    const saveButton = document.getElementById('ad250params-save');
+    if (data.hideSave) {
+        saveButton.style.display = 'none';
+    } else {
+        saveButton.style.display = '';
+    }
+
+    let buildResult = [];
+    let validators = [];
+
+    let displayDefaults = data.parameters;
+    if (!displayDefaults) {
+        displayDefaults = {};
+    }
+    let applyValues = data.apply;
+    if (!applyValues) {
+        applyValues = {};
+    }
+
+    function updateTotalValidity() {
+        let allValid = true;
+        for (const v of validators) {
+            if (!v()) {
+                allValid = false;
+                break;
+            }
+        }
+        okButton.disabled = !allValid;
+        saveButton.disabled = !allValid;
+    }
+
+    function installNumberValidation(field, requireInteger) {
+        function isValid() {
+            let v = field.value.trim();
+            if (v === '') {
+                return true;
+            }
+            v = v * 1.0;
+            if (!isFinite(v)) {
+                return false;
+            }
+            if (requireInteger && !Number.isInteger(v)) {
+                return false;
+            }
+            return true;
+        }
+        validators.push(isValid);
+
+        function updateValidity() {
+            if (isValid()) {
+                field.classList.remove('invalid');
+            } else {
+                field.classList.add('invalid');
+            }
+            updateTotalValidity();
+        }
+        $(field).change(updateValidity);
+        $(field).on('input', updateValidity);
+        updateValidity();
+    }
+
+    function numberField(name, integerValue, decimals) {
+        const field = document.getElementById('ad250params_' + name);
+        if (integerValue) {
+            decimals = 0;
+        }
+
+        const def = displayDefaults[name];
+        if (isFinite(def)) {
+            field.placeholder = def.toFixed(decimals);
+        } else {
+            field.placeholder = '';
+        }
+
+        const apply = applyValues[name];
+        if (isFinite(apply)) {
+            field.value = apply.toFixed(decimals);
+        } else {
+            field.value = '';
+        }
+
+        buildResult.push((data) => {
+            let value = field.value.trim();
+            if (value === '') {
+                return;
+            }
+            value = value * 1.0;
+            if (!isFinite(value)) {
+                return;
+            }
+            if (integerValue) {
+                value = Math.floor(value);
+            }
+
+            data[name] = value;
+        });
+
+        installNumberValidation(field, integerValue);
+    }
+
+    for (const name of ['lset', 'doslope', 'doint', 'doff', 'dvlt', 'dthr', 'pht', 'dthr2', 'qcf', 'qtrg', 
+            'wtrg', 'wdry', 'wwet', 'wgn', 'wmax', 'wmin']) {
+        numberField(name, true);
+    }
+    numberField('qset', false, 1);
+    numberField('heff', false, 2);
+    numberField('hmax', false, 2);
+    numberField('mrefint', false, 1);
+    numberField('mrefslope', false, 2);
+    for (const name of ['tcon', 'tini', 'tmod', 'topt']) {
+        const field = document.getElementById('ad250params_' + name);
+        const mode = document.getElementById('ad250params_' + name + '_mode');
+
+        const def = displayDefaults[name];
+        if (def !== undefined && isFinite(def.setpoint)) {
+            field.placeholder = def.setpoint.toFixed(1);
+        } else {
+            field.placeholder = '';
+        }
+        if (def !== undefined && def.mode) {
+            mode.value = def.mode;
+        }
+
+        const apply = applyValues[name];
+        if (apply !== undefined && isFinite(apply.setpoint)) {
+            field.value = apply.setpoint.toFixed(1);
+        } else {
+            field.value = '';
+        }
+        if (apply !== undefined && apply.mode) {
+            mode.value = apply.mode;
+        }
+
+        buildResult.push((data) => {
+            let value = field.value.trim();
+            if (value === '') {
+                return;
+            }
+            value = value * 1.0;
+            if (!isFinite(value)) {
+                return;
+            }
+
+            data[name] = {
+                setpoint: value,
+                mode: mode.value,
+            };
+        });
+
+        installNumberValidation(field);
+    }
+
+    function overrideField(base, override) {
+        const baseField = document.getElementById('ad250params_' + base);
+        const overrideField = document.getElementById('ad250params_' + override);
+
+        let intermediate = false;
+        function baseChanged() {
+            if (intermediate) {
+                return;
+            }
+            if (baseField.value !== '') {
+                intermediate = true;
+                overrideField.value = '0';
+                intermediate = false;
+            }
+        }
+        $(baseField).change(baseChanged);
+        $(baseField).on('input', baseChanged);
+
+        function overrideChanged() {
+            if (intermediate) {
+                return;
+            }
+            if (overrideField.value !== '') {
+                intermediate = true;
+                baseField.value = '';
+                intermediate = false;
+            }
+        }
+        $(overrideField).change(overrideChanged);
+        $(overrideField).on('input', overrideChanged);
+    }
+    overrideField('dthr2', 'pht');
+    overrideField('doff', 'doslope');
+
+    $(okButton).click(function(event) {
+        event.preventDefault();
+
+        const data = {};
+        for (const b of buildResult) {
+            b(data);
+        }
+
+        if (Object.keys(data).length !== 0) {
+            AcquisitionSocket.sendCommand(data.source, 'set_parameters', data);
+        }
+        hideModal();
+    });
+    $(saveButton).click(function(event) {
+        event.preventDefault();
+
+        const data = {};
+        for (const b of buildResult) {
+            b(data);
+        }
+
+        if (Object.keys(data).length !== 0) {
+            AcquisitionSocket.sendCommand(data.source, 'set_parameters', data);
+        }
+        AcquisitionSocket.sendCommand(data.source, 'save_settings');
+        hideModal();
+    });
+    $('#ad250params-cancel').click(function(event) {
+        event.preventDefault();
+        hideModal();
+    });
+
+})();
+</script>

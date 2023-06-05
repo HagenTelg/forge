@@ -217,10 +217,9 @@ class VariableConverter:
         else:
             self.ancillary_variables: typing.Set[str] = set()
 
-    def insert_metadata(self, meta: cpd3_variant.Metadata) -> None:
-        self.record.converter.insert_metadata(meta)
-
-        units = getattr(self.variable, "units", None)
+    @staticmethod
+    def translate_metadata(variable: Variable, meta: cpd3_variant.Metadata) -> None:
+        units = getattr(variable, "units", None)
         if units:
             meta['Units'] = units
             units = unit_lookup.get(units)
@@ -230,25 +229,29 @@ class VariableConverter:
                 if units.format:
                     meta['Format'] = units.format
 
-        fmt = getattr(self.variable, "C_format", None)
+        fmt = getattr(variable, "C_format", None)
         if fmt:
             fmt = convert_format_code(str(fmt))
             if fmt:
                 meta["Format"] = fmt
 
-        description = getattr(self.variable, "long_name", None)
+        description = getattr(variable, "long_name", None)
         if description:
             meta["Description"] = str(description)
 
-        channel = getattr(self.variable, "channel", None)
+        channel = getattr(variable, "channel", None)
         if channel is None:
-            channel = getattr(self.variable, "address", None)
+            channel = getattr(variable, "address", None)
         if channel is not None:
             try:
                 channel = int(channel)
                 meta["Channel"] = channel
             except (TypeError, ValueError):
                 meta["Channel"] = channel
+
+    def insert_metadata(self, meta: cpd3_variant.Metadata) -> None:
+        self.record.converter.insert_metadata(meta)
+        self.translate_metadata(self.variable, meta)
 
         if "standard_temperature" in self.ancillary_variables:
             standard_temperature = self.record.group.variables.get("standard_temperature")
@@ -268,6 +271,7 @@ class VariableConverter:
                 meta["NoteFlow"] = str(comment)
             else:
                 meta["Comment"] = str(comment)
+
 
     @staticmethod
     def convert_float(v) -> float:

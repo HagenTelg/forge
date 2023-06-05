@@ -26,7 +26,10 @@ async def test_communications():
     assert await bus.value('C') == simulator.data_C
     assert await bus.value('P') == simulator.data_P
     assert await bus.value('Vpulse') == simulator.data_Vpulse
-    assert await bus.value('PCTwick') == simulator.data_PCTwick
+    assert await bus.value('PCTwick') == pytest.approx(simulator.data_PCTwick, abs=0.1)
+    assert await bus.value('Cwick') == pytest.approx(simulator.data_Cwick, abs=1)
+    assert await bus.value('Vpwr') == simulator.data_Vpwr
+    assert await bus.value('PDflow') == simulator.data_PDflow
 
     assert await bus.value('Tinlet') == simulator.data_Tinlet
     assert await bus.value('Tconditioner') == simulator.data_Tconditioner
@@ -35,6 +38,7 @@ async def test_communications():
     assert await bus.value('Toptics') == simulator.data_Toptics
     assert await bus.value('Theatsink') == simulator.data_Theatsink
     assert await bus.value('Tcase') == simulator.data_Tcase
+    assert await bus.value('Tboard') == simulator.data_Tboard
     assert await bus.value('Uinlet') == simulator.data_Uinlet
     assert await bus.value('TDinlet') == simulator.data_TDinlet
     assert await bus.value('TDgrowth') == simulator.data_TDgrowth
