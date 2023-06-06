@@ -236,7 +236,8 @@ class ControlInterface(DisplayInterface):
         await self.db.execute(execute)
 
     async def purge_stale(self, threshold: typing.Union[float, datetime.datetime],
-                          watchdogs: bool = True, events: bool = True, conditions: bool = True, **kwargs) -> None:
+                          entries: bool = True, watchdogs: bool = True, events: bool = True, conditions: bool = True,
+                          **kwargs) -> None:
         threshold = self._to_time(threshold)
 
         def execute(engine: Engine):
@@ -255,6 +256,9 @@ class ControlInterface(DisplayInterface):
 
                 entry_query = self._select_entries(orm_session, **kwargs)
                 if entry_query.whereclause is None:
+                    if entries:
+                        entry_query.filter(Entry.updated <= threshold).delete(synchronize_session='fetch')
+                        _LOGGER.debug(f"Removing all entries before {threshold}")
                     if watchdogs:
                         apply_watchdogs(orm_session.query(Watchdog))
                         _LOGGER.debug(f"Removing all watchdogs before {threshold}")
@@ -265,6 +269,10 @@ class ControlInterface(DisplayInterface):
                         apply_conditions(orm_session.query(Condition))
                         _LOGGER.debug(f"Removing all conditions before {threshold}")
                 else:
+                    if entries:
+                        for entry in entry_query.filter(Entry.updated <= threshold):
+                            orm_session.query(Entry).filter_by(id=entry.id).delete(synchronize_session='fetch')
+                            _LOGGER.debug(f"Removing entry for {entry.station.upper()}/{entry.code}")
                     for entry in entry_query:
                         if watchdogs:
                             apply_watchdogs(orm_session.query(Watchdog).filter_by(entry=entry.id))

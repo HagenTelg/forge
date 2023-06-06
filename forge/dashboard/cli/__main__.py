@@ -179,6 +179,13 @@ def parse_arguments():
     command_parser.add_argument('--threshold',
                                 dest='stale_threshold', type=float, default=32.0,
                                 help="remove information set X days ago")
+    command_parser.add_argument('--stale-entries',
+                                dest='stale_watchdogs', action='store_true',
+                                help="remove stale entries")
+    command_parser.add_argument('--no-stale-entries',
+                                dest='stale_watchdogs', action='store_false',
+                                help="do not remove stale entries")
+    command_parser.set_defaults(stale_entries=True)
     command_parser.add_argument('--stale-watchdogs',
                                 dest='stale_watchdogs', action='store_true',
                                 help="remove stale watchdogs")
@@ -458,10 +465,12 @@ def main():
             await interface.remove_entries(**vars(args))
         elif args.command == 'purge-stale':
             threshold = args.stale_threshold
+            purge_entries = args.stale_entries
             purge_watchdogs = args.stale_watchdogs
             purge_events = args.stale_events
             purge_conditions = args.stale_conditions
-            await interface.purge_stale(threshold, purge_watchdogs, purge_events, purge_conditions, **vars(args))
+            await interface.purge_stale(threshold, purge_entries, purge_watchdogs, purge_events, purge_conditions,
+                                        **vars(args))
         elif args.command == 'stop-watchdog':
             await interface.stop_watchdogs(args.stop, **vars(args))
         elif args.command == 'report-ok':
