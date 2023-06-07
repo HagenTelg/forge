@@ -167,6 +167,9 @@ class Parameters(RecordConverter):
 
     def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) -> None:
         start_time: float = self.converter.file_start_time
+        if start_time is None or not isfinite(start_time):
+            return
+
         meta_start_time = start_time
         end_time: float = self.converter.file_end_time
         if self.converter.system_start_time and self.converter.system_start_time < meta_start_time:

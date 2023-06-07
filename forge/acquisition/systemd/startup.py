@@ -44,6 +44,7 @@ def basic_service(description: str,
         ("WatchdogUSec", dbus.types.UInt64(30_000_000)),
         ("TimeoutStopUSec", dbus.types.UInt64(30_000_000)),
         ("Type", "notify"),
+        ("CollectMode", "inactive-or-failed"),
     ]
     if not user:
         properties.append(("DynamicUser", True))
@@ -119,7 +120,8 @@ def start_control(control_type: str) -> None:
     set_dependencies(
         properties,
         before=["forge-acquisition-start.target", "forge-acquisition-control.target"],
-        after=["forge-acquisition-bus.socket", "forge-acquisition-initialize.target"],
+        after=["forge-acquisition-bus.socket", "forge-acquisition-initialize.target",
+               "forge-acquisition-stop.target"],
         binds_to=["forge-acquisition-bus.socket"],
         conflicts=["forge-acquisition-stop.target"],
     )
@@ -151,6 +153,7 @@ def start_instrument_serial(source: str, instrument_unit_name: str) -> typing.Op
     set_dependencies(
         properties,
         before=["forge-acquisition-start.target", instrument_unit_name],
+        after=["forge-acquisition-initialize.target", "forge-acquisition-stop.target"],
         part_of=[instrument_unit_name],
         conflicts=["forge-acquisition-stop.target"],
     )
@@ -192,6 +195,7 @@ def start_instrument(source: str) -> None:
         "forge-acquisition-bus.socket",
         "forge-acquisition-control.target",
         "forge-acquisition-initialize.target",
+        "forge-acquisition-stop.target",
     ]
     if serial_controller:
         after.append(serial_controller)

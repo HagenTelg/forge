@@ -391,10 +391,13 @@ class DataRecord(RecordConverter):
                 else:
                     raise ValueError("unable to determine record end time")
 
-            if self.converter.file_start_time and start_time < self.converter.file_start_time:
+            if self.converter.file_start_time and (start_time < self.converter.file_start_time or not isfinite(start_time)):
                 start_time = self.converter.file_start_time
-            if self.converter.file_end_time and end_time > self.converter.file_end_time:
+            if self.converter.file_end_time and (end_time > self.converter.file_end_time or not isfinite(end_time)):
                 end_time = self.converter.file_end_time
+
+            if not isfinite(start_time) or not isfinite(end_time):
+                raise ValueError("undefined record times")
 
             cut_size = None
             if record_cut_size:
@@ -786,6 +789,8 @@ class StateRecord(RecordConverter):
         record_times = self.group.variables["time"]
         for i in range(len(record_times)):
             start_time: float = float(record_times[i]) / 1000.0
+            if not isfinite(start_time):
+                raise ValueError("undefined state start time")
 
             if i != len(record_times) - 1:
                 end_time: float = float(record_times[i + 1]) / 1000.0

@@ -1,3 +1,4 @@
 [Unit]
 Description=Forge acquisition stopped
+After=forge-acquisition-initialize.target forge-acquisition-control.target forge-acquisition-start.target
 Conflicts=forge-acquisition-initialize.target forge-acquisition-control.target forge-acquisition-start.target
