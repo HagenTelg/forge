@@ -94,11 +94,10 @@ class Record(BaseInstrument.Record):
                 return False
 
             average_data: typing.Dict[str, typing.Union[float, typing.List[float]]] = dict()
-            for rep in self.reports:
-                for var in rep.variables:
-                    var.assemble_average(average_data)
-                for var in rep.auxiliary_variables:
-                    var.assemble_average(average_data)
+            for var in self.variables:
+                var.assemble_average(average_data)
+            for var in self.auxiliary_variables:
+                var.assemble_average(average_data)
             if average_data:
                 await self.instrument.context.bus.emit_average_record(average_data, self._active_size.size)
 
