@@ -792,6 +792,10 @@ class StateRecord(RecordConverter):
             else:
                 if self.converter.file_end_time:
                     end_time: float = self.converter.file_end_time
+                elif len(record_times) == 1:
+                    # A single value in a record with no times usually means an aborted file that doesn't
+                    # only contains a persistent value, rather than any data.  So just ignore it.
+                    return
                 else:
                     raise ValueError("unable to determine state end time")
 

@@ -1063,10 +1063,12 @@ class Instrument(StreamingInstrument):
                     _LOGGER.debug("Ignoring scheduled zero while not in normal operating mode")
                 else:
                     _LOGGER.debug("Automatic zero scheduled")
-                    self._zero_request = False
+                    self._zero_request = True
 
         if self._spancheck.is_running:
-            self._zero_request = False
+            if self._zero_request:
+                _LOGGER.debug("Discarded queued zero due to active spancheck")
+                self._zero_request = False
             return
 
         do_update = False

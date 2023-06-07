@@ -1253,19 +1253,19 @@ class Instrument(StreamingInstrument):
     async def _vi_command(self, vi: "Instrument._VI") -> bytes:
         await self._command_delay()
         self.writer.write(b"VI%d%02d\r" % (self._address, int(vi)))
-        return await wait_cancelable(self._read_response(), 2.0)
+        return await wait_cancelable(self._read_response(), 4.0)
 
     async def _set_digital_span(self, enable: bool) -> None:
         await self._command_delay()
         self.writer.write(b"DO%d00%d\r" % (self._address, 1 if enable else 0))
-        data: bytes = await wait_cancelable(self.read_line(), 2.0)
+        data: bytes = await wait_cancelable(self.read_line(), 4.0)
         if data != b"OK":
             raise CommunicationsError(f"invalid DOSPAN response {data}")
 
     async def _set_digital_zero(self, enable: bool) -> None:
         await self._command_delay()
         self.writer.write(b"DO%d01%d\r" % (self._address, 1 if enable else 0))
-        data: bytes = await wait_cancelable(self.read_line(), 2.0)
+        data: bytes = await wait_cancelable(self.read_line(), 4.0)
         if data != b"OK":
             raise CommunicationsError(f"invalid DOZERO response {data}")
 
@@ -1300,7 +1300,7 @@ class Instrument(StreamingInstrument):
 
         if self.writer:
             self.writer.write(b"ID%d\r" % self._address)
-            instrument_id = await wait_cancelable(self.read_line(), 2.0)
+            instrument_id = await wait_cancelable(self.read_line(), 4.0)
             matched = _INSTRUMENT_ID.search(instrument_id)
             if matched:
                 model = matched.group(1)
@@ -1328,7 +1328,7 @@ class Instrument(StreamingInstrument):
                               f"{ts.tm_hour:02}{ts.tm_min:02}{ts.tm_sec:02}"
                               f"{ts.tm_mday:02}{ts.tm_mon:02}{ts.tm_year%100:02}\r".encode('ascii'))
             await self.writer.drain()
-            data: bytes = await wait_cancelable(self.read_line(), 2.0)
+            data: bytes = await wait_cancelable(self.read_line(), 4.0)
             if data != b"OK":
                 raise CommunicationsError(f"set time response: {data}")
 
@@ -1339,7 +1339,7 @@ class Instrument(StreamingInstrument):
             self.writer.write(f"**{self._address}PCF,{filter_mode}\n\r".encode('ascii'))
             await self.writer.drain()
             try:
-                data: bytes = await wait_cancelable(self.read_line(), 2.0)
+                data: bytes = await wait_cancelable(self.read_line(), 4.0)
                 if data != b"OK":
                     raise ValueError
                 self._can_set_filter_mode = True
@@ -1351,7 +1351,7 @@ class Instrument(StreamingInstrument):
                 self.writer.write(f"**{self._address}PCSTP,0\n\r".encode('ascii'))
                 await self.writer.drain()
                 try:
-                    data: bytes = await wait_cancelable(self.read_line(), 2.0)
+                    data: bytes = await wait_cancelable(self.read_line(), 4.0)
                     if data != b"OK":
                         raise ValueError
                     self._can_set_filter_mode = True
@@ -1363,7 +1363,7 @@ class Instrument(StreamingInstrument):
             await self._ee()
 
             try:
-                data: bytes = await wait_cancelable(self._vi_command(self._VI.SystemFlags), 2.0)
+                data: bytes = await wait_cancelable(self._vi_command(self._VI.SystemFlags), 4.0)
                 if data.endswith(b'.'):
                     data = data[:-1]
                 int(data)
@@ -1382,7 +1382,7 @@ class Instrument(StreamingInstrument):
             await self.writer.drain()
             await wait_cancelable(self._read_response(), 2.0)
 
-            line: bytes = await wait_cancelable(self._vi_command(self._VI.DataLine), 2.0)
+            line: bytes = await wait_cancelable(self._vi_command(self._VI.DataLine), 4.0)
             self._process_data_line(line)
         else:
             await wait_cancelable(self.read_line(), self._instrument_update_time * 2.0 + 1.0)
@@ -1424,7 +1424,9 @@ class Instrument(StreamingInstrument):
                     self._zero_request = True
 
         if self._spancheck.is_running:
-            self._zero_request = False
+            if self._zero_request:
+                _LOGGER.debug("Discarded queued zero due to active spancheck")
+                self._zero_request = False
             self._control_zero_state = self._ControlZeroState.Idle
             return
 
@@ -1459,7 +1461,7 @@ class Instrument(StreamingInstrument):
                     self._filter_mode_reset_needed = None
                     if self.writer and self._can_set_filter_mode:
                         self.writer.write(f"**{self._address}PCF,{self._FilterMode.Disabled.command_code}\n\r".encode('ascii'))
-                        data: bytes = await wait_cancelable(self.read_line(), 2.0)
+                        data: bytes = await wait_cancelable(self.read_line(), 4.0)
                         if data != b"OK":
                             raise CommunicationsError(f"invalid PCF response {data}")
                     else:
@@ -1482,14 +1484,14 @@ class Instrument(StreamingInstrument):
                         if self._can_set_filter_mode:
                             self._filter_mode_reset_needed = 3
                             self.writer.write(f"**{self._address}PCF,{self._filter_mode.command_code}\n\r".encode('ascii'))
-                            data: bytes = await wait_cancelable(self.read_line(), 2.0)
+                            data: bytes = await wait_cancelable(self.read_line(), 4.0)
                             if data != b"OK":
                                 raise CommunicationsError(f"invalid PCF response {data}")
                         else:
                             _LOGGER.warning("Unable to change filter mode for zeroing")
 
                     self.writer.write(f"**{self._address}J5\r".encode('ascii'))
-                    data: bytes = await wait_cancelable(self.read_line(), 2.0)
+                    data: bytes = await wait_cancelable(self.read_line(), 4.0)
                     if data != b"OK":
                         raise CommunicationsError(f"invalid J5 response {data}")
 
@@ -1566,7 +1568,7 @@ class Instrument(StreamingInstrument):
                 else:
                     for c in commands:
                         self.writer.write(c)
-                        data: bytes = await wait_cancelable(self.read_line(), 2.0)
+                        data: bytes = await wait_cancelable(self.read_line(), 4.0)
                         if data != b"OK":
                             raise CommunicationsError(f"invalid command {c.strip()} response {data}")
                     self.context.bus.log(f"Spancheck calibration saved to instrument settings", {
@@ -1693,7 +1695,16 @@ class Instrument(StreamingInstrument):
         async def retryable_vi(vi: "Instrument._VI", parse: typing.Callable[[bytes], typing.Any]) -> typing.Any:
             command_retries = self._command_retry
             while True:
-                response = await self._vi_command(vi)
+                try:
+                    response = await self._vi_command(vi)
+                except (TimeoutError, asyncio.TimeoutError):
+                    command_retries -= 1
+                    if command_retries < 0:
+                        raise
+                    _LOGGER.debug(f"Retrying timed out command {int(vi)}", exc_info=True)
+                    await asyncio.sleep(2.0)
+                    continue
+
                 try:
                     return parse(response)
                 except CommunicationsError:
@@ -1701,7 +1712,8 @@ class Instrument(StreamingInstrument):
                     if command_retries < 0:
                         raise
                     _LOGGER.debug(f"Retrying command {int(vi)}", exc_info=True)
-                await asyncio.sleep(2.0)
+                    await asyncio.sleep(2.0)
+                    continue
 
         while True:
             try:
