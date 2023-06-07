@@ -1715,6 +1715,7 @@ class Instrument(StreamingInstrument):
                     await asyncio.sleep(2.0)
                     continue
 
+        was_busy = False
         while True:
             try:
                 _, minor = await retryable_vi(
@@ -1807,8 +1808,11 @@ class Instrument(StreamingInstrument):
 
                     await retryable_vi(self._VI.SystemFlags, parse)
             except InstrumentBusy:
-                _LOGGER.debug("BUSY")
                 if busy_final_timeout > time.monotonic():
+                    if not was_busy:
+                        _LOGGER.debug(f"Instrument busy")
+                        was_busy = True
+
                     await self.drain_reader(2.0)
                     continue
                 raise

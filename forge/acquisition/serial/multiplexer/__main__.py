@@ -292,10 +292,23 @@ class Upstream:
 
         self._poll.unregister(self._fd)
         os.close(self._fd)
+        self._fd = None
 
         time.sleep(0.1)
 
-        self._fd = os.open(self.device, os.O_RDWR | os.O_NONBLOCK | os.O_NOCTTY | os.O_CLOEXEC)
+        def open_device():
+            for _ in range(10):
+                try:
+                    self._fd = os.open(self.device, os.O_RDWR | os.O_NONBLOCK | os.O_NOCTTY | os.O_CLOEXEC)
+                except (IOError, FileNotFoundError):
+                    _LOGGER.debug(f"Failed to re-open {self.device}, retrying", exc_info=True)
+                    time.sleep(1.0)
+                    continue
+
+            time.sleep(2.0)
+            self._fd = os.open(self.device, os.O_RDWR | os.O_NONBLOCK | os.O_NOCTTY | os.O_CLOEXEC)
+
+        open_device()
         self._initialize_device()
         self._poll.register(self._fd, select.POLLIN)
 
