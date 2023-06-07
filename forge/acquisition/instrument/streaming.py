@@ -202,9 +202,14 @@ class StreamingInstrument(StandardInstrument):
                 self._stream_need_reset = True
 
             self.is_communicating = True
+            done_emit = False
             while await process():
                 await self.emit()
+                done_emit = True
             self.is_communicating = False
+            if done_emit:
+                # If we've emitted state with communications, make sure to do it without to reflect the new state
+                await self.emit()
             await asyncio.sleep(1.0)
 
 
