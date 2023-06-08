@@ -191,7 +191,7 @@ table.ad250params-info > tbody > tr > td:last-child {
         <td colspan="2"><input id="ad250params_wgn" type="text"></td>
         <td><label for="ad250params_wgn">Feedback gain used in the moderator setpoint calculation (c°C/%)</label></td>
       </tr>
-      <tr>
+      <!--<tr>
         <td><label for="ad250params_mrefint">mrefint</label></td>
         <td colspan="2"><input id="ad250params_mrefint" type="text"></td>
         <td><label for="ad250params_mrefint">Moderator reference intercept parameter in setpoint calculation (°C)</label></td>
@@ -200,7 +200,7 @@ table.ad250params-info > tbody > tr > td:last-child {
         <td><label for="ad250params_mrefslope">mrefslope</label></td>
         <td colspan="2"><input id="ad250params_mrefslope" type="text"></td>
         <td><label for="ad250params_mrefslope">Moderator reference slope parameter in setpoint calculation (°C/°C)</label></td>
-      </tr>
+      </tr>-->
 
       <tr>
         <td><label for="ad250params_heff">heff</label></td>
@@ -386,8 +386,8 @@ var ACTION_PROMPT_DATA;
     numberField('qset', false, 1);
     numberField('heff', false, 2);
     numberField('hmax', false, 2);
-    numberField('mrefint', false, 1);
-    numberField('mrefslope', false, 2);
+    // numberField('mrefint', false, 1);
+    // numberField('mrefslope', false, 2);
     for (const name of ['tcon', 'tini', 'tmod', 'topt']) {
         const field = document.getElementById('ad250params_' + name);
         const mode = document.getElementById('ad250params_' + name + '_mode');

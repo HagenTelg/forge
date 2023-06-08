@@ -162,7 +162,8 @@ class Parameters:
         "wtrg", "wdry", "wwet", "wgn", "wmax", "wmin"
     })
     FLOAT_PARAMETERS = frozenset({
-        "qset", "heff", "hmax", "mrefint", "mrefslope"
+        "qset", "heff", "hmax",
+        # "mrefint", "mrefslope"
     })
     TEMPERATURE_PARAMETERS = frozenset({
         "tcon", "tini", "tmod", "topt"
@@ -313,16 +314,16 @@ class Parameters:
             'C_format': "%4.2f",
             'units': "%",
         }))
-        target.constants.append(_Float(self, "mrefint", {
-            'long_name': "moderator reference intercept parameter in setpoint calculation",
-            'C_format': "%4.1f",
-            'units': "degC",
-        }))
-        target.constants.append(_Float(self, "mrefslope", {
-            'long_name': "moderator reference slope parameter in setpoint calculation",
-            'C_format': "%5.2f",
-            'units': "1",   # degC/degC
-        }))
+        # target.constants.append(_Float(self, "mrefint", {
+        #     'long_name': "moderator reference intercept parameter in setpoint calculation",
+        #     'C_format': "%4.1f",
+        #     'units': "degC",
+        # }))
+        # target.constants.append(_Float(self, "mrefslope", {
+        #     'long_name': "moderator reference slope parameter in setpoint calculation",
+        #     'C_format': "%5.2f",
+        #     'units': "1",   # degC/degC
+        # }))
 
         class _TemperatureSetpoint(BaseDataOutput.Float):
             def __init__(self, parameters: Parameters, name: str,
@@ -435,8 +436,8 @@ class Parameters:
         set_in_range("qset", float, 0, 100)
         set_in_range("heff", float, 0, 1)
         set_in_range("hmax", float, 0, 100)
-        set_if_valid("mrefint", float)
-        set_if_valid("mrefslope", float)
+        # set_if_valid("mrefint", float)
+        # set_if_valid("mrefslope", float)
 
         def set_temperature(name):
             c = config.get(name)
@@ -469,9 +470,13 @@ class Parameters:
         ("wtrg",    re.compile(rb"^wTrg\s+(\d+)", flags=re.IGNORECASE)),
         ("wwet",    re.compile(rb"^wWet\s+(\d+)", flags=re.IGNORECASE)),
         ("wdry",    re.compile(rb"^wDry\s+(\d+)", flags=re.IGNORECASE)),
+        ("wwet",    re.compile(rb"^wDry/wWet\s+\d+/(\d+)", flags=re.IGNORECASE)),
+        ("wdry",    re.compile(rb"^wDry/wWet\s+(\d+)/\d+", flags=re.IGNORECASE)),
         ("wgn",     re.compile(rb"^wgn\s+(\d+)", flags=re.IGNORECASE)),
         ("wmax",    re.compile(rb"^wmax\s+(\d+)", flags=re.IGNORECASE)),
         ("wmin",    re.compile(rb"^wmin\s+(\d+)", flags=re.IGNORECASE)),
+        ("wmax",    re.compile(rb"^wMin/Wmax\s+\d+/(\d+)", flags=re.IGNORECASE)),
+        ("wmin",    re.compile(rb"^wMin/Wmax\s+(\d+)/\d+", flags=re.IGNORECASE)),
     ]
 
     FLOAT_PARSE: typing.List[typing.Tuple[str, re.Pattern]] = [
@@ -480,8 +485,8 @@ class Parameters:
         ("heff",    re.compile(rb"^heff\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
         ("hmax",    re.compile(rb"^heff\s*-?\d+(?:\.\d*)?\S*\s+hmax\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
         ("hmax",    re.compile(rb"^hmax\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
-        ("mrefint", re.compile(rb"^mrefint\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
-        ("mrefslope", re.compile(rb"^mrefslope\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
+        # ("mrefint", re.compile(rb"^mrefint\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
+        # ("mrefslope", re.compile(rb"^mrefslope\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
         ("lcur",    re.compile(rb"^\(?\s*lcur\s*(\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
     ]
 
