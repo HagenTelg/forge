@@ -252,16 +252,25 @@ class Instrument(StreamingInstrument):
     async def start_communications(self) -> None:
         if self.writer:
             # Stop reports
-            self.writer.write(b"\r\rlog,off\rlogl,0\rlog,0\r")
+            self.writer.write(b"\r\rlog,off\r")
             await self.writer.drain()
-            await self.drain_reader(1.0)
-            self.writer.write(b"log,off\rlogl,0\rlog,0\r")
+            await self.drain_reader(0.25)
+            self.writer.write(b"logl,0\r")
             await self.writer.drain()
-            await self.drain_reader(1.0)
+            await self.drain_reader(0.25)
+            self.writer.write(b"log,0\r")
+            await self.writer.drain()
+            await self.drain_reader(0.25)
+            self.writer.write(b"log,off\r")
+            await self.writer.drain()
+            await self.drain_reader(0.5)
 
-            self.writer.write(b"logl,1\rlog,off\r")
+            self.writer.write(b"logl,1\r")
             await self.writer.drain()
-            await self.drain_reader(1.0)
+            await self.drain_reader(0.25)
+            self.writer.write(b"log,off\r")
+            await self.writer.drain()
+            await self.drain_reader(0.5)
 
             self.writer.write(b"hdr\r")
             await self.writer.drain()
@@ -403,7 +412,15 @@ class Instrument(StreamingInstrument):
             await self._read_parameters()
             self.data_parameters(self.active_parameters.persistent(), oneshot=True)
 
-            self.writer.write(f"labels,0\rlogl,{self._report_interval}\rlog,on\r".encode('ascii'))
+            self.writer.write(b"labels,0\r")
+            await self.writer.drain()
+            await self.drain_reader(0.25)
+
+            self.writer.write(f"logl,{self._report_interval}\r".encode('ascii'))
+            await self.writer.drain()
+            await self.drain_reader(0.25)
+
+            self.writer.write(b"log,on\r")
             await self.writer.drain()
 
         # Flush the first record
