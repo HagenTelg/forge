@@ -737,7 +737,7 @@ class StandardInstrument(BaseInstrument):
             for rec in self._records:
                 rec.start_flush(self._bypass_flush_time)
 
-    async def emit(self) -> None:
+    async def emit(self, incomplete: bool = False) -> None:
         if self._instrument_info_updated:
             self._instrument_info_updated = False
 
@@ -754,6 +754,9 @@ class StandardInstrument(BaseInstrument):
         if self._average_state_updated:
             self._average_state_updated = False
             self._update_averaging()
+
+        if incomplete:
+            return
 
         data_record: typing.Dict[str, typing.Union[float, typing.List[float]]] = dict()
         for i in self._inputs:

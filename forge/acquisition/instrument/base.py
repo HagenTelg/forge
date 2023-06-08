@@ -228,7 +228,7 @@ class BaseInstrument:
     def notification_state_changed(self) -> None:
         pass
 
-    async def emit(self) -> None:
+    async def emit(self, incomplete: bool = False) -> None:
         pass
 
     async def run(self) -> typing.NoReturn:
