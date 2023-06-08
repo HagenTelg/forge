@@ -255,22 +255,19 @@ class Instrument(StreamingInstrument):
             self.writer.write(b"\r\rlog,off\r")
             await self.writer.drain()
             await self.drain_reader(0.25)
-            self.writer.write(b"logl,0\r")
-            await self.writer.drain()
-            await self.drain_reader(0.25)
             self.writer.write(b"log,0\r")
             await self.writer.drain()
             await self.drain_reader(0.25)
             self.writer.write(b"log,off\r")
             await self.writer.drain()
-            await self.drain_reader(0.5)
+            await self.drain_reader(0.25)
 
             self.writer.write(b"logl,1\r")
             await self.writer.drain()
             await self.drain_reader(0.25)
-            self.writer.write(b"log,off\r")
+            self.writer.write(b"logl,off\r")
             await self.writer.drain()
-            await self.drain_reader(0.5)
+            await self.drain_reader(1.0)
 
             self.writer.write(b"hdr\r")
             await self.writer.drain()
@@ -420,7 +417,7 @@ class Instrument(StreamingInstrument):
             await self.writer.drain()
             await self.drain_reader(0.25)
 
-            self.writer.write(b"log,on\r")
+            self.writer.write(b"logl,on\r")
             await self.writer.drain()
 
         # Flush the first record

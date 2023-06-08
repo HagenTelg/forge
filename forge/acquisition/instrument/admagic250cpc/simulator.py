@@ -169,27 +169,25 @@ class Simulator(StreamingSimulator):
                 try:
                     if line.startswith(b'log,'):
                         if line[4:] == b"off":
-                            interval = 0
+                            await self._stop_unpolled()
                         elif line[4:] == b"on":
-                            interval = self.unpolled_interval
+                            self._unpolled_long = False
+                            await self._start_unpolled()
                         else:
                             interval = int(line[4:])
-                            if interval != 0:
-                                self._unpolled_long = False
-                        if interval <= 0:
-                            await self._stop_unpolled()
-                        else:
+                            self._unpolled_long = True
                             self.unpolled_interval = interval
-                            await self._start_unpolled()
                         self.writer.write(b'OK\r\n')
                     elif line.startswith(b'logl,'):
-                        interval = int(line[5:])
-                        if interval <= 0:
+                        if line[5:] == b"off":
                             await self._stop_unpolled()
-                        else:
-                            self.unpolled_interval = interval
+                        elif line[5:] == b"on":
                             self._unpolled_long = True
                             await self._start_unpolled()
+                        else:
+                            interval = int(line[5:])
+                            self._unpolled_long = True
+                            self.unpolled_interval = interval
                         self.writer.write(b'OK\r\n')
                     elif line == b'ver' or line == b'rv':
                         self.writer.write(b' Serial Number: 123\r\n')
