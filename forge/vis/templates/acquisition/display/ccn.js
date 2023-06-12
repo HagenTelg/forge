@@ -80,7 +80,7 @@ context.addSourceTarget((value) => {
     }
     plot_dN.y.length = 0;
     plot_dN.x.length = 0;
-    for (let i=0; i<value.length; i++)  {
+    for (let i=0; i < value.length; i++)  {
         const v = value[i];
         if (v === null || !isFinite(v) || v < 0.0) {
             continue;

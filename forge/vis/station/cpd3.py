@@ -2032,6 +2032,26 @@ class _T640Instrument(native_remapped_instrument({
         return super().translate_key(key)
 
 
+class _GrimmOPCInstrument(native_remapped_instrument({
+    "PCTbattery": "PCT1",
+    "PCTpump": "PCT2",
+    "dN": "Nb",
+}, persistent={
+    "Dp": "Ns",
+})):
+    def translate_key(self, key: NativeInstrument.DispatchKey) -> "RealtimeTranslator.Key":
+        if key.field == 'X1':
+            return RealtimeTranslator.Key("X_" + self.source,
+                                          self.FLAVORS_TRANSLATION[NativeCutSize.Size.PM1])
+        elif key.field == 'X25':
+            return RealtimeTranslator.Key("X_" + self.source,
+                                          self.FLAVORS_TRANSLATION[NativeCutSize.Size.PM2_5])
+        elif key.field == 'X10':
+            return RealtimeTranslator.Key("X_" + self.source,
+                                          self.FLAVORS_TRANSLATION[NativeCutSize.Size.PM10])
+        return super().translate_key(key)
+
+
 class RealtimeTranslator(NativeRealtimeTranslator):
     class Key:
         def __init__(self, variable: str, flavors: typing.Optional[typing.Set[str]] = None):
@@ -2235,6 +2255,7 @@ class RealtimeTranslator(NativeRealtimeTranslator):
             "BbswG": "BbswG",
             "BbswR": "BbswR",
         }),
+        "grimm110xopc": _GrimmOPCInstrument,
         "clap": native_remapped_instrument({
             "Tsample": "T1",
             "Tcase": "T2",

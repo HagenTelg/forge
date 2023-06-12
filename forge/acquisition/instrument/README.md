@@ -135,6 +135,16 @@ serial_port = "/dev/serial/by-id/..."
 - Spancheck CO<sub>2</sub> sample: 600 seconds, flush: 480 seconds
 - Spancheck air sample: 600 seconds, flush: 480 seconds
 
+## Grimm 1.10x OPC
+
+```toml
+[instrument.N71]
+type = "grimm110xopc"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+- Instrument baud rate: 9600
+
 ## Magee AE31 Aethalometer
 
 ```toml

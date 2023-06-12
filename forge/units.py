@@ -13,6 +13,10 @@ def flow_ccs_to_lpm(ccs: float) -> float:
     return flow_ccm_to_lpm(ccs * 60.0)
 
 
+def flow_m3s_to_lpm(m3s: float) -> float:
+    return m3s * (1000 * 60.0)
+
+
 def flow_lpm_to_ccm(lpm: float) -> float:
     return lpm * 1000.0
 
