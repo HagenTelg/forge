@@ -193,7 +193,7 @@ class Instrument(StreamingInstrument):
         self.writer.write(b"sus\r")
         sus = await self.read_multiple_lines(total=5.0, first=2.0, tail=1.0)
         self._raw_parameters = "\n".join([l.decode('utf-8', 'backslashreplace') for l in sus])
-        if sus[0].startswith(b"sus"):
+        if sus[0].startswith(b"sus") or sus[0].startswith(b"su:"):
             del sus[0]
         self.active_parameters.parse_sus(sus)
 
@@ -202,8 +202,10 @@ class Instrument(StreamingInstrument):
             resp = await self.read_multiple_lines(total=5.0, first=2.0, tail=1.0)
             self._raw_parameters += "\n\n"
             self._raw_parameters += "\n".join([l.decode('utf-8', 'backslashreplace') for l in resp])
-            if resp[0].startswith(t):
+            if resp[0].startswith(t) and b':' not in resp[0]:
                 del resp[0]
+            if b':' in resp[0]:
+                resp[0] =  (resp[0].split(b':', 1))[1].strip()
             target = getattr(self.active_parameters, t.decode('ascii'), None)
             if target is None:
                 target = self.active_parameters.Temperature()
@@ -225,8 +227,10 @@ class Instrument(StreamingInstrument):
             _LOGGER.debug(f"Setting parameter {cmd.decode('ascii')}")
             self.writer.write(cmd + b"\r")
             data: bytes = await wait_cancelable(self.read_line(), 2.0)
-            if data.startswith(cmd.split(b',', 1)[0]):  # Ignore the echo
+            if data.startswith(cmd.split(b',', 1)[0]) and b':' not in data:  # Ignore the echo
                 data: bytes = await wait_cancelable(self.read_line(), 2.0)
+            if b':' in data:
+                data: bytes = (data.split(b':', 1))[1].strip()
             if data != b"OK":
                 raise CommunicationsError(f"error setting parameter {cmd}: {data}")
 
@@ -267,7 +271,7 @@ class Instrument(StreamingInstrument):
             await self.drain_reader(0.25)
             self.writer.write(b"logl,off\r")
             await self.writer.drain()
-            await self.drain_reader(1.0)
+            await self.drain_reader(self._report_interval * 2.0 + 1.0)
 
             self.writer.write(b"hdr\r")
             await self.writer.drain()
@@ -316,7 +320,7 @@ class Instrument(StreamingInstrument):
                         self._record_fields.append(None)
                     elif field_name == b"humidifer exit dp":
                         self._record_fields.append(lambda TDgrowth: self.data_TDgrowth(parse_number(TDgrowth)))
-                    elif field_name == b"wadc":
+                    elif field_name == b"wadc" or field_name == b"wickadc":
                         self._have_wadc = True
                         self._record_fields.append(lambda Cwick: self.data_Cwick(parse_number(Cwick)))
                     elif field_name == b"board temperature":
@@ -360,8 +364,10 @@ class Instrument(StreamingInstrument):
             self.writer.write(b"wadc\r")
             await self.writer.drain()
             data: bytes = await wait_cancelable(self.read_line(), 2.0)
-            if data.startswith(b"wadc"):  # Ignore the echo
+            if data.startswith(b"wadc") and b':' not in data:  # Ignore the echo
                 data: bytes = await wait_cancelable(self.read_line(), 2.0)
+            if b':' in data:
+                data: bytes = (data.split(b':', 1))[1].strip()
             wadc = parse_number(data)
             if wadc < 0 or wadc > 1023:
                 raise CommunicationsError(f"wadc read: {hdr}")
@@ -391,16 +397,20 @@ class Instrument(StreamingInstrument):
             self.writer.write(f"rtc,{ts.tm_hour:02}:{ts.tm_min:02}:{ts.tm_sec:02}\r".encode('ascii'))
             await self.writer.drain()
             data: bytes = await wait_cancelable(self.read_line(), 2.0)
-            if data.startswith(b"rtc,"):  # Ignore the echo
+            if data.startswith(b"rtc,") and not data.endswith(b': OK'):  # Ignore the echo
                 data: bytes = await wait_cancelable(self.read_line(), 2.0)
+            if b':' in data:
+                data: bytes = (data.split(b':'))[-1].strip()
             if data != b"OK":
                 raise CommunicationsError(f"set time response: {data}")
 
             self.writer.write(f"rtc,{ts.tm_year%100:02}/{ts.tm_mon:02}/{ts.tm_mday:02}\r".encode('ascii'))
             await self.writer.drain()
             data: bytes = await wait_cancelable(self.read_line(), 2.0)
-            if data.startswith(b"rtc,"):  # Ignore the echo
+            if data.startswith(b"rtc,") and b':' not in data:  # Ignore the echo
                 data: bytes = await wait_cancelable(self.read_line(), 2.0)
+            if b':' in data:
+                data: bytes = (data.split(b':', 1))[1].strip()
             if data != b"OK":
                 raise CommunicationsError(f"set date response: {data}")
 
@@ -433,9 +443,19 @@ class Instrument(StreamingInstrument):
         if not self._apply_parameters and not self._save_request:
             return
 
-        self.writer.write(b"\r\rlog,0\rlogl,0\rlog,off\r")
+        self.writer.write(b"log,0\r")
         await self.writer.drain()
-        await self.drain_reader(1.0)
+        await self.drain_reader(0.25)
+        self.writer.write(b"log,off\r")
+        await self.writer.drain()
+        await self.drain_reader(0.25)
+
+        self.writer.write(b"logl,0\r")
+        await self.writer.drain()
+        await self.drain_reader(0.25)
+        self.writer.write(b"logl,off\r")
+        await self.writer.drain()
+        await self.drain_reader(self._report_interval * 2.0 + 1.0)
 
         if self._apply_parameters:
             await self._set_pending_parameters()
@@ -447,9 +467,15 @@ class Instrument(StreamingInstrument):
             self._save_request = False
             self.writer.write(b"svs\r")
             await self.writer.drain()
+            await self.drain_reader(5.0)
 
-        self.writer.write(f"logl,{self._report_interval}\rlog,on\r".encode('ascii'))
+        self.writer.write(f"logl,{self._report_interval}\r".encode('ascii'))
         await self.writer.drain()
+        await self.drain_reader(0.25)
+
+        self.writer.write(b"logl,on\r")
+        await self.writer.drain()
+
         await self.drain_reader(0.5)
         await wait_cancelable(self.read_line(), self._report_interval * 3 + 5)
 
