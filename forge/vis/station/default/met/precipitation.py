@@ -3,6 +3,36 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class Precipitation(TimeSeries):
+    ACCUMULATE_INCOMING = r"""(function() {
+const plotIncomingData = incomingData;
+let priorInterval = undefined;
+let priorEpoch = undefined;
+let total = 0.0;
+incomingData = (plotTime, values, epoch) => {
+    const output = values.slice();
+    for (let i=0; i < epoch.length; i++) {
+        const interval = Math.floor(epoch[i] / (24 * 60 * 60 * 1000));
+        if (interval != priorInterval) {
+            priorInterval = interval;
+            total = 0.0;
+        }
+        
+        let elapsed = 60 * 1000;
+        if (isFinite(priorEpoch)) {
+            elapsed = epoch[i] - priorEpoch;
+        }
+        priorEpoch = epoch[i];
+        
+        if (isFinite(values[i])) {
+            const perMS = values[i] / (60 * 60 * 1000);
+            total += perMS * elapsed;
+        }
+        output[i] = total;
+    }
+    plotIncomingData(plotTime, output, epoch);
+};
+})();"""
+
     def __init__(self, mode: str, **kwargs):
         super().__init__(**kwargs)
 
@@ -32,33 +62,5 @@ class Precipitation(TimeSeries):
         total.legend = "Total"
         total.data_record = f'{mode}-precipitation'
         total.data_field = 'precipitation'
-        total.script_incoming_data = r"""(function() {
-const plotIncomingData = incomingData;
-let priorInterval = undefined;
-let priorEpoch = undefined;
-let total = 0.0;
-incomingData = (plotTime, values, epoch) => {
-    const output = values.slice();
-    for (let i=0; i < epoch.length; i++) {
-        const interval = Math.floor(epoch[i] / (24 * 60 * 60 * 1000));
-        if (interval != priorInterval) {
-            priorInterval = interval;
-            total = 0.0;
-        }
-        
-        let elapsed = 60 * 1000;
-        if (isFinite(priorEpoch)) {
-            elapsed = epoch[i] - priorEpoch;
-        }
-        priorEpoch = epoch[i];
-        
-        if (isFinite(values[i])) {
-            const perMS = values[i] / (60 * 60 * 1000);
-            total += perMS * elapsed;
-        }
-        output[i] = total;
-    }
-    plotIncomingData(plotTime, output, epoch);
-};
-})();"""
+        total.script_incoming_data = self.ACCUMULATE_INCOMING
         precipitation.traces.append(total)
