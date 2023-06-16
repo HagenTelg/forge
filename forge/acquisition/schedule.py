@@ -58,10 +58,10 @@ class Schedule:
             return result
 
         def __repr__(self) -> str:
-            return self.describe_offset()
+            return "Schedule.Active(" + self.describe_offset() + ")"
 
         def __str__(self):
-            return "Schedule.Active(" + self.describe_offset() + ")"
+            return self.describe_offset()
 
     def __init__(self, config: LayeredConfiguration, single_entry: bool = False):
         self.active: typing.List[Schedule.Active] = list()

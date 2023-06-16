@@ -49,18 +49,26 @@ class CutSize(Schedule):
             elif self == CutSize.Size.WHOLE:
                 return "WHOLE"
 
+        def __repr__(self) -> str:
+            return f"Size({str(self)})"
+
     class Active(Schedule.Active):
         def __init__(self, config: LayeredConfiguration):
             super().__init__(config)
 
-            if not isinstance(config, LayeredConfiguration):
-                self.size = CutSize.Size.parse(config)
-            else:
+            if isinstance(config, LayeredConfiguration):
                 constant_config = config.constant()
                 if constant_config is not None:
                     self.size = CutSize.Size.parse(constant_config)
                 else:
                     self.size = CutSize.Size.parse(config.get("SIZE"))
+            elif isinstance(config, dict):
+                self.size = CutSize.Size.parse(config.get("SIZE"))
+            else:
+                self.size = CutSize.Size.parse(config)
+
+        def __repr__(self) -> str:
+            return f"CutSize.Active({self.describe_offset()}={str(self.size)})"
 
     def __init__(self, config: typing.Optional[typing.Union[LayeredConfiguration, str, float, bool]],
                  single_entry: bool = False):

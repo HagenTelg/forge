@@ -285,7 +285,7 @@ class StandardInstrument(BaseInstrument):
         return VariableRate(self, source, name, code, attributes)
 
     def variable_last_valid(self, source: Input, name: str = None, code: str = None,
-                 attributes: typing.Dict[str, typing.Any] = None) -> VariableRate:
+                 attributes: typing.Dict[str, typing.Any] = None) -> VariableLastValid:
         if not attributes:
             attributes = dict()
         return VariableLastValid(self, source, name, code, attributes)

@@ -32,14 +32,15 @@ class Simulator(StreamingSimulator):
         self.data_Alaser = 2.25
 
         self.data_Cb = []
-        self.data_dN = []
-        ccs = self.data_Q * flow_lpm_to_ccs(self.data_Q)
         for i in range(10):
-            Cb = (i + 1) * 5
-            self.data_Cb.append(Cb)
-            self.data_dN.append(Cb / ccs)
+            self.data_Cb.append((i + 1) * 5)
 
         self.flags = 0
+
+    @property
+    def data_dN(self) -> typing.List[float]:
+        ccs = flow_lpm_to_ccs(self.data_Q)
+        return [c / ccs for c in self.data_Cb]
 
     async def run(self) -> typing.NoReturn:
         while True:

@@ -60,7 +60,7 @@ class Simulator(StreamingSimulator):
         ]
 
     @property
-    def data_dC(self) -> typing.List[float]:
+    def data_Cb(self) -> typing.List[float]:
         return [
             self.data_Csum[i] - self.data_Csum[i+1] if i+1 < len(self.data_Csum) else self.data_Csum[i]
             for i in range(len(self.data_Csum))
@@ -69,8 +69,7 @@ class Simulator(StreamingSimulator):
     @property
     def data_dN(self) -> typing.List[float]:
         factor = self.flow_correction / (flow_lpm_to_ccs(self.data_Q) * 6.0)
-        dC = self.data_dC
-        return [c * factor for c in dC]
+        return [c * factor for c in self.data_Cb]
 
     @property
     def data_N(self) -> float:
@@ -205,7 +204,7 @@ class Simulator(StreamingSimulator):
                             if self.mass_concentrations:
                                 self.writer.write(b"Mean PM10:     0.0 ; PM2.5:     0.0 ; PM1:     0.0\r")
                             else:
-                                self._output_array(self.data_dC, b"Mc")
+                                self._output_array(self.data_Cb, b"Mc")
                             elapsed = time.monotonic() - self._volume_begin_time
                             total_volume = flow_lpm_to_m3s(self.data_Q) * elapsed
                             self.writer.write(f"V: {total_volume:.6f} m3\r".encode('ascii'))

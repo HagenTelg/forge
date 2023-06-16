@@ -116,6 +116,17 @@ Q = [0.0, 1.082]
 - Instrument baud rate: 115200
 - Display letter: P
 
+## DMT CCN
+
+```toml
+[instruments.N11]
+type = "dmtccn"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+- Instrument baud rate: 9600
+
 ## Ecotech Aurora 3000/4000 Nephelometer
 
 ```toml
