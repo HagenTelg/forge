@@ -98,7 +98,7 @@ class ModbusException(CommunicationsError):
 def _ascii_lrc(data: typing.Iterable[int]) -> int:
     s = sum(data)
     s = -s
-    return s % 0xFF
+    return s & 0xFF
 
 
 async def _read_mapped_inner(indices: typing.Iterable[int], span_gaps: bool,
@@ -551,7 +551,7 @@ class ModbusSimulator(StreamingSimulator):
             data = await self._read_inner_data(function_code, self.reader.readexactly)
             received_crc = struct.unpack('<H', await self.reader.readexactly(2))[0]  # CRC is little endian
             frame = header + data
-            calculated_crc = self._rtu_crc.cchecksum(frame)
+            calculated_crc = self._rtu_crc.checksum(frame)
             if received_crc != calculated_crc:
                 raise ValueError(f"CRC mismatch {calculated_crc:04X} vs {received_crc:04X} for {frame}")
             if address != 255 and self.station_address != 255 and address != self.station_address:
@@ -653,7 +653,7 @@ class ModbusSimulator(StreamingSimulator):
                     await self.set_coil_value(index, value != 0)
                     await self._send_data(function_code, data)
                 elif function_code == 15:
-                    first, count, byte_count = struct.unpack('>HH', data[:4])
+                    first, count, byte_count = struct.unpack('>HHB', data[:5])
                     if byte_count != (count + 7) // 8:
                         raise ModbusException(ModbusExceptionCode.ILLEGAL_DATA_VALUE, function_code=function_code)
                     data = data[5:]
