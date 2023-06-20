@@ -1,5 +1,5 @@
 import typing
-from ..cpd3 import Export, ExportList, DataExportList, DataExport, Name, export_profile_get, export_profile_lookup, detach, profile_export
+from ..cpd3 import Export, ExportList, DataExportList, DataExport, NativeExport, Name, export_profile_get, export_profile_lookup, detach, profile_export
 
 
 station_profile_export = detach(profile_export)
@@ -198,6 +198,23 @@ station_profile_export['aerosol']['avgh'].insert(
             Name(station, 'avgh', 'XR_A42'),
         },
     )),
+)
+
+
+station_profile_export['aerosol']['raw'].insert(
+    DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
+        start_epoch_ms, end_epoch_ms, directory, station, 'raw',
+    ))
+)
+station_profile_export['aerosol']['clean'].insert(
+    DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
+        start_epoch_ms, end_epoch_ms, directory, station, 'clean',
+    ))
+)
+station_profile_export['aerosol']['avgh'].insert(
+    DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
+        start_epoch_ms, end_epoch_ms, directory, station, 'avgh',
+    ))
 )
 
 
