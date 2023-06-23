@@ -20,6 +20,7 @@ class Acquisition(BaseAcquisition):
         super().__init__(mode_name, display_name, **kwargs)
 
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3760cpc'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('tsi375xcpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi377xcpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3010cpc'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3781cpc'))
@@ -54,6 +55,7 @@ class Acquisition(BaseAcquisition):
 
 
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3760cpc', priority=4000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('tsi375xcpc', priority=4000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi377xcpc', priority=4000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3010cpc', priority=4000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3781cpc', priority=4000))
@@ -95,6 +97,7 @@ _type_display: typing.Dict[str, Display] = {
 _default_summary = BasicSummary()
 _type_summary: typing.Dict[str, SummaryItem] = {
     'tsi3760cpc': ParameterSummary('cpc', {'instrument': "TSI 3760"}),
+    'tsi375xcpc': ParameterSummary('cpc', {'instrument': "TSI 375x"}),
     'tsi377xcpc': ParameterSummary('cpc', {'instrument': "TSI 377x"}),
     'tsi3010cpc': ParameterSummary('cpc', {'instrument': "TSI 3010"}),
     'tsi3781cpc': ParameterSummary('cpc', {'instrument': "TSI 3781"}),

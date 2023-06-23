@@ -2314,6 +2314,16 @@ class RealtimeTranslator(NativeRealtimeTranslator):
             "Tcondenser": "T2",
             "Toptics": "T3",
         }),
+        "tsi375xcpc": native_remapped_instrument({
+            "PDnozzle": "Pd1",
+            "PDorifice": "Pd2",
+            "Alaser": "A",
+            "Qinlet": "Qu",
+            "Tsaturator": "T1",
+            "Tcondenser": "T2",
+            "Toptics": "T3",
+            "Tcabinet": "T4",
+        }),
         "tsi377xcpc": native_remapped_instrument({
             "PDnozzle": "Pd1",
             "PDorifice": "Pd2",
