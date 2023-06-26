@@ -67,3 +67,13 @@ class Green(TimeSeries):
             self.processing[trace.data_record] = self.AdjustWavelength(OrderedDict([
                 ('BaB', 467), ('BaG', 528), ('BaR', 652),
             ]))
+
+        aethalometer = TimeSeries.Trace(Mm_1)
+        aethalometer.legend = "Aethalometer"
+        aethalometer.data_record = f'{mode}-aethalometer'
+        aethalometer.data_field = 'G'
+        absorption.traces.append(aethalometer)
+        input_fields = OrderedDict()
+        for index in range(len(AethalometerOptical.SevenWavelength.WAVELENGTH_NM)):
+            input_fields[f'Ba{index + 1}'] = AethalometerOptical.SevenWavelength.WAVELENGTH_NM[index]
+        self.processing[aethalometer.data_record] = self.AdjustWavelength(input_fields)
