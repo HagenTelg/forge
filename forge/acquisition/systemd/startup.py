@@ -17,6 +17,7 @@ _DATA_OUTPUT_USER: str = None
 _COMPLETED_DATA_DIRECTORY: str = None
 _STATE_LOCATION_DIRECTORY: str = None
 _SERIAL_ACCESS_GROUPS: typing.List[str] = list()
+_IMPORT_ROOT: str = None
 _EXECUTABLE_LOCATION: str = None
 _ENABLE_DEBUG: bool = False
 
@@ -180,6 +181,17 @@ def start_instrument(source: str) -> None:
     if not instrument_type:
         _LOGGER.warning(f"Instrument {source} has no type, skipping")
         return
+    if '/' in instrument_type:
+        instrument_type = Path(instrument_type)
+        if _IMPORT_ROOT:
+            instrument_type = (Path(_IMPORT_ROOT) / instrument_type).resolve()
+            if not Path(_IMPORT_ROOT).resolve() in instrument_type.parents:
+                _LOGGER.warning(f"Instrument type {instrument_type} in {source} is outside of root, skipping")
+                return
+        instrument_type = str(instrument_type.absolute())
+    elif '..' in instrument_type:
+        _LOGGER.warning(f"Instrument type {instrument_type} in {source} is invalid, skipping")
+        return
 
     instrument_unit_name = f"forge-instrument-{source}.service"
     release_transient_unit(instrument_unit_name)
@@ -309,6 +321,9 @@ def main():
     parser.add_argument('--executable-path',
                         dest='executable_path', default=sys.path[0],
                         help="absolute path to search for Forge executables in")
+    parser.add_argument('--import-path',
+                        dest='import_path',
+                        help="absolute path to search for type imports in")
 
     parser.add_argument('--serial-group',
                         dest='serial_groups', action='append',
@@ -339,6 +354,8 @@ def main():
     _STATE_LOCATION_DIRECTORY = args.state_location
     global _EXECUTABLE_LOCATION
     _EXECUTABLE_LOCATION = args.executable_path
+    global _IMPORT_ROOT
+    _IMPORT_ROOT = args.import_path
 
     bus = dbus.SystemBus()
     pid1 = bus.get_object("org.freedesktop.systemd1", "/org/freedesktop/systemd1")

@@ -3,6 +3,7 @@ import asyncio
 import signal
 import argparse
 import logging
+import importlib.util
 from importlib import import_module
 from forge.acquisition import CONFIGURATION
 from .base import BaseControl
@@ -37,7 +38,11 @@ def main():
         root_logger.setLevel(logging.DEBUG)
         root_logger.addHandler(handler)
 
-    import_module('.', 'forge.acquisition.control.' + args.type).main()
+    if '/' in args.type:
+        spec = importlib.util.spec_from_file_location("forge.acquisition.control.external", args.type)
+        importlib.util.module_from_spec(spec).main()
+    else:
+        import_module('.', 'forge.acquisition.control.' + args.type).main()
 
 
 def run(control: BaseControl, systemd: bool = False) -> None:

@@ -3,6 +3,7 @@ import asyncio
 import signal
 import argparse
 import logging
+import importlib.util
 from importlib import import_module
 from pathlib import Path
 from forge.acquisition import LayeredConfiguration, CONFIGURATION
@@ -51,7 +52,11 @@ def main():
         root_logger.setLevel(logging.DEBUG)
         root_logger.addHandler(handler)
 
-    import_module('.', 'forge.acquisition.instrument.' + args.type).main()
+    if '/' in args.type:
+        spec = importlib.util.spec_from_file_location("forge.acquisition.instrument.external", args.type)
+        importlib.util.module_from_spec(spec).main()
+    else:
+        import_module('.', 'forge.acquisition.instrument.' + args.type).main()
 
 
 def instrument_config(args: argparse.Namespace) -> LayeredConfiguration:
