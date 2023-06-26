@@ -4,6 +4,7 @@ from ..default.mode import Mode, ViewList, detach, aerosol_modes
 
 station_modes = detach(aerosol_modes)
 
+
 station_modes['aerosol-raw'].remove('aerosol-raw-wind')
 station_modes['aerosol-realtime'].remove('aerosol-realtime-wind')
 station_modes['aerosol-editing'].remove('aerosol-editing-wind')

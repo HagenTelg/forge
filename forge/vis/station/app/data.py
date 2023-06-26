@@ -5,6 +5,93 @@ from ..cpd3 import DataStream, DataReader, EditedReader, RealtimeTranslator, Nam
 station_profile_data = detach(profile_data)
 
 
+station_profile_data['aerosol']['raw']['aethalometer'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, dict(
+        [(Name(station, 'raw', f'Ba{i+1}_A81'), f'Ba{i+1}') for i in range(7)] +
+        [(Name(station, 'raw', f'X{i+1}_A81'), f'X{i+1}') for i in range(7)] +
+        [(Name(station, 'raw', f'ZFACTOR{i+1}_A81'), f'CF{i+1}') for i in range(7)] +
+        [(Name(station, 'raw', f'Ir{i+1}_A81'), f'Ir{i+1}') for i in range(7)] +
+        [(Name(station, 'raw', f'Ba{i+1}_A81', {'pm1'}), f'Ba{i+1}') for i in range(7)] +
+        [(Name(station, 'raw', f'X{i+1}_A81', {'pm1'}), f'X{i+1}') for i in range(7)] +
+        [(Name(station, 'raw', f'ZFACTOR{i+1}_A81', {'pm1'}), f'CF{i+1}') for i in range(7)] +
+        [(Name(station, 'raw', f'Ir{i+1}_A81', {'pm1'}), f'Ir{i+1}') for i in range(7)]
+    ), send
+)
+station_profile_data['aerosol']['raw']['aethalometerstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'T1_A81'): 'Tcontroller',
+        Name(station, 'raw', 'T2_A81'): 'Tsupply',
+        Name(station, 'raw', 'T3_A81'): 'Tled',
+        Name(station, 'raw', 'Q1_A81'): 'Q1',
+        Name(station, 'raw', 'Q2_A81'): 'Q2',
+        Name(station, 'raw', 'T1_A81', {'pm1'}): 'Tcontroller',
+        Name(station, 'raw', 'T2_A81', {'pm1'}): 'Tsupply',
+        Name(station, 'raw', 'T3_A81', {'pm1'}): 'Tled',
+        Name(station, 'raw', 'Q1_A81', {'pm1'}): 'Q1',
+        Name(station, 'raw', 'Q2_A81', {'pm1'}): 'Q2',
+    }, send
+)
+station_profile_data['aerosol']['realtime']['aethalometer'] = dict(
+    [(RealtimeTranslator.Key(f'Ba{i+1}_A81'), f'Ba{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'X{i+1}_A81'), f'X{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'ZFACTOR{i+1}_A81'), f'CF{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'Ir{i+1}_A81'), f'Ir{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'Ba{i+1}_A81', {'pm1'}), f'Ba{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'X{i+1}_A81', {'pm1'}), f'X{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'ZFACTOR{i+1}_A81', {'pm1'}), f'CF{i+1}') for i in range(7)] +
+    [(RealtimeTranslator.Key(f'Ir{i+1}_A81', {'pm1'}), f'Ir{i+1}') for i in range(7)]
+)
+station_profile_data['aerosol']['realtime']['aethalometerstatus'] = {
+    RealtimeTranslator.Key('T1_A81'): 'Tcontroller',
+    RealtimeTranslator.Key('T2_A81'): 'Tsupply',
+    RealtimeTranslator.Key('T3_A81'): 'Tled',
+    RealtimeTranslator.Key('Q1_A81'): 'Q1',
+    RealtimeTranslator.Key('Q2_A81'): 'Q2',
+    RealtimeTranslator.Key('T1_A81', {'pm1'}): 'Tcontroller',
+    RealtimeTranslator.Key('T2_A81', {'pm1'}): 'Tsupply',
+    RealtimeTranslator.Key('T3_A81', {'pm1'}): 'Tled',
+    RealtimeTranslator.Key('Q1_A81', {'pm1'}): 'Q1',
+    RealtimeTranslator.Key('Q2_A81', {'pm1'}): 'Q2',
+}
+station_profile_data['aerosol']['clean']['aethalometer'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, dict(
+        [(Name(station, 'clean', f'Ba{i+1}_A81'), f'Ba{i+1}') for i in range(7)] +
+        [(Name(station, 'clean', f'X{i+1}_A81'), f'X{i+1}') for i in range(7)] +
+        [(Name(station, 'clean', f'ZFACTOR{i+1}_A81'), f'CF{i+1}') for i in range(7)] +
+        [(Name(station, 'clean', f'Ir{i+1}_A81'), f'Ir{i+1}') for i in range(7)] +
+        [(Name(station, 'clean', f'Ba{i+1}_A81', {'pm1'}), f'Ba{i+1}') for i in range(7)] +
+        [(Name(station, 'clean', f'X{i+1}_A81', {'pm1'}), f'X{i+1}') for i in range(7)] +
+        [(Name(station, 'clean', f'ZFACTOR{i+1}_A81', {'pm1'}), f'CF{i+1}') for i in range(7)] +
+        [(Name(station, 'clean', f'Ir{i+1}_A81', {'pm1'}), f'Ir{i+1}') for i in range(7)]
+    ), send
+)
+station_profile_data['aerosol']['avgh']['aethalometer'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, dict(
+        [(Name(station, 'avgh', f'Ba{i+1}_A81'), f'Ba{i+1}') for i in range(7)] +
+        [(Name(station, 'avgh', f'X{i+1}_A81'), f'X{i+1}') for i in range(7)] +
+        [(Name(station, 'avgh', f'ZFACTOR{i+1}_A81'), f'CF{i+1}') for i in range(7)] +
+        [(Name(station, 'avgh', f'Ir{i+1}_A81'), f'Ir{i+1}') for i in range(7)] +
+        [(Name(station, 'avgh', f'Ba{i+1}_A81', {'pm1'}), f'Ba{i+1}') for i in range(7)] +
+        [(Name(station, 'avgh', f'X{i+1}_A81', {'pm1'}), f'X{i+1}') for i in range(7)] +
+        [(Name(station, 'avgh', f'ZFACTOR{i+1}_A81', {'pm1'}), f'CF{i+1}') for i in range(7)] +
+        [(Name(station, 'avgh', f'Ir{i+1}_A81', {'pm1'}), f'Ir{i+1}') for i in range(7)]
+    ), send
+)
+station_profile_data['aerosol']['editing']['aethalometer'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+    start_epoch_ms, end_epoch_ms, station, 'aerosol', dict(
+        [(Name(station, 'clean', f'Ba{i + 1}_A81'), f'Ba{i + 1}') for i in range(7)] +
+        [(Name(station, 'clean', f'X{i + 1}_A81'), f'X{i + 1}') for i in range(7)] +
+        [(Name(station, 'clean', f'ZFACTOR{i + 1}_A81'), f'CF{i + 1}') for i in range(7)] +
+        [(Name(station, 'clean', f'Ir{i + 1}_A81'), f'Ir{i + 1}') for i in range(7)] +
+        [(Name(station, 'clean', f'Ba{i + 1}_A81', {'pm1'}), f'Ba{i + 1}') for i in range(7)] +
+        [(Name(station, 'clean', f'X{i + 1}_A81', {'pm1'}), f'X{i + 1}') for i in range(7)] +
+        [(Name(station, 'clean', f'ZFACTOR{i + 1}_A81', {'pm1'}), f'CF{i + 1}') for i in range(7)] +
+        [(Name(station, 'clean', f'Ir{i + 1}_A81', {'pm1'}), f'Ir{i + 1}') for i in range(7)]
+    ), send
+)
+
+
+
 station_profile_data['aerosol']['raw']['scattering2-pm10'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'BsB_S12', {'pm10'}): 'BsB',
