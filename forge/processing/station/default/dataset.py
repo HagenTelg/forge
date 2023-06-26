@@ -53,9 +53,9 @@ def keywords(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typ
 
 
 def doi(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    if tags and 'ozone' in tags:
+    if tags and ('ozone' in tags and 'aerosol' not in tags):
         return "10.7289/V57P8WBF"
-    if tags and 'met' in tags:
+    if tags and ('met' in tags and 'aerosol' not in tags):
         return None
     return None
 
@@ -77,7 +77,7 @@ def references(station: str, tags: typing.Optional[typing.Set[str]] = None) -> t
     if tags and 'ozone' in tags:
         return """WMO/GAW Report No. 209, Guidelines for Continuous Measurements of Ozone in the Troposphere, 2013, available at https://www.wmo.int/pages/prog/arep/gaw/documents/Final_GAW_209_web.pdf
 Oltmans, S. J. and Lefohn, A. S. and Scheel, H. E. and Harris, J. M. and Levy, H. and Galbally, I. E. and Brunke, E.-G. and Meyer, C. P. and Lathrop, J. A. and Johnson, B. J. and Shadwick, D. S. and Cuevas, E. and Schmidlin, F. J. and Tarasick, D. W. and Claude, H. and Kerr, J. B. and Uchino, O. and Mohnen, V., Trends of ozone in the troposphere, in Geophysical Research Letters 1998, Issue 1944-8007, Vol 25, Num 2, pg 139-142, http://dx.doi.org/10.1029/97GL03505, available at http://onlinelibrary.wiley.com/doi/10.1029/97GL03505/abstract"""
-    if tags and 'met' in tags:
+    if tags and ('met' in tags and 'aerosol' not in tags):
         return """Mefford, T.K., M. Bieniulis, B. Halter, and J. Peterson, Meteorological Measurements, in CMDL Summary Report 1994 - 1995, No. 23, 1996, pg. 17.
 Herbert, G., M. Bieniulis, T. Mefford, and K. Thaut, Acquisition and Data Management Division, in CMDL Summary Report 1993, No. 22, 1994, pg. 57
 Herbert, G.A., J. Harris, M. Bieniulis, and J. McCutcheon, Acquisition and Data Management, in CMDL Summary Report 1989, No. 18, 1990, Pg. 50.
@@ -103,17 +103,17 @@ def creator_type(station: str, tags: typing.Optional[typing.Set[str]] = None) ->
 
 
 def creator_name(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    if tags and 'ozone' in tags:
+    if tags and ('ozone' in tags and 'aerosol' not in tags):
         return "Ozone and Water Vapor (OZWV)"
-    if tags and 'met' in tags:
+    if tags and ('met' in tags and 'aerosol' not in tags):
         return "GML Observatory Operations (OBOP)"
     return "Global Radiation and Aerosols (GRAD)"
 
 
 def creator_email(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    if tags and 'ozone' in tags:
+    if tags and ('ozone' in tags and 'aerosol' not in tags):
         return "gml.ozwv@noaa.gov"
-    if tags and 'met' in tags:
+    if tags and ('met' in tags and 'aerosol' not in tags):
         return "gmd.met@noaa.gov"
     return "gml.grad@noaa.gov"
 
@@ -123,9 +123,9 @@ def creator_institution(station: str, tags: typing.Optional[typing.Set[str]] = N
 
 
 def creator_url(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    if tags and 'ozone' in tags:
+    if tags and ('ozone' in tags and 'aerosol' not in tags):
         return "https://gml.noaa.gov/ozwv/"
-    if tags and 'met' in tags:
+    if tags and ('met' in tags and 'aerosol' not in tags):
         return "https://gml.noaa.gov/obop/"
     return "https://gml.noaa.gov/grad/"
 

@@ -51,3 +51,11 @@ def mass_ng_to_ug(m: float) -> float:
 
 def concentration_ppm_to_ppb(x: float) -> float:
     return x * 1000.0
+
+
+def distance_m_to_km(x: float) -> float:
+    return x / 1000.0
+
+
+def distance_km_to_m(x: float) -> float:
+    return x * 1000.0

@@ -213,7 +213,7 @@ class Parameters:
         target.constants.append(_Integer(self, "doslope", {
             'long_name': "slope of the detector offset to laser power",
             'C_format': "%3llu",
-            'units': "mV/mW",
+            'units': "mV mW-1",
         }))
         target.constants.append(_Integer(self, "doint", {
             'long_name': "intercept of the detector offset to laser power",
@@ -252,7 +252,7 @@ class Parameters:
         target.constants.append(_Integer(self, "qtrg", {
             'long_name': "target volumetric flow rate",
             'C_format': "%3llu",
-            'units': "cm3/min",
+            'units': "cm3 min-1",
         }))
         target.constants.append(_Integer(self, "wtrg", {
             'long_name': "target wick saturation percentage",
@@ -272,7 +272,7 @@ class Parameters:
         target.constants.append(_Integer(self, "wgn", {
             'long_name': "feedback gain used in the moderator setpoint calculation",
             'C_format': "%3llu",
-            'units': "cdegC/%",
+            'units': "cdegC %-1",
         }))
         target.constants.append(_Integer(self, "wmax", {
             'long_name': "raw wick sensor reading corresponding to 0% saturation",
@@ -322,7 +322,7 @@ class Parameters:
         # target.constants.append(_Float(self, "mrefslope", {
         #     'long_name': "moderator reference slope parameter in setpoint calculation",
         #     'C_format': "%5.2f",
-        #     'units': "1",   # degC/degC
+        #     'units': "1",   # degC degC-1
         # }))
 
         class _TemperatureSetpoint(BaseDataOutput.Float):

@@ -346,6 +346,17 @@ Q = [ -0.046, 1.6624 ] # 2015-05-05 PJS@MLO
 
 - Instrument baud rate: 38400
 
+## Vaisala PWDx2 series weather monitor
+
+```toml
+[instrument.XM1]
+type = "vaisalapwdx2"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+- Instrument baud rate: 9600 (7 data bits, even parity)
+
 ## Azonix 𝜇MAC 1050
 
 ```toml

@@ -9,29 +9,29 @@
         <thead>
             <tr>
                 <th></th>
-                <th>Instantaneous/1 Minute</th>
-                <th>10/15 Minute</th>
                 <th>1 Hour</th>
+                <th>10/15 Minute</th>
+                <th>Instantaneous<br>1 Minute</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td>Visibility (km)</td>
-                <td class="value-formatted" field="WZ" decimals="3"></td>
+                <td></td>
                 <td class="value-formatted" field="WZ10Min" decimals="3"></td>
-                <td></td>
+                <td class="value-formatted" field="WZ" decimals="3"></td>
             </tr>
             <tr>
-                <td>Weather code</td>
-                <td class="value-formatted" field="WX" digits="2" decimals="0" rightpad="4"></td>
-                <td class="value-formatted" field="WX15Min" digits="2" decimals="0" rightpad="4"></td>
+                <td>SYNOP code</td>
                 <td class="value-formatted" field="WX1Hour" digits="2" decimals="0" rightpad="4"></td>
+                <td class="value-formatted" field="WX15Min" digits="2" decimals="0" rightpad="4"></td>
+                <td class="value-formatted" field="WX" digits="2" decimals="0" rightpad="4"></td>
             </tr>
             <tr>
-                <td>NWS Code</td>
+                <td>NWS code</td>
+                <td></td>
+                <td></td>
                 <td class="value-raw" field="nws_code" rightpad="4"></td>
-                <td></td>
-                <td></td>
             </tr>
         </tbody>
     </table>
@@ -56,7 +56,7 @@
             <tr> <td>Offset (Hz)</td>                   <td class="value-formatted" field="Coffset" decimals="2" rightpad="1"></td> </tr>
             <tr> <td>Drift (Hz)</td>                    <td class="value-formatted" field="Cdrift" decimals="2" rightpad="1"></td> </tr>
             <tr> <td>DRD rain (Hz)</td>                 <td class="value-formatted" field="Cdrd" decimals="2" rightpad="1"></td> </tr>
-            <tr> <td>Background luminance (cd/²)</td>   <td class="value-formatted" field="I" decimals="2" rightpad="1"></td> </tr>
+            <tr> <td>Background luminance (cd/m²)</td>   <td class="value-formatted" field="I" decimals="2" rightpad="1"></td> </tr>
         </tbody>
     </table>
 
