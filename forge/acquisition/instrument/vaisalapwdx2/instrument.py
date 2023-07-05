@@ -24,6 +24,7 @@ class Instrument(StreamingInstrument):
     INSTRUMENT_TYPE = _INSTRUMENT_TYPE
     MANUFACTURER = "Vaisala"
     MODEL = "PWDx2"
+    DISPLAY_LETTER = "V"
     TAGS = frozenset({"met", "aerosol", _INSTRUMENT_TYPE})
     SERIAL_PORT = {'baudrate': 9600, 'parity': serial.PARITY_EVEN, 'bytesize': serial.SEVENBITS}
 

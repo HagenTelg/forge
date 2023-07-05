@@ -146,6 +146,18 @@ serial_port = "/dev/serial/by-id/..."
 - Spancheck CO<sub>2</sub> sample: 600 seconds, flush: 480 seconds
 - Spancheck air sample: 600 seconds, flush: 480 seconds
 
+## Gill Instruments Windsonic Anemometer
+
+```toml
+[instrument.XM1]
+type = "gillwindsonic"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+- Instrument baud rate: 9600
+- Display letter: I
+
 ## Grimm 1.10x OPC
 
 ```toml
@@ -356,6 +368,7 @@ cut_size = false
 ```
 
 - Instrument baud rate: 9600 (7 data bits, even parity)
+- Display letter: V
 
 ## Azonix 𝜇MAC 1050
 

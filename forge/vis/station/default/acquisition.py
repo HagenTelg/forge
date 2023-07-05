@@ -48,6 +48,7 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('vaisalapwdx2'))
         self.display_instrument.append(self.DisplayInstrumentSimple('vaisalawmt700'))
         self.display_instrument.append(self.DisplayInstrumentSimple('vaisalawxt5xx'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('gillwindsonic'))
         self.display_instrument.append(self.DisplayInstrumentSimple('azonixumac1050'))
         self.display_instrument.append(self.DisplayInstrumentSimple('campbellcr1000gmd'))
 
@@ -74,6 +75,7 @@ class Acquisition(BaseAcquisition):
 
         self.summary_instrument.append(self.SummaryInstrumentSimple('vaisalawmt700', priority=1000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('vaisalawxt5xx', priority=1000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('gillwindsonic', priority=1000))
 
         self.summary_static.append(BaseAcquisition.SummaryStatic(summary_type='pitot_flow', priority=-2000))
 
@@ -117,6 +119,7 @@ _type_summary: typing.Dict[str, SummaryItem] = {
     }),
     'vaisalawmt700': ParameterSummary('wind', {'instrument': "Vaisala WMT 700"}),
     'vaisalawxt5xx': ParameterSummary('wind', {'instrument': "Vaisala WXT"}),
+    'gillwindsonic': ParameterSummary('wind', {'instrument': "Gill Windsonic"}),
 }
 
 

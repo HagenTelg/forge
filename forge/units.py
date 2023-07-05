@@ -59,3 +59,19 @@ def distance_m_to_km(x: float) -> float:
 
 def distance_km_to_m(x: float) -> float:
     return x * 1000.0
+
+
+def speed_knots_to_ms(x: float) -> float:
+    return x * 0.5144444444
+
+
+def speed_mph_to_ms(x: float) -> float:
+    return x * 0.44704
+
+
+def speed_kph_to_ms(x: float) -> float:
+    return distance_km_to_m(x) / (60.0 * 60.0)
+
+
+def speed_fpm_to_ms(x: float) -> float:
+    return x * 0.00508

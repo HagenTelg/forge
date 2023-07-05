@@ -3888,6 +3888,21 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'reboot': 'Reboot',
     }),
 
+    AcquisitionTranslator.Component('acquire_gill_windsonic', 'gillwindsonic', variable_map={
+        AcquisitionTranslator.Variable('WS'): 'WS',
+        AcquisitionTranslator.Variable('WD'): 'WD',
+    }, flags_notifications={
+        'InsufficientUAxisSamples': 'insufficient_u_samples',
+        'InsufficientVAxisSamples': 'insufficient_v_samples',
+        'NVMChecksumFailed': 'nvm_checksum_failed',
+        'ROMChecksumFailed': 'rom_checksum_failed',
+    }, flags_set_warning={
+        'InsufficientUAxisSamples',
+        'InsufficientVAxisSamples',
+        'NVMChecksumFailed',
+        'ROMChecksumFailed',
+    }),
+
     AcquisitionTranslator.Component('acquire_gmd_cpcpulse', 'tsi3760cpc', variable_map={
         AcquisitionTranslator.Variable('N'): 'N',
         AcquisitionTranslator.Variable('C'): 'C',

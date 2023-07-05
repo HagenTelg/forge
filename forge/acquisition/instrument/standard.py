@@ -348,7 +348,7 @@ class StandardInstrument(BaseInstrument):
             if name_suffix:
                 name_direction = name_direction + name_suffix
         if code_direction is None and code is not None:
-            code_direction = "WS" + code
+            code_direction = "WD" + code
         if attributes_direction is not None:
             if attributes is not None:
                 c = attributes.copy()

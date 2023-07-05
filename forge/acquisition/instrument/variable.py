@@ -289,6 +289,9 @@ class VariableVectorMagnitude(Variable):
             return nan
         return self.average.magnitude
 
+    def clear(self) -> None:
+        pass
+
     def __call__(self) -> None:
         pass
 
@@ -309,9 +312,12 @@ class VariableVectorDirection(Variable):
 
     @property
     def value(self) -> float:
-        if not self.average:
+        if not self.magnitude.average:
             return nan
         return self.magnitude.average.direction
+
+    def clear(self) -> None:
+        self.magnitude.average.clear()
 
     def __call__(self) -> None:
         self.magnitude.average(float(self.magnitude.source), float(self.source))

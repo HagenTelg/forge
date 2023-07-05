@@ -209,7 +209,7 @@ class _AMES_VMT107(_ExternalSensor):
         self.data_WD = self.instrument.input("WD_AMES_VMT107")
 
         self.report = self.instrument.report(
-            *self.instrument.variable_winds(self.data_WS, self.data_WD, name_suffix="_ames_vmt107"),
+            *self.instrument.variable_winds(self.data_WS, self.data_WD, name_suffix="_ames_vmt107", code=""),
         )
 
     def process_fields(self, fields: typing.List[bytes]) -> typing.List[bytes]:
@@ -246,7 +246,7 @@ class _GMX(_ExternalSensor):
                                             attributes={'long_name': "GMX ambient humidity"}),
             self.instrument.variable_air_pressure(self.data_P, "gmx_pressure", code="Px",
                                                   attributes={'long_name': "GMX ambient pressure"}),
-            *self.instrument.variable_winds(self.data_WS, self.data_WD, name_suffix="_gmx"),
+            *self.instrument.variable_winds(self.data_WS, self.data_WD, name_suffix="_gmx", code=""),
         )
 
     def process_fields(self, fields: typing.List[bytes]) -> typing.List[bytes]:
