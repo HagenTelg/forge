@@ -13,7 +13,7 @@ class DataRecord(BaseDataRecord):
         pulse_height = pulse_height[...]
         accumulator = ConditionAccumulator.from_instrument_code(self.analyzer, "pulse_height_low",
                                                                 self.analyzer.target.Severity.ERROR)
-        accumulator.emit_true(pulse_height < 800.0, self.times)
+        accumulator.emit_true(pulse_height < 400.0, self.times)
 
     def analyze(self) -> None:
         if not self.analyzer.instrument:
