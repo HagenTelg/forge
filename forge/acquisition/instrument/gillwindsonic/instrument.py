@@ -3,7 +3,7 @@ import asyncio
 import re
 from forge.tasks import wait_cancelable
 from forge.units import speed_knots_to_ms, speed_mph_to_ms, speed_kph_to_ms, speed_fpm_to_ms
-from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError, BaseDataOutput
+from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError
 from ..parse import parse_number
 
 _INSTRUMENT_TYPE = __name__.split('.')[-2]

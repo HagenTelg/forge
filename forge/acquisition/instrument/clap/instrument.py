@@ -7,7 +7,7 @@ from math import isfinite, nan, log
 from forge.tasks import wait_cancelable
 from forge.units import flow_lpm_to_m3s, ONE_ATM_IN_HPA
 from forge.solver import polynomial as polynomial_solve
-from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError, BaseBusInterface, BaseDataOutput
+from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError, BaseBusInterface
 from ..parse import parse_number, parse_flags_bits
 from ..variable import Input
 from ..array import ArrayInput

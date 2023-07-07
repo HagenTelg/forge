@@ -5,7 +5,7 @@ import time
 import datetime
 from forge.tasks import wait_cancelable
 from forge.units import flow_ccm_to_lpm
-from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError, BaseDataOutput
+from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError
 from ..parse import parse_number, parse_flags_bits
 
 _INSTRUMENT_TYPE = __name__.split('.')[-2]

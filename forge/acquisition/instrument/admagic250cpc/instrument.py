@@ -4,7 +4,7 @@ import logging
 import time
 from forge.tasks import wait_cancelable
 from forge.units import flow_ccm_to_lpm
-from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError, BaseDataOutput
+from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError
 from ..parse import parse_number, parse_datetime_field, parse_flags_bits
 from .parameters import Parameters
 

@@ -8,7 +8,7 @@ import re
 from math import isfinite, nan, exp, log
 from forge.tasks import wait_cancelable
 from forge.units import mass_ng_to_ug, flow_lpm_to_m3s, ONE_ATM_IN_HPA, ZERO_C_IN_K
-from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError, BaseDataOutput
+from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError
 from ..parse import parse_number
 from ..variable import Input
 

@@ -26,6 +26,7 @@ class Instrument(StreamingInstrument):
     INSTRUMENT_TYPE = _INSTRUMENT_TYPE
     MANUFACTURER = "Grimm"
     MODEL = "1.10x"
+    DISPLAY_LETTER = "N"
     TAGS = frozenset({"aerosol", "size", "opc", _INSTRUMENT_TYPE})
     SERIAL_PORT = {'baudrate': 9600}
 

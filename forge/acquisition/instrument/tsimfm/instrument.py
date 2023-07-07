@@ -15,6 +15,7 @@ class Instrument(StreamingInstrument):
     INSTRUMENT_TYPE = _INSTRUMENT_TYPE
     MANUFACTURER = "TSI"
     MODEL = "4000"
+    DISPLAY_LETTER = "Q"
     TAGS = frozenset({"aerosol", _INSTRUMENT_TYPE})
     SERIAL_PORT = {'baudrate': 38400}
 

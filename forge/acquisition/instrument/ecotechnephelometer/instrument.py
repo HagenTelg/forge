@@ -4,13 +4,12 @@ import asyncio
 import time
 import enum
 import re
-import forge.data.structure.variable as netcdf_var
 from math import nan, isfinite
 from forge.tasks import wait_cancelable
 from forge.units import ONE_ATM_IN_HPA
 from forge.acquisition import LayeredConfiguration
 from forge.acquisition.schedule import Schedule
-from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError, BaseDataOutput, BaseBusInterface
+from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError, BaseBusInterface
 from ..parse import parse_number, parse_time, parse_flags_bits
 from ..state import Persistent, ChangeEvent
 from ..variable import Input

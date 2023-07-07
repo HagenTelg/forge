@@ -5,7 +5,7 @@ import serial
 import re
 from forge.tasks import wait_cancelable
 from forge.units import distance_m_to_km
-from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError, BaseDataOutput
+from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError
 from ..parse import parse_number
 
 _INSTRUMENT_TYPE = __name__.split('.')[-2]

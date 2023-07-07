@@ -34,6 +34,7 @@ class Instrument(StreamingInstrument):
     INSTRUMENT_TYPE = _INSTRUMENT_TYPE
     MANUFACTURER = "DMT"
     MODEL = "CCN"
+    DISPLAY_LETTER = "N"
     TAGS = frozenset({"aerosol", _INSTRUMENT_TYPE})
     SERIAL_PORT = {'baudrate': 9600}
 
