@@ -126,6 +126,7 @@ cut_size = false
 ```
 
 - Instrument baud rate: 9600
+- Display letter: N
 
 ## Ecotech Aurora 3000/4000 Nephelometer
 
@@ -167,6 +168,7 @@ serial_port = "/dev/serial/by-id/..."
 cut_size = false
 ```
 - Instrument baud rate: 9600
+- Display letter: N
 
 ## Magee AE31 Aethalometer
 
@@ -192,6 +194,18 @@ serial_port = "/dev/serial/by-id/..."
 - Instrument baud rate: 115200
 - Display letter: E
 - Instrument time base set on the front panel
+
+## RMY 86xxx Series Sonic Anemometer
+
+```toml
+[instrument.XM1]
+type = "rmy86xxx"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+- Instrument baud rate: 9600
+- Display letter: I
 
 ## Teledyne T640
 
@@ -357,6 +371,7 @@ Q = [ -0.046, 1.6624 ] # 2015-05-05 PJS@MLO
 ```
 
 - Instrument baud rate: 38400
+- Display letter: Q
 
 ## Vaisala PWDx2 series weather monitor
 

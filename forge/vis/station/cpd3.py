@@ -4081,6 +4081,15 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         AcquisitionTranslator.Variable('P'): 'P',
     }),
 
+    AcquisitionTranslator.Component('acquire_rmy_wind86xxx', 'rmy86xxx', variable_map={
+        AcquisitionTranslator.Variable('WS'): 'WS',
+        AcquisitionTranslator.Variable('WD'): 'WD',
+    }, flags_notifications={
+        'AbnormalStatus': 'abnormal_status',
+    }, flags_set_warning={
+        'AbnormalStatus',
+    }),
+
     AcquisitionTranslator.Component('acquire_teledyne_t640', 'teledynet640', variable_map={
         AcquisitionTranslator.Variable('ZXPM1'): 'X1',
         AcquisitionTranslator.Variable('ZXPM10'): 'X10',
