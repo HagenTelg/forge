@@ -523,53 +523,19 @@ class Instrument(StreamingInstrument):
             }),
         )
 
-        self._parameters_value: typing.Optional[str] = None
         self._active_external_sensors: typing.Dict[int, _ExternalSensor] = dict()
 
         self.context.bus.connect_command('spot_advance', self._command_spot_advance)
         self._spot_advanced_queued: bool = False
 
-        self._declare_parameters()
-
-    def _declare_parameters(self) -> None:
-        class _StringValue(BaseDataOutput.String):
-            def __init__(self, source, attr: str, name: str,
-                         attributes: typing.Dict[str, typing.Any] = None):
-                super().__init__(name)
-                self.template = BaseDataOutput.Field.Template.METADATA
-                self._source = source
-                self._attr = attr
-                if attributes:
-                    self.attributes.update(attributes)
-
-            @property
-            def value(self) -> typing.List[float]:
-                return getattr(self._source, self._attr, None) or ""
-
-        class _ArrayValue(BaseDataOutput.ArrayFloat):
-            def __init__(self, source, attr: str, name: str,
-                         attributes: typing.Dict[str, typing.Any] = None):
-                super().__init__(name)
-                self.template = BaseDataOutput.Field.Template.METADATA
-                self._source = source
-                self._attr = attr
-                if attributes:
-                    self.attributes.update(attributes)
-
-            @property
-            def value(self) -> typing.List[float]:
-                return getattr(self._source, self._attr, None) or []
-
-        record = self.context.data.constant_record("parameters")
-
-        record.constants.append(_StringValue(self, '_parameters_value', "instrument_parameters", {
+        self.parameters_record = self.context.data.constant_record("parameters")
+        self.parameter_sg = self.parameters_record.string("instrument_parameters", attributes={
             'long_name': "instrument response to the $AE33:SG command, representing the raw parameters values from the instrument configuration without formatting context",
-        }))
-
-        record.constants.append(_ArrayValue(self, '_ebc_efficiency', "mass_absorption_efficiency", {
+        })
+        self.parameters_record.array_float_attr("mass_absorption_efficiency", self, '_ebc_efficiency', attributes={
             'long_name': "the efficiency factor used to convert absorption coefficients into an equivalent black carbon",
             'units': "m2 g",
-        }))
+        })
 
     def _command_spot_advance(self, _) -> None:
         _LOGGER.debug("Received spot advance command")
@@ -614,12 +580,13 @@ class Instrument(StreamingInstrument):
 
             data: bytes = await self._read_parameters_line()
             try:
-                self._parameters_value = data.decode('utf-8')
+                decoded = data.decode('utf-8')
             except UnicodeDecodeError:
-                pass
+                decoded = None
 
-            if self._parameters_value:
-                matched = _SERIAL_NUMBER.search(self._parameters_value)
+            self.parameter_sg(decoded)
+            if decoded:
+                matched = _SERIAL_NUMBER.search(decoded)
                 if matched:
                     self.set_serial_number(matched.group(1))
 

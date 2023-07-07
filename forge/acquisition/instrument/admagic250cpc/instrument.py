@@ -160,39 +160,20 @@ class Instrument(StreamingInstrument):
         ]
         self._have_wadc: bool = False
 
-        self._raw_parameters: typing.Optional[str] = None
-        self._declare_parameters()
+        self.parameters_record = self.context.data.constant_record("parameters")
+        self.active_parameters.record(self.parameters_record)
+        self.parameter_raw = self.parameters_record.string("instrument_parameters", attributes={
+            'long_name': "raw responses to parameters read",
+        })
 
         self._save_request: bool = False
         self.context.bus.connect_command('set_parameters', self.set_parameters)
         self.context.bus.connect_command('save_settings', self.save_settings)
 
-    def _declare_parameters(self) -> None:
-        class _StringValue(BaseDataOutput.String):
-            def __init__(self, source, attr: str, name: str,
-                         attributes: typing.Dict[str, typing.Any] = None):
-                super().__init__(name)
-                self.template = BaseDataOutput.Field.Template.METADATA
-                self._source = source
-                self._attr = attr
-                if attributes:
-                    self.attributes.update(attributes)
-
-            @property
-            def value(self) -> typing.List[float]:
-                return getattr(self._source, self._attr, None) or ""
-
-        record = self.context.data.constant_record("parameters")
-        self.active_parameters.record(record)
-
-        record.constants.append(_StringValue(self, '_raw_parameters', "instrument_parameters", {
-            'long_name': "raw responses to parameters read",
-        }))
-
     async def _read_parameters(self) -> None:
         self.writer.write(b"sus\r")
         sus = await self.read_multiple_lines(total=5.0, first=2.0, tail=1.0)
-        self._raw_parameters = "\n".join([l.decode('utf-8', 'backslashreplace') for l in sus])
+        raw_parameters = "\n".join([l.decode('utf-8', 'backslashreplace') for l in sus])
         if sus[0].startswith(b"sus") or sus[0].startswith(b"su:"):
             del sus[0]
         self.active_parameters.parse_sus(sus)
@@ -200,8 +181,8 @@ class Instrument(StreamingInstrument):
         for t in (b"tcon", b"tini", b"tmod", b"topt"):
             self.writer.write(t + b"\r")
             resp = await self.read_multiple_lines(total=5.0, first=2.0, tail=1.0)
-            self._raw_parameters += "\n\n"
-            self._raw_parameters += "\n".join([l.decode('utf-8', 'backslashreplace') for l in resp])
+            raw_parameters += "\n\n"
+            raw_parameters += "\n".join([l.decode('utf-8', 'backslashreplace') for l in resp])
             if resp[0].startswith(t) and b':' not in resp[0]:
                 del resp[0]
             if b':' in resp[0]:
@@ -214,8 +195,9 @@ class Instrument(StreamingInstrument):
 
         self.writer.write(b"tspid\r")
         tspid = await self.read_multiple_lines(total=5.0, first=2.0, tail=1.0)
-        self._raw_parameters += "\n\n"
-        self._raw_parameters += "\n".join([l.decode('utf-8', 'backslashreplace') for l in tspid])
+        raw_parameters += "\n\n"
+        raw_parameters += "\n".join([l.decode('utf-8', 'backslashreplace') for l in tspid])
+        self.parameter_raw(raw_parameters)
 
     async def _set_pending_parameters(self) -> None:
         apply = self._apply_parameters

@@ -269,66 +269,30 @@ class Instrument(StreamingInstrument):
         self.instrument_report.record.data_record.standard_pressure = ONE_ATM_IN_HPA
         self.instrument_report.record.data_record.report_interval = self._report_interval
 
-        self._declare_parameters()
-
-    def _declare_parameters(self) -> None:
-        class _ArrayValue(BaseDataOutput.ArrayFloat):
-            def __init__(self, source, attr: str, name: str,
-                         attributes: typing.Dict[str, typing.Any] = None):
-                super().__init__(name)
-                self.template = BaseDataOutput.Field.Template.METADATA
-                self._source = source
-                self._attr = attr
-                if attributes:
-                    self.attributes.update(attributes)
-
-            @property
-            def value(self) -> typing.List[float]:
-                return getattr(self._source, self._attr, None) or []
-
-        class _FloatValue(BaseDataOutput.Float):
-            def __init__(self, source, attr: str, name: str,
-                         attributes: typing.Dict[str, typing.Any] = None):
-                super().__init__(name)
-                self.template = BaseDataOutput.Field.Template.METADATA
-                self._source = source
-                self._attr = attr
-                if attributes:
-                    self.attributes.update(attributes)
-
-            @property
-            def value(self) -> float:
-                return getattr(self._source, self._attr, None) or nan
-
-        record = self.context.data.constant_record("parameters")
-
-        record.constants.append(_ArrayValue(self, '_ebc_efficiency', "mass_absorption_efficiency", {
+        self.parameters_record = self.context.data.constant_record("parameters")
+        self.parameters_record.array_float_attr("mass_absorption_efficiency", self, '_ebc_efficiency', attributes={
             'long_name': "the efficiency factor used to convert absorption coefficients into an equivalent black carbon",
             'units': "m2 g",
-        }))
-
-        record.constants.append(_FloatValue(self, 'spot_size', "spot_area", {
+        })
+        self.parameters_record.float_attr("spot_area", self, 'spot_size', attributes={
             'long_name': "sampling spot area",
             'C_format': "%5.2f",
             'units': "mm2",
-        }))
-
-        record.constants.append(_FloatValue(self, 'sample_temperature', "instrument_standard_temperature", {
+        })
+        self.parameters_record.float_attr("instrument_standard_temperature", self, 'sample_temperature', attributes={
             'long_name': "standard temperature of instrument data",
             'C_format': "%5.2f",
             'units': "degC",
-        }))
-
-        record.constants.append(_FloatValue(self, 'sample_pressure', "instrument_standard_pressure", {
+        })
+        self.parameters_record.float_attr("instrument_standard_pressure", self, 'sample_pressure', attributes={
             'long_name': "standard pressure of instrument data",
             'C_format': "%7.2f",
             'units': "hPa",
-        }))
-
-        record.constants.append(_FloatValue(self, 'mean_ratio', "mean_ratio", {
+        })
+        self.parameters_record.float_attr("mean_ratio", self, 'mean_ratio', attributes={
             'long_name': "instrument mean ratio correction factor",
             'C_format': "%5.3f",
-        }))
+        })
 
     async def start_communications(self) -> None:
         # This is less reliable than a normal record flush, but the slow reporting makes that

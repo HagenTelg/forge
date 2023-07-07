@@ -184,43 +184,32 @@ class Instrument(StreamingInstrument):
             }),
         )
 
-        self._declare_parameters()
+        self.parameters_record = self.context.data.constant_record("parameters")
+        self.parameters_record.array_float_attr(
+            "hardware_flow_calibration", self, 'current_hardware_flow_calibration',
+            attributes={
+                'long_name': "calibration polynomial applied to the raw voltage on the instrument to convert to lpm",
+                'C_format': "%8.5f",
+            }
+        )
+        if self.data_Q.calibration:
+            self.parameters_record.array_float_attr(
+                "acquisition_flow_calibration", self.data_Q, 'calibration',
+                attributes={
+                    'long_name': "calibration polynomial applied to the instrument reported flow",
+                    'C_format': "%5.3f",
+                }
+            )
+        self.parameters_record.array_float_attr(
+            "spot_area", self, 'spot_size',
+            attributes={
+                'long_name': "sampling spot area",
+                'C_format': "%5.2f",
+                'units': "mm2",
+            }
+        )
 
         self.control = Control(self)
-
-    def _declare_parameters(self) -> None:
-        class _ArrayValue(BaseDataOutput.ArrayFloat):
-            def __init__(self, source, attr: str, name: str,
-                         attributes: typing.Dict[str, typing.Any] = None):
-                super().__init__(name)
-                self.template = BaseDataOutput.Field.Template.METADATA
-                self._source = source
-                self._attr = attr
-                if attributes:
-                    self.attributes.update(attributes)
-
-            @property
-            def value(self) -> typing.List[float]:
-                return getattr(self._source, self._attr, None) or []
-
-        record = self.context.data.constant_record("parameters")
-
-        record.constants.append(_ArrayValue(self, 'current_hardware_flow_calibration', "hardware_flow_calibration", {
-            'long_name': "calibration polynomial applied to the raw voltage on the instrument to convert to lpm",
-            'C_format': "%8.5f",
-        }))
-
-        if self.data_Q.calibration:
-            record.constants.append(_ArrayValue(self.data_Q, 'calibration', "acquisition_flow_calibration", {
-                'long_name': "calibration polynomial applied to the instrument reported flow",
-                'C_format': "%5.3f",
-            }))
-
-        record.constants.append(_ArrayValue(self, 'spot_size', "spot_area", {
-            'long_name': "sampling spot area",
-            'C_format': "%5.2f",
-            'units': "mm2",
-        }))
 
     @staticmethod
     def _parse_instrument_float(value: bytes) -> float:

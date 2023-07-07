@@ -706,29 +706,10 @@ class Instrument(StreamingInstrument):
         self._reboot_request: bool = False
         self.context.bus.connect_command('reboot', self.reboot)
 
-        self._ee_value: typing.Optional[str] = None
-        self._declare_parameters()
-
-    def _declare_parameters(self) -> None:
-        class _StringValue(BaseDataOutput.String):
-            def __init__(self, source, attr: str, name: str,
-                         attributes: typing.Dict[str, typing.Any] = None):
-                super().__init__(name)
-                self.template = BaseDataOutput.Field.Template.METADATA
-                self._source = source
-                self._attr = attr
-                if attributes:
-                    self.attributes.update(attributes)
-
-            @property
-            def value(self) -> typing.List[float]:
-                return getattr(self._source, self._attr, None) or ""
-
-        record = self.context.data.constant_record("parameters")
-
-        record.constants.append(_StringValue(self, '_ee_value', "instrument_parameters", {
+        self.parameters_record = self.context.data.constant_record("parameters")
+        self.parameter_ee = self.parameters_record.string("instrument_parameters", attributes={
             'long_name': "instrument response to the EE command",
-        }))
+        })
 
     def _declare_polar(self) -> None:
         if self.polar_report:
@@ -1001,9 +982,9 @@ class Instrument(StreamingInstrument):
         self.writer.write(b"EE\r")
         lines = await self.read_multiple_lines(total=10.0, first=2.0, tail=1.0)
 
-        self._ee_value = "\n".join([
+        self.parameter_ee("\n".join([
             l.decode('utf-8', errors='backslashreplace') for l in lines
-        ])
+        ]))
 
         self._parameter_change_pending = False
         self._instrument_zero_pending = False

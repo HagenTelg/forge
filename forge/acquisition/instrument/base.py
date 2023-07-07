@@ -123,6 +123,151 @@ class BaseDataOutput:
             self.standard_temperature: typing.Optional[float] = None
             self.standard_pressure: typing.Optional[float] = None
 
+        class _Constant:
+            def __init__(self):
+                self._value = None
+
+            def __call__(self, value) -> None:
+                self._value = value
+
+            @property
+            def value(self):
+                return self._value
+
+            @value.setter
+            def value(self, value) -> None:
+                self._value = value
+
+        class _Lookup:
+            def __init__(self, source, attr: str):
+                self._source = source
+                self._attr = attr
+
+            @property
+            def value(self):
+                return getattr(self._source, self._attr, None)
+
+        def string(self, name: str, attributes: typing.Dict[str, typing.Any] = None):
+            class _Field(BaseDataOutput.ConstantRecord._Constant, BaseDataOutput.String):
+                def __init__(self, name: str, attributes: typing.Dict[str, typing.Any] = None):
+                    BaseDataOutput.ConstantRecord._Constant.__init__(self)
+                    BaseDataOutput.String.__init__(self, name)
+                    self.template = self.Template.METADATA
+                    if attributes:
+                        self.attributes.update(attributes)
+            f = _Field(name, attributes)
+            self.constants.append(f)
+            return f
+
+        def string_attr(self, name: str, source, attr: str, attributes: typing.Dict[str, typing.Any] = None):
+            class _Field(BaseDataOutput.ConstantRecord._Lookup, BaseDataOutput.String):
+                def __init__(self, name: str, source, attr: str, attributes: typing.Dict[str, typing.Any] = None):
+                    BaseDataOutput.ConstantRecord._Lookup.__init__(self, source, attr)
+                    BaseDataOutput.String.__init__(self, name)
+                    self.template = self.Template.METADATA
+                    if attributes:
+                        self.attributes.update(attributes)
+            f = _Field(name, source, attr, attributes)
+            self.constants.append(f)
+            return f
+
+        def float(self, name: str, attributes: typing.Dict[str, typing.Any] = None):
+            class _Field(BaseDataOutput.ConstantRecord._Constant, BaseDataOutput.Float):
+                def __init__(self, name: str, attributes: typing.Dict[str, typing.Any] = None):
+                    BaseDataOutput.ConstantRecord._Constant.__init__(self)
+                    BaseDataOutput.Float.__init__(self, name)
+                    self.template = self.Template.METADATA
+                    if attributes:
+                        self.attributes.update(attributes)
+            f = _Field(name, attributes)
+            self.constants.append(f)
+            return f
+
+        def float_attr(self, name: str, source, attr: str, attributes: typing.Dict[str, typing.Any] = None):
+            class _Field(BaseDataOutput.ConstantRecord._Lookup, BaseDataOutput.Float):
+                def __init__(self, name: str, source, attr: str, attributes: typing.Dict[str, typing.Any] = None):
+                    BaseDataOutput.ConstantRecord._Lookup.__init__(self, source, attr)
+                    BaseDataOutput.Float.__init__(self, name)
+                    self.template = self.Template.METADATA
+                    if attributes:
+                        self.attributes.update(attributes)
+            f = _Field(name, source, attr, attributes)
+            self.constants.append(f)
+            return f
+
+        def integer(self, name: str, attributes: typing.Dict[str, typing.Any] = None):
+            class _Field(BaseDataOutput.ConstantRecord._Constant, BaseDataOutput.Integer):
+                def __init__(self, name: str, attributes: typing.Dict[str, typing.Any] = None):
+                    BaseDataOutput.ConstantRecord._Constant.__init__(self)
+                    BaseDataOutput.Integer.__init__(self, name)
+                    self.template = self.Template.METADATA
+                    if attributes:
+                        self.attributes.update(attributes)
+            f = _Field(name, attributes)
+            self.constants.append(f)
+            return f
+
+        def integer_attr(self, name: str, source, attr: str, attributes: typing.Dict[str, typing.Any] = None):
+            class _Field(BaseDataOutput.ConstantRecord._Lookup, BaseDataOutput.Integer):
+                def __init__(self, name: str, source, attr: str, attributes: typing.Dict[str, typing.Any] = None):
+                    BaseDataOutput.ConstantRecord._Lookup.__init__(self, source, attr)
+                    BaseDataOutput.Integer.__init__(self, name)
+                    self.template = self.Template.METADATA
+                    if attributes:
+                        self.attributes.update(attributes)
+            f = _Field(name, source, attr, attributes)
+            self.constants.append(f)
+            return f
+
+        def unsigned_integer(self, name: str, attributes: typing.Dict[str, typing.Any] = None):
+            class _Field(BaseDataOutput.ConstantRecord._Constant, BaseDataOutput.UnsignedInteger):
+                def __init__(self, name: str, attributes: typing.Dict[str, typing.Any] = None):
+                    BaseDataOutput.ConstantRecord._Constant.__init__(self)
+                    BaseDataOutput.UnsignedInteger.__init__(self, name)
+                    self.template = self.Template.METADATA
+                    if attributes:
+                        self.attributes.update(attributes)
+            f = _Field(name, attributes)
+            self.constants.append(f)
+            return f
+
+        def unsigned_integer_attr(self, name: str, source, attr: str, attributes: typing.Dict[str, typing.Any] = None):
+            class _Field(BaseDataOutput.ConstantRecord._Lookup, BaseDataOutput.UnsignedInteger):
+                def __init__(self, name: str, source, attr: str, attributes: typing.Dict[str, typing.Any] = None):
+                    BaseDataOutput.ConstantRecord._Lookup.__init__(self, source, attr)
+                    BaseDataOutput.UnsignedInteger.__init__(self, name)
+                    self.template = self.Template.METADATA
+                    if attributes:
+                        self.attributes.update(attributes)
+            f = _Field(name, source, attr, attributes)
+            self.constants.append(f)
+            return f
+
+        def array_float(self, name: str, attributes: typing.Dict[str, typing.Any] = None):
+            class _Field(BaseDataOutput.ConstantRecord._Constant, BaseDataOutput.ArrayFloat):
+                def __init__(self, name: str, attributes: typing.Dict[str, typing.Any] = None):
+                    BaseDataOutput.ConstantRecord._Constant.__init__(self)
+                    BaseDataOutput.ArrayFloat.__init__(self, name)
+                    self.template = self.Template.METADATA
+                    if attributes:
+                        self.attributes.update(attributes)
+            f = _Field(name, attributes)
+            self.constants.append(f)
+            return f
+
+        def array_float_attr(self, name: str, source, attr: str, attributes: typing.Dict[str, typing.Any] = None):
+            class _Field(BaseDataOutput.ConstantRecord._Lookup, BaseDataOutput.ArrayFloat):
+                def __init__(self, name: str, source, attr: str, attributes: typing.Dict[str, typing.Any] = None):
+                    BaseDataOutput.ConstantRecord._Lookup.__init__(self, source, attr)
+                    BaseDataOutput.ArrayFloat.__init__(self, name)
+                    self.template = self.Template.METADATA
+                    if attributes:
+                        self.attributes.update(attributes)
+            f = _Field(name, source, attr, attributes)
+            self.constants.append(f)
+            return f
+
+
     def constant_record(self, name: str) -> "BaseDataOutput.ConstantRecord":
         return self.ConstantRecord()
 

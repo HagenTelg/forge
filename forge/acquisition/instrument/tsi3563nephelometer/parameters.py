@@ -318,18 +318,6 @@ class Parameters:
         raise ValueError
 
     def record(self, target: BaseDataOutput.ConstantRecord, wavelengths: Dimension) -> None:
-        class _Integer(BaseDataOutput.UnsignedInteger):
-            def __init__(self, parameters: Parameters, name: str, attributes: typing.Dict[str, typing.Any] = None):
-                super().__init__(name)
-                self.template = BaseDataOutput.Field.Template.METADATA
-                self.parameters = parameters
-                if attributes:
-                    self.attributes.update(attributes)
-
-            @property
-            def value(self) -> int:
-                return getattr(self.parameters, self.name, None) or 0
-
         class _Boolean(BaseDataOutput.UnsignedInteger):
             def __init__(self, parameters: Parameters, name: str, attributes: typing.Dict[str, typing.Any] = None):
                 super().__init__(name)
@@ -367,44 +355,44 @@ class Parameters:
             def dimensions(self) -> typing.Optional[typing.List[BaseDataOutput.ArrayFloat]]:
                 return [self.wavelengths.data]
 
-        target.constants.append(_Integer(self, "SMZ", {
+        target.unsigned_integer_attr("SMZ", self, 'SMZ', attributes={
             'long_name': "zero mode: 0=manual only, 1-24=autozero with average of last N zeros",
             'C_format': "%2llu",
-        }))
-        target.constants.append(_Integer(self, "SP", {
+        })
+        target.unsigned_integer_attr("SP", self, 'SP', attributes={
             'long_name': "lamp power",
             'units': "W",
             'C_format': "%2llu",
-        }))
-        target.constants.append(_Integer(self, "STA", {
+        })
+        target.unsigned_integer_attr("STA", self, 'STA', attributes={
             'long_name': "averaging time",
             'units': "s",
             'C_format': "%4llu",
-        }))
-        target.constants.append(_Integer(self, "STB", {
+        })
+        target.unsigned_integer_attr("STB", self, 'STB', attributes={
             'long_name': "blanking time",
             'units': "s",
             'C_format': "%3llu",
-        }))
-        target.constants.append(_Integer(self, "STP", {
+        })
+        target.unsigned_integer_attr("STP", self, 'STP', attributes={
             'long_name': "autozero interval",
             'units': "s",
             'C_format': "%5llu",
-        }))
-        target.constants.append(_Integer(self, "STZ", {
+        })
+        target.unsigned_integer_attr("STZ", self, 'STZ', attributes={
             'long_name': "zero measurement length",
             'units': "s",
             'C_format': "%4llu",
-        }))
+        })
         target.constants.append(_Wavelengths(self, wavelengths, lambda p: [p.SVB, p.SVG, p.SVR], "SV", {
             'long_name': "photomultiplier tube voltage",
             'units': "V",
             'C_format': "%4.0f",
         }))
-        target.constants.append(_Integer(self, "B", {
+        target.unsigned_integer_attr("B", self, 'B', attributes={
             'long_name': "blower power (0-255)",
             'C_format': "%3llu",
-        }))
+        })
         target.constants.append(_Boolean(self, "H", {
             'long_name': "heater enable",
         }))

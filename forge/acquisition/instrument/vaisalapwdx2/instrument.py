@@ -237,33 +237,13 @@ class Instrument(StreamingInstrument):
             }),
         )
 
-        self._system_parameters: typing.Optional[str] = None
-        self._weather_parameters: typing.Optional[str] = None
-        self._declare_parameters()
-
-    def _declare_parameters(self) -> None:
-        class _StringValue(BaseDataOutput.String):
-            def __init__(self, source, attr: str, name: str,
-                         attributes: typing.Dict[str, typing.Any] = None):
-                super().__init__(name)
-                self.template = BaseDataOutput.Field.Template.METADATA
-                self._source = source
-                self._attr = attr
-                if attributes:
-                    self.attributes.update(attributes)
-
-            @property
-            def value(self) -> typing.List[float]:
-                return getattr(self._source, self._attr, None) or ""
-
-        record = self.context.data.constant_record("parameters")
-
-        record.constants.append(_StringValue(self, '_system_parameters', "system_parameters", {
+        self.parameters_record = self.context.data.constant_record("parameters")
+        self.parameter_system = self.parameters_record.string("system_parameters", attributes={
             'long_name': "instrument response to the PAR command, representing general operating parameters",
-        }))
-        record.constants.append(_StringValue(self, '_weather_parameters', "weather_parameters", {
+        })
+        self.parameter_weather = self.parameters_record.string("weather_parameters", attributes={
             'long_name': "instrument response to the WPAR command, representing weather identification parameters",
-        }))
+        })
 
     def _handle_version_match(self, matched: re.Match) -> None:
         model = matched.group(1)
@@ -323,7 +303,7 @@ class Instrument(StreamingInstrument):
             lines = await self.read_multiple_lines(total=5.0, first=2.0, tail=2.0)
             if b"SYSTEM PARAMETERS" in lines[0]:
                 del lines[0]
-            self._system_parameters = "\n".join([l.decode('utf-8', 'backslashreplace') for l in lines])
+            self.parameter_system("\n".join([l.decode('utf-8', 'backslashreplace') for l in lines]))
             for l in lines:
                 matched = _VERSION.search(l)
                 if not matched:
@@ -338,7 +318,7 @@ class Instrument(StreamingInstrument):
                 while len(lines) > 0 and lines[0] == b"ERROR":
                     del lines[0]
                 if lines:
-                    self._weather_parameters = "\n".join([l.decode('utf-8', 'backslashreplace') for l in lines])
+                    self.parameter_weather("\n".join([l.decode('utf-8', 'backslashreplace') for l in lines]))
             except (asyncio.TimeoutError, TimeoutError):
                 pass
 

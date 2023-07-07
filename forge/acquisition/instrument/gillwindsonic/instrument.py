@@ -35,7 +35,7 @@ class Instrument(StreamingInstrument):
         self.instrument_report = self.report(
             *self.variable_winds(self.data_WS, self.data_WD, code=""),
 
-            flags = [
+            flags=[
                 self.flag(self.notify_insufficient_u_samples, preferred_bit=0x01),
                 self.flag(self.notify_insufficient_v_samples, preferred_bit=0x02),
                 self.flag(self.notify_nvm_checksum_failed, preferred_bit=0x08),
@@ -43,29 +43,10 @@ class Instrument(StreamingInstrument):
             ]
         )
 
-        self._unit_configuration: typing.Optional[str] = None
-        self._declare_parameters()
-
-    def _declare_parameters(self) -> None:
-        class _StringValue(BaseDataOutput.String):
-            def __init__(self, source, attr: str, name: str,
-                         attributes: typing.Dict[str, typing.Any] = None):
-                super().__init__(name)
-                self.template = BaseDataOutput.Field.Template.METADATA
-                self._source = source
-                self._attr = attr
-                if attributes:
-                    self.attributes.update(attributes)
-
-            @property
-            def value(self) -> typing.List[float]:
-                return getattr(self._source, self._attr, None) or ""
-
-        record = self.context.data.constant_record("parameters")
-
-        record.constants.append(_StringValue(self, '_unit_configuration', "unit_configuration", {
-            'long_name': "instrument response to the D3 command",
-        }))
+        self.parameters_record = self.context.data.constant_record("parameters")
+        self.parameter_unit_configuration = self.parameters_record.string("instrument_parameters", attributes={
+            'long_name': "unit configuration response to the D3 command",
+        })
 
     async def start_communications(self) -> None:
         if self.writer:
@@ -142,7 +123,7 @@ class Instrument(StreamingInstrument):
                 data: bytes = await wait_cancelable(self.read_line(), 5.0)
             if len(data) < 4:
                 raise CommunicationsError
-            self._unit_configuration = data.decode('utf-8', errors='backslashreplace')
+            self.parameter_unit_configuration(data.decode('utf-8', errors='backslashreplace'))
             await self.drain_reader(2.0)
 
             self.writer.write(b"Q\r")

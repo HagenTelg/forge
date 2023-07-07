@@ -193,137 +193,114 @@ class Parameters:
             bottom.overlay(top)
 
     def record(self, target: BaseDataOutput.ConstantRecord) -> None:
-        class _Integer(BaseDataOutput.UnsignedInteger):
-            def __init__(self, parameters: Parameters, name: str, attributes: typing.Dict[str, typing.Any] = None):
-                super().__init__(name)
-                self.template = BaseDataOutput.Field.Template.METADATA
-                self.parameters = parameters
-                if attributes:
-                    self.attributes.update(attributes)
-
-            @property
-            def value(self) -> int:
-                return getattr(self.parameters, self.name, None) or 0
-
-        target.constants.append(_Integer(self, "lset", {
+        target.unsigned_integer_attr("lset", self, 'lset', attributes={
             'long_name': "laser diode power setpoint",
             'C_format': "%4llu",
             'units': "uW",
-        }))
-        target.constants.append(_Integer(self, "doslope", {
+        })
+        target.unsigned_integer_attr("doslope", self, 'doslope', attributes={
             'long_name': "slope of the detector offset to laser power",
             'C_format': "%3llu",
             'units': "mV mW-1",
-        }))
-        target.constants.append(_Integer(self, "doint", {
+        })
+        target.unsigned_integer_attr("doint", self, 'doint', attributes={
             'long_name': "intercept of the detector offset to laser power",
             'C_format': "%4llu",
             'units': "mV",
-        }))
-        target.constants.append(_Integer(self, "doff", {
+        })
+        target.unsigned_integer_attr("doff", self, 'doff', attributes={
             'long_name': "detector offset (no effect if doslope is non-zero)",
             'C_format': "%3llu",
             'units': "mV",
-        }))
-        target.constants.append(_Integer(self, "dvlt", {
+        })
+        target.unsigned_integer_attr("dvlt", self, 'dvlt', attributes={
             'long_name': "detector voltage",
             'C_format': "%3llu",
             'units': "V",
-        }))
-        target.constants.append(_Integer(self, "dthr", {
+        })
+        target.unsigned_integer_attr("dthr", self, 'dthr', attributes={
             'long_name': "detector particle counting threshold",
             'C_format': "%3llu",
             'units': "mV",
-        }))
-        target.constants.append(_Integer(self, "pht", {
+        })
+        target.unsigned_integer_attr("pht", self, 'pht', attributes={
             'long_name': "target percentage of particles above upper detector threshold (dthr2) for auto-adjustment",
             'C_format': "%3llu",
             'units': "%",
-        }))
-        target.constants.append(_Integer(self, "dthr2", {
+        })
+        target.unsigned_integer_attr("dthr2", self, 'dthr2', attributes={
             'long_name': "upper detector threshold (no effect if pht is non-zero)",
             'C_format': "%4llu",
             'units': "mV",
-        }))
-        target.constants.append(_Integer(self, "qcf", {
+        })
+        target.unsigned_integer_attr("qcf", self, 'qcf', attributes={
             'long_name': "flow calibration factor",
             'C_format': "%3llu",
-        }))
-        target.constants.append(_Integer(self, "qtrg", {
+        })
+        target.unsigned_integer_attr("qtrg", self, 'qtrg', attributes={
             'long_name': "target volumetric flow rate",
             'C_format': "%3llu",
             'units': "cm3 min-1",
-        }))
-        target.constants.append(_Integer(self, "wtrg", {
+        })
+        target.unsigned_integer_attr("wtrg", self, 'wtrg', attributes={
             'long_name': "target wick saturation percentage",
             'C_format': "%3llu",
             'units': "%",
-        }))
-        target.constants.append(_Integer(self, "wdry", {
+        })
+        target.unsigned_integer_attr("wdry", self, 'wdry', attributes={
             'long_name': "wick saturation percentage that will trigger wick recovery mode",
             'C_format': "%3llu",
             'units': "%",
-        }))
-        target.constants.append(_Integer(self, "wwet", {
+        })
+        target.unsigned_integer_attr("wwet", self, 'wwet', attributes={
             'long_name': "wick saturation percentage that will exit wick recovery mode",
             'C_format': "%3llu",
             'units': "%",
-        }))
-        target.constants.append(_Integer(self, "wgn", {
+        })
+        target.unsigned_integer_attr("wgn", self, 'wgn', attributes={
             'long_name': "feedback gain used in the moderator setpoint calculation",
             'C_format': "%3llu",
             'units': "cdegC %-1",
-        }))
-        target.constants.append(_Integer(self, "wmax", {
+        })
+        target.unsigned_integer_attr("wmax", self, 'wmax', attributes={
             'long_name': "raw wick sensor reading corresponding to 0% saturation",
             'C_format': "%4llu",
-        }))
-        target.constants.append(_Integer(self, "wmin", {
+        })
+        target.unsigned_integer_attr("wmin", self, 'wmin', attributes={
             'long_name': "raw wick sensor reading corresponding to 100% saturation",
             'C_format': "%4llu",
-        }))
+        })
 
-        class _Float(BaseDataOutput.Float):
-            def __init__(self, parameters: Parameters, name: str, attributes: typing.Dict[str, typing.Any] = None):
-                super().__init__(name)
-                self.template = BaseDataOutput.Field.Template.METADATA
-                self.parameters = parameters
-                if attributes:
-                    self.attributes.update(attributes)
-
-            @property
-            def value(self) -> float:
-                return getattr(self.parameters, self.name, None) or nan
-
-        target.constants.append(_Float(self, "lcur", {
+        target.float_attr("lcur", self, 'lcur', attributes={
             'long_name': "laser diode current",
             'C_format': "%5.1f",
             'units': "mA",
-        }))
-        target.constants.append(_Float(self, "qset", {
+        })
+        target.float_attr("qset", self, 'qset', attributes={
             'long_name': "pump power",
             'C_format': "%5.1f",
             'units': "%",
-        }))
-        target.constants.append(_Float(self, "heff", {
+        })
+        target.float_attr("heff", self, 'heff', attributes={
             'long_name': "humidifier effectiveness parameter in dewpoint estimator",
             'C_format': "%4.2f",
-        }))
-        target.constants.append(_Float(self, "hmax", {
+        })
+        target.float_attr("hmax", self, 'hmax', attributes={
             'long_name': "maximum expected RH from humidifier parameter in dewpoint estimator",
             'C_format': "%4.2f",
             'units': "%",
-        }))
-        # target.constants.append(_Float(self, "mrefint", {
+        })
+
+        # target.float_attr("mrefint", self, 'mrefint', attributes={
         #     'long_name': "moderator reference intercept parameter in setpoint calculation",
         #     'C_format': "%4.1f",
         #     'units': "degC",
-        # }))
-        # target.constants.append(_Float(self, "mrefslope", {
+        # })
+        # target.float_attr("mrefslope", self, 'mrefslope', attributes={
         #     'long_name': "moderator reference slope parameter in setpoint calculation",
         #     'C_format': "%5.2f",
         #     'units': "1",   # degC degC-1
-        # }))
+        # })
 
         class _TemperatureSetpoint(BaseDataOutput.Float):
             def __init__(self, parameters: Parameters, name: str,
