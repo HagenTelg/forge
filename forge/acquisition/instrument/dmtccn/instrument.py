@@ -202,7 +202,7 @@ class Instrument(StreamingInstrument):
         )
 
         # self.report_model = self.report(
-        #     self.variable_rh(self.data_SSset, "supersaturation_model", code="Uc", attributes={
+        #     self.variable_rh(self.data_SScalc, "supersaturation_model", code="Uc", attributes={
         #         'long_name': "supersaturation calculated from a numeric model of the instrument",
         #         'C_format': "%5.3f"
         #     }),
