@@ -2428,6 +2428,14 @@ class RealtimeTranslator(NativeRealtimeTranslator):
             "Tsonic": "T1",
             "Ttransducer": "T2",
         }),
+        "vaisalawxt5xx": native_remapped_instrument({
+            "Uambient": "U1",
+            "Tambient": "T1",
+            "Tinternal": "T2",
+            "Theater": "T3",
+            "Taux": "T4",
+            "R": "VA",
+        }),
     }
 
     def instrument_translator(self, source: str, instrument_info: typing.Dict[str, typing.Any]) -> typing.Optional[NativeRealtimeTranslator.Instrument]:

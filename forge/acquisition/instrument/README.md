@@ -397,6 +397,18 @@ cut_size = false
 - Instrument baud rate: 9600
 - Display letter: I
 
+## Vaisala WXT 5xx series Weather Monitor
+
+```toml
+[instrument.XM1]
+type = "vaisalawxt5xx"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+- Instrument baud rate: 19200
+- Display letter: I
+
 ## Azonix 𝜇MAC 1050
 
 ```toml

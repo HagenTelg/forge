@@ -33,6 +33,10 @@ def temperature_k_to_c(k: float) -> float:
     return k - ZERO_C_IN_K
 
 
+def temperature_f_to_c(f: float) -> float:
+    return (f - 32.0) * (5.0 / 9.0)
+
+
 def pressure_Pa_to_hPa(p: float) -> float:
     return p / 100.0
 
@@ -41,8 +45,16 @@ def pressure_kPa_to_hPa(p: float) -> float:
     return p * 10.0
 
 
+def pressure_bar_to_hPa(p: float) -> float:
+    return p * 1000.0
+
+
 def pressure_mmHg_to_hPa(p: float) -> float:
     return p * 1.33322387415
+
+
+def pressure_inHg_to_hPa(p: float) -> float:
+    return p * 33.86388158
 
 
 def mass_ng_to_ug(m: float) -> float:
@@ -59,6 +71,10 @@ def distance_m_to_km(x: float) -> float:
 
 def distance_km_to_m(x: float) -> float:
     return x * 1000.0
+
+
+def distance_in_to_mm(x: float) -> float:
+    return x * 25.4
 
 
 def speed_knots_to_ms(x: float) -> float:
