@@ -385,6 +385,18 @@ cut_size = false
 - Instrument baud rate: 9600 (7 data bits, even parity)
 - Display letter: V
 
+## Vaisala WMT 700 Sonic Anemometer
+
+```toml
+[instrument.XM1]
+type = "vaisalawmt700"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+- Instrument baud rate: 9600
+- Display letter: I
+
 ## Azonix 𝜇MAC 1050
 
 ```toml

@@ -1,6 +1,5 @@
 import typing
 import asyncio
-import re
 from forge.tasks import wait_cancelable
 from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError
 from ..parse import parse_number

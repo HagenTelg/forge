@@ -2424,6 +2424,10 @@ class RealtimeTranslator(NativeRealtimeTranslator):
             "WX": "WX",
             "nws_code": "ZWXNWS",
         }),
+        "vaisalawmt700": native_remapped_instrument({
+            "Tsonic": "T1",
+            "Ttransducer": "T2",
+        }),
     }
 
     def instrument_translator(self, source: str, instrument_info: typing.Dict[str, typing.Any]) -> typing.Optional[NativeRealtimeTranslator.Instrument]:
