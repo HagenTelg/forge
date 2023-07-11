@@ -585,7 +585,7 @@ class DataRecord(RecordConverter):
 
             return result
 
-        def _sibling_variable_code(self, name: str, apply_suffix: bool = False) -> typing.Optional[str]:
+        def _sibling_variable_code(self, name: str, apply_suffix: bool = True) -> typing.Optional[str]:
             if not name:
                 return None
             variable = self.record.group.variables.get(name)
@@ -623,24 +623,27 @@ class DataRecord(RecordConverter):
             elif time_averaging_method == "last":
                 meta["Smoothing"] = {"Mode": "DifferenceInitial"}
             else:
-                vector_magnitude = self._sibling_variable_code(cell_methods.get("vector_magnitude"))
-                if vector_magnitude:
-                    meta["Smoothing"] = {
-                        "Mode": "Vector2D",
-                        "Parameters": {
-                            "Magnitude": vector_magnitude,
-                            "Direction": self.variable.variable_id,
-                        }
-                    }
-                vector_direction = self._sibling_variable_code(cell_methods.get("vector_angle"))
-                if vector_direction:
-                    meta["Smoothing"] = {
-                        "Mode": "Vector2D",
-                        "Parameters": {
-                            "Direction": vector_direction,
-                            "Magnitude": self.variable.variable_id,
-                        }
-                    }
+                for variable, method in cell_methods.items():
+                    if method == "vector_magnitude":
+                        vector_magnitude = self._sibling_variable_code(variable)
+                        if vector_magnitude:
+                            meta["Smoothing"] = {
+                                "Mode": "Vector2D",
+                                "Parameters": {
+                                    "Magnitude": vector_magnitude,
+                                    "Direction": self.base_name.variable,
+                                }
+                            }
+                    elif method == "vector_direction":
+                        vector_direction = self._sibling_variable_code(variable)
+                        if vector_direction:
+                            meta["Smoothing"] = {
+                                "Mode": "Vector2D",
+                                "Parameters": {
+                                    "Direction": vector_direction,
+                                    "Magnitude": self.base_name.variable,
+                                }
+                            }
 
             if conversion_type == self.ConversionType.ARRAYFLOAT:
                 if 'time' in self.variable.dimensions:
