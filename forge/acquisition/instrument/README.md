@@ -176,11 +176,13 @@ cut_size = false
 [instrument.A81]
 type = "mageeae31"
 serial_port = "/dev/serial/by-id/..."
+average = 300
+cut_size = false
 ```
 
 - Instrument baud rate: 9600
 - Display letter: E
-- Report interval: 300 seconds (5 minutes)
+- Report interval (also match above averaging): 300 seconds (5 minutes)
 - Spot size: 50 mm<sup>2</sup>
 
 ## Magee AE33 Aethalometer
@@ -189,11 +191,33 @@ serial_port = "/dev/serial/by-id/..."
 [instrument.A81]
 type = "mageeae33"
 serial_port = "/dev/serial/by-id/..."
+cut_size = false
 ```
 
 - Instrument baud rate: 115200
 - Display letter: E
 - Instrument time base set on the front panel
+
+## Purple Air
+
+Direct USB connection:
+```toml
+[instrument.A81]
+type = "purpleairusb"
+serial_port = "/dev/serial/by-id/..."
+average = 120
+cut_size = false
+```
+
+Wi-Fi networked connection:
+```toml
+[instrument.A81]
+type = "purpleairwifi"
+url = "http://192.168.0.98/json?live=true"
+```
+
+- Instrument baud rate: 115200
+- Display letter: A
 
 ## RMY 86xxx Series Sonic Anemometer
 

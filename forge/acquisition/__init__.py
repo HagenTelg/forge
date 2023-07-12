@@ -225,3 +225,6 @@ class LayeredConfiguration:
         if isinstance(self._roots[0], bool):
             return bool(self._roots[0])
         return True
+
+    def __repr__(self) -> str:
+        return f"LayeredConfiguration({', '.join([repr(r) for r in self._roots])})"

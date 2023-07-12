@@ -7,14 +7,32 @@ from forge.acquisition.util import parse_interval
 
 
 class AverageRecord:
-    def __init__(self, config: LayeredConfiguration):
+    def __init__(self, config: typing.Optional[typing.Union[LayeredConfiguration, str, float, bool]]):
         self.config = config
 
-        self.interval: typing.Optional[float] = parse_interval(config.get("AVERAGE"), 60.0)
-        if self.interval == 0:
-            self.interval = None
-        elif self.interval < 0.0:
-            raise ValueError(f"invalid averaging interval {self.interval}")
+        interval_only = False
+        if isinstance(config, LayeredConfiguration):
+            if config.constant(False):
+                interval_only = True
+        elif not isinstance(config, dict):
+            interval_only = True
+
+        self.interval: typing.Optional[float] = 60.0
+        if interval_only:
+            if isinstance(config, LayeredConfiguration):
+                config = config.constant()
+            if isinstance(config, bool):
+                if not config:
+                    self.interval = None
+            else:
+                self.interval = parse_interval(config, self.interval)
+        else:
+            self.interval = parse_interval(config.get("AVERAGE"), self.interval)
+        if self.interval is not None:
+            if self.interval == 0:
+                self.interval = None
+            elif self.interval < 0.0:
+                raise ValueError(f"invalid averaging interval {self.interval}")
 
         self._entries: typing.List[AverageRecord.Entry] = list()
 
