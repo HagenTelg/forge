@@ -98,6 +98,14 @@ def _declare_dimension_type(configure: typing.Callable[[netcdf_var.Variable], No
 
 
 class StandardInstrument(BaseInstrument):
+    INSTRUMENT_INFO_METADATA: typing.Dict[str, str] = {
+        'manufacturer': "instrument manufacturer name",
+        'model': "instrument model",
+        'serial_number': "instrument serial number",
+        'firmware_version': "instrument firmware version information",
+        'calibration': "instrument calibration information",
+    }
+
     def __init__(self, context: BaseContext):
         super().__init__(context)
         self.context.bus.bypass_updated = self._bypass_state_changed
@@ -681,13 +689,7 @@ class StandardInstrument(BaseInstrument):
             return self.latest_value
 
     def _update_instrument_metadata(self, info: typing.Dict[str, typing.Any]) -> None:
-        for name, long_name in (
-                ('manufacturer', "instrument manufacturer name"),
-                ('model', "instrument model"),
-                ('serial_number', "instrument serial number"),
-                ('firmware_version', "instrument firmware version information"),
-                ('calibration', "instrument calibration information"),
-        ):
+        for name, long_name in self.INSTRUMENT_INFO_METADATA.items():
             value = info.get(name, None)
             target = self._instrument_metadata_fields.get(name)
             if not value:

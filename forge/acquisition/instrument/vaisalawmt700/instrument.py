@@ -14,6 +14,12 @@ class Instrument(StreamingInstrument):
     DISPLAY_LETTER = "I"
     TAGS = frozenset({"met", "aerosol", _INSTRUMENT_TYPE})
     SERIAL_PORT = {'baudrate': 9600}
+    INSTRUMENT_INFO_METADATA = {
+        **StreamingInstrument.INSTRUMENT_INFO_METADATA,
+        **{
+            'pcb_number': "instrument PCB number",
+        }
+    }
 
     def __init__(self, context: StreamingContext):
         super().__init__(context)
@@ -94,22 +100,23 @@ class Instrument(StreamingInstrument):
             self.set_serial_number(data)
 
             # Get PCB number
-            # self.writer.write(b"G serial_pcb\r")
-            # data: bytes = await wait_cancelable(self.read_line(), 2.0)
-            # if is_error(data):
-            #     raise CommunicationsError(f"invalid serial number response {data}")
-            # if data.startswith(b">"):
-            #     data = data[1:].strip()
-            # if data.lower().startswith(b"s serial_pcb"):
-            #     data = data[12:].strip()
-            # if data.startswith(b","):
-            #     data = data[1:].strip()
+            self.writer.write(b"G serial_pcb\r")
+            data: bytes = await wait_cancelable(self.read_line(), 2.0)
+            if is_error(data):
+                raise CommunicationsError(f"invalid PCB response {data}")
+            if data.startswith(b">"):
+                data = data[1:].strip()
+            if data.lower().startswith(b"s serial_pcb"):
+                data = data[12:].strip()
+            if data.startswith(b","):
+                data = data[1:].strip()
+            self.set_instrument_info('pcb_number', data.decode('utf-8', 'backslashreplace'))
 
-            # Get serial number
+            # Get calibration
             self.writer.write(b"G cal_date\r")
             data: bytes = await wait_cancelable(self.read_line(), 2.0)
             if is_error(data):
-                raise CommunicationsError(f"invalid serial number response {data}")
+                raise CommunicationsError(f"invalid calibration response {data}")
             if data.startswith(b">"):
                 data = data[1:].strip()
             if data.lower().startswith(b"s cal_date"):
