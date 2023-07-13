@@ -269,6 +269,18 @@ cut_size = false
 - The port (502 above) must match the MODBUS port set on the instrument
 - Display letter: Z
 
+## Thermo MAAP
+
+```toml
+[instrument.A21]
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+- Instrument baud rate: 9600 (7 data bits, even parity, 2 stop bits)
+- Display letter: A
+- PF12 requires COM1 (DB-25) and a NULL modem
+
 ## TSI 3563 Nephelometer
 
 ```toml

@@ -1,5 +1,6 @@
 import typing
 import netCDF4
+from math import isfinite
 import forge.cpd3.variant as cpd3_variant
 from forge.cpd3.identity import Identity, Name
 from ..default.converter import Converter as BaseConverter, DataRecord as BaseRecord, StateRecord, RecordConverter, VariableConverter
@@ -34,24 +35,62 @@ class DataRecord(BaseRecord):
                 params_meta = dict()
                 meta['Processing'][-1]['Parameters'] = params_meta
 
-            if wavelength_index < len(self.record.converter.ebc_efficiency):
-                params_meta['Efficiency'] = self.record.converter.ebc_efficiency[wavelength_index]
+            params_meta['Efficiency'] = self.record.converter.ebc_efficiency
 
             return meta
 
     def variable_converter(self, variable: netCDF4.Variable) -> typing.Optional[VariableConverter]:
-        if "wavelength" in variable.dimensions and getattr(variable, "variable_id", None) == "Ba":
+        if "wavelength" in variable.dimensions and getattr(variable, "variable_id", None) in ("Ba", "Bac", "X"):
             return self.AbsorptionWavelengthConverter(self, variable)
         return super().variable_converter(variable)
+
+
+class Parameters(RecordConverter):
+    def __init__(self, converter: "Converter", group: netCDF4.Group):
+        super().__init__(converter, group)
+        self.converter: "Converter" = converter
+
+        variable_name = "ZPARAMETERS_" + self.converter.source
+        self.base_name = Name(self.converter.station, 'raw', variable_name)
+
+    def metadata(self) -> cpd3_variant.Metadata:
+        meta = cpd3_variant.MetadataArray()
+        self.converter.insert_metadata(meta)
+        meta["Description"] = "List of all system parameters"
+        meta["Smoothing"] = {"Mode": "None"}
+        meta["Children"] = cpd3_variant.MetadataString({
+            "Description": "System parameter line",
+        })
+
+        return meta
+
+    def value(self) -> typing.Optional[typing.List[str]]:
+        var = self.group.variables.get("instrument_parameters")
+        if var is None:
+            return
+        return str(var[0]).split('\n')
+
+    def convert(self, result: typing.List[typing.Tuple[Identity, typing.Any]]) -> None:
+        start_time: float = self.converter.file_start_time
+        if start_time is None or not isfinite(start_time):
+            return
+
+        meta_start_time = start_time
+        end_time: float = self.converter.file_end_time
+        if self.converter.system_start_time and self.converter.system_start_time < meta_start_time:
+            meta_start_time = self.converter.system_start_time
+
+        result.append((Identity(name=self.base_name.to_metadata(), start=meta_start_time, end=end_time),
+                       self.metadata()))
+        result.append((Identity(name=self.base_name, start=start_time, end=end_time),
+                       self.value()))
 
 
 class Converter(BaseConverter):
     def __init__(self, station: str, root: netCDF4.Dataset):
         super().__init__(station, root)
 
-        self.ebc_efficiency: typing.List[float] = []
-        # Slow reporting, so discard this
-        self.expected_record_interval = None
+        self.ebc_efficiency: typing.Optional[float] = None
 
         params_group = self.root.groups.get("parameters")
         params_meta: typing.Dict[str, typing.Any] = self.processing_metadata[-1].get('Parameters')
@@ -59,29 +98,17 @@ class Converter(BaseConverter):
             params_meta = dict()
             self.processing_metadata[-1]['Parameters'] = params_meta
         if params_group is not None:
-            report_temperature = params_group.variables.get("instrument_standard_temperature")
-            if report_temperature is not None:
-                params_meta['SampleT'] = float(report_temperature[0])
-            report_pressure = params_group.variables.get("instrument_standard_pressure")
-            if report_pressure is not None:
-                params_meta['SampleP'] = float(report_pressure[0])
-            mean_ratio = params_group.variables.get("mean_ratio")
-            if mean_ratio is not None:
-                params_meta['MeanRatio'] = float(mean_ratio[0])
-            spot_size = params_group.variables.get("spot_area")
-            if spot_size is not None:
-                params_meta['SpotSize'] = float(spot_size[0])
-
             ebc_efficiency = params_group.variables.get("mass_absorption_efficiency")
             if ebc_efficiency is not None:
-                for i in range(len(ebc_efficiency)):
-                    self.ebc_efficiency.append(float(ebc_efficiency[i]))
+                self.ebc_efficiency = float(ebc_efficiency[0])
 
     def record_converter(self, group: netCDF4.Group) -> typing.Optional[RecordConverter]:
         if group.name == "data":
             return DataRecord(self, group)
-        elif group.name == "parameters":
+        elif group.name == "state":
             return None
+        elif group.name == "parameters":
+            return Parameters(self, group)
         return super().record_converter(group)
 
 
