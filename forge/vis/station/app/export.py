@@ -25,6 +25,8 @@ station_profile_export['aerosol']['raw']['scattering'].data = lambda station, st
         Name(station, 'raw', 'BbsB_S12'),
         Name(station, 'raw', 'BbsG_S12'),
         Name(station, 'raw', 'BbsR_S12'),
+        Name(station, 'raw', 'T_V12'),
+        Name(station, 'raw', 'U_V12'),
     },
 )
 station_profile_export['aerosol']['clean']['scattering'].data = lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
@@ -47,6 +49,8 @@ station_profile_export['aerosol']['clean']['scattering'].data = lambda station, 
         Name(station, 'clean', 'BbsB_S12'),
         Name(station, 'clean', 'BbsG_S12'),
         Name(station, 'clean', 'BbsR_S12'),
+        Name(station, 'clean', 'T_V12'),
+        Name(station, 'clean', 'U_V12'),
     },
 )
 station_profile_export['aerosol']['avgh']['scattering'].data = lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
@@ -69,6 +73,8 @@ station_profile_export['aerosol']['avgh']['scattering'].data = lambda station, s
         Name(station, 'avgh', 'BbsB_S12'),
         Name(station, 'avgh', 'BbsG_S12'),
         Name(station, 'avgh', 'BbsR_S12'),
+        Name(station, 'avgh', 'T_V12'),
+        Name(station, 'avgh', 'U_V12'),
     },
 )
 
