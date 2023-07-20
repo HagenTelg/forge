@@ -123,8 +123,6 @@ class AnalogOutput:
 
         self.command_channel: typing.Optional[typing.Any] = None
 
-        self.shutdown_value: typing.Optional[float] = None
-
     def __call__(self, value: float) -> None:
         self.persistent(value)
 

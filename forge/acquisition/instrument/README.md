@@ -550,6 +550,26 @@ initial = 40.0
 
 Remove the "output" subsection to prevent make the acquisition system automatically restore the last value on startup.
 
+## Books 0254 PID controller
+
+```toml
+[instrument.X1]
+type = "brooks0254"
+serial_port = "/dev/serial/by-id/..."
+
+[instrument.X1.data.Q_Q11]
+channel = 1
+type = "sample_flow"
+description = "analyzer flow"
+calibration = [1.0425, 0.646600] # 20221012/PJS@BOS
+[instrument.X1.data.Q_Q11.output]
+remember_changes = false
+initial = 32.3
+```
+
+- Instrument baud rate: 9600
+- Display letter: P
+
 # Common Configuration Tasks
 
 ## Add a secondary instrument
