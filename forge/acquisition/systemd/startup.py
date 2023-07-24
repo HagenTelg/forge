@@ -288,6 +288,9 @@ def start_all_control() -> None:
     if need_pressure_bypass_control():
         start_control("pressurebypass")
 
+    if CONFIGURATION.get("ACQUISITION.HUMIDOGRAPH") is not None:
+        start_control("humidograph")
+
 
 def start_all_instruments() -> None:
     instrument_root = CONFIGURATION.get("INSTRUMENT")

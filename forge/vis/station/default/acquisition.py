@@ -55,6 +55,8 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('campbellcr1000gmd'))
         self.display_instrument.append(self.DisplayInstrumentSimple('brooks0254'))
 
+        self.display_instrument.append(self.DisplayInstrumentSimple('humidograph'))
+
         self.display_static.append(BaseAcquisition.DisplayStatic('spancheck'))
 
 

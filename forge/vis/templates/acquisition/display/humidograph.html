@@ -1,0 +1,152 @@
+<div class="display-container collapsable collapsed menu">
+    <div class="header warning-state">{{ header|default("Humidograph") }}</div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% if writable %}
+    <div class="menu">
+        <button class="menu mdi mdi-menu" title="Humidograph actions"></button>
+        <ul class="menu menu-below">
+            <li><button id="{{uid}}_enable" class="simple-command" command="enable_humidograph"
+                        title="Enable the humidograph control cycle.  The setpoint will change at the next update time.">Enable</button></li>
+            <li><button id="{{uid}}_disable" class="simple-command" command="disable_humidograph"
+                        title="Disable the humidograph control cycle.  This also changes to the idle setpoint, if any.">Disable</button></li>
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="content display-data cycle invalid" id="{{uid}}_current_state">Current: <span class="setpoint" id="{{uid}}_current_setpoint"></span> activated at <span class="time" id="{{uid}}_current_time"></span></div>
+    <div class="content display-data cycle invalid" id="{{uid}}_next_state">Next: <span class="setpoint" id="{{uid}}_next_setpoint"></span> at <span class="time" id="{{uid}}_next_time"></span></div>
+    <div class="content display-data" id="{{uid}}_disabled">Humidograph schedule disabled</div>
+</div>
+
+
+<style>
+#{{uid}} .time {
+  font-family: monospace;
+}
+#{{uid}} .setpoint {
+  font-family: monospace;
+}
+#{{uid}} .cycle.invalid,
+#{{uid}} .cycle.disabled {
+  display: none;
+}
+#{{uid}}_disabled:not(.missing-current):not(.disabled),
+#{{uid}}_disabled:not(.missing-next):not(.disabled) {
+  display: none;
+}
+</style>
+
+
+<script>
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+
+    const enableCommand = document.getElementById('{{uid}}_enable');
+    const disableCommand = document.getElementById('{{uid}}_disable');
+    enableCommand.style.display = 'none';
+
+    const currentState = document.getElementById('{{uid}}_current_state');
+    const currentSetpoint = document.getElementById('{{uid}}_current_setpoint');
+    const currentTime = document.getElementById('{{uid}}_current_time');
+    currentState.classList.add('invalid');
+
+    const nextState = document.getElementById('{{uid}}_next_state');
+    const nextSetpoint = document.getElementById('{{uid}}_next_setpoint');
+    const nextTime = document.getElementById('{{uid}}_next_time');
+    nextState.classList.add('invalid');
+
+    const disabledText = document.getElementById('{{uid}}_disabled');
+    disabledText.classList.add('missing-current', 'missing-next');
+
+    function isValid(value) {
+        if (!value) {
+            return false;
+        }
+        return value.epoch_ms !== null && isFinite(value.epoch_ms) && value.epoch_ms > 0;
+    }
+
+    function formatTime(epoch_ms) {
+        epoch_ms = Math.floor(epoch_ms);
+        let date = new Date(epoch_ms);
+
+        return date.getUTCHours().toString().padStart(2, '0') + ':' +
+            date.getUTCMinutes().toString().padStart(2, '0') + ':' +
+            date.getUTCSeconds().toString().padStart(2, '0');
+    }
+
+    context.addSourceTarget((value) => {
+        if (!isValid(value)) {
+            currentState.classList.add('invalid');
+            disabledText.classList.add('missing-current');
+            return;
+        }
+        currentState.classList.remove('invalid');
+        disabledText.classList.remove('missing-current');
+
+        currentSetpoint.textContent = (value.setpoint * 1).toFixed(1) + "%";
+        currentTime.textContent = formatTime(value.epoch_ms);
+    }, context.source, 'active');
+
+    
+    let nextTimePoint = undefined;
+    let stopTimeUpdate = () => {};
+    function updateRemainingTime() {
+        const now = Date.now();
+        const remaining = nextTimePoint - now;
+        if (remaining < 250) {
+            nextTime.textContent = formatTime(nextTimePoint);
+            stopTimeUpdate();
+            return;
+        }
+
+        let seconds = Math.round(remaining / 1000);
+        if (seconds < 1) {
+            seconds = 1;
+        }
+        let minutes = Math.floor(seconds / 60);
+        seconds = seconds % 60;
+        if (minutes > 99) {
+            nextTime.textContent = formatTime(nextTimePoint) + " (--:" + seconds.toString().padStart(2, '0') + ") ";
+        } else {
+            nextTime.textContent = formatTime(nextTimePoint) + " (" +
+                minutes.toString().padStart(2, '0') + ":" + seconds.toString().padStart(2, '0') + ")";
+        }
+    }
+    context.addSourceTarget((value) => {
+        stopTimeUpdate();
+        if (!isValid(value)) {
+            nextState.classList.add('invalid');
+            disabledText.classList.add('missing-next');
+            return;
+        }
+        nextState.classList.remove('invalid');
+        disabledText.classList.remove('missing-next');
+
+        nextSetpoint.textContent = (value.setpoint * 1).toFixed(1) + "%";
+        nextTimePoint = value.epoch_ms;
+        stopTimeUpdate = context.tickOnSecond(updateRemainingTime, nextTimePoint);
+        updateRemainingTime();
+    }, context.source, 'next');
+
+    context.addSourceTarget((value) => {
+        if (value !== undefined && value !== 0) {
+            enableCommand.style.display = 'none';
+            disableCommand.style.display = '';
+
+            currentState.classList.remove('disabled');
+            nextState.classList.remove('disabled');
+            disabledText.classList.remove('disabled');
+        } else {
+            enableCommand.style.display = '';
+            disableCommand.style.display = 'none';
+
+            currentState.classList.add('disabled');
+            nextState.classList.add('disabled');
+            disabledText.classList.add('disabled');
+        }
+    }, context.source, 'enabled');
+})();
+</script>
