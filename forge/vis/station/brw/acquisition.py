@@ -41,10 +41,12 @@ class AcquisitionTranslator(BaseAcquisitionTranslator):
             'T_V21': ('F21', 'Tsample'),
             'U_V21': ('F21', 'Usample'),
             'T_V22': ('F21', 'Track'),
+            'Fn_F21': ('F21', 'Fp'),
 
             'T_V31': ('F31', 'Tsample'),
             'U_V31': ('F31', 'Usample'),
             'T_V32': ('F31', 'Track'),
+            'Fn_F31': ('F31', 'Fp'),
         }
         for i in range(9):
             self._filter_shims['Pd_P2' + str(i)] = ('F21', 'PD' + str(i))

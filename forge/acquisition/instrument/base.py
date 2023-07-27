@@ -379,6 +379,9 @@ class BaseInstrument:
     async def run(self) -> typing.NoReturn:
         raise NotImplementedError
 
+    async def shutdown(self) -> None:
+        pass
+
     class Input:
         def __init__(self, instrument: "BaseInstrument", name: str):
             self.instrument = instrument

@@ -250,24 +250,29 @@ class ArrayVariable(BaseInstrument.Variable):
     def clear(self) -> None:
         self.average.clear()
 
+    @property
+    def _dimension_count(self) -> int:
+        return len(self.dimensions) if self.dimensions else self.source.dimensions
+
     def attach_to_record(self, record: BaseInstrument.Record) -> None:
         if self.average is None:
-            self.average = record.average.array(dimensions=len(self.dimensions) if self.dimensions else self.source.dimensions)
+            self.average = record.average.array(dimensions=self._dimension_count)
         elif not record.average.has_entry(self.average):
             raise ValueError(f"variable {self.name} from {self.source.name} attached to multiple records")
         self.source.attached_to_record = True
 
 
 class ArrayVariableLastValid(ArrayVariable):
-    def __init__(self, instrument: BaseInstrument, source: ArrayInput, dimension: typing.Optional[Dimension],
+    def __init__(self, instrument: BaseInstrument, source: ArrayInput,
+                 dimensions: typing.Optional[typing.Union[Dimension, typing.Iterable[Dimension]]],
                  name: str, code: typing.Optional[str], attributes: typing.Dict[str, typing.Any]):
         if 'cell_methods' not in attributes:
             attributes['cell_methods'] = "time: last"
-        super().__init__(instrument, source, dimension, name, code, attributes)
+        super().__init__(instrument, source, dimensions, name, code, attributes)
 
     def attach_to_record(self, record: BaseInstrument.Record) -> None:
         if self.average is None:
-            self.average = record.average.array_last_valid(dimensions=len(self.dimensions))
+            self.average = record.average.array_last_valid(dimensions=self._dimension_count)
         elif not record.average.has_entry(self.average):
             raise ValueError(f"variable {self.name} from {self.source.name} attached to multiple records")
         self.source.attached_to_record = True

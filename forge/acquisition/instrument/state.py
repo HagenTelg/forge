@@ -1,6 +1,7 @@
 import typing
 import asyncio
 import enum
+import time
 from .base import BaseInstrument
 
 
@@ -10,6 +11,7 @@ class Persistent(BaseInstrument.Persistent):
 
         self.send_to_bus = send_to_bus
         self.save_value = save_value
+        self.autosave: bool = True
         self.value: typing.Any = None
         self._deduplicate_value: typing.Any = None
 
@@ -101,9 +103,17 @@ class Persistent(BaseInstrument.Persistent):
         if self._queued_for_bus is not None:
             await self.instrument.context.bus.set_state_value(self.name, self._queued_for_bus)
             self._queued_for_bus = None
-        if self._queued_for_save is not None:
+        if self._queued_for_save is not None and self.autosave:
             await self.instrument.context.persistent.save(self.name, self._queued_for_save, now)
             self._queued_for_save = None
+
+    async def save(self, now: float = None) -> None:
+        if self._queued_for_save is None:
+            return
+        if now is None:
+            now = time.time()
+        await self.instrument.context.persistent.save(self.name, self._queued_for_save, now)
+        self._queued_for_save = None
 
 
 class PersistentEnum(Persistent):

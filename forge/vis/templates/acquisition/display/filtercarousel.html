@@ -49,13 +49,20 @@
             <tr> <td>Sample humidity (%)</td>       <td class="value-formatted" field="Usample"></td> </tr>
             <tr> <td>Sample temperature (°C)</td>   <td class="value-formatted" field="Tsample"></td> </tr>
             <tr> <td>Rack temperature (°C)</td>     <td class="value-formatted" field="Track"></td> </tr>
-            <tr> <td>Active filter number</td>      <td class="value-formatted" field="Fn" decimals="0" rightpad="2"></td> </tr>
+            <tr> <td>Sampling filter number</td>    <td class="value-formatted" field="Fp" decimals="0" rightpad="2"></td> </tr>
         </tbody>
     </table>
 
     <div class="content display-data" id="{{uid}}_next_state">Advance at <span id="{{uid}}_advance_time"></span></div>
 
-    <div class="content display-data bypass-state hide-false">Bypassed</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="cnc_high">CN count too high, filter sampling bypassed</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="cnc_spike">CN spike detected, filter sampling bypassed</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="wind_out_of_sector">Wind direction out of clean sector, filter sampling bypassed</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="wind_speed_low">Wind speed too low, filter sampling bypassed</div>
 
     <div class="content display-data notification-state hide-false"
          notification="carousel_complete">Carousel complete</div>
@@ -93,11 +100,12 @@
     const carouselSize = '{{ carousel_size }}' * 1;
     let onLastFilter = false;
     let carouselChanging = false;
+    let carouselComplete = false;
 
     function updateVisibility() {
         setVisible('#{{uid}}_start_change', !carouselChanging);
         setVisible('#{{uid}}_end_change', carouselChanging);
-        setVisible('#{{uid}}_advance', !onLastFilter && !carouselChanging);
+        setVisible('#{{uid}}_advance', !onLastFilter && !carouselChanging && !carouselComplete);
     }
 
     context.addSourceTarget((value) => {
@@ -108,13 +116,15 @@
         }
 
         updateVisibility();
-    }, context.source, 'Fn');
+    }, context.source, 'Fp');
     context.addInstrumentState((source, state) => {
         const notifications = state.notifications;
         if (!notifications) {
             carouselChanging = false;
+            carouselComplete = false;
         } else {
             carouselChanging = notifications.includes('carousel_change');
+            carouselComplete = notifications.includes('carousel_complete');
         }
         updateVisibility();
     }, context.source);
