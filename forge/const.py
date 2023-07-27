@@ -38,6 +38,7 @@ STATIONS = frozenset({
     'msa',
     'msy',
     'nil',
+    'nrlm',
     'nwr',
     'pde',
     'pon',
