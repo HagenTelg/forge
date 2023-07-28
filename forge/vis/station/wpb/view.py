@@ -6,6 +6,9 @@ from ..default.aerosol.temperature import Temperature
 from ..default.aerosol.pressure import BasicPressure
 from ..default.aerosol.flow import BasicFlow
 from .counts import ParticleConcentration, EditingParticleConcentration, ADMagicCPC200Status, ADMagicCPC200StatusStatusSecondary
+from .clap import CLAPStatusSecondary
+from .optical import OpticalCLAPSecondary, EditingCLAPSecondary
+from .green import Green
 
 
 station_views = detach(aerosol_views)
@@ -20,6 +23,21 @@ station_views['aerosol-raw-cpcstatus'] = ADMagicCPC200Status('aerosol-raw')
 station_views['aerosol-raw-cpcstatus2'] = ADMagicCPC200StatusStatusSecondary('aerosol-raw')
 station_views['aerosol-realtime-cpcstatus'] = ADMagicCPC200Status('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-cpcstatus2'] = ADMagicCPC200StatusStatusSecondary('aerosol-realtime', realtime=True)
+
+
+station_views['aerosol-raw-opticalclap2'] = OpticalCLAPSecondary('aerosol-raw')
+station_views['aerosol-editing-clap2'] = EditingCLAPSecondary()
+station_views['aerosol-clean-opticalclap2'] = OpticalCLAPSecondary('aerosol-clean')
+station_views['aerosol-avgh-opticalclap2'] = OpticalCLAPSecondary('aerosol-avgh')
+station_views['aerosol-realtime-opticalclap2'] = OpticalCLAPSecondary('aerosol-realtime', realtime=True)
+station_views['aerosol-raw-clapstatus2'] = CLAPStatusSecondary('aerosol-raw')
+station_views['aerosol-realtime-clapstatus2'] = CLAPStatusSecondary('aerosol-realtime', realtime=True)
+
+
+station_views['aerosol-raw-green'] = Green('aerosol-raw')
+station_views['aerosol-clean-green'] = Green('aerosol-clean')
+station_views['aerosol-avgh-green'] = Green('aerosol-avgh')
+station_views['aerosol-realtime-green'] = Green('aerosol-realtime', realtime=True)
 
 
 measurements = OrderedDict([

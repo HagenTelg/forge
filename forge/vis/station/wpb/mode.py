@@ -11,5 +11,22 @@ station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-cpcsta
                                          'aerosol-realtime-cpcstatus')
 
 
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-opticalclap2', "TAP Optical"),
+                                    'aerosol-raw-optical')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-opticalclap2', "TAP Optical"),
+                                         'aerosol-realtime-optical')
+station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-clap2', "TAP Absorption"),
+                                        'aerosol-editing-absorption')
+station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-opticalclap2', "TAP Optical"),
+                                      'aerosol-clean-optical')
+station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-opticalclap2', "TAP Optical"),
+                                     'aerosol-avgh-optical')
+
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-clapstatus2', "TAP Status"),
+                                    'aerosol-raw-clapstatus')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-clapstatus2', "TAP Status"),
+                                         'aerosol-realtime-clapstatus')
+
+
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:
     return station_modes.get(mode_name)
