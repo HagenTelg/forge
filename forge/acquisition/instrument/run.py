@@ -239,7 +239,6 @@ def run(instrument: BaseInstrument, systemd: bool = False) -> None:
     except asyncio.CancelledError:
         pass
     _LOGGER.debug("Instrument shutdown")
-    loop.run_until_complete(instrument.shutdown())
 
     if heartbeat:
         _LOGGER.debug("Shutting down heartbeat")

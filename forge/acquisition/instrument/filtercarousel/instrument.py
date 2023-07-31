@@ -449,7 +449,7 @@ class Instrument(StandardInstrument):
 
     @property
     def _should_bypass_filter(self) -> bool:
-        return  bool(self.notify_cnc_high.value) or bool(self.notify_cnc_spike) or bool(self.notify_wind_speed_low) or bool(self.notify_wind_out_of_sector)
+        return bool(self.notify_cnc_high.value) or bool(self.notify_cnc_spike) or bool(self.notify_wind_speed_low) or bool(self.notify_wind_out_of_sector)
 
     async def _process_state(self) -> None:
         self.notify_cnc_high(self._cnc_high)
@@ -570,33 +570,34 @@ class Instrument(StandardInstrument):
         # Initial delay to make sure everything is started
         await asyncio.sleep(5)
 
-        await self.emit()
-        await self._process_data()
-        await self._process_advance()
-        self._activate_valve(self.data_Fn.value)
-        await self._update_next()
-        await asyncio.sleep(self._report_interval)
-
-        self.is_communicating = True
-
-        next_save = time.monotonic() + 10 * 60
-        while True:
+        try:
             await self.emit()
-            await self._update()
-
-            now = time.monotonic()
-            if next_save < now:
-                await self._save_all()
-                next_save = now + 10 * 60
-
+            await self._process_data()
+            await self._process_advance()
+            self._activate_valve(self.data_Fn.value)
+            await self._update_next()
             await asyncio.sleep(self._report_interval)
 
-    async def shutdown(self) -> None:
-        # This should be set by the shutdown of the uMAC, but do it here anyway
-        self._activate_valve(0)
-        self.data_Fn(0)
-        if self.data_mode.value in (self.Mode.Filter, self.Mode.InitialBlank):
-            self.data_mode(self.Mode.Bypass)
-        await self.emit()
+            self.is_communicating = True
 
-        await self._save_all()
+            next_save = time.monotonic() + 10 * 60
+            while True:
+                await self.emit()
+                await self._update()
+
+                now = time.monotonic()
+                if next_save < now:
+                    await self._save_all()
+                    next_save = now + 10 * 60
+
+                await asyncio.sleep(self._report_interval)
+        finally:
+            # This should be set by the shutdown of the uMAC, but do it here anyway
+            self._activate_valve(0)
+
+            self.data_Fn(0)
+            if self.data_mode.value in (self.Mode.Filter, self.Mode.InitialBlank):
+                self.data_mode(self.Mode.Bypass)
+            await self.emit()
+
+            await self._save_all()
