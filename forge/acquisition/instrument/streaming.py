@@ -6,7 +6,7 @@ import traceback
 from forge.tasks import wait_cancelable
 from forge.acquisition import LayeredConfiguration
 from .base import BaseSimulator, BaseContext, BaseDataOutput, BasePersistentInterface, BaseBusInterface, CommunicationsError
-from .standard import StandardInstrument
+from .standard import IterativeCommunicationsInstrument
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class StreamingContext(BaseContext):
             writer.close()
 
 
-class StreamingInstrument(StandardInstrument):
+class StreamingInstrument(IterativeCommunicationsInstrument):
     def __init__(self, context: StreamingContext):
         super().__init__(context)
         self.context = context
@@ -116,73 +116,44 @@ class StreamingInstrument(StandardInstrument):
             await asyncio.sleep(1.0)
         self.reader, self.writer = await self.context.open_stream()
 
+    async def initialize_communications(self) -> bool:
+        if self._stream_need_reset or not self.reader:
+            _LOGGER.debug("Resetting stream after communications start failure")
+            try:
+                await self.reset_stream()
+            except IOError:
+                _LOGGER.warning("Error resetting stream", exc_info=True)
+                return False
+            if not self.reader:
+                _LOGGER.warning("No read stream available")
+                return False
+
+        try:
+            await self.start_communications()
+        except (TimeoutError, asyncio.TimeoutError, CommunicationsError):
+            if self.context.always_reset_stream:
+                self._stream_need_reset = True
+            raise
+        except (IOError, EOFError, asyncio.IncompleteReadError):
+            self._stream_need_reset = True
+            raise
+
+        return True
+
+    async def step_communications(self) -> bool:
+        try:
+            await self.communicate()
+        except (TimeoutError, asyncio.TimeoutError, CommunicationsError):
+            if self.context.always_reset_stream:
+                self._stream_need_reset = True
+            raise
+        except (IOError, EOFError, asyncio.IncompleteReadError):
+            self._stream_need_reset = True
+            raise
+
+        return True
+
     async def run(self) -> typing.NoReturn:
-        # Send initial information and state
-        await self.emit()
-
-        async def establish_communications() -> bool:
-            if self._stream_need_reset or not self.reader:
-                _LOGGER.debug("Resetting stream after communications start failure")
-                try:
-                    await self.reset_stream()
-                except IOError:
-                    _LOGGER.warning("Error resetting stream", exc_info=True)
-                    return False
-                if not self.reader:
-                    _LOGGER.warning("No read stream available")
-                    return False
-
-            try:
-                await self.start_communications()
-            except (TimeoutError, asyncio.TimeoutError):
-                _LOGGER.debug("Timeout waiting for response in start communications", exc_info=True)
-                if self.context.always_reset_stream:
-                    self._stream_need_reset = True
-                return False
-            except CommunicationsError:
-                _LOGGER.debug("Invalid response in start communications", exc_info=True)
-                if self.context.always_reset_stream:
-                    self._stream_need_reset = True
-                return False
-            except (IOError, EOFError, asyncio.IncompleteReadError):
-                _LOGGER.warning("Stream IO error during start communications", exc_info=True)
-                self._stream_need_reset = True
-                return False
-
-            _LOGGER.debug("Communications established")
-            self.context.bus.log("Communications established",
-                                 type=BaseBusInterface.LogType.COMMUNICATIONS_ESTABLISHED)
-            return True
-
-        async def process() -> bool:
-            try:
-                await self.communicate()
-            except (TimeoutError, asyncio.TimeoutError):
-                _LOGGER.info("Timeout waiting for response", exc_info=True)
-                self.context.bus.log("Timeout waiting for response", {
-                    "exception": traceback.format_exc(),
-                }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
-                if self.context.always_reset_stream:
-                    self._stream_need_reset = True
-                return False
-            except CommunicationsError:
-                _LOGGER.info("Invalid response received", exc_info=True)
-                self.context.bus.log("Invalid response received", {
-                    "exception": traceback.format_exc(),
-                }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
-                if self.context.always_reset_stream:
-                    self._stream_need_reset = True
-                return False
-            except (IOError, EOFError, asyncio.IncompleteReadError):
-                _LOGGER.warning("Stream IO error", exc_info=True)
-                self.context.bus.log("Stream IO error", {
-                    "exception": traceback.format_exc(),
-                }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
-                self._stream_need_reset = True
-                return False
-
-            return True
-
         if not self.reader:
             try:
                 self.reader, self.writer = await self.context.open_stream()
@@ -195,22 +166,7 @@ class StreamingInstrument(StandardInstrument):
                 _LOGGER.warning("Error opening stream", exc_info=True)
                 await asyncio.sleep(10)
 
-        while True:
-            while not await establish_communications():
-                self.is_communicating = False
-                await asyncio.sleep(10)
-                self._stream_need_reset = True
-
-            self.is_communicating = True
-            done_emit = False
-            while await process():
-                await self.emit()
-                done_emit = True
-            self.is_communicating = False
-            if done_emit:
-                # If we've emitted state with communications, make sure to do it without to reflect the new state
-                await self.emit(incomplete=True)
-            await asyncio.sleep(1.0)
+        await super().run()
 
 
 class StreamingSimulator(BaseSimulator):

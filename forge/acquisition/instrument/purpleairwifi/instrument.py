@@ -6,21 +6,21 @@ import traceback
 import time
 from json import JSONDecodeError
 from forge.units import temperature_f_to_c
-from ..standard import StandardInstrument
+from ..standard import IterativeCommunicationsInstrument
 from ..base import BaseContext, BaseBusInterface, CommunicationsError
 from ..parse import parse_datetime_field
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class Instrument(StandardInstrument):
+class Instrument(IterativeCommunicationsInstrument):
     INSTRUMENT_TYPE = "purpleair"
     MANUFACTURER = "Purple Air"
     MODEL = "PA-II"
     DISPLAY_LETTER = "A"
     TAGS = frozenset({"aerosol", "purpleair"})
     INSTRUMENT_INFO_METADATA = {
-        **StandardInstrument.INSTRUMENT_INFO_METADATA,
+        **IterativeCommunicationsInstrument.INSTRUMENT_INFO_METADATA,
         **{
             'mac_address': "instrument WiFi MAC address",
             'hardware': "instrument hardware description",
@@ -137,71 +137,17 @@ class Instrument(StandardInstrument):
                     raise CommunicationsError("invalid response") from e
                 self._process_report(fields)
 
-    async def run(self) -> typing.NoReturn:
-        # Send initial information and state
-        await self.emit()
+    async def initialize_communications(self) -> bool:
+        await self._poll_report()
+        self._sleep_time = 0
+        return True
 
-        async def establish_communications() -> bool:
-            try:
-                await self._poll_report()
-                self._sleep_time = 0
-            except (TimeoutError, asyncio.TimeoutError):
-                _LOGGER.debug("Timeout waiting for response in start communications", exc_info=True)
-                return False
-            except (CommunicationsError, KeyError, ValueError, OverflowError):
-                _LOGGER.debug("Invalid response in start communications", exc_info=True)
-                return False
-            except (IOError, EOFError, asyncio.IncompleteReadError):
-                _LOGGER.warning("IO error during start communications", exc_info=True)
-                return False
-
-            _LOGGER.debug("Communications established")
-            self.context.bus.log("Communications established",
-                                 type=BaseBusInterface.LogType.COMMUNICATIONS_ESTABLISHED)
-            return True
-
-        async def process() -> bool:
-            try:
-                if self._sleep_time > 0.0:
-                    await asyncio.sleep(self._sleep_time)
-                    self._sleep_time = 0.0
-                begin_read = time.monotonic()
-                await self._poll_report()
-                end_read = time.monotonic()
-                self._sleep_time = self._report_interval - (end_read - begin_read)
-            except (TimeoutError, asyncio.TimeoutError):
-                _LOGGER.info("Timeout waiting for response", exc_info=True)
-                self.context.bus.log("Timeout waiting for response", {
-                    "exception": traceback.format_exc(),
-                }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
-                return False
-            except (CommunicationsError, KeyError, ValueError, OverflowError):
-                _LOGGER.info("Invalid response received", exc_info=True)
-                self.context.bus.log("Invalid response received", {
-                    "exception": traceback.format_exc(),
-                }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
-                return False
-            except (IOError, EOFError, asyncio.IncompleteReadError):
-                _LOGGER.warning("IO error", exc_info=True)
-                self.context.bus.log("IO error", {
-                    "exception": traceback.format_exc(),
-                }, type=BaseBusInterface.LogType.COMMUNICATIONS_LOST)
-                return False
-
-            return True
-
-        while True:
-            while not await establish_communications():
-                self.is_communicating = False
-                await asyncio.sleep(10)
-
-            self.is_communicating = True
-            done_emit = False
-            while await process():
-                await self.emit()
-                done_emit = True
-            self.is_communicating = False
-            if done_emit:
-                # If we've emitted state with communications, make sure to do it without to reflect the new state
-                await self.emit(incomplete=True)
-            await asyncio.sleep(1.0)
+    async def step_communications(self) -> bool:
+        if self._sleep_time > 0.0:
+            await asyncio.sleep(self._sleep_time)
+            self._sleep_time = 0.0
+        begin_read = time.monotonic()
+        await self._poll_report()
+        end_read = time.monotonic()
+        self._sleep_time = self._report_interval - (end_read - begin_read)
+        return True
