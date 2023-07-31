@@ -8,7 +8,7 @@ from importlib import import_module
 from pathlib import Path
 from forge.acquisition import LayeredConfiguration, CONFIGURATION
 from forge.acquisition.average import AverageRecord
-from .base import BaseInstrument, BaseDataOutput, BaseBusInterface, BasePersistentInterface
+from .base import BaseInstrument, BaseDataOutput, BaseBusInterface, BasePersistentInterface, BaseContext
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -261,3 +261,17 @@ def run(instrument: BaseInstrument, systemd: bool = False) -> None:
 
     _LOGGER.debug("Shutdown complete")
 
+
+def launch(create_instrument: typing.Callable[[BaseContext], BaseInstrument]) -> None:
+    args = arguments()
+    args = args.parse_args()
+    bus = bus_interface(args)
+    data = data_output(args)
+    persistent = persistent_interface(args)
+    config = instrument_config(args)
+
+    ctx = BaseContext(config, data, bus, persistent)
+    ctx.average_config = average_config(args)
+    ctx.cutsize_config = cutsize_config(args)
+
+    run(create_instrument(ctx), args.systemd)
