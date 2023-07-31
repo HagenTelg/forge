@@ -52,6 +52,7 @@ class GenericDisplay(Display):
             display=self,
             rows=self.rows,
             decimal_width=self.decimal_width,
+            instrument=self.instrument,
             **kwargs
         ))
 
