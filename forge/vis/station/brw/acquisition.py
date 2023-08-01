@@ -1,6 +1,6 @@
 import typing
 from forge.vis.acquisition import Translator
-from forge.vis.acquisition.basic import ParameterDisplay, ParameterSummary, Display, SummaryItem
+from forge.vis.acquisition.basic import ParameterDisplay, ParameterSummary, Display, SummaryItem, GenericDisplay
 from ..default.acquisition import Acquisition as BaseAcquisition
 from ..default.acquisition import display as base_display
 from ..default.acquisition import summary as base_summary
@@ -18,6 +18,7 @@ class Acquisition(BaseAcquisition):
 
         self.display_instrument.append(self.DisplayInstrument(display_type='filtercarousel', match_source='F21'))
         self.display_instrument.append(self.DisplayInstrument(display_type='filtercarousel', match_source='F31'))
+        self.display_instrument.append(self.DisplayInstrument(display_type='realtimewind', match_source='XM2'))
 
         self.summary_instrument.append(self.SummaryInstrument(summary_type='realtimewind', match_source='XM2',
                                                               priority=1000))
@@ -26,6 +27,13 @@ class Acquisition(BaseAcquisition):
 _source_display: typing.Dict[str, Display] = {
     'F21': ParameterDisplay('filtercarousel', {'header': 'PMEL Filter Carousel'}),
     'F31': ParameterDisplay('filtercarousel', {'header': 'SCRIPPS Filter Carousel'}),
+}
+
+_type_display: typing.Dict[str, Display] = {
+    'realtimewind': GenericDisplay('NOAA Windbird', [
+        GenericDisplay.Row('Wind speed (m/s)', 'WS', decimals=1),
+        GenericDisplay.Row('Wind direction (degrees)', 'WD', decimals=1),
+    ]),
 }
 
 _type_summary: typing.Dict[str, SummaryItem] = {
@@ -152,6 +160,9 @@ station_acquisition_translator.interfaces.append(RealtimeWindInterface())
 
 def display(station: str, display_type: str, source: typing.Optional[str]) -> typing.Optional[Display]:
     d = _source_display.get(source)
+    if d:
+        return d
+    d = _type_display.get(display_type)
     if d:
         return d
     return base_display(station, display_type, source)
