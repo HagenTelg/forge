@@ -54,7 +54,9 @@ def main():
 
     if '/' in args.type:
         spec = importlib.util.spec_from_file_location("forge.acquisition.instrument.external", args.type)
-        importlib.util.module_from_spec(spec).main()
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        mod.main()
     else:
         import_module('.', 'forge.acquisition.instrument.' + args.type).main()
 
