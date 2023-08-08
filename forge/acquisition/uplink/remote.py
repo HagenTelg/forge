@@ -269,6 +269,10 @@ def main():
                         default=CONFIGURATION.get('ACQUISITION.BUS', '/run/forge-acquisition-bus.socket'),
                         help="acquisition bus socket")
 
+    parser.add_argument('--no-retry',
+                        dest='no_retry', action='store_true',
+                        help="disable automatic connection retry")
+
 
     args = parser.parse_args()
     if args.debug:
@@ -328,6 +332,8 @@ def main():
                 raise
             except:
                 _LOGGER.info(f"Connection to {url} terminated", exc_info=True)
+            if args.no_retry:
+                return
             await asyncio.sleep(60)
 
     connection_run = loop.create_task(run())
