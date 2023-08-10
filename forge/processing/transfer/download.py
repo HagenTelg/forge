@@ -13,7 +13,7 @@ from base64 import b64decode
 from shutil import move as move_file
 from forge.crypto import key_to_bytes
 from forge.processing.transfer import CONFIGURATION
-from forge.processing.transfer.completion import completion_directory
+from forge.processing.transfer.completion import completion_directory, completion_command
 from forge.processing.transfer.storage.client import GetFiles
 from forge.processing.transfer.storage.protocol import FileType
 
@@ -202,7 +202,7 @@ def main():
 
                 if args.command:
                     process = await asyncio.create_subprocess_shell(
-                        args.command,
+                        completion_command(args.command, self.key, self.station, self.file_type),
                         stdin=asyncio.subprocess.DEVNULL
                     )
                     await process.communicate()

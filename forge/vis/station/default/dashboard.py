@@ -19,9 +19,11 @@ code_records: typing.Dict[str, Record] = {
     ),
     'acquisition-transfer-backup': FileIngestRecord.simple_override(
         name="Acquisition computer backup transfer",
+        offline=(26 + 12) * 60 * 60,
     ),
     'acquisition-telemetry-uplink': BasicRecord.simple_override(
         name="Telemetry uplink",
+        offline=(26 + 12) * 60 * 60,
     ),
     'acquisition-telemetry-tunnel': BasicRecord.simple_override(
         name="Fallback SSH remote access",
