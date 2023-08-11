@@ -2,7 +2,7 @@ import typing
 from dynaconf import Dynaconf
 from dynaconf.constants import DEFAULT_SETTINGS_FILES
 from tomlkit.container import Container as TOMLContainer
-from tomlkit.items import Item as TOMLItem, Table as TOMLTable, Comment as TOMLComment, Key as TOMLKey
+from tomlkit.items import Item as TOMLItem, Table as TOMLTable, Comment as TOMLComment, Key as TOMLKey, SingleKey as TOMLSingleKey
 from tomlkit.exceptions import NonExistentKey as TOMLNonExistentKey
 
 CONFIGURATION = Dynaconf(
@@ -22,9 +22,9 @@ class LayeredConfiguration:
         self._toml = toml
 
     @staticmethod
-    def _get_toml_key(toml: TOMLContainer, key: str) -> typing.Optional[TOMLItem]:
+    def toml_resolve(toml: TOMLContainer, key: str) -> typing.Tuple[typing.Optional[TOMLItem], typing.Optional[TOMLKey]]:
         try:
-            return toml[key]
+            return toml[key], TOMLSingleKey(key)
         except TOMLNonExistentKey:
             pass
         key = key.casefold()
@@ -32,13 +32,13 @@ class LayeredConfiguration:
             if not isinstance(check, TOMLKey):
                 continue
             if check.key.casefold() == key:
-                return value
-        return None
+                return value, check
+        return None, None
 
     @staticmethod
     def _lookup_toml_path(toml: TOMLContainer, path: typing.Iterable[str]) -> typing.Optional[TOMLContainer]:
         for p in path:
-            toml = LayeredConfiguration._get_toml_key(toml, p)
+            toml, _ = LayeredConfiguration.toml_resolve(toml, p)
             if not toml:
                 return None
             if not isinstance(toml, TOMLTable):
@@ -128,7 +128,7 @@ class LayeredConfiguration:
         if toml is None:
             return None
 
-        value = self._get_toml_key(toml, actual_path[-1])
+        value, _ = self.toml_resolve(toml, actual_path[-1])
         if value is not None:
             comment = value.trivia.comment.strip()
             if comment.startswith("#"):
