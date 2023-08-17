@@ -1,12 +1,16 @@
 import typing
 import asyncio
+import logging
 import re
+import forge.data.structure.variable as netcdf_var
 from math import isfinite
 from forge.acquisition import LayeredConfiguration
 from .standard import StandardInstrument
-from .variable import Input, Variable
+from .variable import Input, Variable, VariableVectorMagnitude, VariableVectorDirection
 from .state import Persistent, State
 from ..cutsize import CutSize
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _merge_attribute(config: LayeredConfiguration, attributes: typing.Dict[str, str]) -> None:
@@ -52,6 +56,37 @@ class AnalogInput:
         if not isinstance(variable_config, dict):
             return list()
 
+        pending_wind_speed: typing.Dict[str, typing.Tuple[Input, str, str, typing.Dict[str, typing.Any]]] = dict()
+        pending_wind_direction: typing.Dict[str, typing.Tuple[Input, str, str, typing.Dict[str, typing.Any]]] = dict()
+
+        def wind_speed(source: Input, name: str = None, code: str = None,
+                       attributes: typing.Dict[str, typing.Any] = None) -> None:
+            if code and code.startswith("WS"):
+                associated = code[2:]
+            elif name and "wind_speed" in name:
+                associated = name.replace("wind_speed", "")
+            else:
+                associated = ""
+
+            if associated in pending_wind_speed:
+                _LOGGER.warning("Duplicate wind speed association, one will be ignored")
+
+            pending_wind_speed[associated] = (source, name, code, attributes)
+
+        def wind_direction(source: Input, name: str = None, code: str = None,
+                           attributes: typing.Dict[str, typing.Any] = None) -> None:
+            if code and code.startswith("WD"):
+                associated = code[2:]
+            elif name and "wind_direction" in name:
+                associated = name.replace("wind_direction", "")
+            else:
+                associated = ""
+
+            if associated in pending_wind_direction:
+                _LOGGER.warning("Duplicate wind direction association, one will be ignored")
+
+            pending_wind_direction[associated] = (source, name, code, attributes)
+
         type_map: typing.Dict[str, typing.Callable] = {
             'temperature': instrument.variable_temperature,
             't': instrument.variable_temperature,
@@ -71,6 +106,10 @@ class AnalogInput:
             'sample_q': instrument.variable_sample_flow,
             'delta_pressure': instrument.variable_delta_pressure,
             'dp': instrument.variable_delta_pressure,
+            'wind_speed': wind_speed,
+            'ws': wind_speed,
+            'wind_direction': wind_direction,
+            'wd': wind_direction,
             'none': instrument.variable,
         }
         name_match: typing.Dict[re.Pattern, typing.Callable] = {
@@ -79,6 +118,8 @@ class AnalogInput:
             re.compile(r'^Pd\d*(?:_|$)'): instrument.variable_delta_pressure,
             re.compile(r'^P\d*(?:_|$)'): instrument.variable_pressure,
             re.compile(r'^Q\d*(?:_|$)'): instrument.variable_flow,
+            re.compile(r'^WS\d*(?:_|$)'): wind_speed,
+            re.compile(r'^WD\d*(?:_|$)'): wind_direction,
         }
 
         analog_inputs: typing.List["AnalogInput"] = list()
@@ -108,6 +149,31 @@ class AnalogInput:
                                   name=ain.config.get('FIELD'),
                                   code=name,
                                   attributes=ain.attributes)
+
+        for associated, direction in pending_wind_direction.items():
+            (direction_source, name_direction, code_direction, attributes_direction) = direction
+            speed = pending_wind_speed.pop(associated, None)
+            if not speed:
+                _LOGGER.warning(f"No wind speed available for {name_direction}, data will not be logged")
+                continue
+            (speed_source, name_speed, code_speed, attributes_speed) = speed
+
+            var_speed, var_direction = instrument.variable_winds(
+                speed_source, direction_source,
+                name_speed=name_speed, name_direction=name_direction,
+                code_speed=code_speed, code_direction=code_direction,
+                attributes_speed=attributes_speed, attributes_direction=attributes_direction
+            )
+
+            for ain in analog_inputs:
+                if ain.input == direction_source:
+                    ain.variable = var_direction
+                elif ain.input == speed_source:
+                    ain.variable = var_speed
+
+        for associated, speed in pending_wind_speed.items():
+            _LOGGER.warning(f"No wind direction available for {speed[1]}, data will not be logged")
+
         return analog_inputs
 
 
