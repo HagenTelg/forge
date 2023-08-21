@@ -4,7 +4,7 @@ import datetime
 
 
 MATCH_ISO8601_DURATION = re.compile(
-    r'P?(?:(?:(\d+)D)?T)?'
+    r'P?(?:(?:(\d+)D)?T?)?'
     r'(?:(\d+)H)?'
     r'(?:(\d+)M)?'
     r'(?:(\d+(?:\.\d*)?)S?)?',

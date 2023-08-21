@@ -31,30 +31,60 @@ class Instrument(StandardInstrument):
         Bypass = 4
 
     class _DigitalOutput:
-        def __init__(self, config: typing.Union[LayeredConfiguration, dict, str], default_target: typing.Optional[str]):
-            self.target: typing.Optional[str] = default_target
+        def __init__(self, config: typing.Union[LayeredConfiguration, dict, list, str],
+                     default_target: typing.Optional[str], default_invert: bool = False):
+            self._outputs: typing.List[typing.Tuple[str, typing.Optional[str], bool]] = list()
             if isinstance(config, str):
-                self.output: str = config
+                self._outputs.append((config, default_target, default_invert))
             elif isinstance(config, LayeredConfiguration):
-                self.output: str = config.constant()
-                if not self.output:
-                    self.output = str(config["OUTPUT"])
-                    self.target = config.get("TARGET", self.target)
+                output: str = config.constant()
+                if not output:
+                    self._outputs.append((
+                        str(config["OUTPUT"]),
+                        config.get("TARGET", default=default_target),
+                        bool(config.get("INVERT", default=default_invert)),
+                    ))
+                elif isinstance(output, list):
+                    for o in output:
+                        if isinstance(o, dict):
+                            self._outputs.append((
+                                str(o["OUTPUT"]),
+                                o.get("TARGET", default=default_target),
+                                bool(o.get("INVERT", default=default_invert)),
+                            ))
+                        else:
+                            self._outputs.append((str(o), default_target, default_invert))
+                else:
+                    self._outputs.append((str(output), default_target, default_invert))
+            elif isinstance(config, list):
+                for o in config:
+                    if isinstance(o, dict):
+                        self._outputs.append((
+                            str(o["OUTPUT"]),
+                            o.get("TARGET", default=default_target),
+                            bool(o.get("INVERT", default=default_invert)),
+                        ))
+                    else:
+                        self._outputs.append((str(o), default_target, default_invert))
             else:
-                self.output = config["OUTPUT"]
-                self.target = config.get("TARGET", self.target)
+                self._outputs.append((
+                    str(config["OUTPUT"]),
+                    config.get("TARGET", default=default_target),
+                    bool(config.get("INVERT", default=default_invert)),
+                ))
 
         def set(self, bus: BusInterface, value: bool) -> None:
-            data: typing.Dict[str, typing.Any] = {
-                'command': 'set_digital',
-                'data': {
-                    'output': self.output,
-                    'value': value,
-                },
-            }
-            if self.target:
-                data['target'] = self.target
-            bus.client.send_data('command', data)
+            for output, target, invert in self._outputs:
+                data: typing.Dict[str, typing.Any] = {
+                    'command': 'set_digital',
+                    'data': {
+                        'output': output,
+                        'value': value ^ invert,
+                    },
+                }
+                if target:
+                    data['target'] = target
+                bus.client.send_data('command', data)
 
     class _Baseline:
         def __init__(self, total_time: float, minimum_time: float, discard_time: float):
@@ -142,16 +172,18 @@ class Instrument(StandardInstrument):
         valves = context.config.section_or_constant('VALVES')
         self._valve_outputs: typing.List[Instrument._DigitalOutput] = list()
         if valves is None:
-            self._valve_outputs.append(self._DigitalOutput("FilterBypass", digital_target))
-            for i in range(0, self._carousel_size ):
+            self._valve_outputs.append(self._DigitalOutput("FilterBypass", digital_target, True))
+            for i in range(0, self._carousel_size):
                 self._valve_outputs.append(self._DigitalOutput(f"FilterValve{i+1}", digital_target))
         elif isinstance(valves, dict) or isinstance(valves, LayeredConfiguration):
-            self._valve_outputs.append(self._DigitalOutput(valves.get("BYPASS", default="FilterBypass"), digital_target))
+            self._valve_outputs.append(self._DigitalOutput(valves.get("BYPASS", default="FilterBypass"),
+                                                           digital_target, True))
             for i in range(0, self._carousel_size):
-                self._valve_outputs.append(self._DigitalOutput(valves.get(f"CAROUSEL{i+1}", default=f"FilterValve{i+1}"), digital_target))
+                self._valve_outputs.append(self._DigitalOutput(
+                    valves.get(f"CAROUSEL{i+1}", default=f"FilterValve{i+1}"), digital_target))
         else:
             if len(valves) == 0:
-                self._valve_outputs.append(self._DigitalOutput("FilterBypass", digital_target))
+                self._valve_outputs.append(self._DigitalOutput("FilterBypass", digital_target, True))
                 for i in range(0, self._carousel_size):
                     self._valve_outputs.append(self._DigitalOutput(f"FilterValve{i + 1}", digital_target))
             else:
@@ -159,7 +191,7 @@ class Instrument(StandardInstrument):
                     if i >= len(valves):
                         self._valve_outputs.append(self._DigitalOutput(f"FilterValve{i}", digital_target))
                     else:
-                        self._valve_outputs.append(self._DigitalOutput(valves[i], digital_target))
+                        self._valve_outputs.append(self._DigitalOutput(valves[i], digital_target, i == 0))
 
         self._prior_time: float = time.monotonic()
 
@@ -535,9 +567,14 @@ class Instrument(StandardInstrument):
         })
 
     def _activate_valve(self, index: int) -> None:
+        if len(self._valve_outputs) == 0:
+            _LOGGER.warning(f"Valve activation for {index} skipped since no valves are defined")
+            return
+
         if index == 0:
-            # Bypass is inverted, so disable it to open (as well as all filter valves)
-            for i in range(len(self._valve_outputs)):
+            # Open bypass, close all other valves
+            self._valve_outputs[0].set(self.context.bus, True)
+            for i in range(1, len(self._valve_outputs)):
                 self._valve_outputs[i].set(self.context.bus, False)
             return
 
@@ -551,12 +588,11 @@ class Instrument(StandardInstrument):
 
         if any_open:
             # Disable bypass last after a valve has been opened
-            self._valve_outputs[0].set(self.context.bus, True)
+            self._valve_outputs[0].set(self.context.bus, False)
         else:
             # No filter valve open so bypass to make sure there's a flow path
             _LOGGER.warning(f"Invalid valve index {index}, bypass enabled")
-            if len(self._valve_outputs) > 0:
-                self._valve_outputs[0].set(self.context.bus, False)
+            self._valve_outputs[0].set(self.context.bus, True)
 
     async def _save_all(self) -> None:
         _LOGGER.debug("Saving persistent data")
