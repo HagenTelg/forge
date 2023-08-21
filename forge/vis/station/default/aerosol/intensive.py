@@ -80,8 +80,8 @@ return new Intensive.CalculateDispatch(dataName, outputNames,
         angstrom_unit.format_code = '.3f'
         angstrom.axes.append(angstrom_unit)
 
-        for size in [("Whole", 'whole', '#0f0'), ("PM10", 'pm10', '#0f0'),
-                     ("PM2.5", 'pm25', '#070'), ("PM1", 'pm1', '#070')]:
+        for size in [("Whole", 'whole', '#0f0', '#70f'), ("PM10", 'pm10', '#0f0', '#70f'),
+                     ("PM2.5", 'pm25', '#070', '#407'), ("PM1", 'pm1', '#070', '#407')]:
             self.processing[f'{mode}-intensive-{size[1]}'] = self.Calculate()
 
             trace = TimeSeries.Trace(albedo_unit)
@@ -99,9 +99,16 @@ return new Intensive.CalculateDispatch(dataName, outputNames,
             bfr.traces.append(trace)
 
             trace = TimeSeries.Trace(angstrom_unit)
-            trace.legend = f"Å ({size[0]})"
+            trace.legend = f"Åₛₚ ({size[0]})"
             trace.data_record = f'{mode}-intensive-{size[1]}'
-            trace.data_field = 'Ang'
+            trace.data_field = 'AngBs'
             trace.color = size[2]
+            angstrom.traces.append(trace)
+
+            trace = TimeSeries.Trace(angstrom_unit)
+            trace.legend = f"Åₐₚ ({size[0]})"
+            trace.data_record = f'{mode}-intensive-{size[1]}'
+            trace.data_field = 'AngBa'
+            trace.color = size[3]
             angstrom.traces.append(trace)
 

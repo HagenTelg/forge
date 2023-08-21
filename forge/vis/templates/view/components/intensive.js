@@ -23,6 +23,11 @@ var Intensive = {};
                 this._scatteringWavelengths.set(fieldName, wavelength);
             });
 
+            this._absorptionWavelengths = new Map();
+            inputAbsorption.forEach((wavelength, fieldName) => {
+                this._absorptionWavelengths.set(fieldName, wavelength);
+            });
+
             this.scatteringAdjuster = new WavelengthAdjust.RecordAdjust(inputScattering, outputScattering,
                 assumedAngstromExponent);
             this.backscatteringAdjuster = new WavelengthAdjust.RecordAdjust(inputBackscattering, outputBackscattering,
@@ -34,15 +39,13 @@ var Intensive = {};
         }
 
         processRecord(record, epoch) {
-            const angstromOutput = [];
-            record.set('Ang', angstromOutput);
-            for (let timeIndex=0; timeIndex<epoch.length; timeIndex++) {
-                let firstScatteringValue = undefined;
-                let firstScatteringWavelength = undefined;
-                let lastScatteringValue = undefined;
-                let lastScatteringWavelength = undefined;
+            function calculateAngstrom(timeIndex, wavelengths) {
+                let firstValue = undefined;
+                let firstWavelength = undefined;
+                let lastValue = undefined;
+                let lastWavelength = undefined;
 
-                this._scatteringWavelengths.forEach((wavelength, fieldName) => {
+                wavelengths.forEach((wavelength, fieldName) => {
                     const recordValues = record.get(fieldName);
                     if (!recordValues) {
                         return;
@@ -52,17 +55,30 @@ var Intensive = {};
                         return;
                     }
 
-                    lastScatteringValue = value;
-                    lastScatteringWavelength = wavelength;
+                    lastValue = value;
+                    lastWavelength = wavelength;
 
-                    if (firstScatteringValue === undefined) {
-                        firstScatteringValue = value;
-                        firstScatteringWavelength = wavelength;
+                    if (firstValue === undefined) {
+                        firstValue = value;
+                        firstWavelength = wavelength;
                     }
                 });
 
-                angstromOutput.push(Math.log(firstScatteringValue / lastScatteringValue) /
-                    Math.log(lastScatteringWavelength / firstScatteringWavelength));
+                let ang = Math.log(firstValue / lastValue) / Math.log(lastWavelength / firstWavelength);
+                if (isFinite(ang)) {
+                    ang = Math.min(ang, 5.0);
+                    ang = Math.max(ang, -1.0);
+                }
+                return ang;
+            }
+
+            const angstromScatteringOutput = [];
+            record.set('AngBs', angstromScatteringOutput);
+            const angstromAbsorptionOutput = [];
+            record.set('AngBa', angstromAbsorptionOutput);
+            for (let timeIndex=0; timeIndex<epoch.length; timeIndex++) {
+                angstromScatteringOutput.push(calculateAngstrom(timeIndex, this._scatteringWavelengths));
+                angstromAbsorptionOutput.push(calculateAngstrom(timeIndex, this._absorptionWavelengths));
             }
 
             this.scatteringAdjuster.adjustRecord(record, epoch.length);
@@ -115,8 +131,12 @@ var Intensive = {};
                 Ba = processField('Ba' + fieldName, (Be, Bs) => { return Be - Bs; }, Be, Bs);
                 Be = processField('Be' + fieldName, (Bs, Ba) => { return Bs + Ba; }, Bs, Ba);
 
-                processField('SSA' + fieldName, (Bs, Be) => { return Bs / Be; }, Bs, Be);
-                processField('Bfr' + fieldName, (Bbs, Bs) => { return Bbs / Bs; }, Bbs, Bs);
+                processField('SSA' + fieldName, (Bs, Be) => {
+                    return Math.max(Math.min(Bs / Be, 2.0), -0.5);
+                }, Bs, Be);
+                processField('Bfr' + fieldName, (Bbs, Bs) => {
+                    return Math.max(Math.min(Bbs / Bs, 1.0), -0.5);
+                }, Bbs, Bs);
             });
         }
     }
