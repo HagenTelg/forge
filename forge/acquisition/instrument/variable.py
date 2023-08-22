@@ -11,6 +11,7 @@ class InputFieldControl:
         self.use_standard_pressure: typing.Optional[bool] = None
         self.is_dried: typing.Optional[bool] = None
         self.use_cut_size: typing.Optional[bool] = None
+        self.apply_long_name: typing.Optional[str] = None
 
         self.comment: typing.Optional[str] = None
         self.override_description: typing.Optional[str] = None
@@ -44,6 +45,11 @@ class InputFieldControl:
             use_cut_size = bool(use_cut_size)
             self.use_cut_size = use_cut_size
 
+        long_name = config.get('LONG_NAME', default=config.get('DESCRIPTION'))
+        if long_name is not None:
+            long_name = str(long_name)
+            self.apply_long_name = long_name
+
     def add_comment(self, comment: str) -> None:
         if not comment:
             return
@@ -62,6 +68,8 @@ class InputFieldControl:
             data.is_dried = self.is_dried
         if self.use_cut_size is not None:
             data.use_cut_size = self.use_cut_size
+        if self.apply_long_name:
+            data.attributes['long_name'] = self.apply_long_name
 
         if calibration and 'calibration_polynomial' not in data.attributes:
             data.attributes['calibration_polynomial'] = calibration
