@@ -123,7 +123,7 @@ class Instrument(StreamingInstrument):
             raise CommunicationsError from e
         model = model.strip()
         if model.startswith("375") or model == "3789":
-            raise CommunicationsError
+            raise CommunicationsError(f"invalid model {model}")
         self.set_instrument_info('model', model)
         have_coincidence_correction = (model == "3771" or model == "3772")
 

@@ -1252,7 +1252,7 @@ class Instrument(StreamingInstrument):
     @staticmethod
     def _parse_system_state(response: bytes) -> typing.Tuple["Instrument.MajorState", typing.Optional[typing.Union["Instrument._NormalMinorState"]]]:
         if len(response) < 4 or len(response) > 10:
-            raise CommunicationsError
+            raise CommunicationsError(f"invalid system state {response}")
         try:
             major, minor = response.split(b'.')
             major = int(major)

@@ -122,7 +122,7 @@ class Instrument(StreamingInstrument):
 
         data: bytes = await self.retry_command(b"RV")
         if data != b"VAC" and data != b"LOVAC":
-            raise CommunicationsError
+            raise CommunicationsError(f"invalid vacuum response {data}")
 
         async def expect_error():
             try:
@@ -130,7 +130,7 @@ class Instrument(StreamingInstrument):
             except (TimeoutError, asyncio.TimeoutError):
                 return
             if data != b"ERROR":
-                raise CommunicationsError
+                raise CommunicationsError(f"got {data} instead of error response")
 
         # Disambiguation with other instruments
         self.writer.write(b"I\r")

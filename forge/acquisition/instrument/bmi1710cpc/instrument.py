@@ -14,7 +14,7 @@ _FIRMWARE_VERSION_MATCH = re.compile(br'BMI\s*MCPC\s*v(\d+(?:\.\d+)?)')
 def _power_fraction(v: bytes, upper_limit: float = 200.0) -> float:
     v = parse_number(v)
     if v < 0.0 or v > upper_limit:
-        raise CommunicationsError
+        raise CommunicationsError(f"value {v} out of range")
     return (v / upper_limit) * 100.0
 
 

@@ -335,7 +335,7 @@ class Instrument(StreamingInstrument):
             try:
                 int(line)
             except (ValueError, OverflowError):
-                raise CommunicationsError
+                raise CommunicationsError(f"invalid address {line}")
 
             # Set clock
             ts = time.gmtime()
@@ -417,7 +417,7 @@ class Instrument(StreamingInstrument):
             try:
                 errors = int(line)
             except (ValueError, OverflowError):
-                raise CommunicationsError
+                raise CommunicationsError(f"invalid error counter {line}")
             if errors != 0:
                 raise CommunicationsError
 

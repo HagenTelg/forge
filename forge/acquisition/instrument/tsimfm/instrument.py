@@ -128,17 +128,17 @@ class Instrument(StreamingInstrument):
         self.writer.write(b"SUS\r")
         data: bytes = await wait_cancelable(self.read_line(), 4.0)
         if data != b"OK":
-            raise CommunicationsError
+            raise CommunicationsError(f"invalid response {data}")
 
         # Disable triggers
         self.writer.write(b"CBT\r")
         data: bytes = await wait_cancelable(self.read_line(), 4.0)
         if data != b"OK":
-            raise CommunicationsError
+            raise CommunicationsError(f"invalid response {data}")
         self.writer.write(b"CET\r")
         data: bytes = await wait_cancelable(self.read_line(), 4.0)
         if data != b"OK":
-            raise CommunicationsError
+            raise CommunicationsError(f"invalid response {data}")
 
         sample_ms = round(self._report_interval * 1000)
         if sample_ms < 1:
@@ -148,7 +148,7 @@ class Instrument(StreamingInstrument):
         self.writer.write(f"SSR{sample_ms:04d}\r".encode('ascii'))
         data: bytes = await wait_cancelable(self.read_line(), 4.0)
         if data != b"OK":
-            raise CommunicationsError
+            raise CommunicationsError(f"invalid response {data}")
 
         self._sleep_time = 0.0
         await self.communicate()

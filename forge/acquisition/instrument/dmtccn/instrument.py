@@ -219,16 +219,16 @@ class Instrument(StreamingInstrument):
             if not self._parse_H(line.split(b',')):
                 line: bytes = await wait_cancelable(self.read_line(), self._report_interval * 2.0 + 1.0)
                 if not line.startswith(b'C'):
-                    raise CommunicationsError
+                    raise CommunicationsError(f"out of order line {line}")
                 self._parse_C(line.split(b','), allow_combined=False)
         elif line.startswith(b'C'):
             if not self._parse_C(line.split(b',')):
                 line: bytes = await wait_cancelable(self.read_line(), self._report_interval * 2.0 + 1.0)
                 if not line.startswith(b'H'):
-                    raise CommunicationsError
+                    raise CommunicationsError(f"out of order line {line}")
                 self._parse_H(line.split(b','), allow_combined=False)
         else:
-            raise CommunicationsError
+            raise CommunicationsError(f"invalid record type in {line}")
 
     def _parse_H(self, fields: typing.List[bytes], allow_combined: bool = True) -> bool:
         try:

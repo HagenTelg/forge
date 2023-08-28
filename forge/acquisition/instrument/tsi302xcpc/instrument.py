@@ -134,7 +134,7 @@ class Instrument(StreamingInstrument):
             except (TimeoutError, asyncio.TimeoutError):
                 return
             if data != b"ERROR":
-                raise CommunicationsError
+                raise CommunicationsError(f"got {data} instead of error response")
 
         # Disambiguation with other instruments
         self.writer.write(b"RV\r")

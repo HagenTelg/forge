@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 def _power_fraction(v: bytes, upper_limit: float = 200.0) -> float:
     v = parse_number(v)
     if v < 0.0 or v > upper_limit:
-        raise CommunicationsError
+        raise CommunicationsError(f"value {v} out of range")
     return (v / upper_limit) * 100.0
 
 
