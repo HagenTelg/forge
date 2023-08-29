@@ -7,7 +7,7 @@ station_profile_export = detach(profile_export)
 
 station_profile_export['aerosol']['raw'].insert(
     DataExportList.Entry('ambient', "Ambient Meteorological", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-        start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
             Name(station, 'raw', 'WS_XM1'), Name(station, 'raw', 'WD_XM1'),
             Name(station, 'raw', 'T1_XM1'), Name(station, 'raw', 'U1_XM1'), Name(station, 'raw', 'TD1_XM1'),
             Name(station, 'raw', 'P_XM1'),

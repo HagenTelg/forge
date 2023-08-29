@@ -22,7 +22,7 @@ station_views['aerosol-raw-flow'] = BasicFlow('aerosol-raw')
 station_views['aerosol-realtime-flow'] = BasicFlow('aerosol-realtime', realtime=True)
 
 station_views['aerosol-raw-ccnstatus'] = CCNStatus('aerosol-raw')
-station_views['aerosol-raw-ccnstatus'] = CCNStatus('aerosol-raw', realtime=True)
+station_views['aerosol-realtime-ccnstatus'] = CCNStatus('aerosol-raw', realtime=True)
 
 
 def get(station: str, view_name: str) -> typing.Optional[View]:

@@ -79,6 +79,68 @@ station_profile_export['aerosol']['avgh']['scattering'].data = lambda station, s
 )
 
 
+station_profile_export['aerosol']['raw'].insert(
+    DataExportList.Entry('ccn', "CCN", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
+            Name(station, 'raw', 'N_N12'),
+            Name(station, 'raw', 'Nb_N12'),
+            Name(station, 'raw', 'Tu_N12'),
+            Name(station, 'raw', 'T1_N12'),
+            Name(station, 'raw', 'T2_N12'),
+            Name(station, 'raw', 'T3_N12'),
+            Name(station, 'raw', 'T4_N12'),
+            Name(station, 'raw', 'T5_N12'),
+            Name(station, 'raw', 'T6_N12'),
+            Name(station, 'raw', 'Q1_N12'),
+            Name(station, 'raw', 'Q2_N12'),
+            Name(station, 'raw', 'U_N12'),
+            Name(station, 'raw', 'P_N12'),
+            Name(station, 'raw', 'DT_N12'),
+        },
+    )),
+)
+station_profile_export['aerosol']['clean'].insert(
+    DataExportList.Entry('ccn', "CCN", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
+            Name(station, 'clean', 'N_N12'),
+            Name(station, 'clean', 'Nb_N12'),
+            Name(station, 'clean', 'Tu_N12'),
+            Name(station, 'clean', 'T1_N12'),
+            Name(station, 'clean', 'T2_N12'),
+            Name(station, 'clean', 'T3_N12'),
+            Name(station, 'clean', 'T4_N12'),
+            Name(station, 'clean', 'T5_N12'),
+            Name(station, 'clean', 'T6_N12'),
+            Name(station, 'clean', 'Q1_N12'),
+            Name(station, 'clean', 'Q2_N12'),
+            Name(station, 'clean', 'U_N12'),
+            Name(station, 'clean', 'P_N12'),
+            Name(station, 'clean', 'DT_N12'),
+        },
+    )),
+)
+station_profile_export['aerosol']['avgh'].insert(
+    DataExportList.Entry('ccn', "CCN", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'average', {
+            Name(station, 'avgh', 'N_N12'),
+            Name(station, 'avgh', 'Nb_N12'),
+            Name(station, 'avgh', 'Tu_N12'),
+            Name(station, 'avgh', 'T1_N12'),
+            Name(station, 'avgh', 'T2_N12'),
+            Name(station, 'avgh', 'T3_N12'),
+            Name(station, 'avgh', 'T4_N12'),
+            Name(station, 'avgh', 'T5_N12'),
+            Name(station, 'avgh', 'T6_N12'),
+            Name(station, 'avgh', 'Q1_N12'),
+            Name(station, 'avgh', 'Q2_N12'),
+            Name(station, 'avgh', 'U_N12'),
+            Name(station, 'avgh', 'P_N12'),
+            Name(station, 'avgh', 'DT_N12'),
+        },
+    )),
+)
+
+
 def get(station: str, mode_name: str, export_key: str,
         start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
     return export_profile_get(station, mode_name, export_key,

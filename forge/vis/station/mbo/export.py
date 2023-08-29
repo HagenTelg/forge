@@ -7,7 +7,7 @@ station_profile_export = detach(profile_export)
 
 station_profile_export['aerosol']['raw'].insert(
     DataExportList.Entry('met', "Meteorological", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-        start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
             Name(station, 'raw', 'WS1_XM1'), Name(station, 'raw', 'WD1_XM1'),
             Name(station, 'raw', 'WS2_XM1'), Name(station, 'raw', 'WD2_XM1'),
             Name(station, 'raw', 'WS3_XM1'), Name(station, 'raw', 'WD3_XM1'),
@@ -21,7 +21,7 @@ station_profile_export['aerosol']['raw'].insert(
 )
 station_profile_export['aerosol']['raw'].insert(
     DataExportList.Entry('gas', "Gas Measurements", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-        start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
             Name(station, 'raw', 'X_G81'),
             Name(station, 'raw', 'X_G82'),
             Name(station, 'raw', 'X1_G71'),

@@ -11,7 +11,7 @@ station_profile_export['aerosol']['avgh']['aethalometer'].display = "Aethalomete
 
 station_profile_export['aerosol']['raw'].insert(
     DataExportList.Entry('aethalometer2', "Aethalometer (A41)", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-        start_epoch_ms, end_epoch_ms, directory, 'unsplt', set(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', set(
             [Name(station, 'raw', f'Ba{i + 1}_A41') for i in range(7)] +
             [Name(station, 'raw', f'X{i + 1}_A41') for i in range(7)] +
             [Name(station, 'raw', f'ZFACTOR{i + 1}_A41') for i in range(7)] +
@@ -21,7 +21,7 @@ station_profile_export['aerosol']['raw'].insert(
 )
 station_profile_export['aerosol']['clean'].insert(
     DataExportList.Entry('aethalometer2', "Aethalometer (A41)", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-        start_epoch_ms, end_epoch_ms, directory, 'unsplt', set(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', set(
             [Name(station, 'clean', f'Ba{i + 1}_A41') for i in range(7)] +
             [Name(station, 'clean', f'X{i + 1}_A41') for i in range(7)] +
             [Name(station, 'clean', f'ZFACTOR{i + 1}_A41') for i in range(7)] +
@@ -43,7 +43,7 @@ station_profile_export['aerosol']['avgh'].insert(
 
 station_profile_export['aerosol']['raw'].insert(
     DataExportList.Entry('aethalometer3', "Aethalometer (A42)", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-        start_epoch_ms, end_epoch_ms, directory, 'unsplt', set(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', set(
             [Name(station, 'raw', f'Ba{i + 1}_A42') for i in range(7)] +
             [Name(station, 'raw', f'X{i + 1}_A42') for i in range(7)] +
             [Name(station, 'raw', f'ZFACTOR{i + 1}_A42') for i in range(7)] +
@@ -53,7 +53,7 @@ station_profile_export['aerosol']['raw'].insert(
 )
 station_profile_export['aerosol']['clean'].insert(
     DataExportList.Entry('aethalometer3', "Aethalometer (A42)", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-        start_epoch_ms, end_epoch_ms, directory, 'unsplt', set(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', set(
             [Name(station, 'clean', f'Ba{i + 1}_A42') for i in range(7)] +
             [Name(station, 'clean', f'X{i + 1}_A42') for i in range(7)] +
             [Name(station, 'clean', f'ZFACTOR{i + 1}_A42') for i in range(7)] +
@@ -75,7 +75,7 @@ station_profile_export['aerosol']['avgh'].insert(
 
 station_profile_export['aerosol']['raw'].insert(
     DataExportList.Entry('maap', "MAAP (A21)", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-        start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
             Name(station, 'raw', 'F1_A21'),
             Name(station, 'raw', 'P_A21'),
             Name(station, 'raw', 'IfR_A21'),
@@ -96,7 +96,7 @@ station_profile_export['aerosol']['raw'].insert(
 )
 station_profile_export['aerosol']['clean'].insert(
     DataExportList.Entry('maap', "MAAP (A21)", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-        start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
             Name(station, 'clean', 'F1_A21'),
             Name(station, 'clean', 'P_A21'),
             Name(station, 'clean', 'IfR_A21'),
@@ -139,7 +139,7 @@ station_profile_export['aerosol']['avgh'].insert(
 
 station_profile_export['aerosol']['raw'].insert(
     DataExportList.Entry('maap', "MAAP (A42)", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-        start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
             Name(station, 'raw', 'F1_A42'),
             Name(station, 'raw', 'P_A42'),
             Name(station, 'raw', 'IfR_A42'),
@@ -160,7 +160,7 @@ station_profile_export['aerosol']['raw'].insert(
 )
 station_profile_export['aerosol']['clean'].insert(
     DataExportList.Entry('maap', "MAAP (A42)", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-        start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
             Name(station, 'clean', 'F1_A42'),
             Name(station, 'clean', 'P_A42'),
             Name(station, 'clean', 'IfR_A42'),

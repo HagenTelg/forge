@@ -2,15 +2,23 @@ import typing
 from collections import OrderedDict
 from ..default.view import detach, View, aerosol_views
 from ..default.aerosol.temperature import Temperature
+from ..default.aerosol.ccn import CCNStatus
 from .optical import OpticalScatteringSecondary, EditingScatteringSecondary, EditingBackScatteringSecondary
 from .green import Green
 from .humidograph import WetDryRatio
 from .pressure import Pressure
 from .tsi3563nephelometer import NephelometerZeroSecondary, NephelometerStatusSecondary
+from .counts import RealtimeParticleConcentration, ParticleConcentration, EditingParticleConcentration, SMPSDistribution
 
 
 station_views = detach(aerosol_views)
 
+
+station_views['aerosol-raw-counts'] = ParticleConcentration('aerosol-raw')
+station_views['aerosol-realtime-counts'] = RealtimeParticleConcentration('aerosol-realtime')
+station_views['aerosol-editing-counts'] = EditingParticleConcentration()
+station_views['aerosol-clean-counts'] = ParticleConcentration('aerosol-clean')
+station_views['aerosol-avgh-counts'] = ParticleConcentration('aerosol-avgh')
 
 station_views['aerosol-raw-opticalscattering2'] = OpticalScatteringSecondary('aerosol-raw')
 station_views['aerosol-realtime-opticalscattering2'] = OpticalScatteringSecondary('aerosol-realtime', realtime=True)
@@ -49,6 +57,16 @@ station_views['aerosol-realtime-temperature'] = Temperature('aerosol-raw', measu
 
 station_views['aerosol-raw-pressure'] = Pressure('aerosol-raw')
 station_views['aerosol-realtime-pressure'] = Pressure('aerosol-realtime', realtime=True)
+
+
+station_views['aerosol-raw-ccnstatus'] = CCNStatus('aerosol-raw')
+station_views['aerosol-realtime-ccnstatus'] = CCNStatus('aerosol-raw', realtime=True)
+
+
+station_views['aerosol-raw-smps'] = SMPSDistribution('aerosol-raw')
+station_views['aerosol-editing-smps'] = SMPSDistribution('aerosol-editing')
+station_views['aerosol-clean-smps'] = SMPSDistribution('aerosol-clean')
+station_views['aerosol-avgh-smps'] = SMPSDistribution('aerosol-avgh')
 
 
 def get(station: str, view_name: str) -> typing.Optional[View]:

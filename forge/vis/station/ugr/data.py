@@ -256,6 +256,7 @@ station_profile_data['aerosol']['raw']['ccnstatus'] = lambda station, start_epoc
         Name(station, 'raw', 'Q1_N21'): 'Qsample',
         Name(station, 'raw', 'Q2_N21'): 'Qsheath',
         Name(station, 'raw', 'Uc_N21'): 'SScalc',
+        Name(station, 'raw', 'U_N21'): 'SSset',
     }, send
 )
 station_profile_data['aerosol']['realtime']['ccnstatus'] = {
@@ -269,6 +270,7 @@ station_profile_data['aerosol']['realtime']['ccnstatus'] = {
     RealtimeTranslator.Key('Q1_N21'): 'Qsample',
     RealtimeTranslator.Key('Q2_N21'): 'Qsheath',
     RealtimeTranslator.Key('Uc_N21'): 'SScalc',
+    RealtimeTranslator.Key('U_N21'): 'SSset',
 }
 
 

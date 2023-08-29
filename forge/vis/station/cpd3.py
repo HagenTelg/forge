@@ -3534,7 +3534,7 @@ ozone_export: typing.Dict[str, DataExportList] = {
 met_export: typing.Dict[str, DataExportList] = {
     'raw': DataExportList([
         DataExportList.Entry('ambient', "Ambient", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-            start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+            start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
                 Name(station, 'raw', 'WS1_XM1'), Name(station, 'raw', 'WD1_XM1'),
                 Name(station, 'raw', 'WS2_XM1'), Name(station, 'raw', 'WD2_XM1'),
                 Name(station, 'raw', 'WS3_XM1'), Name(station, 'raw', 'WD3_XM1'),
@@ -3548,7 +3548,7 @@ met_export: typing.Dict[str, DataExportList] = {
     ]),
     'clean': DataExportList([
         DataExportList.Entry('ambient', "Ambient", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-            start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+            start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
                 Name(station, 'clean', 'WS1_XM1'), Name(station, 'clean', 'WD1_XM1'),
                 Name(station, 'clean', 'WS2_XM1'), Name(station, 'clean', 'WD2_XM1'),
                 Name(station, 'clean', 'WS3_XM1'), Name(station, 'clean', 'WD3_XM1'),
@@ -3562,7 +3562,7 @@ met_export: typing.Dict[str, DataExportList] = {
     ]),
     'avgh': DataExportList([
         DataExportList.Entry('ambient', "Ambient", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
-            start_epoch_ms, end_epoch_ms, directory, 'unsplt', {
+            start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
                 Name(station, 'avgh', 'WS1_XM1'), Name(station, 'avgh', 'WD1_XM1'),
                 Name(station, 'avgh', 'WS2_XM1'), Name(station, 'avgh', 'WD2_XM1'),
                 Name(station, 'avgh', 'WS3_XM1'), Name(station, 'avgh', 'WD3_XM1'),

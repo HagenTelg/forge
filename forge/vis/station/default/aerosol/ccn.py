@@ -100,3 +100,9 @@ class CCNStatus(TimeSeries):
         calculated.data_record = f'{mode}-ccnstatus'
         calculated.data_field = 'SScalc'
         ccn_ss.traces.append(calculated)
+
+        instrument = TimeSeries.Trace(percent)
+        instrument.legend = "Setpoint"
+        instrument.data_record = f'{mode}-ccnstatus'
+        instrument.data_field = 'SSset'
+        ccn_ss.traces.append(instrument)
