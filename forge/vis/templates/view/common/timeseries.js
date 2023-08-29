@@ -381,6 +381,9 @@ var TimeSeriesCommon = {};
                 'xaxis.range[1]': DataSocket.toPlotTime(end_ms),
             });
         }
+        if (TimeSelect.isZoomed()) {
+            TimeSelect.applyZoom(TimeSelect.zoom_start_ms, TimeSelect.zoom_end_ms);
+        }
     }
 
     class DataFilter {

@@ -696,10 +696,12 @@ let TimeParse = {};
         });
     }
     TimeSelect.applyZoom = function(start_ms, end_ms) {}
-    TimeSelect.resetZoomConnections = function() {
+    TimeSelect.resetZoomConnections = function(retainZoom) {
         TimeSelect.applyZoom = function(start_ms, end_ms) {};
-        TimeSelect.zoom_start_ms = undefined;
-        TimeSelect.zoom_end_ms = undefined;
+        if (!retainZoom) {
+            TimeSelect.zoom_start_ms = undefined;
+            TimeSelect.zoom_end_ms = undefined;
+        }
     }
 
     TimeSelect.onIntervalHeartbeat = function() {}

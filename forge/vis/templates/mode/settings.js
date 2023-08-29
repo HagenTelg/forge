@@ -18,6 +18,11 @@ if (localStorage.getItem('forge-always-show-edit-directives')) {
     alwaysShowEditDirectives.checked = true;
 }
 
+const viewSwitchRetainZoom = document.getElementById('view_switch_retain_zoom');
+if (localStorage.getItem('forge-view-switch-retain-zoom')) {
+    viewSwitchRetainZoom.checked = true;
+}
+
 $('#apply_settings').click(function(event) {
     event.preventDefault();
 
@@ -40,6 +45,11 @@ $('#apply_settings').click(function(event) {
         localStorage.setItem('forge-always-show-edit-directives', '1');
     } else {
         localStorage.removeItem('forge-always-show-edit-directives');
+    }
+    if (viewSwitchRetainZoom.checked) {
+        localStorage.setItem('forge-view-switch-retain-zoom', '1');
+    } else {
+        localStorage.removeItem('forge-view-switch-retain-zoom');
     }
 
     this.blur();

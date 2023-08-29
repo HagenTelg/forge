@@ -6,8 +6,10 @@ localStorage.setItem('forge-last-mode', '{{ mode.mode_name }}');
 $('a.view-select').click(function(event) {
     event.preventDefault();
 
+    const retainZoom = !!(localStorage.getItem('forge-view-switch-retain-zoom'));
+
     DataSocket.resetLoadedRecords();
-    TimeSelect.resetZoomConnections();
+    TimeSelect.resetZoomConnections(retainZoom);
     TimeSelect.resetIntervalHeartbeat();
 
     $('a.view-select').not(this).removeClass('active');
