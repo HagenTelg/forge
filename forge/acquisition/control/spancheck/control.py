@@ -224,6 +224,11 @@ class Control(BaseControl):
             self._broadcast_state()
             self._event.set()
 
+            self.bus.send_message(PersistenceLevel.DATA, 'command', {
+                'command': 'disable_humidograph',
+                'target': 'humidograph',
+            })
+
             _LOGGER.debug("Spancheck starting initial air flush before gas sampling")
 
             self.log("Spancheck initiated", {
@@ -249,6 +254,11 @@ class Control(BaseControl):
             self._control_command('abort')
             self._broadcast_state()
             self._event.set()
+
+            self.bus.send_message(PersistenceLevel.DATA, 'command', {
+                'command': 'enable_humidograph',
+                'target': 'humidograph',
+            })
 
     async def _advance_state(self, now: float) -> None:
         if self._current_state == Control._State.GasAirFlush:
@@ -282,6 +292,10 @@ class Control(BaseControl):
             self._control_command('complete')
             self._calculate()
             self._broadcast_state()
+            self.bus.send_message(PersistenceLevel.DATA, 'command', {
+                'command': 'enable_humidograph',
+                'target': 'humidograph',
+            })
 
     async def run(self) -> typing.NoReturn:
         while True:
