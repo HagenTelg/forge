@@ -1279,6 +1279,8 @@ class Instrument(StreamingInstrument):
             discard_zero.activate()
 
         if self.writer:
+            await self.drain_reader(2.0)
+
             self.writer.write(b"ID%d\r" % self._address)
             instrument_id = await wait_cancelable(self.read_line(), 4.0)
             matched = _INSTRUMENT_ID.search(instrument_id)
