@@ -1,8 +1,11 @@
 import typing
 from ..default.view import detach, View, aerosol_views, ozone_views, met_views, radiation_views
+from ..default.ozone.concentration import OzoneConcentration
 
 
 station_views = detach(aerosol_views, ozone_views, met_views, radiation_views)
+
+station_views['public-realtime-ozone-concentration'] = OzoneConcentration('public-realtime', realtime=True)
 
 
 def get(station: str, view_name: str) -> typing.Optional[View]:
