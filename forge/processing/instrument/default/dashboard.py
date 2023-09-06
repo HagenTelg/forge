@@ -201,7 +201,11 @@ class SpancheckRecord(RecordAnalyzer):
             return
         for i in range(len(event_times)):
             spancheck_time: float = float(event_times[i]) / 1000.0
-            if self.analyzer.file_start_time and spancheck_time < self.analyzer.file_start_time:
+            if not self.analyzer.file_start_time:
+                # If we don't have a start time, assume the first instance is the ongoing case
+                if i == 0:
+                    continue
+            elif spancheck_time < self.analyzer.file_start_time:
                 continue
             if self.analyzer.file_end_time and spancheck_time > self.analyzer.file_end_time:
                 continue
