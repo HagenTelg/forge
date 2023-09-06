@@ -1,7 +1,7 @@
 <link rel="stylesheet" type="text/css" href="{{ request.url_for('static', path='/css/dashboard_filter.css') }}"/>
 
 <nav class="sidebar">
-{% if enable_user_actions %}
+{% if auth_layer %}
 <a id="user_logout" href="{{ request.url_for('logout') }}">Logout</a>
 <a id="user_profile" href="{{ request.url_for('change_user_info') }}" title="Set information for your user">Profile</a>
 {% elif ENABLE_LOGIN %}

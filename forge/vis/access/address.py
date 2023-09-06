@@ -1,7 +1,7 @@
 import typing
 import logging
 import ipaddress
-from . import BaseAccessUser, BaseAccessController, Request
+from . import BaseAccessLayer, BaseAccessController, Request
 from forge.vis.util import name_to_initials
 from forge.const import DISPLAY_STATIONS
 
@@ -25,7 +25,7 @@ class AccessController(BaseAccessController):
         self.name = config.get("name", "")
         self.initials = config.get("initials", name_to_initials(self.name))
 
-    async def authenticate(self, request: Request) -> typing.Optional[BaseAccessUser]:
+    async def authenticate(self, request: Request) -> typing.Optional[BaseAccessLayer]:
         try:
             origin = ipaddress.ip_address(request.client.host)
         except ValueError:
@@ -34,11 +34,11 @@ class AccessController(BaseAccessController):
             if origin not in net:
                 continue
             _LOGGER.debug(f"Using address authentication for {origin}")
-            return AccessUser(self, origin)
+            return AccessLayer(self, origin)
         return None
 
 
-class AccessUser(BaseAccessUser):
+class AccessLayer(BaseAccessLayer):
     def __init__(self, controller: AccessController, origin: typing.Union[ipaddress.IPv4Address, ipaddress.IPv6Address]):
         self.controller = controller
         self.origin = origin
@@ -49,41 +49,44 @@ class AccessUser(BaseAccessUser):
         if len(self.username) == 0:
             self.username = f"{origin}:{controller.station}:{controller.mode}"
 
-    @property
-    def is_authenticated(self) -> bool:
-        return self.controller.authenticated
+    def is_authenticated(self, lower: typing.Sequence[BaseAccessLayer]) -> bool:
+        if self.controller.authenticated:
+            return True
+        return super().is_authenticated(lower)
 
-    @property
-    def display_name(self) -> str:
-        return self.username
-
-    @property
-    def initials(self) -> str:
+    def initials(self, _lower: typing.Sequence[BaseAccessLayer]) -> str:
         return self.controller.initials
 
-    @property
-    def display_id(self) -> str:
+    def display_id(self, _lower: typing.Sequence[BaseAccessLayer]) -> str:
         return str(self.origin)
 
-    @property
-    def visible_stations(self) -> typing.List[str]:
-        if self.controller.station == "*":
-            return sorted(DISPLAY_STATIONS)
-        return [self.controller.station]
+    def display_name(self, _lower: typing.Sequence[BaseAccessLayer]) -> str:
+        return self.username
 
-    def allow_station(self, station: str) -> bool:
+    def visible_stations(self, lower: typing.Sequence[BaseAccessLayer]) -> typing.Set[str]:
+        if self.controller.station == "*":
+            stations = set(DISPLAY_STATIONS)
+        else:
+            stations = {self.controller.station}
+        if lower:
+            stations |= lower[0].visible_stations(lower[1:])
+        return stations
+
+    def allow_station(self, station: str, lower: typing.Sequence[BaseAccessLayer]) -> bool:
         if self.controller.station == "*":
             return True
-        return self.controller.station == station
+        if self.controller.station == station:
+            return True
+        return lower and lower[0].allow_station(station, lower[1:])
 
-    def allow_mode(self, station: str, mode: str, write=False) -> bool:
-        if not self.allow_station(station):
-            return False
-        if not self.matches_mode(self.controller.mode, mode):
-            return False
-        return not write or self.controller.write
+    def allow_mode(self, station: str, mode: str, write: bool, lower: typing.Sequence[BaseAccessLayer]) -> bool:
+        if self.allow_station(station, lower) and self.matches_mode(self.controller.mode, mode):
+            if not write or self.controller.write:
+                return True
+        return lower and lower[0].allow_mode(station, mode, write, lower[1:])
 
-    def allow_global(self, mode: str, write=False) -> bool:
-        if not self.matches_mode(self.controller.mode, mode):
-            return False
-        return not write or self.controller.write
+    def allow_global(self, mode: str, write: bool, lower: typing.Sequence[BaseAccessLayer]) -> bool:
+        if self.matches_mode(self.controller.mode, mode):
+            if not write or self.controller.write:
+                return True
+        return lower and lower[0].allow_global(mode, write, lower[1:])

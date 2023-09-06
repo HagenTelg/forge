@@ -13,17 +13,17 @@
 
   <div class="info-item">
     <label for="email"><b>Email address</b></label>
-    <input type="text" id="email" placeholder="Enter Email Address" name="email" class="info-field" value="{{ request.user.auth_user.email }}" original="{{ request.user.auth_user.email }}"  required>
+    <input type="text" id="email" placeholder="Enter Email Address" name="email" class="info-field" value="{{ auth_layer.auth_user.email }}" original="{{ auth_layer.auth_user.email }}"  required>
   </div>
 
   <div class="info-item">
     <label for="name"><b>Full name</b></label>
-    <input type="text" id="name" placeholder="Enter Full Name" name="name" class="info-field" value="{{ request.user.auth_user.name }}" original="{{ request.user.auth_user.name }}">
+    <input type="text" id="name" placeholder="Enter Full Name" name="name" class="info-field" value="{{ auth_layer.auth_user.name }}" original="{{ auth_layer.auth_user.name }}">
   </div>
 
   <div class="info-item">
     <label for="initials"><b>Initials</b></label>
-    <input type="text" id="initials" placeholder="Enter Initials" name="initials" class="info-field" value="{{ request.user.auth_user.initials }}" original="{{ request.user.auth_user.initials }}">
+    <input type="text" id="initials" placeholder="Enter Initials" name="initials" class="info-field" value="{{ auth_layer.auth_user.initials }}" original="{{ auth_layer.auth_user.initials }}">
   </div>
 
   <button class="action" id="apply_changes">Save</button>

@@ -10,7 +10,7 @@ from starlette.requests import Request
 from starlette.exceptions import HTTPException
 from starlette.types import ASGIApp, Receive, Scope, Send
 from forge.vis.util import package_template
-from forge.vis.access.database import AccessUser as DatabaseUser, SubscriptionLevel
+from forge.vis.access.database import AccessLayer as DatabaseAccess, SubscriptionLevel
 from forge.dashboard import is_valid_station, is_valid_code
 from forge.dashboard.display import DisplayInterface
 from forge.telemetry.display import DisplayInterface as TelemetryInterface
@@ -67,15 +67,16 @@ class _DashboardSocket(WebSocketEndpoint):
         if record is None:
             return None
 
+        email = SubscriptionLevel.OFF
         if self._is_example:
             email = SubscriptionLevel.OFF
-        elif isinstance(websocket.user, DatabaseUser):
-            email = await websocket.user.controller.get_dashboard_email(websocket.user.auth_user,
-                                                                        station, code)
-            if email is None:
-                email = SubscriptionLevel.OFF
         else:
-            email = SubscriptionLevel.OFF
+            database_layer = websocket.user.layer_type(DatabaseAccess)
+            if database_layer:
+                email = await database_layer.controller.get_dashboard_email(database_layer.auth_user,
+                                                                            station, code)
+                if email is None:
+                    email = SubscriptionLevel.OFF
 
         return await record.status(db=self.db, telemetry=self.telemetry, processing=self.processing,
                                    email=email, station=station, entry_code=code, start_epoch_ms=start_epoch_ms)
@@ -123,7 +124,7 @@ async def _root(request: Request) -> Response:
     return HTMLResponse(await package_template('dashboard', 'index.html').render_async(
         request=request,
         is_example=False,
-        enable_user_actions=isinstance(request.user, DatabaseUser),
+        auth_layer=request.user.layer_type(DatabaseAccess),
     ))
 
 
@@ -132,7 +133,7 @@ async def _example(request: Request) -> Response:
     return HTMLResponse(await package_template('dashboard', 'index.html').render_async(
         request=request,
         is_example=True,
-        enable_user_actions=isinstance(request.user, DatabaseUser),
+        auth_layer=request.user.layer_type(DatabaseAccess),
     ))
 
 
@@ -247,13 +248,14 @@ async def _set_email(request: Request) -> Response:
     if is_all_example:
         return JSONResponse({'status': 'ok'})
 
-    if not isinstance(request.user, DatabaseUser):
+    auth_layer = request.user.layer_type(DatabaseAccess)
+    if not auth_layer:
         raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Not using a dynamic login")
 
     if not apply_entries:
         raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Invalid entry selection")
 
-    await request.user.controller.set_dashboard_email(request.user.auth_user, severity, apply_entries)
+    await auth_layer.controller.set_dashboard_email(auth_layer.auth_user, severity, apply_entries)
 
     return JSONResponse({'status': 'ok'})
 

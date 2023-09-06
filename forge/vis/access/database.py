@@ -23,7 +23,7 @@ from forge.vis.util import package_template, name_to_initials
 from forge.vis import CONFIGURATION
 from forge.const import DISPLAY_STATIONS
 from forge.database import ORMDatabase
-from . import BaseAccessUser, BaseAccessController, Request
+from . import BaseAccessLayer, BaseAccessController, Request, wildcard_match_level
 
 
 if typing.TYPE_CHECKING:
@@ -179,7 +179,7 @@ def _dashboard_email_subscription(orm_session: Session, user: _User, station: st
     most_specific_sub: typing.Optional[SubscriptionLevel] = None
     most_specific_level: int = 0
     for sub in query:
-        match_level = AccessUser.wildcard_match_level(sub.code, entry_code)
+        match_level = wildcard_match_level(sub.code, entry_code)
         if match_level is None:
             continue
 
@@ -304,7 +304,7 @@ class AccessController(BaseAccessController):
 
         background_task(purge())
 
-    async def authenticate(self, request: Request) -> typing.Optional[BaseAccessUser]:
+    async def authenticate(self, request: Request) -> typing.Optional[BaseAccessLayer]:
         self._purge_sessions()
 
         session_user_id = request.session.get('id')
@@ -341,7 +341,7 @@ class AccessController(BaseAccessController):
                         pass
 
                 _LOGGER.debug(f"Found session token for '{user.email}' ({session_user_id})")
-                return AccessUser(self, user)
+                return AccessLayer(self, user)
         return await self.db.execute(execute)
 
     async def login(self, request: Request) -> Response:
@@ -417,7 +417,8 @@ class AccessController(BaseAccessController):
 
     @requires('authenticated')
     async def password_change(self, request: Request) -> Response:
-        if not isinstance(request.user, AccessUser):
+        auth_layer = request.user.layer_type(AccessLayer)
+        if not auth_layer:
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Not using a dynamic login")
 
         data = await request.json()
@@ -427,13 +428,13 @@ class AccessController(BaseAccessController):
 
         def execute(engine: Engine) -> Response:
             with Session(engine) as orm_session:
-                auth_entry = orm_session.query(_AuthPassword).filter_by(user=request.user.auth_user.id).one_or_none()
+                auth_entry = orm_session.query(_AuthPassword).filter_by(user=auth_layer.auth_user.id).one_or_none()
                 if auth_entry is None:
                     raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="No password entry found")
 
                 auth_entry.pbkdf2 = pbkdf2_sha256.hash(password)
                 orm_session.commit()
-                _LOGGER.debug(f"Changed password for '{request.user.auth_user.email}' ({request.user.auth_user.id})")
+                _LOGGER.debug(f"Changed password for '{auth_layer.auth_user.email}' ({auth_layer.auth_user.id})")
                 return JSONResponse({'status': 'ok'})
 
         return await self.db.execute(execute)
@@ -692,14 +693,15 @@ class AccessController(BaseAccessController):
 
     @requires('authenticated')
     async def info_change(self, request: Request) -> Response:
-        if not isinstance(request.user, AccessUser):
+        auth_layer = request.user.layer_type(AccessLayer)
+        if not auth_layer:
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Not using a dynamic login")
 
         if request.method.upper() == 'GET':
             def execute(engine: Engine):
                 with Session(engine) as orm_session:
                     auth_entry = orm_session.query(_AuthPassword).filter_by(
-                        user=request.user.auth_user.id).one_or_none()
+                        user=auth_layer.auth_user.id).one_or_none()
                     if auth_entry is not None:
                         return True
                 return False
@@ -708,6 +710,7 @@ class AccessController(BaseAccessController):
 
             return HTMLResponse(await package_template('access', 'user_info.html').render_async(
                 request=request,
+                auth_layer=auth_layer,
                 enable_password_change=enable_password_change,
             ))
 
@@ -725,7 +728,7 @@ class AccessController(BaseAccessController):
             nonlocal initials
 
             with Session(engine) as orm_session:
-                user = orm_session.query(_User).filter_by(id=request.user.auth_user.id).one_or_none()
+                user = orm_session.query(_User).filter_by(id=auth_layer.auth_user.id).one_or_none()
                 if user is None:
                     raise HTTPException(starlette.status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No user found")
 
@@ -753,7 +756,8 @@ class AccessController(BaseAccessController):
 
     @requires('authenticated')
     async def request_access(self, request: Request) -> Response:
-        if not isinstance(request.user, AccessUser):
+        auth_layer = request.user.layer_type(AccessLayer)
+        if not auth_layer:
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Not using a dynamic login")
 
         if request.method.upper() == 'GET':
@@ -773,7 +777,7 @@ class AccessController(BaseAccessController):
             'request': request,
             'station': station,
             'comment': comment,
-            'user': request.user.auth_user
+            'user': auth_layer.auth_user
         }
 
         message = EmailMessage()
@@ -790,11 +794,13 @@ class AccessController(BaseAccessController):
         return HTMLResponse(await package_template('access', 'request_submitted.html').render_async(
             request=request,
             station=station,
+            auth_layer=auth_layer,
         ))
 
     @requires('authenticated')
     async def confirm_access(self, request: Request) -> Response:
-        if not isinstance(request.user, AccessUser):
+        auth_layer = request.user.layer_type(AccessLayer)
+        if not auth_layer:
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Not using a dynamic login")
 
         confirm_token = request.query_params.get('token')
@@ -809,7 +815,7 @@ class AccessController(BaseAccessController):
             with Session(engine) as orm_session:
                 orm_session.query(_AccessChallenge).filter(_AccessChallenge.valid_until < now).delete()
                 for challenge in orm_session.query(_AccessChallenge).filter_by(token=confirm_token,
-                                                                               user=request.user.auth_user.id).filter(
+                                                                               user=auth_layer.auth_user.id).filter(
                         _AccessChallenge.valid_until >= now):
                     orm_session.delete(challenge)
                     orm_session.add(_Access(user=challenge.user, station=challenge.station, mode=challenge.mode,
@@ -826,6 +832,7 @@ class AccessController(BaseAccessController):
         return HTMLResponse(await package_template("access", "request_confirmed.html").render_async(
             request=request,
             any_added=any_added,
+            auth_layer=auth_layer,
         ))
 
     async def set_dashboard_email(self, user: _User, level: typing.Optional[SubscriptionLevel],
@@ -847,7 +854,7 @@ class AccessController(BaseAccessController):
                                 continue
                             if check.station != station and check.station != '*':
                                 continue
-                            if AccessUser.matches_mode(check.code, entry_code):
+                            if AccessLayer.matches_mode(check.code, entry_code):
                                 return True
                         return False
 
@@ -1250,7 +1257,7 @@ class EmailInterface:
             for access in orm_session.query(_Access).filter_by(user=user.id):
                 if access.station != '*' and access.station != station:
                     continue
-                if not AccessUser.matches_mode(access.mode, entry_code):
+                if not AccessLayer.matches_mode(access.mode, entry_code):
                     continue
                 return True
             return False
@@ -1281,7 +1288,7 @@ class EmailInterface:
         return await self.db.execute(execute)
 
 
-class AccessUser(BaseAccessUser):
+class AccessLayer(BaseAccessLayer):
     def __init__(self, controller: AccessController, user: _User):
         self.controller = controller
         self.auth_user = user
@@ -1291,50 +1298,44 @@ class AccessUser(BaseAccessUser):
         with Session(engine) as orm_session:
             return orm_session.query(_Access).filter_by(user=self.auth_user.id).all()
 
-    @property
-    def is_authenticated(self) -> bool:
+    def is_authenticated(self, _lower: typing.Sequence[BaseAccessLayer]) -> bool:
         return True
 
-    @property
-    def can_request_access(self) -> bool:
+    def can_request_access(self, l_ower: typing.Sequence["BaseAccessLayer"]) -> bool:
         return True
 
-    @property
-    def display_name(self) -> str:
+    def initials(self, _lower: typing.Sequence[BaseAccessLayer]) -> str:
+        return self.auth_user.initials or ''
+
+    def display_id(self, _lower: typing.Sequence[BaseAccessLayer]) -> str:
+        return str(self.auth_user.id)
+
+    def display_name(self, _lower: typing.Sequence[BaseAccessLayer]) -> str:
         if self.auth_user.name is not None and len(self.auth_user.name) != 0:
             return self.auth_user.name
         if self.auth_user.initials is not None and len(self.auth_user.initials) != 0:
             return self.auth_user.initials
         return self.auth_user.email
 
-    @property
-    def initials(self) -> str:
-        return self.auth_user.initials or ''
-
-    @property
-    def display_id(self) -> str:
-        return str(self.auth_user.id)
-
-    @property
-    def visible_stations(self) -> typing.List[str]:
+    def visible_stations(self, _lower: typing.Sequence[BaseAccessLayer]) -> typing.Set[str]:
         result: typing.Set[str] = set()
         for access in self._access.result():
             if access.station == '*':
-                return sorted(DISPLAY_STATIONS)
+                return DISPLAY_STATIONS
             if str(access.station) not in DISPLAY_STATIONS:
                 continue
             result.add(str(access.station))
-        return sorted(result)
+        return result
 
-    def allow_station(self, station: str) -> bool:
+    def allow_station(self, station: str, lower: typing.Sequence[BaseAccessLayer]) -> bool:
         for access in self._access.result():
             if access.station == '*':
                 return True
             if str(access.station) == station:
                 return True
-        return False
+        return lower and lower[0].allow_station(station, lower[1:])
 
-    def allow_mode(self, station: str, mode: str, write=False) -> bool:
+    def allow_mode(self, station: str, mode: str, write: bool, lower: typing.Sequence[BaseAccessLayer]) -> bool:
         for access in self._access.result():
             if access.station != '*' and str(access.station) != station:
                 continue
@@ -1345,9 +1346,9 @@ class AccessUser(BaseAccessUser):
             if access.write:
                 return True
             continue
-        return False
+        return lower and lower[0].allow_mode(station, mode, write, lower[1:])
 
-    def allow_global(self, mode: str, write=False) -> bool:
+    def allow_global(self, mode: str, write: bool, lower: typing.Sequence[BaseAccessLayer]) -> bool:
         for access in self._access.result():
             if not self.matches_mode(access.mode, mode):
                 continue
@@ -1356,4 +1357,4 @@ class AccessUser(BaseAccessUser):
             if access.write:
                 return True
             continue
-        return False
+        return lower and lower[0].allow_global(mode, write, lower[1:])

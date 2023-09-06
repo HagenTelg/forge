@@ -8,11 +8,11 @@ from starlette.requests import Request
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.authentication import AuthenticationMiddleware
-from forge.vis.access import BaseAccessUser
+from forge.vis.access import AccessUser
 from forge.vis.data.server import sockets
 
 
-class StubUser(BaseAccessUser):
+class StubUser(AccessUser):
     @property
     def is_authenticated(self) -> bool:
         return True

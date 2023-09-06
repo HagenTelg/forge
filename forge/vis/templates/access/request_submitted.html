@@ -8,7 +8,7 @@
 
 <h1>Access Request Submitted</h1>
 Your access request has been submitted.  You will receive an email at
-<a href="mailto:{{ request.user.auth_user.email }}">{{ request.user.auth_user.email }}</a> once the request is
+<a href="mailto:{{ auth_layer.auth_user.email }}">{{ auth_layer.auth_user.email }}</a> once the request is
 processed.
 
 </body>

@@ -7,7 +7,7 @@ from starlette.requests import Request
 from starlette.exceptions import HTTPException
 from forge.const import STATIONS
 from forge.vis.util import package_template
-from forge.vis.access.database import AccessUser as DatabaseUser
+from forge.vis.access.database import AccessLayer as DatabaseLayer
 from .assemble import lookup_mode, visible_modes, default_mode
 from .permissions import is_available
 
@@ -34,12 +34,12 @@ async def _mode_request(request: Request) -> Response:
     if mode is None:
         raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail="Mode not found")
     available_modes = visible_modes(request, station, mode_name=mode_name)
-    enable_user_actions = isinstance(request.user, DatabaseUser)
-    return await mode(request,
-                      station=station,
-                      available_modes=available_modes,
-                      enable_user_actions=enable_user_actions
-                      )
+    return await mode(
+        request,
+        station=station,
+        available_modes=available_modes,
+        enable_user_actions=request.user.layer_type(DatabaseLayer) is not None
+    )
 
 
 @requires('authenticated')

@@ -1,12 +1,12 @@
 import typing
 import ipaddress
 from forge.crypto import PublicKey
-from forge.vis.access import BaseAccessUser
+from forge.vis.access import wildcard_match_level
 from . import CONFIGURATION
 from .storage import DashboardInterface
 
 
-_match_access = BaseAccessUser.wildcard_match_level
+_match_access = wildcard_match_level
 
 _ADDRESS_AUTH: typing.List[typing.Tuple[typing.Union[ipaddress.IPv4Network, ipaddress.IPv6Network], str, str]] = list()
 for config in CONFIGURATION.get('DASHBOARD.ACCESS.STATIC', []):

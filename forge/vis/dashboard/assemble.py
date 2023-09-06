@@ -1,5 +1,5 @@
 import typing
-from forge.vis.access import BaseAccessUser
+from forge.vis.access import AccessUser
 from forge.dashboard.display import DisplayInterface
 from forge.telemetry.display import DisplayInterface as TelemetryInterface
 from forge.processing.control.display import DisplayInterface as ProcessingInterface
@@ -24,7 +24,7 @@ def get_record(station: typing.Optional[str], code: str) -> typing.Optional[Reco
 async def list_entries(db: DisplayInterface,
                        telemetry: typing.Optional[TelemetryInterface],
                        processing: typing.Optional[ProcessingInterface],
-                       user: BaseAccessUser) -> typing.List[Entry]:
+                       user: AccessUser) -> typing.List[Entry]:
     result: typing.List[Entry] = list()
     for entry in await db.list_entries():
         station = entry.station

@@ -6,7 +6,7 @@ import sqlalchemy as db
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from forge.crypto import PublicKey
-from forge.vis.access import BaseAccessUser
+from forge.vis.access import wildcard_match_level
 from . import is_valid_station, is_valid_code
 from .database import (Interface, Entry, Notification, Watchdog, Event, EventEmail, Condition, ConditionEmail,
                        AccessKey, AccessBearer)
@@ -15,7 +15,7 @@ from .report.action import DashboardAction
 
 _LOGGER = logging.getLogger(__name__)
 
-_match_access = BaseAccessUser.wildcard_match_level
+_match_access = wildcard_match_level
 
 
 class DashboardInterface(Interface):

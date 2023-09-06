@@ -14,7 +14,7 @@ from forge.const import __version__
 from forge.formattime import format_export_time
 from forge.vis import CONFIGURATION
 from forge.tasks import background_task
-from forge.vis.access import BaseAccessUser
+from forge.vis.access import AccessUser
 from forge.vis.data.stream import DataStream, RecordStream
 from forge.vis.realtime.controller.client import ReadData as RealtimeRead
 from forge.vis.realtime.controller.block import DataBlock as RealtimeDataBlock
@@ -599,7 +599,7 @@ def _from_cpd3_trigger(trigger: typing.Any) -> typing.Optional[typing.Dict[str, 
     return convert_element(trigger)
 
 
-def _new_directive(user: BaseAccessUser, station: str, profile: str,
+def _new_directive(user: AccessUser, station: str, profile: str,
                    directive: typing.Dict[str, typing.Any]) -> typing.Tuple[Identity, typing.Dict[str, typing.Any]]:
     start = directive.get('start_epoch_ms')
     end = directive.get('end_epoch_ms')
@@ -633,7 +633,7 @@ def _new_directive(user: BaseAccessUser, station: str, profile: str,
     return identity, result
 
 
-def _modify_directive(user: BaseAccessUser, station: str, profile: str,
+def _modify_directive(user: AccessUser, station: str, profile: str,
                       existing: typing.Dict[str, typing.Any], identity: Identity,
                       modification: typing.Dict[str, typing.Any]) -> None:
     history = existing.get('History')
@@ -914,7 +914,7 @@ def _display_directive(raw: typing.Dict[str, typing.Any]) -> bool:
     return True
 
 
-async def _write_directive(user: BaseAccessUser, station: str, profile: str,
+async def _write_directive(user: AccessUser, station: str, profile: str,
                            directive: typing.Dict[str, typing.Any]) -> typing.Optional[typing.Dict]:
     if '_id' not in directive:
         try:
@@ -3071,7 +3071,7 @@ def editing_available(station: str, mode_name: str, start_epoch_ms: int, end_epo
     return EditAvailable(station, profile, start_epoch_ms, end_epoch_ms, send)
 
 
-def editing_writable(user: BaseAccessUser, station: str, mode_name: str,
+def editing_writable(user: AccessUser, station: str, mode_name: str,
                      directive: typing.Dict[str, typing.Any]) -> bool:
     profile = mode_name.split('-', 1)[0]
     if '_id' in directive:
@@ -3089,7 +3089,7 @@ def editing_writable(user: BaseAccessUser, station: str, mode_name: str,
     return True
 
 
-def editing_save(user: BaseAccessUser, station: str, mode_name: str,
+def editing_save(user: AccessUser, station: str, mode_name: str,
                  directive: typing.Dict[str, typing.Any]) -> typing.Awaitable[typing.Optional[dict]]:
     profile = mode_name.split('-', 1)[0]
     return _write_directive(user, station, profile, directive)

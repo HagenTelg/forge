@@ -1,5 +1,5 @@
 import typing
-from forge.vis.access import BaseAccessUser
+from forge.vis.access import AccessUser
 from forge.vis.data.stream import DataStream
 
 
@@ -15,12 +15,12 @@ def available(station: str, mode_name: str, start_epoch_ms: int, end_epoch_ms: i
     return editing_available(station, mode_name, start_epoch_ms, end_epoch_ms, send)
 
 
-def writable(user: BaseAccessUser, station: str, mode_name: str, directive: typing.Dict[str, typing.Any]) -> bool:
+def writable(user: AccessUser, station: str, mode_name: str, directive: typing.Dict[str, typing.Any]) -> bool:
     from forge.vis.station.cpd3 import editing_writable
     return editing_writable(user, station, mode_name, directive)
 
 
-def save(user: BaseAccessUser, station: str, mode_name: str,
+def save(user: AccessUser, station: str, mode_name: str,
          directive: typing.Dict[str, typing.Any]) -> typing.Optional[typing.Awaitable[typing.Optional[typing.Dict[str, typing.Any]]]]:
     from forge.vis.station.cpd3 import editing_save
     return editing_save(user, station, mode_name, directive)

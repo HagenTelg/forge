@@ -380,7 +380,7 @@ const DashboardEntry = (function() {
                 this._email_button.title = "Emails disabled";
                 break;
             }
-            //{% if (enable_user_actions and request.user.auth_user.email) or is_example %}
+            //{% if (auth_layer and auth_layer.auth_user.email) or is_example %}
             this._email_button.classList.remove('hidden');
             //{% endif %}
 
