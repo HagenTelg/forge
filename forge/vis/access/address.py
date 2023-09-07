@@ -24,6 +24,7 @@ class AccessController(BaseAccessController):
         self.authenticated = config.get("authenticated", True)
         self.name = config.get("name", "")
         self.initials = config.get("initials", name_to_initials(self.name))
+        self.visible = config.get("visible", True)
 
     async def authenticate(self, request: Request) -> typing.Optional[BaseAccessLayer]:
         try:
@@ -64,6 +65,8 @@ class AccessLayer(BaseAccessLayer):
         return self.username
 
     def visible_stations(self, lower: typing.Sequence[BaseAccessLayer]) -> typing.Set[str]:
+        if not self.controller.visible:
+            return lower and lower[0].visible_stations(lower[1:])
         if self.controller.station == "*":
             stations = set(DISPLAY_STATIONS)
         else:
