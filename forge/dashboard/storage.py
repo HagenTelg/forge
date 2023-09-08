@@ -223,7 +223,7 @@ class DashboardInterface(Interface):
                 query = orm_session.query(AccessKey).filter_by(public_key=key)
                 query = query.filter(db.or_(AccessKey.station == station, AccessKey.station == '*'))
                 for access in query:
-                    if _match_access(access.code, entry_code):
+                    if _match_access(access.code, entry_code) is not None:
                         return True
             return False
 

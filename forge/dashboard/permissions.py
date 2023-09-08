@@ -31,7 +31,7 @@ def check_address(address: typing.Union[ipaddress.IPv4Address, ipaddress.IPv6Add
             continue
         if access_station != station and access_station != '*':
             continue
-        if not _match_access(access_code, entry_code):
+        if _match_access(access_code, entry_code) is None:
             continue
         return True
     return False
