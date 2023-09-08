@@ -24,6 +24,8 @@ async def test_basic(interface):
             'name': 'Test Name',
             'initials': 'TST',
             'last_seen': None,
+            'authentication': 'password',
+            'subscriptions': [],
             'access': [],
         }
     ]
@@ -38,6 +40,8 @@ async def test_basic(interface):
             'name': 'New Name',
             'initials': 'TST',
             'last_seen': None,
+            'authentication': 'password',
+            'subscriptions': [],
             'access': [
                 {
                     'id': users[0]['access'][0]['id'],
@@ -68,6 +72,8 @@ async def test_grant_revoke(interface):
             'name': 'Test Name',
             'initials': 'TST',
             'last_seen': None,
+            'authentication': 'password',
+            'subscriptions': [],
             'access': [
                 {
                     'id': users[0]['access'][0]['id'],
@@ -93,7 +99,7 @@ async def test_grant_revoke(interface):
     assert (await interface.list_users()) == users
     await interface.revoke_access(mode='NONE')
     assert (await interface.list_users()) == users
-    await interface.revoke_access(mode='test-')
+    await interface.revoke_access(mode='test-*')
     assert (await interface.list_users())[0]['access'] == []
 
 
@@ -113,6 +119,8 @@ async def test_selections(interface):
             'name': 'Test Name',
             'initials': 'TS1',
             'last_seen': None,
+            'authentication': 'password',
+            'subscriptions': [],
             'access': [
                 {
                     'id': all_users[0]['access'][0]['id'],
@@ -128,6 +136,8 @@ async def test_selections(interface):
             'name': 'Second Name',
             'initials': 'TS2',
             'last_seen': datetime.datetime(2020, 1, 1),
+            'authentication': 'password',
+            'subscriptions': [],
             'access': [],
         },
     ]
@@ -177,6 +187,8 @@ async def test_selections(interface):
     users = await interface.list_users(mode='test-test')
     assert users == [all_users[0]]
     users = await interface.list_users(mode='*')
+    assert users == [all_users[0]]
+    users = await interface.list_users(mode='foo-*')
     assert users == []
     users = await interface.list_users(mode='test-%')
     assert users == [all_users[0]]

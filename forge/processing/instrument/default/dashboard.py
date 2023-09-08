@@ -94,10 +94,10 @@ class ConditionAccumulator:
     def finish(self) -> None:
         return self._complete()
 
-    def emit_true(self, truth_values: np.array, times: np.array) -> None:
+    def emit_true(self, truth_values: np.ndarray, times: np.ndarray) -> None:
         for start_index, end_index in true_ranges(truth_values):
-            start_time = times[start_index][0]
-            end_time = times[end_index - 1][1]
+            start_time = float(times[start_index][0])
+            end_time = float(times[end_index - 1][1])
 
             self.analyzer.target.conditions.append(self.analyzer.target.Condition(
                 self.code, self.severity,

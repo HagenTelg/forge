@@ -920,7 +920,7 @@ class ControlInterface:
     @staticmethod
     def _mode_filter(query, mode: str):
         if mode.endswith('*'):
-            return query.filter(_Access.mode.ilike(f'{mode}%'))
+            return query.filter(_Access.mode.ilike(f'{mode[:-1]}%'))
         elif '%' in mode:
             return query.filter(_Access.mode.ilike(mode))
         else:

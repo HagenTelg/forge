@@ -108,7 +108,7 @@ def cutsize_config(args: argparse.Namespace) -> LayeredConfiguration:
 def bus_interface(args: argparse.Namespace) -> BaseBusInterface:
     from .businterface import BusInterface
 
-    interface = BusInterface(args.identifier, CONFIGURATION.get("ACQUISITION.BUS", '/run/forge-acquisition-bus.socket'))
+    interface = BusInterface(args.identifier.upper(), CONFIGURATION.get("ACQUISITION.BUS", '/run/forge-acquisition-bus.socket'))
 
     bypass_config = _global_section_override(args, "BYPASS")
     enabled = bypass_config.constant()
@@ -165,7 +165,7 @@ def data_output(args: argparse.Namespace) -> BaseDataOutput:
 
     working_directory, completed_directory = data_directories(args)
 
-    return DataOutput(CONFIGURATION.get("ACQUISITION.STATION", 'nil').lower(), args.identifier,
+    return DataOutput(CONFIGURATION.get("ACQUISITION.STATION", 'nil').lower(), args.identifier.upper(),
                       LayeredConfiguration(*roots, toml=toml),
                       working_directory, completed_directory,
                       AverageRecord(average_config(args)).interval)
@@ -174,7 +174,7 @@ def data_output(args: argparse.Namespace) -> BaseDataOutput:
 def persistent_interface(args: argparse.Namespace) -> BasePersistentInterface:
     from .persistent import PersistentInterface
 
-    state_file = f"{args.identifier}-{args.type.lower()}.json"
+    state_file = f"{args.identifier.upper()}-{args.type.lower()}.json"
     state_location = args.state_location or CONFIGURATION.get("ACQUISITION.STATE_LOCATION", "/var/lib/forge/state")
     state_location = Path(state_location)
 

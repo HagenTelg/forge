@@ -1,6 +1,7 @@
 import asyncio
 import typing
 import pytest
+import pytest_asyncio
 import os
 from forge.acquisition.bus.server.dispatch import Dispatch
 from forge.acquisition.bus.client import AcquisitionBusClient
@@ -37,17 +38,17 @@ async def _aio_pipe() -> typing.Tuple[asyncio.StreamReader, asyncio.StreamWriter
     return reader, writer
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client_to_server():
     return await _aio_pipe()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client_from_server():
     return await _aio_pipe()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def server():
     return Dispatch()
 
@@ -64,7 +65,7 @@ async def _client(server: Dispatch, client_to_server, client_from_server,
     return client
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def client(server: Dispatch, client_to_server, client_from_server):
     return await _client(server, client_to_server, client_from_server)
 

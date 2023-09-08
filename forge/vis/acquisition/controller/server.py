@@ -3,7 +3,7 @@ import asyncio
 import logging
 import struct
 from forge.vis import CONFIGURATION
-from forge.service import UnixServer
+from forge.service import SocketServer
 from .protocol import ConnectionType
 from .connection import Station
 
@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 _stations: typing.Dict[str, Station] = dict()
 
 
-class Server(UnixServer):
+class Server(SocketServer):
     DESCRIPTION = "Forge visualization acquisition server."
 
     async def connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:

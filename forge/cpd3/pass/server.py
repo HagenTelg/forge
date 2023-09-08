@@ -6,7 +6,7 @@ from math import isfinite
 from dynaconf import Dynaconf
 from dynaconf.constants import DEFAULT_SETTINGS_FILES
 from forge.tasks import background_task
-from forge.service import UnixServer
+from forge.service import SocketServer
 
 CONFIGURATION = Dynaconf(
     environments=False,
@@ -120,7 +120,7 @@ async def _wait_for_passed(station: str, writer: asyncio.StreamWriter) -> None:
         await blocker.wait_for_done()
 
 
-class Server(UnixServer):
+class Server(SocketServer):
     DESCRIPTION = "Forge tunnel coordinator server."
 
     async def connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:

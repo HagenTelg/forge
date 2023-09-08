@@ -5,12 +5,12 @@ import argparse
 import asyncio
 import logging
 import signal
+import shutil
 import re
 import os
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from base64 import b64decode
-from shutil import move as move_file
 from forge.crypto import key_to_bytes
 from forge.processing.transfer import CONFIGURATION
 from forge.processing.transfer.completion import completion_directory, completion_command
@@ -198,7 +198,7 @@ def main():
                 file_directory = Path(file_directory)
                 file_directory.mkdir(parents=True, exist_ok=True)
                 output_path = str(file_directory / self.filename)
-                move_file(output.name, output_path)
+                await asyncio.get_event_loop().run_in_executor(None, shutil.move, output.name, output_path)
 
                 if args.command:
                     process = await asyncio.create_subprocess_shell(
@@ -267,6 +267,11 @@ def main():
             loop.run_until_complete(t)
         except:
             pass
+
+    try:
+        writer.close()
+    except:
+        pass
 
     loop.close()
 

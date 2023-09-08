@@ -9,7 +9,7 @@ from tempfile import TemporaryFile
 from dynaconf import Dynaconf
 from dynaconf.constants import DEFAULT_SETTINGS_FILES
 from forge.tasks import background_task
-from forge.service import UnixServer
+from forge.service import SocketServer
 
 CONFIGURATION = Dynaconf(
     environments=False,
@@ -406,7 +406,7 @@ async def _prune() -> typing.NoReturn:
             await e.evict()
 
 
-class Server(UnixServer):
+class Server(SocketServer):
     DESCRIPTION = "Forge CPD3 cache server."
 
     async def connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:

@@ -8,9 +8,12 @@ from .storage.protocol import FileType
 _time_replace = re.compile(r"\{time:([^{}]+)}")
 
 
-def completion_directory(base: str, key: PublicKey, station: str, file_type: typing.Union[str, FileType]) -> str:
+def completion_directory(base: str, key: typing.Optional[PublicKey], station: str, file_type: typing.Union[str, FileType]) -> str:
     if '{key}' in base:
-        base = base.replace('{key}', urlsafe_b64encode(key_to_bytes(key)).decode('ascii'))
+        if key:
+            base = base.replace('{key}', urlsafe_b64encode(key_to_bytes(key)).decode('ascii'))
+        else:
+            base = base.replace('{key}', 'NO_KEY')
     if '{type}' in base:
         if isinstance(file_type, FileType):
             file_type = file_type.name

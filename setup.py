@@ -52,6 +52,10 @@ setup(
         "forge-processing-storage-server = forge.processing.transfer.storage.server:main",
         "forge-processing-upload = forge.processing.transfer.upload:main",
         "forge-processing-download = forge.processing.transfer.download:main",
+        "forge-processing-ingest-server = forge.processing.transfer.ingest.server:main",
+        "forge-processing-ingest-notify = forge.processing.transfer.ingest.notify:main",
+        "forge-processing-ingest-file = forge.processing.transfer.ingest.file:main",
+        "forge-processing-ingest-receive = forge.processing.transfer.ingest.receive:main",
 
         "forge-telemetry = forge.telemetry.__main__:main",
         "forge-telemetry-control = forge.telemetry.cli.__main__:main",
@@ -64,6 +68,11 @@ setup(
         "forge-dashboard = forge.dashboard.__main__:main",
         "forge-dashboard-control = forge.dashboard.cli.__main__:main",
         "forge-dashboard-report = forge.dashboard.report.__main__:main",
+
+        "forge-archive-server = forge.archive.server.__main__:main",
+        "forge-archive-server-diagnostics = forge.archive.server.diagnostics:main",
+        "forge-archive-put = forge.archive.client.put:cli",
+        "forge-archive-reindex = forge.archive.client.reindex:main",
 
         "forge-cpd3-cache-client = forge.cpd3.cache.client:main",
         "forge-cpd3-cache-server = forge.cpd3.cache.server:main",

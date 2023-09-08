@@ -14,6 +14,9 @@ code_records: typing.Dict[str, Record] = {
     'acquisition-ingest-cpd3-forge': AcquisitionIngestRecord.simple_override(
         name="CPD3 Forge data processing",
     ),
+    'acquisition-ingest-data': AcquisitionIngestRecord.simple_override(
+        name="Acquisition data processing",
+    ),
     'acquisition-transfer-data': FileIngestRecord.simple_override(
         name="Acquisition data transfer",
     ),
@@ -47,6 +50,7 @@ def detach_irregular_reporting(threshold: float = 0) -> typing.Dict[str, Record]
     for code in (
             'acquisition-ingest-cpd3',
             'acquisition-ingest-cpd3-forge',
+            'acquisition-ingest-data',
             'acquisition-transfer-data',
             'acquisition-transfer-backup',
             'acquisition-telemetry-uplink',

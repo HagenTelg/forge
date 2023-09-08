@@ -1,6 +1,7 @@
 import asyncio
 import typing
 import pytest
+import pytest_asyncio
 import os
 from forge.vis.acquisition.controller.connection import Station
 from forge.vis.acquisition.controller.client import Client as BaseClient
@@ -105,32 +106,32 @@ async def _aio_pipe() -> typing.Tuple[asyncio.StreamReader, asyncio.StreamWriter
     return reader, writer
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def acquisition_to_server():
     return await _aio_pipe()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def acquisition_from_server():
     return await _aio_pipe()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def display_to_server():
     return await _aio_pipe()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def display_from_server():
     return await _aio_pipe()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def server():
     return Station('nil')
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def acquisition(acquisition_to_server, acquisition_from_server, server: Station):
     s = server.attach_acquisition(acquisition_to_server[0], acquisition_from_server[1])
     c = Client(acquisition_from_server[0], acquisition_to_server[1])
@@ -153,7 +154,7 @@ async def acquisition(acquisition_to_server, acquisition_from_server, server: St
     return s, c
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def display(display_to_server, display_from_server, server: Station):
     s = server.attach_display(display_to_server[0], display_from_server[1])
     c = Client(display_from_server[0], display_to_server[1])

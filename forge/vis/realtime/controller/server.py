@@ -5,7 +5,7 @@ import logging
 import struct
 from forge.tasks import background_task
 from forge.vis import CONFIGURATION
-from forge.service import UnixServer
+from forge.service import SocketServer
 from .protocol import ConnectionType
 from .manager import Manager
 
@@ -25,7 +25,7 @@ async def _prune() -> typing.NoReturn:
         await asyncio.sleep(600)
 
 
-class Server(UnixServer):
+class Server(SocketServer):
     DESCRIPTION = "Forge visualization realtime server."
 
     async def connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
@@ -85,6 +85,10 @@ class Server(UnixServer):
                 pass
             return
 
+    async def initialize(self) -> None:
+        await manager.load_existing()
+        background_task(_prune())
+
     @property
     def default_socket(self) -> str:
         return CONFIGURATION.get('REALTIME.SOCKET', '/run/forge-vis-realtime.socket')
@@ -94,10 +98,8 @@ def main():
     global manager
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    server = Server()
     manager = Manager(CONFIGURATION.get('REALTIME.STORAGE', '/var/lib/forge-vis-realtime'))
-    loop.run_until_complete(manager.load_existing())
-    background_task(_prune())
+    server = Server()
     server.run()
 
 

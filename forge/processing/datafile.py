@@ -2,10 +2,10 @@ import typing
 import numpy as np
 
 
-def record_times(start_times: np.array,
+def record_times(start_times: np.ndarray,
                  expected_record_interval: typing.Optional[typing.Union[float, int]] = None,
                  file_start_time: typing.Optional[typing.Union[float, int]] = None,
-                 file_end_time: typing.Optional[typing.Union[float, int]] = None) -> np.array:
+                 file_end_time: typing.Optional[typing.Union[float, int]] = None) -> np.ndarray:
     if start_times.shape[0] == 0:
         return np.array([])
     final_end_time = start_times[-1]
@@ -31,7 +31,7 @@ def record_times(start_times: np.array,
     return start_end_times
 
 
-def true_ranges(truth_values: np.array) -> np.array:
+def true_ranges(truth_values: np.ndarray) -> np.ndarray:
     """
     End indices are exclusive (meaning the index after the last true value)
     """

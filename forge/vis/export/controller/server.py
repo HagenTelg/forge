@@ -5,7 +5,7 @@ import logging
 import struct
 from forge.tasks import background_task
 from forge.vis import CONFIGURATION
-from forge.service import UnixServer
+from forge.service import SocketServer
 from .manager import Manager, ExportedFile
 
 
@@ -51,7 +51,7 @@ async def _prune() -> typing.NoReturn:
         manager.prune()
 
 
-class Server(UnixServer):
+class Server(SocketServer):
     DESCRIPTION = "Forge visualization export server."
 
     async def connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:

@@ -5,7 +5,6 @@ import enum
 import struct
 import crc
 from io import BytesIO
-from forge.tasks import wait_cancelable
 from .base import CommunicationsError
 from .streaming import StreamingContext, StreamingInstrument, StreamingSimulator
 from .flag import Flag, Notification

@@ -1,4 +1,5 @@
 import asyncio
+from sqlalchemy import text
 from starlette.applications import Starlette
 from starlette.testclient import TestClient
 from starlette.routing import Route, Mount
@@ -8,6 +9,7 @@ from starlette.responses import Response, JSONResponse
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.authentication import AuthenticationMiddleware
+from forge.vis.access import AccessUser
 from forge.vis.access.database import AccessController, ControlInterface
 
 
@@ -25,9 +27,9 @@ class StubAuthBackend(AuthenticationBackend):
         self.controller = controller
 
     async def authenticate(self, request: Request):
-        user = await self.controller.authenticate(request)
-        if user is not None:
-            return AuthCredentials(['authenticated']), user
+        layer = await self.controller.authenticate(request)
+        if layer is not None:
+            return AuthCredentials(['authenticated']), AccessUser([layer])
 
 
 def create_app():
@@ -151,13 +153,13 @@ def test_password_reset():
     def fetch_token(engine):
         nonlocal reset_token
         with engine.connect() as conn:
-            row = conn.execute('SELECT token FROM password_reset').one()
+            row = conn.execute(text('SELECT token FROM password_reset')).one()
             reset_token = row[0]
 
     controller.db.sync(fetch_token)
     assert reset_token is not None
 
-    response = client.get(f'/auth/password/reset?token={reset_token}')
+    response = client.post(f'/auth/password/reset?token={reset_token}')
     assert response.status_code == 200
 
     response = client.get('/required_auth')

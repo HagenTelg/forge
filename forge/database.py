@@ -48,7 +48,7 @@ class ORMDatabase:
         return self._pool.submit(call, self._engine)
 
     async def execute(self, call: typing.Callable[[Engine], typing.Any]):
-        return await asyncio.wrap_future(self.future(call))
+        return await asyncio.get_event_loop().run_in_executor(self._pool, call, self._engine)
 
     def background(self, call: typing.Callable[[Engine], None]) -> None:
         if self.foreground_only:

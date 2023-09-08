@@ -128,13 +128,13 @@ class _ExportRequest:
             if isinstance(result, Export.DirectResult):
                 try:
                     with open(result.source_file, 'rb') as src:
-                        await asyncio.wrap_future(_THREAD_POOL.submit(copyfileobj, src, target))
+                        await asyncio.get_event_loop().run_in_executor(_THREAD_POOL, copyfileobj, src, target)
                 except OSError:
                     self._apply_result(None)
                     return None
                 file = ExportedFile(target, client_name=result.client_name, media_type=result.media_type)
             else:
-                await asyncio.wrap_future(_THREAD_POOL.submit(self._create_zip, directory, target.name))
+                await asyncio.get_event_loop().run_in_executor(_THREAD_POOL, self._create_zip, directory, target.name)
                 name = result.client_name
                 if not name:
                     name = self._export_zip_name()

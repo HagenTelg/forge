@@ -1,7 +1,7 @@
 import typing
 import asyncio
 import logging
-from forge.service import UnixServer
+from forge.service import SocketServer
 from forge.acquisition import CONFIGURATION
 from ..protocol import deserialize_string
 from .dispatch import Dispatch
@@ -13,7 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 dispatch: Dispatch = None
 
 
-class Server(UnixServer):
+class Server(SocketServer):
     DESCRIPTION = "Forge acquisition bus."
 
     async def connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:

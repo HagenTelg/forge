@@ -3,7 +3,7 @@ import asyncio
 import logging
 import struct
 from pathlib import Path
-from forge.service import UnixServer
+from forge.service import SocketServer
 from forge.crypto import PublicKey
 from forge.processing.transfer import CONFIGURATION
 from forge.processing.transfer.storage.protocol import ServerConnectionType, FileType, Compression
@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 _dispatch: typing.Optional[Dispatch] = None
 
 
-class Server(UnixServer):
+class Server(SocketServer):
     DESCRIPTION = "Forge data transfer storage server."
 
     async def connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:

@@ -4,7 +4,7 @@ import time
 import logging
 import shutil
 import numpy as np
-import forge.data.structure.timeseries as netcdf_timeseries
+import forge.data.structure.eventlog as netcdf_eventlog
 from enum import IntEnum
 from math import floor
 from json import dumps as to_json
@@ -116,27 +116,11 @@ class Log:
     def _write_events(self, target: Dataset) -> None:
         type_enum = self._declare_type_enum(target)
 
-        time_var = netcdf_timeseries.time_coordinate(target)
-        time_var.long_name = "time of event"
-
-        type_var = target.createVariable("type", type_enum, ("time",), fill_value=False)
-        netcdf_timeseries.variable_coordinates(target, type_var)
-        type_var.long_name = "event type"
-
-        source_var = target.createVariable("source", str, ("time",), fill_value=False)
-        netcdf_timeseries.variable_coordinates(target, source_var)
-        source_var.long_name = "source name"
-        source_var.text_encoding = "UTF-8"
-
-        message_var = target.createVariable("message", str, ("time",), fill_value=False)
-        netcdf_timeseries.variable_coordinates(target, message_var)
-        message_var.long_name = "text description of the event"
-        message_var.text_encoding = "UTF-8"
-
-        auxiliary_var = target.createVariable("auxiliary_data", str, ("time",), fill_value=False)
-        netcdf_timeseries.variable_coordinates(target, auxiliary_var)
-        auxiliary_var.long_name = "JSON encoded auxiliary data"
-        auxiliary_var.text_encoding = "UTF-8"
+        time_var = netcdf_eventlog.event_time(target)
+        type_var = netcdf_eventlog.event_type(target, type_enum)
+        source_var = netcdf_eventlog.event_source(target)
+        message_var = netcdf_eventlog.event_message(target)
+        auxiliary_var = netcdf_eventlog.event_auxiliary(target)
 
         time_var[:] = [round(e.time * 1000.0) for e in self._events]
         type_var[:] = [e.type.value for e in self._events]
@@ -196,8 +180,8 @@ class Log:
         self._events.clear()
 
         try:
-            asyncio.get_event_loop().run_in_executor(None, shutil.move,
-                                                     str(source_file), str(target_file))
+            await asyncio.get_event_loop().run_in_executor(None, shutil.move,
+                                                           str(source_file), str(target_file))
             _LOGGER.debug(f"Moved completed event log file {source_file} to {target_file}")
         except OSError:
             _LOGGER.warning(f"Failed to relocate completed event log file {source_file} to {target_file}",

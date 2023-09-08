@@ -6,6 +6,7 @@ import asyncio
 import aiohttp
 import logging
 import time
+import shutil
 import zstandard
 from pathlib import Path
 from hashlib import sha512
@@ -13,7 +14,6 @@ from tempfile import TemporaryFile
 from ftplib import FTP
 from base64 import b64encode, b64decode
 from os.path import exists as file_exists
-from shutil import move as move_file
 from starlette.datastructures import URL, QueryParams
 from forge.authsocket import PublicKey, PrivateKey, key_to_bytes
 from forge.processing.transfer import CONFIGURATION
@@ -247,7 +247,7 @@ def main():
     if not servers:
         servers = CONFIGURATION.get('PROCESSING.UPLOAD.URL')
         if isinstance(servers, str):
-            servers = servers
+            servers = [servers]
         elif not isinstance(servers, list):
             servers = None
     if not servers:
@@ -263,7 +263,7 @@ def main():
             if args.completed:
                 target_file = Path(args.completed) / file.name
                 try:
-                    move_file(str(file), str(target_file))
+                    shutil.move(str(file), str(target_file))
                 except IOError:
                     _LOGGER.warning(f"Failed to move {file} to completed location {target_file}", exc_info=True)
             continue
@@ -328,7 +328,7 @@ def main():
                 target_dir.mkdir(parents=True, exist_ok=True)
                 target_file = target_dir / file.name
                 try:
-                    move_file(str(file), str(target_file))
+                    await asyncio.get_event_loop().run_in_executor(None, shutil.move, str(file), str(target_file))
                 except IOError:
                     _LOGGER.warning(f"Failed to move {file} to completed location {target_file}", exc_info=True)
 

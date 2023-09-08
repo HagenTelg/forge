@@ -6,7 +6,7 @@ from base64 import b64encode
 from random import randint
 from dynaconf import Dynaconf
 from dynaconf.constants import DEFAULT_SETTINGS_FILES
-from forge.service import UnixServer
+from forge.service import SocketServer
 from .protocol import ServerConnectionType, FromRemotePacketType, ToRemotePacketType, InitiateConnectionStatus
 
 CONFIGURATION = Dynaconf(
@@ -157,7 +157,7 @@ class _RemoteHost:
 _active_hosts: typing.Dict[bytes, _RemoteHost] = dict()
 
 
-class Server(UnixServer):
+class Server(SocketServer):
     DESCRIPTION = "Forge tunnel coordinator server."
 
     async def connection(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:

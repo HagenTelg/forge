@@ -1,13 +1,14 @@
 import asyncio
 import typing
 import pytest
+import pytest_asyncio
 import os
 import time
 from forge.vis.realtime.controller.manager import Manager
 from forge.vis.realtime.controller.block import DataBlock, serialize_single_record
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def manager(tmp_path):
     manager = Manager(str(tmp_path))
     await manager.load_existing()
@@ -29,12 +30,12 @@ async def _aio_pipe() -> typing.Tuple[asyncio.StreamReader, asyncio.StreamWriter
     return reader, writer
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def to_manager():
     return await _aio_pipe()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def from_manager():
     return await _aio_pipe()
 

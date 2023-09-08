@@ -6,7 +6,7 @@ import struct
 import logging
 import bisect
 from pathlib import Path
-from concurrent.futures import ThreadPoolExecutor
+from forge.service import send_file_contents
 from .block import ValueType, DataBlock, serialize_single_record
 
 
@@ -96,10 +96,6 @@ class Manager:
     def __init__(self, storage_directory: str):
         self.storage = Path(storage_directory)
         self._data: typing.Dict[_DataKey, _DataEntry] = dict()
-        if self._have_sendfile():
-            self._sendfile_pool = ThreadPoolExecutor(thread_name_prefix="RealtimeSendfile")
-        else:
-            self._sendfile_pool = None
 
     async def load_existing(self):
         try:
@@ -151,15 +147,6 @@ class Manager:
             self._data[_DataKey(station, date_name)] = _DataEntry(file)
 
         _LOGGER.debug(f"Loaded {len(self._data)} realtime records")
-
-    @staticmethod
-    def _have_sendfile() -> bool:
-        try:
-            _ = os.sendfile
-            return True
-        except AttributeError:
-            pass
-        return False
 
     async def prune(self, maximum_age_ms: int = None, maximum_count: int = None) -> None:
         _LOGGER.debug("Pruning cached data")
@@ -239,57 +226,6 @@ class Manager:
 
         await entry.add_record(contents)
 
-    @staticmethod
-    def _get_writer_fileno(writer: asyncio.StreamWriter) -> typing.Optional[int]:
-        info = writer.get_extra_info('socket')
-        if info:
-            return info.fileno()
-
-        info = writer.get_extra_info('pipe')
-        if info:
-            return info.fileno()
-
-        return None
-
-    async def _send_file_contents(self, source: typing.BinaryIO, writer: asyncio.StreamWriter) -> None:
-        if self._sendfile_pool:
-            out_fd = self._get_writer_fileno(writer)
-            if out_fd is not None:
-                in_fd = source.fileno()
-
-                def _send():
-                    input_blocking_state = os.get_blocking(in_fd)
-                    output_blocking_state = os.get_blocking(out_fd)
-                    try:
-                        os.set_blocking(in_fd, True)
-                        os.set_blocking(out_fd, True)
-
-                        offset = 0
-                        remaining = os.fstat(in_fd).st_size
-                        while remaining > 0:
-                            n = os.sendfile(out_fd, in_fd, offset, min(remaining, 10 * 1024 * 1024))
-                            if n <= 0:
-                                break
-                            offset += n
-                            remaining -= n
-                    finally:
-                        os.set_blocking(out_fd, output_blocking_state)
-                        os.set_blocking(in_fd, input_blocking_state)
-
-                _LOGGER.debug("Sending file with os.sendfile")
-
-                await asyncio.wrap_future(self._sendfile_pool.submit(_send))
-                await writer.drain()
-                return
-
-        _LOGGER.debug("Sending file with a read loop")
-        while True:
-            data = source.read(65536)
-            if not data:
-                break
-            writer.write(data)
-            await writer.drain()
-
     async def stream(self, station: str, data_name: str, writer: asyncio.StreamWriter) -> typing.NoReturn:
         key = _DataKey(station, data_name)
         entry = self._data.get(key)
@@ -302,7 +238,7 @@ class Manager:
                 async with entry.file_lock:
                     with open(str(entry.storage_file), mode='rb') as f:
                         _LOGGER.debug(f"Sending cached data for stream {key}")
-                        await self._send_file_contents(f, writer)
+                        await send_file_contents(f, writer)
             except FileNotFoundError:
                 pass
 
@@ -321,6 +257,6 @@ class Manager:
             async with entry.file_lock:
                 with open(str(entry.storage_file), mode='rb') as f:
                     _LOGGER.debug(f"Sending cached data for read {key}")
-                    await self._send_file_contents(f, writer)
+                    await send_file_contents(f, writer)
         except FileNotFoundError:
             pass
