@@ -525,8 +525,10 @@ class AccessController(BaseAccessController):
 
         request.session.clear()
         new_password = token_urlsafe(16)
+        did_reset = False
 
         def execute(engine: Engine):
+            nonlocal did_reset
             added_session = None
             now = datetime.datetime.now(tz=datetime.timezone.utc)
             with Session(engine) as orm_session:
@@ -539,6 +541,7 @@ class AccessController(BaseAccessController):
                     orm_session.query(_Session).filter_by(user=challenge.user).delete()
 
                     auth_entry.pbkdf2 = pbkdf2_sha256.hash(new_password)
+                    did_reset = True
 
                     _LOGGER.info(f"Reset password for user {challenge.user}")
 
@@ -554,6 +557,9 @@ class AccessController(BaseAccessController):
                     request.session['token'] = added_session.token
 
         await self.db.execute(execute)
+
+        if not did_reset:
+            raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Reset request expired or not found")
 
         return HTMLResponse(await package_template("access", "password_reset_complete.html").render_async(
             request=request,
