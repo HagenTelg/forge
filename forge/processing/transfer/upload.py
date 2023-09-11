@@ -337,7 +337,7 @@ def main():
                 await report_ok(args.dashboard, args.station, events=[{
                     "code": "file-processed",
                     "severity": "info",
-                    "data": f"{file.name,file_size,int(elapsed*1000)}"
+                    "data": f"{file.name},{file_size},{int(elapsed*1000)}"
                 }])
 
     loop = asyncio.new_event_loop()
