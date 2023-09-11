@@ -72,6 +72,37 @@ station_profile_export['aerosol']['avgh']['absorption'].data = lambda station, s
     },
 )
 
+station_profile_export['aerosol']['raw'].insert(
+    DataExportList.Entry('ambient', "Ambient Meteorological", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
+            Name(station, 'raw', 'WS_XM1'), Name(station, 'raw', 'WD_XM1'),
+            Name(station, 'raw', 'WI_XM1'),
+            Name(station, 'raw', 'T1_XM1'), Name(station, 'raw', 'U1_XM1'), Name(station, 'raw', 'TD1_XM1'),
+            Name(station, 'raw', 'P_XM1'),
+        },
+    ))
+)
+station_profile_export['aerosol']['clean'].insert(
+    DataExportList.Entry('ambient', "Ambient Meteorological", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
+            Name(station, 'clean', 'WS_XM1'), Name(station, 'clean', 'WD_XM1'),
+            Name(station, 'clean', 'WI_XM1'),
+            Name(station, 'clean', 'T1_XM1'), Name(station, 'clean', 'U1_XM1'), Name(station, 'clean', 'TD1_XM1'),
+            Name(station, 'clean', 'P_XM1'),
+        },
+    ))
+)
+station_profile_export['aerosol']['avgh'].insert(
+    DataExportList.Entry('ambient', "Ambient Meteorological", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
+            Name(station, 'avgh', 'WS_XM1'), Name(station, 'avgh', 'WD_XM1'),
+            Name(station, 'avgh', 'WI_XM1'),
+            Name(station, 'avgh', 'T1_XM1'), Name(station, 'avgh', 'U1_XM1'), Name(station, 'avgh', 'TD1_XM1'),
+            Name(station, 'avgh', 'P_XM1'),
+        },
+    ))
+)
+
 
 def get(station: str, mode_name: str, export_key: str,
         start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
