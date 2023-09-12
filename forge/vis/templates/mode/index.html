@@ -11,22 +11,40 @@
 (function() {
     const lastMode = localStorage.getItem('forge-last-mode');
     const defaultURL = "{{ request.url_for('mode', station=station, mode_name=default_mode.mode_name) }}";
-    if (lastMode === null || lastMode.length === 0 || lastMode.startsWith('example-')) {
-        window.location.replace(defaultURL);
-        return;
-    }
-
+    const modeRoot = "{{ request.url_for('default_mode', station=station) }}/";
     const availableModes = [
         // {% for mode in available_modes.all_available_modes(request, station) %}
         "{{ mode }}",
         // {% endfor %}
     ];
+    const queryParameters = new URLSearchParams(window.location.search);
+
+    for (const pattern of queryParameters.getAll("match-mode")) {
+        const match = new RegExp(pattern, "i");
+        for (const mode of availableModes) {
+            const hit = match.exec(mode);
+            if (hit === null) {
+                continue;
+            }
+            if (hit[0] !== mode) {
+                continue;
+            }
+            window.location.replace(modeRoot + mode);
+            return;
+        }
+    }
+
+    if (lastMode === null || lastMode.length === 0 || lastMode.startsWith('example-')) {
+        window.location.replace(defaultURL);
+        return;
+    }
+
     if (!availableModes.includes(lastMode)) {
         window.location.replace(defaultURL);
         return;
     }
 
-    window.location.replace("{{ request.url_for('default_mode', station=station) }}/" + lastMode);
+    window.location.replace(modeRoot + lastMode);
 })();
 </script>
 
