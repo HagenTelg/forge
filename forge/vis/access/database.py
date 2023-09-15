@@ -422,7 +422,7 @@ class AccessController(BaseAccessController):
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Not using a dynamic login")
 
         data = await request.json()
-        password = str(data.get('password', '')).lower()
+        password = str(data.get('password', ''))
         if password is None or len(password) < 8:
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Invalid password")
 
