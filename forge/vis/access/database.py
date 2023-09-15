@@ -9,7 +9,7 @@ import starlette.status
 from secrets import token_urlsafe
 from concurrent.futures import Future
 from enum import Enum
-from starlette.responses import Response, RedirectResponse, JSONResponse, HTMLResponse
+from starlette.responses import Response, RedirectResponse, JSONResponse, HTMLResponse, PlainTextResponse
 from starlette.exceptions import HTTPException
 from starlette.authentication import requires
 from starlette.routing import Route
@@ -209,11 +209,11 @@ class AccessController(BaseAccessController):
             Route('/logout', endpoint=self.logout, methods=['GET'], name='logout'),
             Route('/change_info', endpoint=self.info_change, methods=['GET', 'POST'], name='change_user_info'),
             Route('/request', endpoint=self.request_access, methods=['GET', 'POST'], name='request_access'),
-            Route('/confirm', endpoint=self.confirm_access, methods=['GET'], name='confirm_access'),
+            Route('/confirm', endpoint=self.confirm_access, methods=['GET', 'HEAD', 'POST'], name='confirm_access'),
             Route('/password/login', endpoint=self.password_login, methods=['POST'], name='login_password'),
             Route('/password/change', endpoint=self.password_change, methods=['POST'], name='change_password'),
             Route('/password/reset_issue', endpoint=self.password_reset_challenge, methods=['POST'], name='reset_password_send'),
-            Route('/password/reset', endpoint=self.password_reset_response, methods=['GET'], name='reset_password'),
+            Route('/password/reset', endpoint=self.password_reset_response, methods=['GET', 'HEAD', 'POST'], name='reset_password'),
             Route('/password/create', endpoint=self.password_create_user, methods=['POST'], name='create_password'),
         ]
 
@@ -523,6 +523,12 @@ class AccessController(BaseAccessController):
         if reset_token is None:
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Invalid reset request")
 
+        if request.method.upper() != 'POST':
+            return HTMLResponse(await package_template("access", "password_reset_complete_container.html").render_async(
+                request=request,
+                token=reset_token,
+            ))
+
         request.session.clear()
         new_password = token_urlsafe(16)
         did_reset = False
@@ -703,7 +709,7 @@ class AccessController(BaseAccessController):
         if not auth_layer:
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Not using a dynamic login")
 
-        if request.method.upper() == 'GET':
+        if request.method.upper() != 'POST':
             def execute(engine: Engine):
                 with Session(engine) as orm_session:
                     auth_entry = orm_session.query(_AuthPassword).filter_by(
@@ -766,7 +772,7 @@ class AccessController(BaseAccessController):
         if not auth_layer:
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Not using a dynamic login")
 
-        if request.method.upper() == 'GET':
+        if request.method.upper() != 'POST':
             station = request.query_params.get("station")
             return HTMLResponse(await package_template('access', 'request.html').render_async(
                 request=request,
@@ -812,6 +818,13 @@ class AccessController(BaseAccessController):
         confirm_token = request.query_params.get('token')
         if confirm_token is None:
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Invalid access confirmation request")
+
+        if request.method.upper() != 'POST':
+            return HTMLResponse(await package_template("access", "request_confirmed_container.html").render_async(
+                request=request,
+                token=confirm_token,
+                auth_layer=auth_layer,
+            ))
 
         any_added = False
 

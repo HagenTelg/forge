@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Data Access Request</title>
+{% if OFFLINE %}
+<script src="{{ request.url_for('static', path='/packages/jquery.min.js') }}"></script>
+{% else %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+{% endif %}
+</head>
+<body>
+
+<div id="response">Processing...</div>
+
+<script>
+$(document).ready(function() {
+    $.post("{{ request.url_for('confirm_access') }}?token={{ token }}", function (responseText) {
+        $('#response').html(responseText);
+    });
+});
+</script>
+
+</body>
+</html>
