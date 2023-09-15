@@ -455,7 +455,7 @@ class AccessController(BaseAccessController):
             nonlocal other_login
 
             now = datetime.datetime.now(tz=datetime.timezone.utc)
-            valid_until = now + datetime.timedelta(minutes=30)
+            valid_until = now + datetime.timedelta(minutes=120)
 
             any_hit = False
             any_login = False
