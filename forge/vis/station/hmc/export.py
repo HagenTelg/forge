@@ -29,7 +29,7 @@ station_profile_export['aerosol']['clean'].insert(
 station_profile_export['aerosol']['avgh'].insert(
     DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
         start_epoch_ms, end_epoch_ms, directory, station, 'avgh',
-    )),
+    ), time_limit_days=None),
 )
 
 
