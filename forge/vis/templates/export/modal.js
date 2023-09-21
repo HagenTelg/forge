@@ -88,6 +88,17 @@ $(exportButton).click(function(event) {
             const filename = reply.filename;
             const size = reply.size;
             startExportDownload(filename, size);
+        } else if (reply.type === 'error') {
+            const error = reply.error;
+            $('#export-waiting').addClass('hidden');
+            $("#export-error").removeClass('hidden');
+            $('#export-cancel').text("Close");
+            const text = document.getElementById('export-error-message');
+            if (error) {
+                text.textContent = error;
+            } else {
+                text.textContent = "Error exporting data."
+            }
         }
     });
     exportSocket.send(JSON.stringify({

@@ -274,7 +274,7 @@ class _ExportSocket(WebSocketEndpoint):
                 await websocket.send_json({
                     'stream': stream_id,
                     'type': 'error',
-                    'error': 'No data available'
+                    'error': 'No data available.'
                 })
                 return
 
@@ -298,7 +298,11 @@ class _ExportSocket(WebSocketEndpoint):
                 except:
                     _LOGGER.debug(f"Exception waiting for stream {self.station},{mode_name},{export_key},{start_epoch_ms},{end_epoch_ms}", exc_info=True)
                     try:
-                        await websocket.send_json({'type': 'error', 'error': "Error waiting for data"})
+                        await websocket.send_json({
+                            'stream': stream_id,
+                            'type': 'error',
+                            'error': "Error waiting for data."
+                        })
                         await websocket.close()
                     except:
                         pass
@@ -364,7 +368,11 @@ class _ExportSocket(WebSocketEndpoint):
                 except:
                     _LOGGER.debug(f"Exception streaming data {self.station},{mode_name},{export_key},{start_epoch_ms},{end_epoch_ms}", exc_info=True)
                     try:
-                        await websocket.send_json({'type': 'error', 'error': "Data stream error"})
+                        await websocket.send_json({
+                            'stream': stream_id,
+                            'type': 'error',
+                            'error': "Error streaming data.",
+                        })
                         await websocket.close()
                     except:
                         pass
