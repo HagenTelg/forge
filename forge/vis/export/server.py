@@ -1,5 +1,6 @@
 import asyncio
 import typing
+import logging
 import struct
 import os
 import starlette.status
@@ -18,6 +19,8 @@ from forge.vis.util import package_template, package_data
 from .permissions import is_available
 from .assemble import visible_exports
 from .controller.manager import Manager, ExportedFile
+
+_LOGGER = logging.getLogger(__name__)
 
 
 _manager: typing.Optional[Manager] = None
@@ -292,6 +295,14 @@ class _ExportSocket(WebSocketEndpoint):
                     })
                 except asyncio.CancelledError:
                     pass
+                except:
+                    _LOGGER.debug(f"Exception waiting for stream {self.station},{mode_name},{export_key},{start_epoch_ms},{end_epoch_ms}", exc_info=True)
+                    try:
+                        await websocket.send_json({'type': 'error', 'error': "Error waiting for data"})
+                        await websocket.close()
+                    except:
+                        pass
+                    raise
 
                 self._active.discard(source)
 
@@ -350,6 +361,14 @@ class _ExportSocket(WebSocketEndpoint):
                     })
                 except asyncio.CancelledError:
                     pass
+                except:
+                    _LOGGER.debug(f"Exception streaming data {self.station},{mode_name},{export_key},{start_epoch_ms},{end_epoch_ms}", exc_info=True)
+                    try:
+                        await websocket.send_json({'type': 'error', 'error': "Data stream error"})
+                        await websocket.close()
+                    except:
+                        pass
+                    raise
 
                 self._active.discard(source)
 
@@ -360,12 +379,16 @@ class _ExportSocket(WebSocketEndpoint):
 
     async def on_disconnect(self, websocket, close_code):
         for stream in list(self._active):
-            try:
-                if stream.task:
+            if stream.task:
+                try:
                     stream.task.cancel()
+                except:
+                    pass
+                try:
+                    await stream.task
+                except:
+                    pass
                 stream.task = None
-            except:
-                pass
 
 
 routes: typing.List[Route] = [

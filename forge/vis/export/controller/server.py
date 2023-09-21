@@ -104,6 +104,13 @@ class Server(UnixServer):
             await read_detector
         except:
             pass
+        if export_file is None:
+            _LOGGER.warning(f"Export failed {station},{mode_name},{export_key},{start_epoch_ms},{end_epoch_ms}")
+            try:
+                writer.close()
+            except OSError:
+                pass
+            return
 
         header = struct.pack('<Q', export_file.size)
 
