@@ -3,7 +3,9 @@ import asyncio
 import logging
 import argparse
 import signal
+import threading
 import sys
+import os
 import struct
 import enum
 import time
@@ -17,10 +19,55 @@ _LOGGER = logging.getLogger(__name__)
 async def open_stdio() -> typing.Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
     loop = asyncio.get_event_loop()
     reader = asyncio.StreamReader()
-    protocol = asyncio.StreamReaderProtocol(reader)
-    await loop.connect_read_pipe(lambda: protocol, sys.stdin)
-    w_transport, w_protocol = await loop.connect_write_pipe(asyncio.streams.FlowControlMixin, sys.stdout)
+    r_protocol = asyncio.StreamReaderProtocol(reader)
+
+    try:
+        await loop.connect_read_pipe(lambda: r_protocol, sys.stdin)
+    except ValueError:
+        # connect_*_pipe bails out of the file is a regular file, which can happen for stdio redirection
+        read, write = os.pipe()
+        read = os.fdopen(read, mode='rb')
+        write = os.fdopen(write, mode='wb')
+
+        def forward_stdin(write):
+            try:
+                while True:
+                    data = sys.stdin.buffer.read(4096)
+                    if not data:
+                        break
+                    write.write(data)
+            finally:
+                write.close()
+
+        await loop.connect_read_pipe(lambda: r_protocol, read)
+        threading.Thread(target=forward_stdin, args=(write,), daemon=True).start()
+
+    try:
+        w_transport, w_protocol = await loop.connect_write_pipe(asyncio.streams.FlowControlMixin, sys.stdout)
+    except ValueError:
+        # Like with read, this can happen for redirection
+        read, write = os.pipe()
+        read = os.fdopen(read, mode='rb')
+        write = os.fdopen(write, mode='wb')
+
+        def forward_stdout(read):
+            try:
+                while True:
+                    data = read.read(4096)
+                    if not data:
+                        break
+                    sys.stdout.buffer.write(data)
+            finally:
+                try:
+                    read.close()
+                except OSError:
+                    pass
+                sys.stdout.buffer.close()
+
+        w_transport, w_protocol = await loop.connect_write_pipe(asyncio.streams.FlowControlMixin, write)
+        threading.Thread(target=forward_stdout, args=(read,), daemon=True).start()
     writer = asyncio.StreamWriter(w_transport, w_protocol, reader, loop)
+
     return reader, writer
 
 
