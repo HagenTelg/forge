@@ -16,6 +16,24 @@ from forge.acquisition.serial.multiplexer.protocol import ToMultiplexer, FromMul
 _LOGGER = logging.getLogger(__name__)
 
 
+def sync_forward(read: typing.BinaryIO, write: typing.BinaryIO) -> None:
+    try:
+        while True:
+            data = os.read(read.fileno(), 4096)
+            if not data:
+                break
+            os.write(write.fileno(), data)
+    finally:
+        try:
+            write.close()
+        except OSError:
+            pass
+        try:
+            read.close()
+        except OSError:
+            pass
+
+
 async def open_stdio() -> typing.Tuple[asyncio.StreamReader, asyncio.StreamWriter]:
     loop = asyncio.get_event_loop()
     reader = asyncio.StreamReader()
@@ -28,19 +46,8 @@ async def open_stdio() -> typing.Tuple[asyncio.StreamReader, asyncio.StreamWrite
         read, write = os.pipe()
         read = os.fdopen(read, mode='rb')
         write = os.fdopen(write, mode='wb')
-
-        def forward_stdin(write):
-            try:
-                while True:
-                    data = sys.stdin.buffer.read(4096)
-                    if not data:
-                        break
-                    write.write(data)
-            finally:
-                write.close()
-
         await loop.connect_read_pipe(lambda: r_protocol, read)
-        threading.Thread(target=forward_stdin, args=(write,), daemon=True).start()
+        threading.Thread(target=sync_forward, args=(sys.stdin, write,), daemon=True).start()
 
     try:
         w_transport, w_protocol = await loop.connect_write_pipe(asyncio.streams.FlowControlMixin, sys.stdout)
@@ -49,23 +56,8 @@ async def open_stdio() -> typing.Tuple[asyncio.StreamReader, asyncio.StreamWrite
         read, write = os.pipe()
         read = os.fdopen(read, mode='rb')
         write = os.fdopen(write, mode='wb')
-
-        def forward_stdout(read):
-            try:
-                while True:
-                    data = read.read(4096)
-                    if not data:
-                        break
-                    sys.stdout.buffer.write(data)
-            finally:
-                try:
-                    read.close()
-                except OSError:
-                    pass
-                sys.stdout.buffer.close()
-
         w_transport, w_protocol = await loop.connect_write_pipe(asyncio.streams.FlowControlMixin, write)
-        threading.Thread(target=forward_stdout, args=(read,), daemon=True).start()
+        threading.Thread(target=sync_forward, args=(read, sys.stdout.buffer,), daemon=True).start()
     writer = asyncio.StreamWriter(w_transport, w_protocol, reader, loop)
 
     return reader, writer
@@ -118,7 +110,7 @@ async def read_eavesdropped(evs: asyncio.StreamReader):
         packet_end = 2 + packet_length
         if len(read_buffer) < packet_end:
             return None
-        data = read_buffer[2:packet_end]
+        data = bytes(read_buffer[2:packet_end])
         del read_buffer[0:packet_end]
         return data
 
@@ -182,7 +174,7 @@ def output_display_data(output: asyncio.StreamWriter, data: bytearray, direction
 
 async def display_raw(evs: asyncio.StreamReader, output: asyncio.StreamWriter) -> None:
     async for data, direction in read_eavesdropped(evs):
-        output_display_data(output, data, direction)
+        output_display_data(output, bytearray(data), direction)
         await output.drain()
 
 
