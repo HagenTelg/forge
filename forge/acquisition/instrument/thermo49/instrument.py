@@ -220,7 +220,7 @@ class Instrument(StreamingInstrument):
 
     def _send_command(self, command: bytes) -> None:
         if self._address != 0:
-            self.writer.write(chr((self._address + 128) & 0xFF).encode('ascii'))
+            self.writer.write(bytes(((self._address + 128) & 0xFF, )))
         self.writer.write(command)
         self.writer.write(b'\r')
 
