@@ -11,6 +11,7 @@ STATIONS = frozenset({
     'alt',
     'amy',
     'app',
+    'arh',
     'arn',
     'beo',
     'bld',
