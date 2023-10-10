@@ -3,11 +3,12 @@ from collections import OrderedDict
 from ..default.view import detach, View, aerosol_views
 from ..default.aerosol.temperature import Temperature
 from ..default.aerosol.ccn import CCNStatus
-from .optical import OpticalScatteringSecondary, EditingScatteringSecondary, EditingBackScatteringSecondary
+from .optical import OpticalScatteringSecondary, EditingScatteringSecondary, EditingBackScatteringSecondary, EditingScattering3, EditingBackScattering3, EditingScattering4, EditingBackScattering4, AllScattering
 from .green import Green
 from .humidograph import WetDryRatio
 from .pressure import Pressure
 from .tsi3563nephelometer import NephelometerZeroSecondary, NephelometerStatusSecondary
+from .ecotechnephelometer import NephelometerZero3, NephelometerStatus3, NephelometerZero4, NephelometerStatus4
 from .counts import RealtimeParticleConcentration, ParticleConcentration, EditingParticleConcentration, SMPSDistribution
 
 
@@ -31,6 +32,27 @@ station_views['aerosol-raw-nephelometerstatus2'] = NephelometerStatusSecondary('
 station_views['aerosol-realtime-nephelometerzero2'] = NephelometerZeroSecondary('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-nephelometerstatus2'] = NephelometerStatusSecondary('aerosol-realtime', realtime=True)
 
+
+station_views['aerosol-raw-allscattering'] = AllScattering('aerosol-raw')
+station_views['aerosol-realtime-allscattering'] = AllScattering('aerosol-realtime', realtime=True)
+station_views['aerosol-clean-allscattering'] = AllScattering('aerosol-clean')
+station_views['aerosol-avgh-allscattering'] = AllScattering('aerosol-avgh')
+
+station_views['aerosol-editing-scattering3'] = EditingScattering3()
+station_views['aerosol-editing-backscattering3'] = EditingBackScattering3()
+station_views['aerosol-raw-nephelometerzero3'] = NephelometerZero3('aerosol-raw')
+station_views['aerosol-raw-nephelometerstatus3'] = NephelometerStatus3('aerosol-raw')
+station_views['aerosol-realtime-nephelometerzero3'] = NephelometerZero3('aerosol-realtime', realtime=True)
+station_views['aerosol-realtime-nephelometerstatus3'] = NephelometerStatus3('aerosol-realtime', realtime=True)
+
+station_views['aerosol-editing-scattering4'] = EditingScattering4()
+station_views['aerosol-editing-backscattering4'] = EditingBackScattering4()
+station_views['aerosol-raw-nephelometerzero4'] = NephelometerZero4('aerosol-raw')
+station_views['aerosol-raw-nephelometerstatus4'] = NephelometerStatus4('aerosol-raw')
+station_views['aerosol-realtime-nephelometerzero4'] = NephelometerZero4('aerosol-realtime', realtime=True)
+station_views['aerosol-realtime-nephelometerstatus4'] = NephelometerStatus4('aerosol-realtime', realtime=True)
+
+
 station_views['aerosol-raw-green'] = Green('aerosol-raw')
 station_views['aerosol-realtime-green'] = Green('aerosol-realtime', realtime=True)
 station_views['aerosol-clean-green'] = Green('aerosol-clean')
@@ -49,6 +71,8 @@ measurements = OrderedDict([
     ('{code}nephinlet2', '{code}u_S12 (wet inlet)'),
     ('{code}neph2', '{code}_S12 (wet sample)'),
     ('{code}outlet', '{code}_V12 (outlet)'),
+    ('{code}neph3', '{code}_S13 (sample)'),
+    ('{code}neph4', '{code}_S14 (sample)'),
 ])
 omit_traces={'TDnephinlet', 'TDnephinlet2'}
 station_views['aerosol-raw-temperature'] = Temperature('aerosol-raw', measurements, omit_traces=omit_traces)

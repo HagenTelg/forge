@@ -46,6 +46,30 @@ class Green(TimeSeries):
                 ('BsB', 450), ('BsG', 550), ('BsR', 700),
             ]))
 
+        for size in [("Whole", 'whole', '#0f0'), ("PM10", 'pm10', '#0f0'),
+                     ("PM2.5", 'pm25', '#070'), ("PM1", 'pm1', '#070')]:
+            trace = TimeSeries.Trace(Mm_1)
+            trace.legend = f"Ecotech S13 ({size[0]})"
+            trace.data_record = f'{mode}-scattering3-{size[1]}'
+            trace.data_field = 'G'
+            trace.color = size[2]
+            scattering.traces.append(trace)
+            self.processing[trace.data_record] = self.AdjustWavelength(OrderedDict([
+                ('BsB', 450), ('BsG', 525), ('BsR', 635),
+            ]))
+
+        for size in [("Whole", 'whole', '#0f0'), ("PM10", 'pm10', '#0f0'),
+                     ("PM2.5", 'pm25', '#070'), ("PM1", 'pm1', '#070')]:
+            trace = TimeSeries.Trace(Mm_1)
+            trace.legend = f"Ecotech S14 ({size[0]})"
+            trace.data_record = f'{mode}-scattering4-{size[1]}'
+            trace.data_field = 'G'
+            trace.color = size[2]
+            scattering.traces.append(trace)
+            self.processing[trace.data_record] = self.AdjustWavelength(OrderedDict([
+                ('BsB', 450), ('BsG', 525), ('BsR', 635),
+            ]))
+
         absorption = TimeSeries.Graph()
         absorption.title = "Light Absorption"
         absorption.contamination = f'{mode}-contamination'

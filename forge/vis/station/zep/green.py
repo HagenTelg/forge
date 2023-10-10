@@ -42,7 +42,7 @@ class Green(TimeSeries):
             trace.data_field = 'G'
             scattering.traces.append(trace)
             self.processing[trace.data_record] = self.AdjustWavelength(OrderedDict([
-                ('BsB', 450), ('BsG', 550), ('BsR', 700),
+                ('BsB', 450), ('BsG', 525), ('BsR', 635),
             ]))
 
         absorption = TimeSeries.Graph()

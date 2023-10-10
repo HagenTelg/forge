@@ -35,6 +35,41 @@ station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-nephel
                                          'aerosol-realtime-nephelometerzero2')
 
 
+station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-scattering3', "Ecotech S13 Scattering"),
+                                        'aerosol-editing-scattering2')
+station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-backscattering3', "Ecotech S13 Back Scattering"),
+                                        'aerosol-editing-scattering3')
+station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-scattering4', "Ecotech S14 Scattering"),
+                                        'aerosol-editing-backscattering3')
+station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-backscattering4', "Ecotech S14 Back Scattering"),
+                                        'aerosol-editing-scattering4')
+
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-nephelometerzero3', "S13 Nephelometer Zero"),
+                                    'aerosol-raw-nephelometerstatus2')
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-nephelometerstatus3', "S13 Nephelometer Status"),
+                                    'aerosol-raw-nephelometerzero3')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-nephelometerzero3', "S13 Nephelometer Zero"),
+                                         'aerosol-realtime-nephelometerstatus2')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-nephelometerstatus3', "S13 Nephelometer Status"),
+                                         'aerosol-realtime-nephelometerzero3')
+
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-nephelometerzero4', "S14 Nephelometer Zero"),
+                                    'aerosol-raw-nephelometerstatus3')
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-nephelometerstatus4', "S14 Nephelometer Status"),
+                                    'aerosol-raw-nephelometerzero4')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-nephelometerzero4', "S14 Nephelometer Zero"),
+                                         'aerosol-realtime-nephelometerstatus3')
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-nephelometerstatus4', "S14 Nephelometer Status"),
+                                         'aerosol-realtime-nephelometerzero4')
+
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-allscattering', "Scattering Comparison"),
+                                    'aerosol-raw-green')
+station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-allscattering', "Scattering Comparison"),
+                                      'aerosol-clean-green')
+station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-allscattering', "Scattering Comparison"),
+                                     'aerosol-avgh-green')
+
+
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-humidograph', "Humidograph"),
                                     'aerosol-raw-green')
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-humidograph', "Humidograph"),

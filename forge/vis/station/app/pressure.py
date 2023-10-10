@@ -41,6 +41,20 @@ class Pressure(TimeSeries):
             nephelometer.data_field = 'neph2'
             pressure.traces.append(nephelometer)
 
+        for size in [("Whole", 'whole'), ("PM10", 'pm10'), ("PM2.5", 'pm25'), ("PM1", 'pm1')]:
+            nephelometer = TimeSeries.Trace(hpa_ambient)
+            nephelometer.legend = f"S13 Nephelometer ({size[0]})"
+            nephelometer.data_record = f'{mode}-samplepressure-{size[1]}'
+            nephelometer.data_field = 'neph3'
+            pressure.traces.append(nephelometer)
+
+        for size in [("Whole", 'whole'), ("PM10", 'pm10'), ("PM2.5", 'pm25'), ("PM1", 'pm1')]:
+            nephelometer = TimeSeries.Trace(hpa_ambient)
+            nephelometer.legend = f"S14 Nephelometer ({size[0]})"
+            nephelometer.data_record = f'{mode}-samplepressure-{size[1]}'
+            nephelometer.data_field = 'neph4'
+            pressure.traces.append(nephelometer)
+
         pitot = TimeSeries.Trace(hpa_delta)
         pitot.legend = "Pitot"
         pitot.data_record = f'{mode}-pressure'
