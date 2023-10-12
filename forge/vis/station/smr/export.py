@@ -69,6 +69,22 @@ station_profile_export['aerosol']['avgh'].insert(
 )
 
 
+station_profile_export['aerosol']['raw'].insert(
+    DataExportList.Entry('nephzero', "Nephelometer Zero", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
+        start_epoch_ms, end_epoch_ms, directory, 'unsplit', {
+            Name(station, 'raw', 'Tw_S11'),
+            Name(station, 'raw', 'Pw_S11'),
+            Name(station, 'raw', 'BswB_S11'),
+            Name(station, 'raw', 'BswG_S11'),
+            Name(station, 'raw', 'BswR_S11'),
+            Name(station, 'raw', 'BbswB_S11'),
+            Name(station, 'raw', 'BbswG_S11'),
+            Name(station, 'raw', 'BbswR_S11'),
+        },
+    )),
+)
+
+
 def get(station: str, mode_name: str, export_key: str,
         start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
     return export_profile_get(station, mode_name, export_key,
