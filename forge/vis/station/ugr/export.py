@@ -126,7 +126,7 @@ station_profile_export['aerosol']['avgh'].insert(
             Name(station, 'avgh', 'T3_A31'),
             Name(station, 'avgh', 'XR_A31'),
         },
-    )),
+    ), time_limit_days=None),
 )
 
 
