@@ -8,18 +8,17 @@ import logging
 import time
 import zstandard
 from pathlib import Path
-from io import BytesIO
 from hashlib import sha512
 from tempfile import TemporaryFile
 from ftplib import FTP
 from base64 import b64encode, b64decode
 from os.path import exists as file_exists
-from json import dumps as to_json
 from shutil import move as move_file
-from starlette.datastructures import URL
+from starlette.datastructures import URL, QueryParams
 from forge.authsocket import PublicKey, PrivateKey, key_to_bytes
 from forge.processing.transfer import CONFIGURATION
 from forge.processing.transfer.completion import completion_directory
+from forge.processing.transfer.files import upload_ftp, upload_sftp
 from forge.dashboard.report import report_ok, report_failed
 
 
@@ -28,15 +27,6 @@ _LOGGER = logging.getLogger(__name__)
 
 class UploadRejected(Exception):
     pass
-
-
-def upload_ftp(ftp: FTP, file: Path, contents: typing.BinaryIO, public_key: PublicKey, signature: bytes):
-    signature_file = to_json({
-        'public_key': b64encode(key_to_bytes(public_key)).decode('ascii'),
-        'signature': b64encode(signature).decode('ascii'),
-    }).encode('utf-8')
-    ftp.storbinary(f'STOR {file.name}.sig', BytesIO(signature_file))
-    ftp.storbinary(f'STOR {file.name}', contents)
 
 
 async def upload_post(session: aiohttp.ClientSession, url: URL,
@@ -84,6 +74,16 @@ async def upload_to_url(url: URL, file: Path, contents: typing.BinaryIO, compres
             ftp.login()
             ftp.cwd(url.path)
             upload_ftp(ftp, file, contents, public_key, signature)
+    elif url.scheme == 'sftp':
+        if compression == 'zstd':
+            file = file.with_suffix('zst')
+        params = QueryParams(url.query)
+        await upload_sftp(
+            url.path, file, contents, public_key, signature,
+            url.hostname, url.port or 22,
+            username=url.username or None, password=url.password or None,
+            key_file=params.get('key', None), key_passphrase=params.get('key-passphrase', None)
+        )
     elif url.scheme == 'http' or url.scheme == 'https':
         timeout = aiohttp.ClientTimeout(total=180)
         async with aiohttp.ClientSession(timeout=timeout) as session:

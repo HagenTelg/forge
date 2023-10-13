@@ -12,12 +12,14 @@ from secrets import token_bytes
 from base64 import b64encode, b64decode, b32encode
 from os.path import exists as file_exists
 from json import dumps as to_json
-from starlette.datastructures import URL
+from pathlib import Path
+from starlette.datastructures import URL, QueryParams
 from forge.authsocket import WebsocketJSON as AuthSocket, PublicKey, PrivateKey, key_to_bytes
 from forge.dashboard.report import report_ok
 from forge.telemetry import CONFIGURATION
 from forge.telemetry.assemble import complete as assemble_telemetry
 from forge.telemetry.assemble.station import get_station
+from forge.processing.transfer.files import upload_ftp, upload_sftp
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -60,16 +62,6 @@ def parse_arguments():
     return args
 
 
-def upload_ftp(ftp: FTP, telemetry: bytes, public_key: PublicKey, signature: bytes):
-    signature_file = to_json({
-        'public_key': b64encode(key_to_bytes(public_key)).decode('ascii'),
-        'signature': b64encode(signature).decode('ascii'),
-    }).encode('utf-8')
-    uid = b32encode(token_bytes(10)).decode('ascii')
-    ftp.storbinary(f'STOR telemetry_{uid}.sig', BytesIO(signature_file))
-    ftp.storbinary(f'STOR telemetry_{uid}', BytesIO(telemetry))
-
-
 async def upload_post(session: aiohttp.ClientSession, url: URL, telemetry: bytes,
                       public_key: PublicKey, signature: bytes) -> typing.Dict[str, typing.Any]:
     public_key = b64encode(key_to_bytes(public_key)).decode('ascii')
@@ -91,14 +83,26 @@ async def submit_to_url(url: URL, telemetry: bytes, public_key: PublicKey,
                         signature: bytes) -> typing.Optional[typing.Dict[str, typing.Any]]:
     _LOGGER.debug(f"Uploading telemetry to {repr(url)}")
     if url.scheme == 'ftp':
-        with FTP(user=url.username or "anonymous", passwd=url.password or "anonymous", timeout=120) as ftp:
+        uid = b32encode(token_bytes(10)).decode('ascii')
+        file = Path(f'telemetry_{uid}')
+        with FTP(user=url.username or "anonymous", passwd=url.password or "anonymous", timeout=180) as ftp:
             ftp.connect(host=url.hostname, port=url.port or 21)
             ftp.login()
             ftp.cwd(url.path)
-            upload_ftp(ftp, telemetry, public_key, signature)
+            upload_ftp(ftp, file, BytesIO(telemetry), public_key, signature)
         return None
+    elif url.scheme == 'sftp':
+        uid = b32encode(token_bytes(10)).decode('ascii')
+        file = Path(f'telemetry_{uid}')
+        params = QueryParams(url.query)
+        await upload_sftp(
+            url.path, file, BytesIO(telemetry), public_key, signature,
+            url.hostname, url.port or 22,
+            username=url.username or None, password=url.password or None,
+            key_file=params.get('key', None), key_passphrase=params.get('key-passphrase', None)
+        )
     elif url.scheme == 'http' or url.scheme == 'https':
-        timeout = aiohttp.ClientTimeout(total=120)
+        timeout = aiohttp.ClientTimeout(total=180)
         async with aiohttp.ClientSession(timeout=timeout) as session:
             return await upload_post(session, url, telemetry, public_key, signature)
     else:
