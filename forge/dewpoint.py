@@ -41,7 +41,7 @@ def svp_over_water(t_kelvin: float) -> float:
     This is Equation (30) in Section 8.1 "The Saturation-Pressure Equation (Basic Equation)"
     """
 
-    th = t_kelvin - 0.23855557567849 / (t_kelvin - 0.11670521452767e40)
+    th = t_kelvin - 0.23855557567849 / (t_kelvin - 0.65017534844798e3)
     A = (th + 0.11670521452767e4) * th - 0.72421316703206e6
     B = (-0.17073846940092e2 * th + 0.12020824702470e5) * th - 0.32325550322333e7
     C = (0.14915108613530e2 * th - 0.48232657361591e4) * th + 0.40511340542057e6
