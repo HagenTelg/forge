@@ -218,17 +218,31 @@ def visible(station: str, mode_name: typing.Optional[str] = None) -> VisibleMode
         'ozone-avgh',
         'ozone-realtime',
         'acquisition',
-    ]),
+    ])
     _assemble_mode("Metrological", [
         'met-raw',
         'met-editing',
         'met-clean',
         'met-avgh',
-    ]),
+    ])
     _assemble_mode("Radiation", [
         'radiation-raw',
         'radiation-editing',
         'radiation-clean',
-    ]),
+    ])
+
+    # Eliminate groups that only contain modes duplicated elsewhere.  This serves to eliminate the aerosol heading
+    # for ozone only stations that also have acquisition.
+    if len(visible_modes.groups) > 1:
+        for remove_gidx in reversed(range(len(visible_modes.groups))):
+            unique_modes = set([m.mode_name for m in visible_modes.groups[remove_gidx].modes])
+            for check_gidx in range(len(visible_modes.groups)):
+                if check_gidx == remove_gidx:
+                    continue
+                for m in visible_modes.groups[check_gidx].modes:
+                    unique_modes.discard(m.mode_name)
+            if unique_modes:
+                continue
+            del visible_modes.groups[remove_gidx]
 
     return visible_modes
