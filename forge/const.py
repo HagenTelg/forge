@@ -65,6 +65,7 @@ STATIONS = frozenset({
     'wpa',
     'wpb',
     'wpc',
+    'wvr',
     'zep',
     'zsf',
 })
