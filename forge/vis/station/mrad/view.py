@@ -6,13 +6,13 @@ from .radiation import EditingShortwave, EditingLongwave, EditingPyranometerTemp
 from .ambient import Ambient
 
 
-# Brush Creek
-LATITUDE = 38.859127744
-LONGITUDE = -106.920904658
+# Nantucket (inexact)
+LATITUDE = 41.282778
+LONGITUDE = -70.099444
 
 sites: typing.List[Site] = [
-    Site('RMSURFRAD', 'cbc', "Brush Creek"),
-    Site('RADSYS2', 'ckp', "Kettle Ponds", include_spn1=True),
+    Site('RMSURFRAD', 'nan', "Nantucket"),
+    Site('RADSYS2', 'bid', "Block Island", include_spn1=True),
 ]
 
 views: typing.Dict[str, View] = {
