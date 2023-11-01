@@ -248,6 +248,8 @@ class Instrument(StreamingInstrument):
         if not self.writer:
             raise CommunicationsError
 
+        await self.drain_reader(1.0)
+
         self._send_command(b"set mode remote")
         try:
             data: bytes = await wait_cancelable(self._read_response(), 2.0)

@@ -91,7 +91,8 @@ async def test_basic(server: Dispatch, client: Client):
     await client.writer.drain()
     check = await client.received.get()
     assert check == {'source': 'client', 'record': 'record4', 'message': 4.0}
-    return client
+
+    await client.shutdown()
 
 
 @pytest.mark.asyncio
@@ -111,6 +112,9 @@ async def test_basic_persistence(server: Dispatch):
     c2 = await _client(server, await _aio_pipe(), await _aio_pipe())
     check = await c2.received.get()
     assert check == {'source': 'client', 'record': 'record1', 'message': 1.0}
+
+    await c1.shutdown()
+    await c2.shutdown()
 
 
 @pytest.mark.asyncio
@@ -185,6 +189,8 @@ async def test_persistence_levels(server: Dispatch):
     assert check == {'source': 'client', 'record': 'record1', 'message': 6.0}
     await c2.shutdown()
 
+    await c1.shutdown()
+
 
 @pytest.mark.asyncio
 async def test_disable_echo(server: Dispatch):
@@ -203,4 +209,7 @@ async def test_disable_echo(server: Dispatch):
     assert check == {'source': 'client', 'record': 'record2', 'message': 'value2'}
     check = await c1.received.get()
     assert check == {'source': 'client', 'record': 'record2', 'message': 'value2'}
+
+    await c1.shutdown()
+    await c2.shutdown()
 

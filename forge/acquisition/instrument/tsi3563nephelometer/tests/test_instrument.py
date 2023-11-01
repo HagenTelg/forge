@@ -3,7 +3,7 @@ import typing
 import pytest
 from forge.tasks import wait_cancelable
 from forge.units import ZERO_C_IN_K
-from forge.acquisition.instrument.testing import create_streaming_instrument, BusInterface, PersistentInterface
+from forge.acquisition.instrument.testing import create_streaming_instrument, cleanup_streaming_instrument, BusInterface, PersistentInterface
 from forge.acquisition.instrument.tsi3563nephelometer.simulator import Simulator
 from forge.acquisition.instrument.tsi3563nephelometer.instrument import Instrument
 
@@ -82,16 +82,7 @@ async def test_communications():
     assert persistent.values['modestring'].data == simulator.data_modestring
     assert persistent.values['sampling'].data == 0
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
 @pytest.mark.asyncio
@@ -131,16 +122,7 @@ async def test_start_zero():
     assert await bus.state('BswB') == pytest.approx(simulator.data_Bsw[0], abs=1E-2)
     assert await bus.state('BswdB') == 0.0
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
 @pytest.mark.asyncio
@@ -171,16 +153,7 @@ async def test_set_parameters():
         await asyncio.sleep(1)
     assert simulator.parameters.STZ == 42
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
 @pytest.mark.asyncio
@@ -258,13 +231,4 @@ async def test_spancheck():
     assert result['scattering']['air']['total']['G'] == pytest.approx(to_stp(simulator.data_Bs[1]), abs=1E-2)
     assert result['scattering']['air']['back']['G'] == pytest.approx(to_stp(simulator.data_Bbs[1]), abs=1E-2)
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)

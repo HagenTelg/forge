@@ -118,6 +118,7 @@ async def test_add(public_key):
         await get_client_task
     except asyncio.CancelledError:
         pass
+    get.writer.close()
 
 
 @pytest.mark.asyncio
@@ -194,3 +195,4 @@ async def test_abort(public_key):
         await get_client_task
     except asyncio.CancelledError:
         pass
+    get.writer.close()

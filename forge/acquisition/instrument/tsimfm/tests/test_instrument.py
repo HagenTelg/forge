@@ -2,7 +2,7 @@ import asyncio
 import typing
 import pytest
 from forge.tasks import wait_cancelable
-from forge.acquisition.instrument.testing import create_streaming_instrument, BusInterface
+from forge.acquisition.instrument.testing import create_streaming_instrument, cleanup_streaming_instrument, BusInterface
 from forge.acquisition.instrument.tsimfm.simulator import Simulator
 from forge.acquisition.instrument.tsimfm.instrument import Instrument
 
@@ -25,16 +25,7 @@ async def test_communications():
     assert await bus.value('P') == simulator.data_P
     assert await bus.value('U') == simulator.data_U
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
 @pytest.mark.asyncio
@@ -56,15 +47,6 @@ async def test_4000_series():
     assert await bus.value('T') == simulator.data_T
     assert await bus.value('P') == simulator.data_P
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 

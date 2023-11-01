@@ -3,7 +3,7 @@ import typing
 import pytest
 from forge.tasks import wait_cancelable
 from forge.acquisition.instrument.modbus import ModbusProtocol
-from forge.acquisition.instrument.testing import create_streaming_instrument, BusInterface
+from forge.acquisition.instrument.testing import create_streaming_instrument, cleanup_streaming_instrument, BusInterface
 from forge.acquisition.instrument.thermo49iq.simulator import Simulator
 from forge.acquisition.instrument.thermo49iq.instrument import Instrument
 
@@ -39,13 +39,4 @@ async def test_communications():
     assert await bus.value('Alamp') == simulator.data_Alamp
     assert await bus.value('Aheater') == simulator.data_Aheater
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)

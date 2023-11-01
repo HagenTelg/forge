@@ -2,7 +2,7 @@ import asyncio
 import typing
 import pytest
 from forge.tasks import wait_cancelable
-from forge.acquisition.instrument.testing import create_streaming_instrument, BusInterface
+from forge.acquisition.instrument.testing import create_streaming_instrument, cleanup_streaming_instrument, BusInterface
 from forge.acquisition.instrument.mageeae33.simulator import Simulator
 from forge.acquisition.instrument.mageeae33.instrument import Instrument
 
@@ -35,16 +35,7 @@ async def test_communications():
     assert await bus.value('Ip1') == simulator.data_Ip1
     assert await bus.value('Ips1') == simulator.data_Ips1
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
 @pytest.mark.asyncio
@@ -72,15 +63,6 @@ async def test_spot_advance():
     assert await bus.value('Ir1') == 1.0
     assert await bus.value('Irs1') == 1.0
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 

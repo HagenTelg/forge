@@ -80,6 +80,9 @@ async def test_basic(manager, tmp_path, to_manager, from_manager):
     assert blocks[0].records[0].epoch_ms >= int(write_time * 1000)
     assert blocks[0].records[0].fields == {'foo': 1.0}
 
+    m_writer.close()
+    c_writer.close()
+
 
 @pytest.mark.asyncio
 async def test_stream(manager, to_manager, from_manager):
@@ -121,6 +124,9 @@ async def test_stream(manager, to_manager, from_manager):
     assert len(blocks[1].records) == 1
     assert blocks[1].records[0].fields == {'foo': 3.0}
 
+    m_writer.close()
+    c_writer.close()
+
 
 @pytest.mark.asyncio
 async def test_prune(manager, tmp_path, to_manager):
@@ -141,3 +147,5 @@ async def test_prune(manager, tmp_path, to_manager):
 
     await manager.prune(maximum_age_ms=-10000)
     assert not (tmp_path / 'realtime.nil.data').exists()
+
+    m_writer.close()

@@ -181,3 +181,18 @@ async def create_streaming_instrument(instrument: typing.Type[StreamingInstrumen
     context = PipeStreamingContext(LayeredConfiguration(config or dict()), data, bus, persistent, reader, writer)
     i = instrument(context)
     return s, i
+
+
+async def cleanup_streaming_instrument(
+        simulator: StreamingSimulator, instrument: StreamingInstrument,
+        *run: asyncio.Task,
+) -> None:
+    for t in run:
+        t.cancel()
+    for t in run:
+        try:
+            await t
+        except asyncio.CancelledError:
+            pass
+    simulator.writer.close()
+    instrument.context.writer.close()

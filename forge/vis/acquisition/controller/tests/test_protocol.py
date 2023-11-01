@@ -239,6 +239,9 @@ async def test_basic(acquisition: typing.Tuple[Station.Connection, Client],
     check = await c_acquisition.received.get()
     assert check == {'type': 'chat', 'epoch_ms': 123, 'name': 'from name', 'text': 'text data'}
 
+    c_display.writer.close()
+    c_acquisition.writer.close()
+
 
 @pytest.mark.asyncio
 async def test_display_disconnect(acquisition: typing.Tuple[Station.Connection, Client],
@@ -261,6 +264,9 @@ async def test_display_disconnect(acquisition: typing.Tuple[Station.Connection, 
     completed = server.detach(s_acquisition)
     assert completed
 
+    c_display.writer.close()
+    c_acquisition.writer.close()
+
 
 @pytest.mark.asyncio
 async def test_acquisition_disconnect(acquisition: typing.Tuple[Station.Connection, Client],
@@ -279,6 +285,9 @@ async def test_acquisition_disconnect(acquisition: typing.Tuple[Station.Connecti
 
     completed = server.detach(s_display)
     assert completed
+
+    c_display.writer.close()
+    c_acquisition.writer.close()
 
 
 @pytest.mark.asyncio
@@ -313,3 +322,6 @@ async def test_existing_send(acquisition: typing.Tuple[Station.Connection, Clien
     assert check == {'type': 'instrument_add', 'source': 'S11', 'information': {'foo': 2.0}}
     check = await c_display.received.get()
     assert check == {'type': 'incoming_data', 'source': 'S11', 'values': {'foo': 1.0}}
+
+    c_display.writer.close()
+    c_acquisition.writer.close()

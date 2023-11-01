@@ -2,7 +2,7 @@ import asyncio
 import typing
 import pytest
 from forge.tasks import wait_cancelable
-from forge.acquisition.instrument.testing import create_streaming_instrument, BusInterface
+from forge.acquisition.instrument.testing import create_streaming_instrument, cleanup_streaming_instrument, BusInterface
 from forge.acquisition.instrument.dmtccn.simulator import Simulator
 from forge.acquisition.instrument.dmtccn.instrument import Instrument
 
@@ -39,16 +39,7 @@ async def test_communications():
     assert await bus.value('minimum_bin_number') == simulator.data_minimum_bin_number
     assert await bus.value('dN') == simulator.data_dN
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
 @pytest.mark.asyncio
@@ -83,16 +74,7 @@ async def test_single_line():
     assert await bus.value('minimum_bin_number') == simulator.data_minimum_bin_number
     assert await bus.value('dN') == simulator.data_dN
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
 @pytest.mark.asyncio
@@ -116,14 +98,5 @@ async def test_flow_configuration():
     assert await bus.value('N') == simulator.data_N / 2.0
     assert await bus.value('dN') == [n / 2.0 for n in simulator.data_dN]
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 

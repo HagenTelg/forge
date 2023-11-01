@@ -42,9 +42,8 @@ async def _make_connection(control: Controller) -> typing.Tuple[asyncio.Task, as
 
     control_run = asyncio.ensure_future(control.connection(server_reader, server_writer))
     connection = Connection(client_reader, client_writer, repr(client_reader))
-    await connection.initialize()
-    connection_run = asyncio.ensure_future(connection.run())
-    return control_run, connection_run, connection
+    await connection.startup()
+    return control_run, connection
 
 
 @pytest_asyncio.fixture
@@ -54,16 +53,15 @@ async def control_connection(control):
 
 @pytest.mark.asyncio
 async def test_basic(control, control_connection):
-    control_run, connection_run, connection = control_connection
+    control_run, connection = control_connection
 
     await connection.shutdown()
-    await connection_run
     await control_run
 
 
 @pytest.mark.asyncio
 async def test_storage(control, control_connection):
-    control_run, connection_run, connection = control_connection
+    control_run, connection = control_connection
 
     await connection.transaction_begin(False)
     await connection.transaction_commit()
@@ -150,14 +148,13 @@ async def test_storage(control, control_connection):
     assert sorted(await connection.list_files("test")) == ["test/file1", "test/file2"]
 
     await connection.shutdown()
-    await connection_run
     await control_run
 
 
 @pytest.mark.asyncio
 async def test_overlap(control):
-    control1_run, connection1_run, connection1 = await _make_connection(control)
-    control2_run, connection2_run, connection2 = await _make_connection(control)
+    control1_run, connection1 = await _make_connection(control)
+    control2_run, connection2 = await _make_connection(control)
 
     async with connection1.transaction(True):
         await connection1.lock_write("test/key1", 100, 200)
@@ -264,7 +261,6 @@ async def test_overlap(control):
     assert hit_intents == []
 
     await connection1.shutdown()
-    await connection1_run
     await control1_run
     intent1._realized = False
 
@@ -272,5 +268,4 @@ async def test_overlap(control):
         await connection2.lock_write("test/key1", 100, 200)
 
     await connection2.shutdown()
-    await connection2_run
     await control2_run

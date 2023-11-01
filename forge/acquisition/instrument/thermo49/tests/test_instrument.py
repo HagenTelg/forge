@@ -2,7 +2,7 @@ import asyncio
 import typing
 import pytest
 from forge.tasks import wait_cancelable
-from forge.acquisition.instrument.testing import create_streaming_instrument, BusInterface
+from forge.acquisition.instrument.testing import create_streaming_instrument, cleanup_streaming_instrument, BusInterface
 from forge.acquisition.instrument.thermo49.simulator import Simulator
 from forge.acquisition.instrument.thermo49.instrument import Instrument
 
@@ -32,16 +32,7 @@ async def test_communications():
 
     assert await bus.value('Qozonator') == simulator.data_Qozonator
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
 @pytest.mark.asyncio
@@ -71,16 +62,7 @@ async def test_49i():
     assert await bus.value('Vlamp') == simulator.data_Vlamp
     assert await bus.value('Vozonator') == simulator.data_Vozonator
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
 @pytest.mark.asyncio
@@ -107,16 +89,7 @@ async def test_49c_legacy1():
     assert await bus.value('Tlamp') == simulator.data_Tlamp
     assert await bus.value('bitflags') == simulator.flags
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
 @pytest.mark.asyncio
@@ -143,13 +116,4 @@ async def test_49c_legacy2():
     assert await bus.value('Tlamp') == simulator.data_Tlamp
     assert await bus.value('bitflags') == simulator.flags
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)

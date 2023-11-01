@@ -44,16 +44,7 @@ async def test_communications():
     assert await bus.value('PCTasc') == simulator.data_PCTasc
     assert await bus.value('spandev') == simulator.data_spandev
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
 @pytest.mark.asyncio
@@ -75,13 +66,4 @@ async def test_no_pm1():
     await bus.wait_for_notification('box_temperature_out_of_range')
     assert 'X1' not in bus.data_values
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)

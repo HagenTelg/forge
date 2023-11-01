@@ -2,7 +2,7 @@ import asyncio
 import typing
 import pytest
 from forge.tasks import wait_cancelable
-from forge.acquisition.instrument.testing import create_streaming_instrument, BusInterface
+from forge.acquisition.instrument.testing import create_streaming_instrument, cleanup_streaming_instrument, BusInterface
 from forge.acquisition.instrument.vaisalawxt5xx.simulator import Simulator
 from forge.acquisition.instrument.vaisalawxt5xx.instrument import Instrument
 
@@ -32,16 +32,7 @@ async def test_communications():
     assert await bus.value('Vreference') == simulator.data_Vreference
     assert await bus.value('Vheater') == simulator.data_Vheater
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
 @pytest.mark.asyncio
@@ -62,13 +53,4 @@ async def test_auxiliary():
     assert await bus.value('R') == simulator.data_R
     assert await bus.value('Ld') == simulator.data_Ld
 
-    instrument_run.cancel()
-    simulator_run.cancel()
-    try:
-        await instrument_run
-    except asyncio.CancelledError:
-        pass
-    try:
-        await simulator_run
-    except asyncio.CancelledError:
-        pass
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
