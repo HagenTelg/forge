@@ -42,6 +42,9 @@ code_records: typing.Dict[str, Record] = {
     'radiation-editing-ingest-basemod': BasicRecord.simple_override(
         name="Ingest radiation edits from basemod.dat",
     ),
+    'forge-archive': BasicRecord.simple_override(
+        name="Forge archive server",
+    ),
 }
 
 
