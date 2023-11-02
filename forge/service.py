@@ -91,7 +91,7 @@ class SocketServer(ABC):
                 except (AttributeError, OSError):
                     return [(fd, "") for fd in systemd.daemon.listen_fds()]
 
-            for fd, name in listen_fd_names().items():
+            for fd, name in listen_fd_names():
                 _LOGGER.info(f"Binding to systemd socket {fd}: {name}")
                 sock = attach_socket(fd)
                 background_task(loop.create_server(attached_factory(name), sock=sock))
