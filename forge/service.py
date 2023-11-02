@@ -89,7 +89,7 @@ class SocketServer(ABC):
                 try:
                     return systemd.daemon.listen_fds_with_names().items()
                 except (AttributeError, OSError):
-                    return {fd: "" for fd in systemd.daemon.listen_fds()}.items()
+                    return [(fd, "") for fd in systemd.daemon.listen_fds()]
 
             for fd, name in listen_fd_names().items():
                 _LOGGER.info(f"Binding to systemd socket {fd}: {name}")
