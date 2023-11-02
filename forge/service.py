@@ -58,7 +58,7 @@ class SocketServer(ABC):
                     return f"StreamReader(systemd={self.systemd_name})"
 
                 def __str__(self) -> str:
-                    return self.systemd_name
+                    return self.systemd_name or super().__str__()
 
             def attached_factory(name: str):
                 def factory():
@@ -67,26 +67,33 @@ class SocketServer(ABC):
                     return protocol
                 return factory
 
-            for fd, name in systemd.daemon.listen_fds_with_names().items():
-                _LOGGER.info(f"Binding to systemd socket {fd}: {name}")
-
+            def attach_socket(fd):
                 if sys.version_info[:2] >= (3, 7):
-                    sock = socket.socket(fileno=fd)
-                else:
-                    sock_family = socket.AF_UNIX
-                    sock_type = socket.SOCK_STREAM
-                    sock_proto = 0
-                    temp_socket = socket.socket(fileno=fd, type=sock_type, family=sock_family, proto=sock_proto)
-                    try:
-                        sock_family = temp_socket.getsockopt(socket.SOL_SOCKET, socket.SO_DOMAIN)
-                        sock_type = temp_socket.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE)
-                        sock_proto = temp_socket.getsockopt(socket.SOL_SOCKET, socket.SO_PROTOCOL)
-                    except (AttributeError, IOError):
-                        _LOGGER.debug("Failed to read socket information", exc_info=True)
-                    finally:
-                        temp_socket.detach()
-                    sock = socket.socket(fileno=fd, type=sock_type, family=sock_family, proto=sock_proto)
+                    return socket.socket(fileno=fd)
 
+                sock_family = socket.AF_UNIX
+                sock_type = socket.SOCK_STREAM
+                sock_proto = 0
+                temp_socket = socket.socket(fileno=fd, type=sock_type, family=sock_family, proto=sock_proto)
+                try:
+                    sock_family = temp_socket.getsockopt(socket.SOL_SOCKET, socket.SO_DOMAIN)
+                    sock_type = temp_socket.getsockopt(socket.SOL_SOCKET, socket.SO_TYPE)
+                    sock_proto = temp_socket.getsockopt(socket.SOL_SOCKET, socket.SO_PROTOCOL)
+                except (AttributeError, IOError):
+                    _LOGGER.debug("Failed to read socket information", exc_info=True)
+                finally:
+                    temp_socket.detach()
+                return socket.socket(fileno=fd, type=sock_type, family=sock_family, proto=sock_proto)
+
+            def listen_fd_names():
+                try:
+                    return systemd.daemon.listen_fds_with_names().items()
+                except (AttributeError, OSError):
+                    return {fd: "" for fd in systemd.daemon.listen_fds()}.items()
+
+            for fd, name in listen_fd_names().items():
+                _LOGGER.info(f"Binding to systemd socket {fd}: {name}")
+                sock = attach_socket(fd)
                 background_task(loop.create_server(attached_factory(name), sock=sock))
 
             async def heartbeat():
