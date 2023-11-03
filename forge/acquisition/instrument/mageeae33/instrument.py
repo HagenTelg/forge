@@ -833,7 +833,7 @@ class Instrument(StreamingInstrument):
         def _calculate(data_In0, Ip_wavelength, Ba_wavelength):
             In0: typing.Optional[typing.List[float]] = None
             for i in range(len(self.WAVELENGTHS)):
-                if data_In0.value and isfinite(data_In0.value[i]):
+                if data_In0.value and i < len(data_In0.value) and isfinite(data_In0.value[i]):
                     continue
 
                 Bac = float(self.data_Bac_wavelength[i])
@@ -887,11 +887,11 @@ class Instrument(StreamingInstrument):
         Ins0 = self.data_Ins0.value
         In, Ins = self._normalized_intensities()
         for i in range(len(self.data_If_wavelength)):
-            if In0 and isfinite(In0[i]) and In0[i] != 0.0:
+            if In0 and i < len(In0) and isfinite(In0[i]) and In0[i] != 0.0:
                 self.data_Ir_wavelength[i](In[i] / In0[i])
             else:
                 self.data_Ir_wavelength[i](nan)
-            if Ins0 and isfinite(Ins0[i]) and Ins0[i] != 0.0:
+            if Ins0 and i < len(Ins0) and isfinite(Ins0[i]) and Ins0[i] != 0.0:
                 self.data_Irs_wavelength[i](Ins[i] / Ins0[i])
             else:
                 self.data_Irs_wavelength[i](nan)
