@@ -1,6 +1,6 @@
 import typing
 import pytest
-from forge.range import intersects, subtract_tuple
+from forge.range import intersects, contains, subtract_tuple, intersecting_tuple, insertion_tuple
 
 
 def test_intersects():
@@ -24,9 +24,24 @@ def test_intersects():
     assert not intersects(50, 75, 100, 200)
 
 
+def test_contains():
+    assert contains(100, 200, 125, 175)
+    assert contains(100, 200, 125, 200)
+    assert contains(100, 200, 100, 175)
+    assert contains(100, 200, 100, 200)
+    assert not contains(100, 200, 100, 250)
+    assert not contains(100, 200, 50, 150)
+    assert not contains(100, 200, 50, 250)
+    assert not contains(100, 200, 50, 100)
+    assert not contains(100, 200, 200, 250)
+
+
 def test_subtract():
     def sub(existing, start, end):
+        saved = list(existing)
         subtract_tuple(existing, start, end)
+        subtract_tuple(saved, start, end, canonical=False)
+        assert existing == saved
         return existing
 
     assert sub([], 100, 200) == []
@@ -62,3 +77,61 @@ def test_subtract():
     assert sub([(100, 200), (200, 300)], 175, 225) == [(100, 175), (225, 300)]
     assert sub([(100, 200), (200, 300)], 150, 175) == [(100, 150), (175, 200), (200, 300)]
     assert sub([(100, 200), (200, 300)], 250, 275) == [(100, 200), (200, 250), (275, 300)]
+
+
+def test_find_intersecting():
+    def find(existing, start, end):
+        first = intersecting_tuple(existing, start, end)
+        second = intersecting_tuple(existing, start, end, canonical=False)
+        first = list(first)
+        assert first == list(second)
+        return first
+
+    assert find([], 100, 200) == []
+    assert find([(100, 200)], 100, 200) == [0]
+    assert find([(100, 200)], 250, 300) == []
+    assert find([(100, 200)], 50, 75) == []
+    assert find([(100, 200)], 200, 300) == []
+    assert find([(100, 200)], 50, 100) == []
+    assert find([(100, 200)], 50, 300) == [0]
+    assert find([(100, 200)], 50, 150) == [0]
+    assert find([(100, 200)], 150, 300) == [0]
+
+    assert find([(100, 200), (200, 300)], 100, 200) == [0]
+    assert find([(100, 200), (200, 300)], 200, 300) == [1]
+    assert find([(100, 200), (200, 300)], 100, 300) == [0, 1]
+    assert find([(100, 200), (200, 300)], 50, 75) == []
+    assert find([(100, 200), (200, 300)], 350, 400) == []
+    assert find([(100, 200), (200, 300)], 50, 150) == [0]
+    assert find([(100, 200), (200, 300)], 125, 150) == [0]
+    assert find([(100, 200), (200, 300)], 150, 250) == [0, 1]
+    assert find([(100, 200), (200, 300)], 250, 300) == [1]
+    assert find([(100, 200), (200, 300)], 250, 350) == [1]
+
+
+def test_insertion():
+    assert insertion_tuple([], 100) == 0
+    assert insertion_tuple([(100, 200)], 50) == 0
+    assert insertion_tuple([(100, 200)], 100) == 0
+    assert insertion_tuple([(100, 200)], 150) == 1
+    assert insertion_tuple([(100, 200)], 200) == 1
+    assert insertion_tuple([(100, 200)], 250) == 1
+    assert insertion_tuple([(100, 200), (200, 300)], 50) == 0
+    assert insertion_tuple([(100, 200), (200, 300)], 100) == 0
+    assert insertion_tuple([(100, 200), (200, 300)], 150) == 1
+    assert insertion_tuple([(100, 200), (200, 300)], 200) == 1
+    assert insertion_tuple([(100, 200), (200, 300)], 250) == 2
+    assert insertion_tuple([(100, 200), (200, 300)], 300) == 2
+    assert insertion_tuple([(100, 200), (200, 300)], 350) == 2
+    assert insertion_tuple([(100, 200), (300, 400)], 200) == 1
+    assert insertion_tuple([(100, 200), (300, 400)], 250) == 1
+    assert insertion_tuple([(100, 200), (300, 400)], 300) == 1
+    assert insertion_tuple([(100, 200), (300, 400)], 350) == 2
+    assert insertion_tuple([(100, 200), (300, 400)], 400) == 2
+    assert insertion_tuple([(100, 200), (300, 400)], 450) == 2
+    assert insertion_tuple([(100, 200), (200, 300), (300, 400)], 200) == 1
+    assert insertion_tuple([(100, 200), (200, 300), (300, 400)], 250) == 2
+    assert insertion_tuple([(100, 200), (200, 300), (300, 400)], 300) == 2
+    assert insertion_tuple([(100, 200), (200, 300), (300, 400)], 350) == 3
+    assert insertion_tuple([(100, 200), (200, 300), (300, 400)], 400) == 3
+    assert insertion_tuple([(100, 200), (200, 300), (300, 400)], 450) == 3

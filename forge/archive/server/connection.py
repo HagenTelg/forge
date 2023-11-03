@@ -240,17 +240,17 @@ class Connection:
             await self.control.notify.acknowledge(self, uid)
         elif packet_type == ClientPacket.ACQUIRE_INTENT:
             key = await read_string(self.reader)
-            (start, end) = struct.unpack('<qq', await self.reader.readexactly(16))
+            (start, end, immediate) = struct.unpack('<qqB', await self.reader.readexactly(17))
             uid = self.next_intent_uid
             self.next_intent_uid += 1
-            if self._transaction:
+            if immediate == 0 and self._transaction:
                 self._transaction.acquire_intent(uid, key, start, end)
             else:
                 self.control.intent.acquire(self, uid, key, start, end)
             self.writer.write(struct.pack('<BQ', ServerPacket.INTENT_ACQUIRED.value, uid))
         elif packet_type == ClientPacket.RELEASE_INTENT:
-            uid = struct.unpack('<Q', await self.reader.readexactly(8))[0]
-            if self._transaction:
+            (uid, immediate) = struct.unpack('<QB', await self.reader.readexactly(9))
+            if immediate == 0 and self._transaction:
                 self._transaction.release_intent(uid)
             else:
                 self.control.intent.release(self, uid)

@@ -4,6 +4,7 @@ import netCDF4
 import re
 import numpy as np
 from math import floor, ceil, nan, inf, isfinite
+from forge.const import MAX_I64
 from forge.range import subtract_tuple
 from forge.timeparse import parse_iso8601_time
 from forge.formattime import format_iso8601_time
@@ -490,7 +491,12 @@ class _Variable:
                 *source
             )]
 
-    def apply_time(self, start: int, end: int, contents: netCDF4.Variable) -> typing.Optional[_TimeMapping]:
+    def apply_(self, start: typing.Optional[int], end: typing.Optional[int],
+                            contents: netCDF4.Variable) -> None:
+        pass
+
+    def apply_time(self, start: typing.Optional[int], end: typing.Optional[int],
+                   contents: netCDF4.Variable) -> typing.Optional[_TimeMapping]:
         return None
 
     def apply_data(self, start: int, end: int, contents: netCDF4.Variable, time_mapping: _TimeMapping) -> None:
@@ -538,8 +544,8 @@ class _HistoryConstantVariable(_Variable):
         self.prior_value: typing.Optional[np.ndarray] = None
         self.history: typing.Dict[int, str] = dict()
 
-    def _handle_existing_history(self, start: int, end: int, contents: netCDF4.Variable,
-                                 data_mapping: _DataMapping) -> None:
+    def _handle_existing_history(self, start: typing.Optional[int], end: typing.Optional[int],
+                                 contents: netCDF4.Variable, data_mapping: _DataMapping) -> None:
         insert_history = _parse_history(
             getattr(contents, 'change_history', None),
             start, end,
@@ -569,7 +575,7 @@ class _HistoryConstantVariable(_Variable):
 
         self.history.update(insert_history)
 
-    def _update_history(self, start: int, converted_value: np.ndarray) -> None:
+    def _update_history(self, start: typing.Optional[int], converted_value: np.ndarray) -> None:
         def equal_to_prior() -> bool:
             if np.issubdtype(self.dtype, np.floating):
                 if not np.allclose(converted_value, self.prior_value, equal_nan=True):
@@ -579,7 +585,7 @@ class _HistoryConstantVariable(_Variable):
                     return False
             return True
 
-        if self.prior_value is not None and not equal_to_prior():
+        if self.prior_value is not None and not equal_to_prior() and start is not None:
             format_code = getattr(self.variable, 'C_format', None)
 
             def format_history_item(value) -> str:
@@ -611,7 +617,8 @@ class _HistoryConstantVariable(_Variable):
 
         self.prior_value = converted_value
 
-    def apply_time(self, start: int, end: int, contents: netCDF4.Variable) -> typing.Optional[_TimeMapping]:
+    def apply_time(self, start: typing.Optional[int], end: typing.Optional[int],
+                   contents: netCDF4.Variable) -> typing.Optional[_TimeMapping]:
         source_dimensions = contents.dimensions
         try:
             source_values = np.asarray(contents)
@@ -698,8 +705,13 @@ class _TimeVariable(_Variable):
     def bind_dimensions(self) -> typing.List[str]:
         return ['time'] + super().bind_dimensions
 
-    def apply_time(self, start: int, end: int, contents: netCDF4.Variable) -> typing.Optional[_TimeMapping]:
+    def apply_time(self, start: typing.Optional[int], end: typing.Optional[int],
+                   contents: netCDF4.Variable) -> typing.Optional[_TimeMapping]:
+        if start is None or end is None:
+            return None
         if len(contents.dimensions) == 0 or contents.dimensions[0] != 'time':
+            return None
+        if contents.shape[0] == 0:
             return None
         source_start = np.searchsorted(contents[:], start)
         source_end = np.searchsorted(contents[:], end)
@@ -1028,6 +1040,12 @@ class _Record:
         for name, root in contents.groups.items():
             self.groups[name].apply_constants(root)
 
+    def apply_empty_data(self, contents: netCDF4.Dataset) -> None:
+        for name, var in contents.variables.items():
+            self.variables[name].apply_time(None, None, var)
+        for name, root in contents.groups.items():
+            self.groups[name].apply_empty_data(root)
+
     def apply_data(self, start: int, end: int, contents: netCDF4.Dataset) -> None:
         for attr in self.history_attrs:
             attr.apply_data(start, end, contents)
@@ -1135,7 +1153,7 @@ class MergeInstrument:
             return
 
         visibility_start = source.visibility[0][0]
-        visibility_end = 0x7FFF_FFFF_FFFF_FFFF
+        visibility_end = MAX_I64
         existing_index = len(self._layers) - 1
         while existing_index >= 0:
             existing = self._layers[existing_index]
@@ -1169,8 +1187,12 @@ class MergeInstrument:
 
         for layer in self._layers:
             record.apply_constants(layer.root)
-        for start, end, source in visible_sources:
-            record.apply_data(start, end, source.root)
+        if visible_sources:
+            for start, end, source in visible_sources:
+                record.apply_data(start, end, source.root)
+        else:
+            for layer in self._layers:
+                record.apply_empty_data(layer.root)
 
         record.finish()
 

@@ -45,6 +45,36 @@ code_records: typing.Dict[str, Record] = {
     'forge-archive': BasicRecord.simple_override(
         name="Forge archive server",
     ),
+    'forge-archive-update-edited': BasicRecord.simple_override(
+        name="Forge archive edited data update",
+    ),
+    'forge-archive-flush-edited': BasicRecord.simple_override(
+        name="Forge archive edited data flush",
+    ),
+    'forge-archive-update-clean': BasicRecord.simple_override(
+        name="Forge archive clean data update",
+    ),
+    'forge-archive-flush-clean': BasicRecord.simple_override(
+        name="Forge archive clean data flush",
+    ),
+    'forge-archive-update-avgh': BasicRecord.simple_override(
+        name="Forge archive hourly averaged data update",
+    ),
+    'forge-archive-flush-avgh': BasicRecord.simple_override(
+        name="Forge archive hourly averaged data flush",
+    ),
+    'forge-archive-update-avgd': BasicRecord.simple_override(
+        name="Forge archive daily averaged data update",
+    ),
+    'forge-archive-flush-avgd': BasicRecord.simple_override(
+        name="Forge archive daily averaged data flush",
+    ),
+    'forge-archive-update-avgm': BasicRecord.simple_override(
+        name="Forge archive monthly averaged data update",
+    ),
+    'forge-archive-flush-avgm': BasicRecord.simple_override(
+        name="Forge archive monthly averaged data flush",
+    ),
 }
 
 

@@ -11,7 +11,16 @@ def intersects(a_start: typing.Union[int, float], a_end: typing.Union[int, float
     return True
 
 
-class Subtractor(ABC):
+def contains(out_start: typing.Union[int, float], out_end: typing.Union[int, float],
+             in_start: typing.Union[int, float], in_end: typing.Union[int, float]) -> bool:
+    if in_start < out_start:
+        return False
+    if in_end > out_end:
+        return False
+    return True
+
+
+class _Search(ABC):
     @property
     def canonical(self) -> bool:
         return True
@@ -21,15 +30,67 @@ class Subtractor(ABC):
         pass
 
     @abstractmethod
-    def __delitem__(self, key: int) -> None:
-        pass
-
-    @abstractmethod
     def get_start(self, index: int) -> typing.Union[int, float]:
         pass
 
     @abstractmethod
     def get_end(self, index: int) -> typing.Union[int, float]:
+        pass
+
+    def _find_before_start(self, search_start: typing.Union[int, float]) -> int:
+        if self.canonical:
+            existing_index = 0
+            end_index = len(self)
+            while existing_index < end_index:
+                mid = (existing_index + end_index) // 2
+                if self.get_start(mid) < search_start:
+                    existing_index = mid + 1
+                else:
+                    end_index = mid
+            return max(existing_index-1, 0)
+        else:
+            return 0
+
+
+class Insertion(_Search):
+    def before(self, start: typing.Union[int, float]) -> int:
+        if not self.canonical:
+            return len(self)
+        existing_index = 0
+        end_index = len(self)
+        while existing_index < end_index:
+            mid = (existing_index + end_index) // 2
+            if self.get_start(mid) < start:
+                existing_index = mid + 1
+            else:
+                end_index = mid
+        return existing_index
+
+    __call__ = before
+
+
+def insertion_tuple(existing: typing.List[typing.Union[typing.Tuple[int, int], typing.Tuple[float, float]]],
+                    find_start: typing.Union[int, float], canonical: bool = True) -> int:
+    class TupleInsertion(Insertion):
+        @property
+        def canonical(self) -> bool:
+            return canonical
+
+        def __len__(self) -> int:
+            return len(existing)
+
+        def get_start(self, index: int) -> typing.Union[int, float]:
+            return existing[index][0]
+
+        def get_end(self, index: int) -> typing.Union[int, float]:
+            return existing[index][1]
+
+    return TupleInsertion()(find_start)
+
+
+class Subtractor(_Search):
+    @abstractmethod
+    def __delitem__(self, key: int) -> None:
         pass
 
     @abstractmethod
@@ -44,21 +105,9 @@ class Subtractor(ABC):
     def duplicate_after(self, source: int, start: typing.Union[int, float], end: typing.Union[int, float]) -> None:
         pass
 
-    def subtract(self, sub_start: typing.Union[int, float], sub_end: typing.Union[int, float]):
+    def __call__(self, sub_start: typing.Union[int, float], sub_end: typing.Union[int, float]) -> None:
         canonical = self.canonical
-
-        if canonical:
-            existing_index = 0
-            end_index = len(self)
-            while existing_index < end_index:
-                mid = (existing_index + end_index) // 2
-                if self.get_start(mid) < sub_start:
-                    existing_index = mid + 1
-                else:
-                    end_index = mid
-            existing_index = max(existing_index-1, 0)
-        else:
-            existing_index = 0
+        existing_index = self._find_before_start(sub_start)
 
         while existing_index < len(self):
             inspect_start = self.get_start(existing_index)
@@ -97,7 +146,7 @@ class Subtractor(ABC):
 
 def subtract_tuple(existing: typing.List[typing.Union[typing.Tuple[int, int], typing.Tuple[float, float]]],
                    sub_start: typing.Union[int, float], sub_end: typing.Union[int, float],
-                   canonical: bool = True):
+                   canonical: bool = True) -> None:
     class TupleSubtract(Subtractor):
         @property
         def canonical(self) -> bool:
@@ -124,4 +173,54 @@ def subtract_tuple(existing: typing.List[typing.Union[typing.Tuple[int, int], ty
         def duplicate_after(self, source: int, start: typing.Union[int, float], end: typing.Union[int, float]) -> None:
             existing.insert(source+1, (start, end))
 
-    TupleSubtract().subtract(sub_start, sub_end)
+    TupleSubtract()(sub_start, sub_end)
+
+
+class FindIntersecting(_Search):
+    def __call__(self, find_start: int, find_end: int) -> typing.Union[typing.List[int], range]:
+        if self.canonical:
+            begin_index = self._find_before_start(find_start)
+            intersection_begin: typing.Optional[int] = None
+            intersection_end: typing.Optional[int] = None
+            for inspect_index in range(begin_index, len(self)):
+                inspect_start = self.get_start(inspect_index)
+                inspect_end = self.get_end(inspect_index)
+                if not intersects(find_start, find_end, inspect_start, inspect_end):
+                    if inspect_start >= find_end:
+                        break
+                    continue
+                if intersection_begin is None:
+                    intersection_begin = inspect_index
+                intersection_end = inspect_index
+            if intersection_begin is not None:
+                return range(intersection_begin, intersection_end+1)
+            return range(0)
+
+        result: typing.List[int] = list()
+        for inspect_index in range(len(self)):
+            inspect_start = self.get_start(inspect_index)
+            inspect_end = self.get_end(inspect_index)
+            if not intersects(find_start, find_end, inspect_start, inspect_end):
+                continue
+            result.append(inspect_index)
+        return result
+
+
+def intersecting_tuple(existing: typing.List[typing.Union[typing.Tuple[int, int], typing.Tuple[float, float]]],
+                       find_start: typing.Union[int, float], find_end: typing.Union[int, float],
+                       canonical: bool = True) -> typing.Union[typing.List[int], range]:
+    class TupleIntersecting(FindIntersecting):
+        @property
+        def canonical(self) -> bool:
+            return canonical
+
+        def __len__(self) -> int:
+            return len(existing)
+
+        def get_start(self, index: int) -> typing.Union[int, float]:
+            return existing[index][0]
+
+        def get_end(self, index: int) -> typing.Union[int, float]:
+            return existing[index][1]
+
+    return TupleIntersecting()(find_start, find_end)

@@ -6,6 +6,8 @@ __version__ = f'{__short_version__}.{PATCH_VERSION}'
 
 HELP_URL = 'https://gitlab.com/derek.hageman/forge/-/issues'
 
+MAX_I64 = int(0x7FFF_FFFF_FFFF_FFFF)
+
 STATIONS = frozenset({
     'air',
     'alt',

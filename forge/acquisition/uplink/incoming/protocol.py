@@ -1,6 +1,7 @@
 import typing
 import asyncio
 import struct
+from forge.const import MAX_I64
 from forge.acquisition.bus.serializer import AcquisitionBusSerializer
 
 
@@ -92,7 +93,7 @@ class UplinkSerializer(AcquisitionBusSerializer):
         try:
             writer.write(struct.pack('<Hq', 0xFFFF, n))
         except (OverflowError, struct.error):
-            writer.write(struct.pack('<Hq', 0xFFFF, int(0x7FFF_FFFF_FFFF_FFFF)))
+            writer.write(struct.pack('<Hq', 0xFFFF, MAX_I64))
 
     async def deserialize_integer(self, reader: typing.Union[asyncio.StreamReader, typing.BinaryIO],
                                   read_n: typing.Callable[[int], typing.Awaitable[bytes]] = None) -> int:

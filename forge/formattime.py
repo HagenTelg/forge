@@ -1,6 +1,7 @@
 import typing
 import time
 import datetime
+from .logicaltime import start_of_year
 
 
 def format_iso8601_duration(duration: float, milliseconds: bool = False) -> str:
@@ -117,8 +118,8 @@ def format_export_time(t: float) -> str:
 def format_year_doy(t: float, digits: int = 5, year_mode: typing.Union[bool, str] = ':',
                     doy_padding: typing.Union[bool, str] = '0') -> str:
     current_time = datetime.datetime.fromtimestamp(t, tz=datetime.timezone.utc)
-    start_of_year = datetime.datetime(current_time.year, 1, 1, 0, 0, 0, tzinfo=datetime.timezone.utc).timestamp()
-    doy = (t - start_of_year) / (24.0 * 60.0 * 60.0) + 1.0
+    year_start = start_of_year(current_time.year)
+    doy = (t - year_start) / (24.0 * 60.0 * 60.0) + 1.0
 
     if isinstance(doy_padding, bool) and doy_padding:
         doy_padding = '0'

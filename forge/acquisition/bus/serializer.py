@@ -4,6 +4,7 @@ import struct
 import logging
 from math import nan, isfinite
 from enum import IntEnum
+from forge.const import MAX_I64
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ class AcquisitionBusSerializer:
         try:
             writer.write(struct.pack('<q', n))
         except (OverflowError, struct.error):
-            writer.write(struct.pack('<q', int(0x7FFF_FFFF_FFFF_FFFF)))
+            writer.write(struct.pack('<q', MAX_I64))
 
     async def deserialize_integer(self, reader: typing.Union[asyncio.StreamReader, typing.BinaryIO],
                                   read_n: typing.Callable[[int], typing.Awaitable[bytes]] = None) -> int:

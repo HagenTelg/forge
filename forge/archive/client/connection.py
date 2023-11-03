@@ -102,7 +102,7 @@ class Connection:
     def __repr__(self) -> str:
         return f"Connection({repr(self.name)})"
 
-    async def initialize(self) -> None:
+    async def _initialize(self) -> None:
         self.writer.write(struct.pack('<I', Handshake.CLIENT_TO_SERVER.value))
         await self.writer.drain()
 
@@ -122,7 +122,7 @@ class Connection:
             raise ProtocolError(f"Invalid ready handshake 0x{check:08X}")
 
     async def startup(self) -> None:
-        await self.initialize()
+        await self._initialize()
         self._internal_run = asyncio.get_event_loop().create_task(self.run())
 
     async def _request_response(self,
@@ -531,16 +531,17 @@ class Connection:
             self._uid = uid
             self._realized = False
 
-        async def release(self) -> None:
+        async def release(self, immediate: bool = False) -> None:
             async def request(connection: "Connection", intent: "Connection.IntentHandle"):
-                connection.writer.write(struct.pack('<BQ', ClientPacket.RELEASE_INTENT.value, intent._uid))
+                connection.writer.write(struct.pack('<BQB', ClientPacket.RELEASE_INTENT.value,
+                                                    intent._uid, 1 if immediate else 0))
 
             async def response(connection: "Connection", packet_type: ServerPacket, intent: "Connection.IntentHandle"):
                 return packet_type == ServerPacket.INTENT_RELEASED or None
 
             await self._connection._request_response(request, response, self)
 
-            if self._connection._transaction_intents is not None:
+            if not immediate and self._connection._transaction_intents is not None:
                 self._connection._transaction_intents[self] = False
                 return
             if not self._realized:
@@ -553,11 +554,11 @@ class Connection:
                 _LOGGER.error("Leaked intent (%d)", self._uid, extra=self._connection.log_extra)
                 self._realized = False
 
-    async def acquire_intent(self, key: str, start: int, end: int) -> "Connection.IntentHandle":
+    async def acquire_intent(self, key: str, start: int, end: int, immediate: bool = False) -> "Connection.IntentHandle":
         async def request(connection: "Connection"):
             connection.writer.write(struct.pack('<B', ClientPacket.ACQUIRE_INTENT.value))
             write_string(connection.writer, key)
-            connection.writer.write(struct.pack('<qq', start, end))
+            connection.writer.write(struct.pack('<qqB', start, end, 1 if immediate else 0))
 
         async def response(connection: "Connection", packet_type: ServerPacket):
             if packet_type != ServerPacket.INTENT_ACQUIRED:
@@ -565,7 +566,7 @@ class Connection:
             uid = struct.unpack('<Q', await connection.reader.readexactly(8))[0]
 
             intent = connection.IntentHandle(connection, uid)
-            if connection._transaction_intents is not None:
+            if not immediate and connection._transaction_intents is not None:
                 connection._transaction_intents[intent] = True
             else:
                 intent._realized = True

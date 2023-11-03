@@ -1,0 +1,144 @@
+import typing
+import asyncio
+import logging
+import time
+import datetime
+import re
+from math import floor, ceil
+from tempfile import TemporaryDirectory
+from pathlib import Path
+from netCDF4 import Dataset
+from forge.logicaltime import containing_year_range, start_of_year
+from forge.archive.client.connection import Connection
+from forge.archive.client.put import ArchivePut
+from forge.archive.client.get import read_file_or_nothing, get_all_daily_files
+from forge.archive.client import passed_lock_key, passed_file_name
+from forge.data.structure.history import append_history
+from .filter import AcceptIntoClean
+
+_LOGGER = logging.getLogger(__name__)
+_DAY_FILE_MATCH = re.compile(
+    r'[A-Z][0-9A-Z_]{0,31}-[A-Z][A-Z0-9]*_'
+    r's((\d{4})(\d{2})(\d{2}))\.nc',
+)
+
+
+async def _fetch_passed(connection: Connection, station: str, start: int, end: int, destination: Path) -> None:
+    await connection.lock_read(passed_lock_key(station), start * 1000, end * 1000)
+
+    for year in range(*containing_year_range(start, end)):
+        year_start = start_of_year(year)
+        await read_file_or_nothing(connection, passed_file_name(station, year_start), destination)
+
+
+async def _run_pass(connection: Connection, working_directory: Path, station: str, start: int, end: int) -> int:
+    index_offset = int(floor(start / (24 * 60 * 60)))
+    total_count = int(ceil(end / (24 * 60 * 60))) - index_offset
+    day_files: typing.List[typing.Set[Path]] = list()
+    for file in (working_directory / "data").iterdir():
+        if not file.is_file():
+            continue
+        match = _DAY_FILE_MATCH.fullmatch(file.name)
+        if not match:
+            file.unlink()
+            continue
+        file_day_number = int(floor(datetime.datetime(
+            int(match.group(2)), int(match.group(3)), int(match.group(4)),
+            tzinfo=datetime.timezone.utc
+        ).timestamp() / (24 * 60 * 60)))
+        target_index = file_day_number - index_offset
+        if target_index < 0 or target_index >= total_count:
+            continue
+        while target_index >= len(day_files):
+            day_files.append(set())
+        day_files[target_index].add(file)
+
+    _LOGGER.debug(f"Processing clean data {start},{end} split into {len(day_files)} days")
+
+    pass_time = time.time()
+    total_file_count = 0
+    current_year: typing.Optional[int] = None
+    current_filter: typing.Optional[AcceptIntoClean] = None
+    for day_index in range(len(day_files)):
+        await connection.set_transaction_status(f"Processing clean data, {day_index / total_count:.0f}% done")
+
+        file_start = (day_index + index_offset) * (24 * 60 * 60)
+        file_year = time.gmtime(file_start).tm_year
+        if file_year != current_year:
+            current_year = file_year
+            passed_file = working_directory / f"passed/{station.upper()}-PASSED_s{current_year:04}0101.nc"
+            if not passed_file.exists():
+                if current_filter:
+                    current_filter.close()
+                current_filter = None
+            else:
+                current_filter = AcceptIntoClean(str(passed_file))
+
+        if current_filter is None:
+            for remove_file in day_files[day_index]:
+                remove_file.unlink()
+            continue
+
+        for check_file in day_files[day_index]:
+            data = current_filter.accept_file(file_start, str(check_file))
+            if data is None:
+                check_file.unlink()
+                continue
+            try:
+                append_history(data, "forge.pass", pass_time)
+            finally:
+                data.close()
+            total_file_count += 1
+
+    return total_file_count
+
+
+async def _write_data(connection: Connection, station: str, start: int, end: int,
+                      source: Path, expected_count: int) -> None:
+    put = ArchivePut(connection)
+    await put.preemptive_lock_range(station, "clean", start * 1000, end * 1000)
+
+    total_written = 0
+    expected_count = max(expected_count, 1)
+    for file in source.iterdir():
+        if not file.name.endswith('.nc'):
+            continue
+        if not file.is_file():
+            continue
+        await connection.set_transaction_status(f"Writing clean data, {total_written / expected_count:.0f}% done")
+
+        data = Dataset(str(file), 'r')
+        try:
+            await put.data(data, archive="clean", station=station, replace_entire=True)
+        finally:
+            data.close()
+
+        total_written += 1
+
+    await put.commit_index()
+
+
+async def update_clean_data(connection: Connection, station: str, start: float, end: float) -> None:
+    start = int(floor(start / (24 * 60 * 60))) * 24 * 60 * 60
+    end = int(ceil(end / (24 * 60 * 60))) * 24 * 60 * 60
+    with TemporaryDirectory() as working_directory:
+        working_directory = Path(working_directory)
+        data_directory = working_directory / "data"
+        data_directory.mkdir(exist_ok=True)
+        _LOGGER.debug(f"Fetching edited data for {station.upper()} {start},{end} into {data_directory}")
+        await connection.set_transaction_status("Loading edited data for passing")
+        await get_all_daily_files(connection, station, "edited", start, end, data_directory)
+
+        passed_directory = working_directory / "passed"
+        passed_directory.mkdir(exist_ok=True)
+        _LOGGER.debug(f"Fetching passed ranges for {station.upper()} {start},{end} into {passed_directory}")
+        await connection.set_transaction_status("Loading passed ranges")
+        await _fetch_passed(connection, station, start, end, passed_directory)
+
+        _LOGGER.debug(f"Running pass filtering for {station.upper()} {start},{end}")
+        await connection.set_transaction_status("Processing clean data")
+        total_files = await _run_pass(connection, working_directory, station, start, end)
+
+        _LOGGER.debug(f"Writing {total_files} clean data files for {station.upper()} {start},{end}")
+        await connection.set_transaction_status("Writing clean data")
+        await _write_data(connection, station, start, end, data_directory, total_files)

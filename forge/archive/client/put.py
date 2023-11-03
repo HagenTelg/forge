@@ -10,6 +10,7 @@ from tempfile import NamedTemporaryFile
 from netCDF4 import Dataset, Variable
 from forge.timeparse import parse_iso8601_time
 from forge.formattime import format_iso8601_time
+from forge.logicaltime import year_bounds_ms, start_of_year_ms, containing_year_range
 from forge.const import STATIONS
 from forge.archive.client import data_lock_key, data_file_name, data_notification_key, index_lock_key, index_file_name, event_log_lock_key, event_log_file_name
 from forge.archive.client.connection import Connection
@@ -37,7 +38,7 @@ class Index:
 
     @property
     def known_instrument_ids(self) -> typing.Iterable[str]:
-        return self._instrument_codes.keys()
+        return self._instrument_tags.keys()
 
     def integrate_file(self, file: Dataset) -> None:
         instrument_id = file.instrument_id
@@ -128,7 +129,7 @@ class Index:
             return
         contents = from_json(contents)
         try:
-            version = contents['_version']
+            version = contents['version']
         except KeyError:
             raise RuntimeError("No index version available")
         if version != self.INDEX_VERSION:
@@ -158,7 +159,7 @@ class Index:
 
     def commit(self) -> bytes:
         result = {
-            '_version': self.INDEX_VERSION,
+            'version': self.INDEX_VERSION,
             'variable_ids': self._variable_ids,
         }
 
@@ -174,18 +175,6 @@ class Index:
         apply_set_lookup('standard_names', self._standard_names)
 
         return to_json(result, sort_keys=True).encode('ascii')
-
-
-def year_bounds(year: int) -> typing.Tuple[int, int]:
-    year_start = int(floor(datetime.datetime(
-        year, 1, 1,
-        tzinfo=datetime.timezone.utc
-    ).timestamp() * 1000.0))
-    year_end = int(ceil(datetime.datetime(
-        year + 1, 1, 1,
-        tzinfo=datetime.timezone.utc
-    ).timestamp() * 1000.0))
-    return year_start, year_end
 
 
 class ArchivePut:
@@ -278,19 +267,65 @@ class ArchivePut:
         await self._connection.lock_write(data_lock_key(station, archive), lock_start, lock_end)
         archive_locks.add(lock_start)
 
+    async def preemptive_lock_range(self, station: str, archive: str, lock_start_ms: int, lock_end_ms: int) -> None:
+        station_locks = self._data_locks.get(station)
+        if not station_locks:
+            station_locks = dict()
+            self._data_locks[station] = station_locks
+        archive_locks = station_locks.get(archive)
+        if not archive_locks:
+            archive_locks = set()
+            station_locks[archive] = archive_locks
+
+        if archive in ("avgd", "avgm"):
+            start_year, end_year = containing_year_range(lock_start_ms / 1000.0, lock_end_ms / 1000.0)
+            year_start_ms = start_of_year_ms(start_year)
+            year_end_ms = start_of_year_ms(end_year)
+
+            year_lock_times = set()
+            for year in range(start_year, end_year):
+                add = start_of_year_ms(year)
+                year_lock_times.add(add)
+
+            if year_lock_times.issubset(archive_locks):
+                return
+
+            _LOGGER.debug("Acquiring lock for %s/%s on %d,%d", station, archive, year_start_ms, year_end_ms)
+            await self._connection.lock_write(data_lock_key(station, archive), year_start_ms, year_end_ms)
+            archive_locks.update(year_lock_times)
+        else:
+            lock_start_ms = int(floor(lock_start_ms / (24 * 60 * 60 * 1000))) * (24 * 60 * 60 * 1000)
+            lock_end_ms = int(ceil(lock_end_ms / (24 * 60 * 60 * 1000))) * (24 * 60 * 60 * 1000)
+            if lock_end_ms <= lock_start_ms:
+                lock_end_ms += (24 * 60 * 60 * 1000)
+
+            for check in range(lock_start_ms, lock_end_ms, 24 * 60 * 60 * 1000):
+                if check not in archive_locks:
+                    break
+            else:
+                return
+
+            _LOGGER.debug("Acquiring lock for %s/%s on %d,%d", station, archive, lock_start_ms, lock_end_ms)
+            await self._connection.lock_write(data_lock_key(station, archive), lock_start_ms, lock_end_ms)
+            for lock_day in range(lock_start_ms, lock_end_ms, 24 * 60 * 60 * 1000):
+                archive_locks.add(lock_day)
+
     async def _merge_data_file(self, file: Dataset, station: str, archive: str, instrument_id: str,
-                               archive_file_start: int, archive_file_end: int) -> None:
+                               archive_file_start: int, archive_file_end: int, replace_entire: bool = False) -> None:
         with NamedTemporaryFile(suffix=".nc") as existing_file, NamedTemporaryFile(suffix=".nc") as merged_file:
             merge = MergeInstrument()
 
             archive_file_name = data_file_name(station, archive, instrument_id, archive_file_start / 1000.0)
-            try:
-                await self._connection.read_file(archive_file_name, existing_file)
-                existing_data = Dataset(existing_file.name, 'r')
-                merge.overlay(existing_data, archive_file_start, archive_file_end)
-                _LOGGER.debug("Using existing data file %s", archive_file_name)
-            except FileNotFoundError:
-                _LOGGER.debug("No existing data for %s", archive_file_name)
+            if not replace_entire:
+                try:
+                    await self._connection.read_file(archive_file_name, existing_file)
+                    existing_data = Dataset(existing_file.name, 'r')
+                    merge.overlay(existing_data, archive_file_start, archive_file_end)
+                    _LOGGER.debug("Using existing data file %s", archive_file_name)
+                except FileNotFoundError:
+                    _LOGGER.debug("No existing data for %s", archive_file_name)
+                    existing_data = None
+            else:
                 existing_data = None
 
             merge.overlay(file, archive_file_start, archive_file_end)
@@ -316,7 +351,7 @@ class ArchivePut:
 
     async def data(self, file: Dataset, archive: str = "raw",
                    file_start_ms: int = None, file_end_ms: int = None,
-                   station: str = None) -> None:
+                   station: str = None, replace_entire: bool = False) -> None:
         instrument_id = getattr(file, 'instrument_id', None)
         if not instrument_id:
             raise InvalidFile("No instrument identifier in file")
@@ -329,19 +364,21 @@ class ArchivePut:
         station = self.get_station(file, station)
         destination_start, destination_end = self._get_destination_bounds(file, file_start_ms, file_end_ms)
 
-        if archive == "avgm":
+        if archive in ("avgd", "avgm"):
             start_year = time.gmtime(destination_start / 1000.0).tm_year
             end_year = time.gmtime(destination_end / 1000.0).tm_year + 1
 
             for year in range(start_year, end_year):
                 _LOGGER.debug("Processing year %d for %s", year, instrument_id)
-                archive_file_start, archive_file_end = year_bounds(year)
+                archive_file_start, archive_file_end = year_bounds_ms(year)
 
                 if archive_file_start >= destination_end:
                     break
 
                 await self._lock_data(station, archive, archive_file_start, archive_file_end)
-                await self._merge_data_file(file, station, archive, instrument_id, archive_file_start, archive_file_end)
+                await self._merge_data_file(file, station, archive, instrument_id,
+                                            archive_file_start, archive_file_end,
+                                            replace_entire)
         else:
             start_day_index = int(floor(destination_start / (24 * 60 * 60 * 1000)))
             end_day_index = int(ceil(destination_end / (24 * 60 * 60 * 1000))) + 1
@@ -355,7 +392,9 @@ class ArchivePut:
                     break
 
                 await self._lock_data(station, archive, archive_file_start, archive_file_end)
-                await self._merge_data_file(file, station, archive, instrument_id, archive_file_start, archive_file_end)
+                await self._merge_data_file(file, station, archive, instrument_id,
+                                            archive_file_start, archive_file_end,
+                                            replace_entire)
 
         await self._connection.send_notification(data_notification_key(station, archive),
                                                  destination_start, destination_end)
@@ -445,7 +484,7 @@ class ArchivePut:
         for station, station_index in self._index.items():
             for archive, archive_index in station_index.items():
                 for year, index in archive_index.items():
-                    year_start, year_end = year_bounds(year)
+                    year_start, year_end = year_bounds_ms(year)
                     _LOGGER.debug("Updating index for %s/%s year %d", station, archive, year)
                     await self._connection.lock_write(index_lock_key(station, archive), year_start, year_end)
                     index_file = index_file_name(station, archive, year_start / 1000.0)

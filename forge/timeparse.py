@@ -48,3 +48,7 @@ def parse_iso8601_time(s: str) -> datetime.datetime:
         )
 
     raise ValueError("invalid time format")
+
+
+def parse_time_argument(s: str) -> datetime.datetime:
+    return parse_iso8601_time(s)

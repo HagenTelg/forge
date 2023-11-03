@@ -5,6 +5,7 @@ import os
 import struct
 from json import dumps as to_json
 from forge.tasks import wait_cancelable
+from forge.const import MAX_I64
 from .control import Controller
 from .. import CONFIGURATION
 from ..protocol import ServerDiagnosticRequest
@@ -298,9 +299,9 @@ def main():
             output_row(r)
 
     def format_time(value: int) -> str:
-        if value <= -0x7FFF_FFFF_FFFF_FFFF:
+        if value <= -MAX_I64:
             return "-∞"
-        if value >= 0x7FFF_FFFF_FFFF_FFFF:
+        if value >= MAX_I64:
             return "+∞"
         ts = time.gmtime(value / 1000.0)
         return f"{ts.tm_year:04}-{ts.tm_mon:02}-{ts.tm_mday}T{ts.tm_hour:02}:{ts.tm_min:02}:{ts.tm_sec:02}"

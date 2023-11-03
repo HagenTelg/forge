@@ -4,17 +4,18 @@ import logging
 import time
 from tempfile import NamedTemporaryFile
 from netCDF4 import Dataset
-from forge.const import STATIONS
 from pathlib import Path
+from forge.const import STATIONS
+from forge.logicaltime import year_bounds_ms
 from forge.archive.client import data_lock_key, data_file_name, index_lock_key, index_file_name
 from forge.archive.client.connection import Connection
-from forge.archive.client.put import Index, year_bounds
+from forge.archive.client.put import Index
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def reindex(connection: Connection, station: str, archive: str, year: int) -> None:
-    year_start, year_end = year_bounds(year)
+    year_start, year_end = year_bounds_ms(year)
     await connection.lock_write(data_lock_key(station, archive), year_start, year_end)
     await connection.lock_write(index_lock_key(station, archive), year_start, year_end)
     file_prefix = station.upper() + "-"
