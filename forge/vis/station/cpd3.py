@@ -256,7 +256,7 @@ def _to_cpd3_action(directive: typing.Dict[str, typing.Any]) -> typing.Dict[str,
             raise ValueError
         return {
             'Type': 'FlowCorrection',
-            'Instrument': str(directive.get('instrument', '')),
+            'Instrument': instrument,
             'Calibration': _to_cpd3_calibration(directive.get('calibration')),
             'Original': _to_cpd3_calibration(directive.get('reverse_calibration')),
         }
@@ -287,6 +287,18 @@ def _to_cpd3_action(directive: typing.Dict[str, typing.Any]) -> typing.Dict[str,
             'ApplyToMetadata': not is_stuck_impactor,
             'Cut': modified_size.lower(),
             'Selection': original_selection,
+        }
+    elif op == 'abnormal_data':
+        episode_type = str(directive.get('episode_type', '')).strip()
+        if episode_type == 'wild_fire':
+            episode_type = 'WildFire'
+        elif episode_type == 'dust':
+            episode_type = 'Dust'
+        else:
+            raise ValueError
+        return {
+            'Type': 'AbnormalDataEpisode',
+            'EpisodeType': episode_type,
         }
     else:
         return {
@@ -799,6 +811,13 @@ def _convert_directive(profile: str, identity: Identity,
         result['action'] = 'cut_size'
         result['cutsize'] = _selection_to_single_cutsize(_from_cpd3_selection(action.get('Selection')))
         result['modified_cutsize'] = str(action.get('Cut', ''))
+    elif op == 'abnormaldataepisode':
+        result['action'] = 'abnormal_data'
+        episode_type = str(action.get('EpisodeType', 'WildFire')).lower()
+        if episode_type == 'dust':
+            result['episode_type'] = 'dust'
+        else:
+            result['episode_type'] = 'wild_fire'
     else:
         selection = _from_cpd3_selection(action.get('Selection'))
         single_cutsize = _selection_to_single_cutsize(selection)
@@ -896,6 +915,8 @@ def _display_directive(raw: typing.Dict[str, typing.Any]) -> bool:
             return False
         elif _matches("NOOP", "None"):
             return False
+        elif _matches("AbnormalDataEpisode"):
+            return True
 
         # Invalidate
         return True

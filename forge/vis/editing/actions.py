@@ -41,6 +41,10 @@ action_codes['cut_size'] = Action("Size Cut Fix", """
 Apply a fix to the size cut of the data.
 This is used to alter or invalidate data when a specific cut size is active (e.g. invalidate a leaking impactor or change the effective size when it is stuck).
 """)
+action_codes['abnormal_data'] = Action("Abnormal Data", """
+Indicate that the station is experiencing an episode that causes data do be outside normal sampling conditions.
+This normally has no direct effect on the data being edited.
+""")
 
 
 @requires('authenticated')

@@ -175,6 +175,12 @@ $(document).ready(function() {
             case 'pm1': return "PM1";
             default: return "Whole";
             }
+        } else if (typeof directive.episode_type === 'string') {
+            switch(directive.episode_type) {
+            case 'wild_fire': return "Wild Fire";
+            case 'dust': return "Dust";
+            default: return "";
+            }
         }
 
         return "";

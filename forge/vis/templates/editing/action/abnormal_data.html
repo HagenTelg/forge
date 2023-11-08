@@ -1,0 +1,51 @@
+<table class="edit-action-abnormaldata-parameters">
+  <tr>
+    <td class="edit-action-abnormaldata-label"><label for="abnormaldata_episodetype">Episode Type:</label></td>
+    <td>
+      <select id="abnormaldata_episodetype" class="details-combobox">
+        <option value="wild_fire" title="Wild fire and/or smoke conditions present">Wild fire</option>
+        <option value="dust" title="Abnormal dust present (e.x. Saharan dust transport)">Dust</option>
+      </select>
+    </td>
+  </tr>
+</table>
+
+<div class="edit-action-abnormaldata-info">
+  <p>
+    This is used to indicate that the data does not represent normal station conditions but is still a valid measurement.
+    The indication applies to all instruments at the station, even ones not visibly being edited.
+    The action taken is context dependent and rarely directly affects the station data, but usually indicates external archive flagging (e.x. EBAS flag code 110).
+  </p>
+  <b>Edits of this type should only be made if you are certain the effects are required.</b>
+</div>
+
+<style>
+.edit-action-abnormaldata-parameters {
+  padding: 8px 8px 0;
+  border: none;
+}
+.edit-action-abnormaldata-info {
+  padding: 12px 8px 8px;
+}
+.edit-action-abnormaldata-label {
+  text-align: right;
+}
+</style>
+
+<script>
+var abnormalDataTarget = {};
+
+$('#abnormaldata_episodetype').change(function(event) {
+  abnormalDataTarget.episode_type = this.value;
+});
+
+selectEditDirectiveAction = function(directive) {
+  abnormalDataTarget = directive;
+
+  if (typeof directive.episode_type === 'string') {
+    $('#abnormaldata_episodetype').val(directive.episode_type).change();
+  } else {
+    $('#abnormaldata_episodetype').val('wild_fire').change();
+  }
+};
+</script>
