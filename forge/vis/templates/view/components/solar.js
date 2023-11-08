@@ -140,7 +140,7 @@ var Solar = {};
         let zenith = Math.acos(csz);
         const azDenom = Math.cos(latitudeRadians) * Math.sin(zenith);
         let azimuth;
-        if (Math.abs(azDenom) > 0.001) {
+        if (Math.abs(azDenom) > 1E-6) {
             let azRad = ((Math.sin(latitudeRadians) * Math.cos(zenith)) - Math.sin(sunDeclination)) / azDenom;
             if (azRad > 1.0) {
                 azRad = 1.0;
