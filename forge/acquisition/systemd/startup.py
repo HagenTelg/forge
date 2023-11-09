@@ -35,10 +35,11 @@ def assemble_forge_exec(program: str, *args: str):
 
 def basic_service(description: str,
                   restart: bool = True,
-                  user: typing.Optional[str] = None) -> typing.List[typing.Tuple[str, typing.Any]]:
+                  user: typing.Optional[str] = None,
+                  group: str = None) -> typing.List[typing.Tuple[str, typing.Any]]:
     properties: typing.List[typing.Tuple[str, typing.Any]] = [
         ("Description", description),
-        ("Group", _ACQUISITION_SYSTEM_GROUP),
+        ("Group", group or _ACQUISITION_SYSTEM_GROUP),
         ("ProtectSystem", "strict"),
         ("ProtectHome", "true"),
         ("WorkingDirectory", "/"),
@@ -131,6 +132,29 @@ def start_control(control_type: str) -> None:
     )))
 
     unit_name = f"forge-control-{control_type}.service"
+    release_transient_unit(unit_name)
+    start_transient_unit(unit_name, properties)
+
+
+def start_control_restart() -> None:
+    _LOGGER.debug(f"Starting restart controller")
+
+    # Unfortunately, it doesn't look like PolKit plays nice with dynamic users, so we have to give extended permissions
+    properties = basic_service(f"Forge acquisition restart controller",
+                               user="root", group="root", restart=False)
+    set_dependencies(
+        properties,
+        before=["forge-acquisition-start.target", "forge-acquisition-control.target"],
+        after=["forge-acquisition-bus.socket", "forge-acquisition-initialize.target",
+               "forge-acquisition-stop.target"],
+        binds_to=["forge-acquisition-bus.socket"],
+        conflicts=["forge-acquisition-stop.target"],
+    )
+    properties.append(("ExecStart", assemble_forge_exec(
+        "forge-acquisition-control", "--systemd", "restart"
+    )))
+
+    unit_name = f"forge-control-restart.service"
     release_transient_unit(unit_name)
     start_transient_unit(unit_name, properties)
 
@@ -266,7 +290,7 @@ def need_pressure_bypass_control() -> bool:
 def start_all_control() -> None:
     for _ in range(5):
         try:
-            start_control("restart")
+            start_control_restart()
         except dbus.exceptions.DBusException:
             _LOGGER.debug("Control start failed, retrying", exc_info=True)
             release_transient_unit("forge-control-restart.service")
@@ -276,7 +300,7 @@ def start_all_control() -> None:
             continue
         break
     else:
-        start_control("restart")
+        start_control_restart()
 
     cutsize = CONFIGURATION.get("ACQUISITION.CUT_SIZE")
     if cutsize and not CutSize(LayeredConfiguration(cutsize)).constant_size:
