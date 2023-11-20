@@ -2,6 +2,7 @@ import typing
 import time
 from netCDF4 import Dataset, Variable
 from numpy import dtype
+from math import nan
 from forge.formattime import format_iso8601_time, format_iso8601_duration
 from . import find_variable
 from .basic import date_created
@@ -93,7 +94,7 @@ def averaged_count_variable(target: Dataset) -> Variable:
 
 
 def cutsize_variable(target: Dataset) -> Variable:
-    var = target.createVariable("cut_size", "f8", ("time",), fill_value=False)
+    var = target.createVariable("cut_size", "f8", ("time",), fill_value=nan)
     setup_cutsize(var)
     var.coverage_content_type = "referenceInformation"  # Not measured, so reference is a bit better fit
     return var
@@ -101,7 +102,7 @@ def cutsize_variable(target: Dataset) -> Variable:
 
 def cutsize_coordinate(target: Dataset, number_possible: int) -> Variable:
     dim = target.createDimension("cut_size", number_possible)
-    var = target.createVariable("cut_size", "f8", ("cut_size",), fill_value=False)
+    var = target.createVariable("cut_size", "f8", ("cut_size",), fill_value=nan)
     setup_cutsize(var)
     var.coverage_content_type = "coordinate"
     return var

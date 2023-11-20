@@ -79,6 +79,7 @@ class DataController(StationsController):
                                         await self.connection.read_file(archive_path, f)
                                     except FileNotFoundError:
                                         continue
+                                    f.flush()
                                     passed_modified.extend(self.get_modified_edits(f.name, modified_after))
                         break
                     except LockDenied as ld:

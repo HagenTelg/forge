@@ -56,7 +56,7 @@ def _parse_history(value: typing.Optional[str],
     if not value:
         return result
 
-    for line in str(value).split('\n'):
+    for line in str(value).strip().split('\n'):
         try:
             end_time, contents = line.split(',', 1)
         except ValueError:
@@ -767,7 +767,7 @@ class _FlagsVariable(_DataVariable):
 
     @staticmethod
     def _parse_flags(contents: netCDF4.Variable) -> typing.Dict[int, str]:
-        flag_meanings = getattr(contents, 'flag_meanings', "").split(' ')
+        flag_meanings = getattr(contents, 'flag_meanings', "").split()
         if not flag_meanings:
             return dict()
         flag_masks = getattr(contents, 'flag_masks', None)
@@ -950,6 +950,14 @@ class _Record:
         ]
         self.all_tags: typing.Set[str] = set()
 
+    @staticmethod
+    def _has_parent_group(g: netCDF4.Dataset, name: str) -> bool:
+        while g is not None:
+            if g.name == name:
+                return True
+            g = g.parent
+        return False
+
     def _create_variable(self, var: netCDF4.Variable) -> _Variable:
         if var.name == 'cut_size':
             return _CutSizeVariable(self)
@@ -958,7 +966,7 @@ class _Record:
         if not dims or dims[0] != 'time':
             if var.name == 'wavelength' and (not dims or dims[0] == 'wavelength'):
                 return _HistoryConstantVariable(var.name, self)
-            if var.group().name == 'instrument' and getattr(var, 'coverage_content_type', None) == "referenceInformation":
+            if self._has_parent_group(var.group(), 'instrument') and getattr(var, 'coverage_content_type', None) == "referenceInformation":
                 return _HistoryConstantVariable(var.name, self)
             return _ConstantVariable(var.name, self)
         if var.name == 'time':

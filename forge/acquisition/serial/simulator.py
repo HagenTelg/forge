@@ -110,12 +110,8 @@ def parse_arguments(parser: typing.Optional[argparse.ArgumentParser] = None) -> 
 
     args, _ = parser.parse_known_args()
     if args.debug:
-        root_logger = logging.getLogger()
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(name)-40s %(message)s')
-        handler.setFormatter(formatter)
-        root_logger.setLevel(logging.DEBUG)
-        root_logger.addHandler(handler)
+        from forge.log import set_debug_logger
+        set_debug_logger()
 
     return args.tty
 

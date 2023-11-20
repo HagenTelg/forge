@@ -522,12 +522,8 @@ class StationsController:
             parser.error("Both a server host and port must be specified")
 
         if args.debug:
-            root_logger = logging.getLogger()
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(name)-40s %(message)s')
-            handler.setFormatter(formatter)
-            root_logger.setLevel(logging.DEBUG)
-            root_logger.addHandler(handler)
+            from forge.log import set_debug_logger
+            set_debug_logger()
 
         loop = asyncio.new_event_loop()
 
@@ -699,12 +695,8 @@ class StationsController:
             parser.error("No control socket available")
 
         if args.debug:
-            root_logger = logging.getLogger()
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(name)-40s %(message)s')
-            handler.setFormatter(formatter)
-            root_logger.setLevel(logging.DEBUG)
-            root_logger.addHandler(handler)
+            from forge.log import set_debug_logger
+            set_debug_logger()
 
         before = MAX_I64
         if args.before:

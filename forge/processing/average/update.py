@@ -16,8 +16,33 @@ from forge.data.structure.history import append_history
 _LOGGER = logging.getLogger(__name__)
 
 
+async def _write_files(connection: Connection, put: ArchivePut, source: Path, station: str, archive: str,
+                       whole_file: bool, history: str, status: str) -> None:
+    write_files: typing.List[Path] = list()
+    for file in source.iterdir():
+        if not file.name.endswith('.nc'):
+            continue
+        if not file.is_file():
+            continue
+        write_files.append(file)
+
+    history_time = time.time()
+    for idx in range(len(write_files)):
+        data = Dataset(str(write_files[idx]), 'r+')
+        try:
+            append_history(data, history, history_time)
+            await put.data(data, archive=archive, station=station, exact_contents=whole_file)
+        finally:
+            if not whole_file:
+                data.close()
+
+        await connection.set_transaction_status(status.format(percent_done=((idx + 1) / len(write_files)) * 100.0))
+
+    await put.commit_index()
+
+
 async def _run_avgh(connection: Connection, input_directory: Path, output_directory: Path,
-                    station: str, start: int, end: int) -> int:
+                    station: str, start: int, end: int) -> None:
     for f in input_directory.iterdir():
         if not f.is_file():
             continue
@@ -25,43 +50,14 @@ async def _run_avgh(connection: Connection, input_directory: Path, output_direct
         await asyncio.get_event_loop().run_in_executor(None, shutil.move,
                                                        str(f), str(output_directory / f.name))
 
-    now = time.time()
-    file_count = 0
-    for file in output_directory.iterdir():
-        if not file.name.endswith('.nc'):
-            continue
-        data = Dataset(str(file), 'r+')
-        try:
-            append_history(data, "forge.average.hourly", now)
-        finally:
-            data.close()
-        file_count += 1
-    return file_count
-
 
 async def _write_avgh(connection: Connection, station: str, start: int, end: int,
-                      source: Path, expected_count: int) -> None:
+                      source: Path) -> None:
     put = ArchivePut(connection)
     await put.preemptive_lock_range(station, "avgh", start * 1000, end * 1000)
 
-    total_written = 0
-    expected_count = max(expected_count, 1)
-    for file in source.iterdir():
-        if not file.name.endswith('.nc'):
-            continue
-        if not file.is_file():
-            continue
-        await connection.set_transaction_status(f"Writing hourly averaged data, {total_written / expected_count:.0f}% done")
-
-        data = Dataset(str(file), 'r')
-        try:
-            await put.data(data, archive="avgh", station=station, replace_entire=True)
-        finally:
-            data.close()
-
-        total_written += 1
-
-    await put.commit_index()
+    await _write_files(connection, put, source, station, "avgh", True, "forge.average.hourly",
+                       "Writing hourly averaged data, {percent_done:.0f}% done")
 
 
 async def update_avgh_data(connection: Connection, station: str, start: float, end: float) -> None:
@@ -79,54 +75,27 @@ async def update_avgh_data(connection: Connection, station: str, start: float, e
         output_directory.mkdir(exist_ok=True)
         _LOGGER.debug(f"Running hourly averaging for {station.upper()} {start},{end}")
         await connection.set_transaction_status("Starting hourly average calculation")
-        total_files = await _run_avgh(connection, input_directory, output_directory, station, start, end)
+        await _run_avgh(connection, input_directory, output_directory, station, start, end)
 
-        _LOGGER.debug(f"Writing {total_files} hourly averaged data files for {station.upper()} {start},{end}")
+        _LOGGER.debug(f"Writing hourly averaged data for {station.upper()} {start},{end}")
         await connection.set_transaction_status("Writing hourly averaged data")
-        await _write_avgh(connection, station, start, end, output_directory, total_files)
+        await _write_avgh(connection, station, start, end, output_directory)
+        _LOGGER.debug(f"Hourly average write completed for {station.upper()} {start},{end}")
 
 
 async def _run_avgd(connection: Connection, input_directory: Path, output_directory: Path,
-                    station: str, start: int, end: int) -> int:
+                    station: str, start: int, end: int) -> None:
     # connection.set_transaction_status()
-
-    now = time.time()
-    file_count = 0
-    for file in output_directory.iterdir():
-        if not file.name.endswith('.nc'):
-            continue
-        data = Dataset(str(file), 'r+')
-        try:
-            append_history(data, "forge.average.daily", now)
-        finally:
-            data.close()
-        file_count += 1
-    return file_count
+    pass
 
 
 async def _write_avgd(connection: Connection, station: str, start: int, end: int,
-                      source: Path, expected_count: int) -> None:
+                      source: Path) -> None:
     put = ArchivePut(connection)
     await put.preemptive_lock_range(station, "avgd", start * 1000, end * 1000)
 
-    total_written = 0
-    expected_count = max(expected_count, 1)
-    for file in source.iterdir():
-        if not file.name.endswith('.nc'):
-            continue
-        if not file.is_file():
-            continue
-        await connection.set_transaction_status(f"Writing daily averaged data, {total_written / expected_count:.0f}% done")
-
-        data = Dataset(str(file), 'r')
-        try:
-            await put.data(data, archive="avgd", station=station)
-        finally:
-            data.close()
-
-        total_written += 1
-
-    await put.commit_index()
+    await _write_files(connection, put, source, station, "avgd", False, "forge.average.daily",
+                       "Writing daily averaged data, {percent_done:.0f}% done")
 
 
 async def update_avgd_data(connection: Connection, station: str, start: float, end: float) -> None:
@@ -144,54 +113,27 @@ async def update_avgd_data(connection: Connection, station: str, start: float, e
         output_directory.mkdir(exist_ok=True)
         _LOGGER.debug(f"Running daily averaging for {station.upper()} {start},{end}")
         await connection.set_transaction_status("Starting daily average calculation")
-        total_files = await _run_avgd(connection, input_directory, output_directory, station, start, end)
+        await _run_avgd(connection, input_directory, output_directory, station, start, end)
 
-        _LOGGER.debug(f"Writing {total_files} daily averaged data files for {station.upper()} {start},{end}")
+        _LOGGER.debug(f"Writing daily averaged data for {station.upper()} {start},{end}")
         await connection.set_transaction_status("Writing daily averaged data")
-        await _write_avgd(connection, station, start, end, output_directory, total_files)
+        await _write_avgd(connection, station, start, end, output_directory)
+        _LOGGER.debug(f"Daily average write completed for {station.upper()} {start},{end}")
 
 
 async def _run_avgm(connection: Connection, input_directory: Path, output_directory: Path,
-                    station: str, start: int, end: int) -> int:
+                    station: str, start: int, end: int) -> None:
     # connection.set_transaction_status()
-
-    now = time.time()
-    file_count = 0
-    for file in output_directory.iterdir():
-        if not file.name.endswith('.nc'):
-            continue
-        data = Dataset(str(file), 'r+')
-        try:
-            append_history(data, "forge.average.monthly", now)
-        finally:
-            data.close()
-        file_count += 1
-    return file_count
+    pass
 
 
 async def _write_avgm(connection: Connection, station: str, start: int, end: int,
-                      source: Path, expected_count: int) -> None:
+                      source: Path) -> None:
     put = ArchivePut(connection)
     await put.preemptive_lock_range(station, "avgm", start * 1000, end * 1000)
 
-    total_written = 0
-    expected_count = max(expected_count, 1)
-    for file in source.iterdir():
-        if not file.name.endswith('.nc'):
-            continue
-        if not file.is_file():
-            continue
-        await connection.set_transaction_status(f"Writing monthly averaged data, {total_written / expected_count:.0f}% done")
-
-        data = Dataset(str(file), 'r')
-        try:
-            await put.data(data, archive="avgm", station=station, replace_entire=True)
-        finally:
-            data.close()
-
-        total_written += 1
-
-    await put.commit_index()
+    await _write_files(connection, put, source, station, "avgm", False, "forge.average.monthly",
+                       "Writing daily monthly data, {percent_done:.0f}% done")
 
 
 async def update_avgm_data(connection: Connection, station: str, start: float, end: float) -> None:
@@ -208,8 +150,9 @@ async def update_avgm_data(connection: Connection, station: str, start: float, e
         output_directory.mkdir(exist_ok=True)
         _LOGGER.debug(f"Running monthly averaging for {station.upper()} {start},{end}")
         await connection.set_transaction_status("Starting monthly average calculation")
-        total_files = await _run_avgm(connection, input_directory, output_directory, station, start, end)
+        await _run_avgm(connection, input_directory, output_directory, station, start, end)
 
-        _LOGGER.debug(f"Writing {total_files} monthly averaged data files for {station.upper()} {start},{end}")
+        _LOGGER.debug(f"Writing monthly averaged data for {station.upper()} {start},{end}")
         await connection.set_transaction_status("Writing monthly averaged data")
-        await _write_avgm(connection, station, start, end, output_directory, total_files)
+        await _write_avgm(connection, station, start, end, output_directory)
+        _LOGGER.debug(f"Monthly average write completed for {station.upper()} {start},{end}")

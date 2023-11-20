@@ -60,7 +60,7 @@ async def _run_pass(connection: Connection, working_directory: Path, station: st
     current_year: typing.Optional[int] = None
     current_filter: typing.Optional[AcceptIntoClean] = None
     for day_index in range(len(day_files)):
-        await connection.set_transaction_status(f"Processing clean data, {day_index / total_count:.0f}% done")
+        await connection.set_transaction_status(f"Processing clean data, {(day_index / total_count) * 100.0:.0f}% done")
 
         file_start = (day_index + index_offset) * (24 * 60 * 60)
         file_year = time.gmtime(file_start).tm_year
@@ -105,13 +105,10 @@ async def _write_data(connection: Connection, station: str, start: int, end: int
             continue
         if not file.is_file():
             continue
-        await connection.set_transaction_status(f"Writing clean data, {total_written / expected_count:.0f}% done")
+        await connection.set_transaction_status(f"Writing clean data, {(total_written / expected_count) * 100.0:.0f}% done")
 
-        data = Dataset(str(file), 'r')
-        try:
-            await put.data(data, archive="clean", station=station, replace_entire=True)
-        finally:
-            data.close()
+        data = Dataset(str(file), 'r+')
+        await put.data(data, archive="clean", station=station, exact_contents=True)
 
         total_written += 1
 

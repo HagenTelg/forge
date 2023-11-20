@@ -310,95 +310,166 @@ class ArchivePut:
             for lock_day in range(lock_start_ms, lock_end_ms, 24 * 60 * 60 * 1000):
                 archive_locks.add(lock_day)
 
+    async def _write_data_file(self, file: Dataset, station: str, archive: str, instrument_id: str,
+                               archive_file_start: int, archive_file_end: int,
+                               temp_file: typing.Optional[NamedTemporaryFile] = None) -> None:
+        now = time.time()
+        date_created(file, now)
+        file_id(file, instrument_id, archive_file_start / 1000.0, archive_file_end / 1000.0, now)
+        file.time_coverage_start = format_iso8601_time(archive_file_start / 1000.0)
+        file.time_coverage_end = format_iso8601_time(archive_file_end / 1000.0)
+
+        self._get_index(station, archive, archive_file_start).integrate_file(file)
+
+        source_file = temp_file
+        if not temp_file:
+            source_file = open(file.filepath(), "rb")
+        file.close()
+        source_file.seek(0)
+
+    def _prepare_data_file(self, file: Dataset, station: str, archive: str, instrument_id: str,
+                           archive_file_start: int, archive_file_end: int) -> None:
+        now = time.time()
+        date_created(file, now)
+        file_id(file, instrument_id, archive_file_start / 1000.0, archive_file_end / 1000.0, now)
+        file.time_coverage_start = format_iso8601_time(archive_file_start / 1000.0)
+        file.time_coverage_end = format_iso8601_time(archive_file_end / 1000.0)
+
+        self._get_index(station, archive, archive_file_start).integrate_file(file)
+
     async def _merge_data_file(self, file: Dataset, station: str, archive: str, instrument_id: str,
-                               archive_file_start: int, archive_file_end: int, replace_entire: bool = False) -> None:
+                               archive_file_start: int, archive_file_end: int) -> None:
         with NamedTemporaryFile(suffix=".nc") as existing_file, NamedTemporaryFile(suffix=".nc") as merged_file:
             merge = MergeInstrument()
 
             archive_file_name = data_file_name(station, archive, instrument_id, archive_file_start / 1000.0)
-            if not replace_entire:
-                try:
-                    await self._connection.read_file(archive_file_name, existing_file)
-                    existing_data = Dataset(existing_file.name, 'r')
-                    merge.overlay(existing_data, archive_file_start, archive_file_end)
-                    _LOGGER.debug("Using existing data file %s", archive_file_name)
-                except FileNotFoundError:
-                    _LOGGER.debug("No existing data for %s", archive_file_name)
+            try:
+                await self._connection.read_file(archive_file_name, existing_file)
+                existing_file.flush()
+                existing_data = Dataset(existing_file.name, 'r')
+                merge.overlay(existing_data, archive_file_start, archive_file_end)
+                _LOGGER.debug("Using existing data file %s", archive_file_name)
+            except FileNotFoundError:
+                _LOGGER.debug("No existing data for %s", archive_file_name)
+                existing_data = None
+
+            try:
+                merge.overlay(file, archive_file_start, archive_file_end)
+                result = merge.execute(merged_file.name)
+            finally:
+                if existing_data is not None:
+                    existing_data.close()
                     existing_data = None
-            else:
-                existing_data = None
+            try:
+                self._prepare_data_file(result, station, archive, instrument_id,
+                                        archive_file_start, archive_file_end)
+                self._get_index(station, archive, archive_file_start).integrate_file(result)
+                result.close()
+                result = None
+            finally:
+                if result is not None:
+                    result.close()
 
-            merge.overlay(file, archive_file_start, archive_file_end)
-
-            result = merge.execute(merged_file.name)
-            if existing_data:
-                existing_data.close()
-                existing_data = None
-
-            now = time.time()
-            date_created(result, now)
-            file_id(result, instrument_id, archive_file_start / 1000.0, archive_file_end / 1000.0, now)
-            result.time_coverage_start = format_iso8601_time(archive_file_start / 1000.0)
-            result.time_coverage_end = format_iso8601_time(archive_file_end / 1000.0)
-
-            self._get_index(station, archive, archive_file_start).integrate_file(result)
-
-            result.close()
-            result = None
-
+            merged_file.seek(0)
             await self._connection.write_file(archive_file_name, merged_file)
             _LOGGER.debug("Sent updated file %s", archive_file_name)
 
+    async def _replace_data_file(self, file: Dataset, station: str, archive: str, instrument_id: str,
+                                 archive_file_start: int, archive_file_end: int) -> None:
+        try:
+            self._prepare_data_file(file, station, archive, instrument_id,
+                                    archive_file_start, archive_file_end)
+            self._get_index(station, archive, archive_file_start).integrate_file(file)
+            source_file_name = file.filepath()
+            file.close()
+            file = None
+
+            with open(source_file_name, "rb") as source_data:
+                archive_file_name = data_file_name(station, archive, instrument_id, archive_file_start / 1000.0)
+                await self._connection.write_file(archive_file_name, source_data)
+                _LOGGER.debug("Sent replacement file %s", archive_file_name)
+        finally:
+            if file is not None:
+                file.close()
+
     async def data(self, file: Dataset, archive: str = "raw",
                    file_start_ms: int = None, file_end_ms: int = None,
-                   station: str = None, replace_entire: bool = False) -> None:
-        instrument_id = getattr(file, 'instrument_id', None)
-        if not instrument_id:
-            raise InvalidFile("No instrument identifier in file")
-        if not _VALID_INSTRUMENT.fullmatch(instrument_id) or instrument_id.upper() == "LOG":
-            raise InvalidFile("Invalid instrument identifier in file")
+                   station: str = None, exact_contents: bool = False) -> None:
+        try:
+            instrument_id = getattr(file, 'instrument_id', None)
+            if not instrument_id:
+                raise InvalidFile("No instrument identifier in file")
+            if not _VALID_INSTRUMENT.fullmatch(instrument_id) or instrument_id.upper() == "LOG":
+                raise InvalidFile("Invalid instrument identifier in file")
 
-        archive = archive.lower()
-        assert archive in ("raw", "edited", "clean", "avgh", "avgd", "avgm")
+            archive = archive.lower()
+            assert archive in ("raw", "edited", "clean", "avgh", "avgd", "avgm")
 
-        station = self.get_station(file, station)
-        destination_start, destination_end = self._get_destination_bounds(file, file_start_ms, file_end_ms)
+            station = self.get_station(file, station)
+            destination_start, destination_end = self._get_destination_bounds(file, file_start_ms, file_end_ms)
 
-        if archive in ("avgd", "avgm"):
-            start_year = time.gmtime(destination_start / 1000.0).tm_year
-            end_year = time.gmtime(destination_end / 1000.0).tm_year + 1
+            if archive in ("avgd", "avgm"):
+                start_year = time.gmtime(destination_start / 1000.0).tm_year
 
-            for year in range(start_year, end_year):
-                _LOGGER.debug("Processing year %d for %s", year, instrument_id)
-                archive_file_start, archive_file_end = year_bounds_ms(year)
+                if exact_contents:
+                    archive_file_start, archive_file_end = year_bounds_ms(start_year)
+                    if destination_end > archive_file_end:
+                        raise InvalidFile("Exact file exceeds archive file bounds")
 
-                if archive_file_start >= destination_end:
-                    break
+                    _LOGGER.debug("Replacing year %d for %s", start_year, instrument_id)
+                    try:
+                        await self._replace_data_file(file, station, archive, instrument_id,
+                                                      archive_file_start, archive_file_end)
+                    finally:
+                        file = None
+                else:
+                    end_year = time.gmtime(destination_end / 1000.0).tm_year + 1
 
-                await self._lock_data(station, archive, archive_file_start, archive_file_end)
-                await self._merge_data_file(file, station, archive, instrument_id,
-                                            archive_file_start, archive_file_end,
-                                            replace_entire)
-        else:
-            start_day_index = int(floor(destination_start / (24 * 60 * 60 * 1000)))
-            end_day_index = int(ceil(destination_end / (24 * 60 * 60 * 1000))) + 1
+                    for year in range(start_year, end_year):
+                        _LOGGER.debug("Processing year %d for %s", year, instrument_id)
+                        archive_file_start, archive_file_end = year_bounds_ms(year)
 
-            for day_index in range(start_day_index, end_day_index):
-                _LOGGER.debug("Processing day index %d for %s", day_index, instrument_id)
-                archive_file_start = day_index * 24 * 60 * 60 * 1000
-                archive_file_end = archive_file_start + 24 * 60 * 60 * 1000
+                        if archive_file_start >= destination_end:
+                            break
 
-                if archive_file_start >= destination_end:
-                    break
+                        await self._lock_data(station, archive, archive_file_start, archive_file_end)
+                        await self._merge_data_file(file, station, archive, instrument_id,
+                                                    archive_file_start, archive_file_end)
+            else:
+                start_day_index = int(floor(destination_start / (24 * 60 * 60 * 1000)))
+                if exact_contents:
+                    archive_file_start = start_day_index * 24 * 60 * 60 * 1000
+                    archive_file_end = archive_file_start + 24 * 60 * 60 * 1000
+                    if destination_end > archive_file_end:
+                        raise InvalidFile("Exact file exceeds archive file bounds")
 
-                await self._lock_data(station, archive, archive_file_start, archive_file_end)
-                await self._merge_data_file(file, station, archive, instrument_id,
-                                            archive_file_start, archive_file_end,
-                                            replace_entire)
+                    _LOGGER.debug("Replacing day index %d for %s", start_day_index, instrument_id)
+                    try:
+                        await self._replace_data_file(file, station, archive, instrument_id,
+                                                      archive_file_start, archive_file_end)
+                    finally:
+                        file = None
+                else:
+                    end_day_index = int(ceil(destination_end / (24 * 60 * 60 * 1000))) + 1
 
-        await self._connection.send_notification(data_notification_key(station, archive),
-                                                 destination_start, destination_end)
-        _LOGGER.debug("Sent update notification")
+                    for day_index in range(start_day_index, end_day_index):
+                        _LOGGER.debug("Processing day index %d for %s", day_index, instrument_id)
+                        archive_file_start = day_index * 24 * 60 * 60 * 1000
+                        archive_file_end = archive_file_start + 24 * 60 * 60 * 1000
+
+                        if archive_file_start >= destination_end:
+                            break
+
+                        await self._lock_data(station, archive, archive_file_start, archive_file_end)
+                        await self._merge_data_file(file, station, archive, instrument_id,
+                                                    archive_file_start, archive_file_end)
+
+                await self._connection.send_notification(data_notification_key(station, archive),
+                                                         destination_start, destination_end)
+                _LOGGER.debug("Sent update notification")
+        finally:
+            if exact_contents and file is not None:
+                file.close()
 
     async def _lock_event_log(self, station: str, lock_start: int, lock_end: int) -> None:
         station_locks = self._eventlog_locks.get(station)
@@ -420,6 +491,8 @@ class ArchivePut:
             raise InvalidFile
         if len(event_time.shape) != 1:
             raise InvalidFile
+        if event_time.shape[0] == 0:
+            return
 
         destination_start = int(event_time[0])
         destination_end = int(event_time[-1])
@@ -444,6 +517,7 @@ class ArchivePut:
                 archive_file_name = event_log_file_name(station, archive_file_start / 1000.0)
                 try:
                     await self._connection.read_file(archive_file_name, existing_file)
+                    existing_file.flush()
                     existing_data = Dataset(existing_file.name, 'r')
                     merge.overlay(existing_data, archive_file_start, archive_file_end)
                     _LOGGER.debug("Using existing data file %s", archive_file_name)
@@ -452,11 +526,12 @@ class ArchivePut:
                     existing_data = None
 
                 merge.overlay(file, archive_file_start, archive_file_end)
-                if existing_data:
+
+                result = merge.execute(merged_file.name)
+                if existing_data is not None:
                     existing_data.close()
                     existing_data = None
 
-                result = merge.execute(merged_file.name)
                 if result is None:
                     _LOGGER.debug("Removing empty event log %s", archive_file_name)
                     await self._connection.remove_file(archive_file_name)
@@ -471,6 +546,7 @@ class ArchivePut:
                 result.close()
                 result = None
 
+                merged_file.seek(0)
                 await self._connection.write_file(archive_file_name, merged_file)
                 _LOGGER.debug("Sent updated file %s", archive_file_name)
 
@@ -542,12 +618,8 @@ def cli():
         parser.error("Both a server host and port must be specified")
 
     if args.debug:
-        root_logger = logging.getLogger()
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(name)-40s %(message)s')
-        handler.setFormatter(formatter)
-        root_logger.setLevel(logging.DEBUG)
-        root_logger.addHandler(handler)
+        from forge.log import set_debug_logger
+        set_debug_logger()
 
     loop = asyncio.new_event_loop()
 

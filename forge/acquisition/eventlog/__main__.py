@@ -42,12 +42,8 @@ def main():
 
     args = parser.parse_args()
     if args.debug:
-        root_logger = logging.getLogger()
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(name)-40s %(message)s')
-        handler.setFormatter(formatter)
-        root_logger.setLevel(logging.DEBUG)
-        root_logger.addHandler(handler)
+        from forge.log import set_debug_logger
+        set_debug_logger()
 
     bus_socket = CONFIGURATION.get("ACQUISITION.BUS", '/run/forge-acquisition-bus.socket')
 

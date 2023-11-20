@@ -1,0 +1,17 @@
+VOLUME_DEPENDENT_MEASUREMENTS = (
+    {"variable_name": "number_concentration"},
+    {"standard_name": "number_concentration_of_ambient_aerosol_particles_in_air"},
+    {"variable_name": "scattering_coefficient"},
+    {"standard_name": "volume_scattering_coefficient_in_air_due_to_dried_aerosol_particles"},
+    {"variable_name": "backscattering_coefficient"},
+    {"standard_name": "volume_backwards_scattering_coefficient_in_air_due_to_dried_aerosol_particles"},
+    {"variable_name": "light_absorption"},
+    {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
+    {"variable_name": "light_extinction"},
+    {"standard_name": "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles"},
+    {"variable_name": "equivalent_black_carbon"},
+    {"variable_name": "number_distribution"},
+    {"variable_name": "normalized_number_distribution"},
+    {"variable_name": "polar_scattering_coefficient"},
+    {"variable_name": "mass_concentration"},
+)

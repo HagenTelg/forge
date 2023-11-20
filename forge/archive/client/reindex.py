@@ -54,6 +54,7 @@ async def reindex(connection: Connection, station: str, archive: str, year: int)
         with NamedTemporaryFile(suffix=".nc") as data_file:
             try:
                 await connection.read_file(name, data_file)
+                data_file.flush()
                 existing_data = Dataset(data_file.name, 'r')
                 index.integrate_file(existing_data)
                 existing_data.close()
@@ -151,12 +152,8 @@ def main():
         reindex_years = range(1971, ts.tm_year)
 
     if args.debug:
-        root_logger = logging.getLogger()
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(name)-40s %(message)s')
-        handler.setFormatter(formatter)
-        root_logger.setLevel(logging.DEBUG)
-        root_logger.addHandler(handler)
+        from forge.log import set_debug_logger
+        set_debug_logger()
 
     loop = asyncio.new_event_loop()
 

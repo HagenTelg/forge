@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import typing
 import argparse
@@ -134,12 +134,8 @@ async def upload_websocket(websocket: "aiohttp.client.ClientWebSocketResponse", 
 def main():
     args = parse_arguments()
     if args.debug:
-        root_logger = logging.getLogger()
-        handler = logging.StreamHandler()
-        formatter = logging.Formatter('%(name)-40s %(message)s')
-        handler.setFormatter(formatter)
-        root_logger.setLevel(logging.DEBUG)
-        root_logger.addHandler(handler)
+        from forge.log import set_debug_logger
+        set_debug_logger()
         CONFIGURATION.DEBUG = True
 
     key = args.key

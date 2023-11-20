@@ -35,12 +35,8 @@ class SocketServer(ABC):
         self.add_arguments(parser)
         self.args = parser.parse_args()
         if self.args.debug:
-            root_logger = logging.getLogger()
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(name)-40s %(message)s')
-            handler.setFormatter(formatter)
-            root_logger.setLevel(logging.DEBUG)
-            root_logger.addHandler(handler)
+            from forge.log import set_debug_logger
+            set_debug_logger()
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(self.initialize())

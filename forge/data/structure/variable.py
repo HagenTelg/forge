@@ -8,6 +8,7 @@ def variable_flags(var: Variable, flags: typing.Dict[int, str] = None) -> None:
     var.standard_name = "status_flag"
     var.long_name = "bitwise OR of status condition flags"
     if not flags:
+        var.C_format = f"%04llX"
         return
 
     bits: typing.List[int] = list(flags.keys())
