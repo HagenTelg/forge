@@ -1,6 +1,6 @@
 import typing
 from ..default.view import detach, View, aerosol_views
-from ..default.aerosol.tsi3010cpc import TSI3010CPCStatus
+from ..default.aerosol.admagiccpc import ADMagicCPC200Status
 from ..default.aerosol.clap import CLAPStatus
 from ..default.aerosol.psap import PSAPStatus
 from ..default.aerosol.aethalometer import AE31, AE31Status
@@ -13,8 +13,8 @@ from .tca import TCA08Mass, TCA08Status, EditingTCA
 station_views = detach(aerosol_views)
 
 
-station_views['aerosol-raw-cpcstatus'] = TSI3010CPCStatus('aerosol-raw')
-station_views['aerosol-realtime-cpcstatus'] = TSI3010CPCStatus('aerosol-realtime', realtime=True)
+station_views['aerosol-raw-cpcstatus'] = ADMagicCPC200Status('aerosol-raw')
+station_views['aerosol-realtime-cpcstatus'] = ADMagicCPC200Status('aerosol-realtime', realtime=True)
 
 station_views['aerosol-raw-optical'] = OpticalPSAP('aerosol-raw')
 station_views['aerosol-realtime-optical'] = OpticalPSAP('aerosol-realtime', realtime=True)
