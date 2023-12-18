@@ -11,15 +11,15 @@ station_modes['aerosol-clean'].remove('aerosol-clean-wind')
 station_modes['aerosol-avgh'].remove('aerosol-avgh-wind')
 
 
-station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-opticalclap', "CLAP Optical"),
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-opticalclap', "CLAP (A12) Optical"),
                                     'aerosol-raw-optical')
-station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-opticalclap', "CLAP Optical"),
+station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-opticalclap', "CLAP (A12) Optical"),
                                          'aerosol-realtime-optical')
-station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-clap', "CLAP"),
+station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-clap', "CLAP (A12)"),
                                         'aerosol-editing-absorption')
-station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-opticalclap', "CLAP Optical"),
+station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-opticalclap', "CLAP (A12) Optical"),
                                       'aerosol-clean-optical')
-station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-opticalclap', "CLAP Optical"),
+station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-opticalclap', "CLAP (A12) Optical"),
                                      'aerosol-avgh-optical')
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-psapstatus', "PSAP Status"),
                                     'aerosol-raw-clapstatus', after=False)

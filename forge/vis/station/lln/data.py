@@ -197,6 +197,31 @@ station_profile_data['aerosol']['raw']['clapstatus'] = lambda station, start_epo
         Name(station, 'raw', 'T2_A12', {'pm1'}): 'Tcase',
         Name(station, 'raw', 'T2_A12', {'pm25'}): 'Tcase',
         Name(station, 'raw', 'Fn_A12'): 'spot',
+        Name(station, 'raw', 'IrG_A11'): 'IrG',
+        Name(station, 'raw', 'IrG_A11', {'pm10'}): 'IrG',
+        Name(station, 'raw', 'IrG_A11', {'pm1'}): 'IrG',
+        Name(station, 'raw', 'IrG_A11', {'pm25'}): 'IrG',
+        Name(station, 'raw', 'IfG_A11'): 'IfG',
+        Name(station, 'raw', 'IfG_A11', {'pm10'}): 'IfG',
+        Name(station, 'raw', 'IfG_A11', {'pm1'}): 'IfG',
+        Name(station, 'raw', 'IfG_A11', {'pm25'}): 'IfG',
+        Name(station, 'raw', 'IpG_A11'): 'IpG',
+        Name(station, 'raw', 'IpG_A11', {'pm10'}): 'IpG',
+        Name(station, 'raw', 'IpG_A11', {'pm1'}): 'IpG',
+        Name(station, 'raw', 'IpG_A11', {'pm25'}): 'IpG',
+        Name(station, 'raw', 'Q_A11'): 'Q',
+        Name(station, 'raw', 'Q_A11', {'pm10'}): 'Q',
+        Name(station, 'raw', 'Q_A11', {'pm1'}): 'Q',
+        Name(station, 'raw', 'Q_A11', {'pm25'}): 'Q',
+        Name(station, 'raw', 'T1_A11'): 'Tsample',
+        Name(station, 'raw', 'T1_A11', {'pm10'}): 'Tsample',
+        Name(station, 'raw', 'T1_A11', {'pm1'}): 'Tsample',
+        Name(station, 'raw', 'T1_A11', {'pm25'}): 'Tsample',
+        Name(station, 'raw', 'T2_A11'): 'Tcase',
+        Name(station, 'raw', 'T2_A11', {'pm10'}): 'Tcase',
+        Name(station, 'raw', 'T2_A11', {'pm1'}): 'Tcase',
+        Name(station, 'raw', 'T2_A11', {'pm25'}): 'Tcase',
+        Name(station, 'raw', 'Fn_A11'): 'spot',
     }, send
 )
 
@@ -426,16 +451,6 @@ station_profile_data['aerosol']['realtime']['psapstatus'] = {
     RealtimeTranslator.Key('Q_A11', {'pm10'}): 'Q',
     RealtimeTranslator.Key('Q_A11', {'pm1'}): 'Q',
     RealtimeTranslator.Key('Q_A11', {'pm25'}): 'Q',
-}
-
-
-station_profile_data['aerosol']['raw']['aethalometerstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
-    start_epoch_ms, end_epoch_ms, {
-        Name(station, 'raw', 'Q_A81'): 'Q',
-    }, send
-)
-station_profile_data['aerosol']['realtime']['aethalometerstatus'] = {
-    RealtimeTranslator.Key('Q_A81'): 'Q',
 }
 
 
