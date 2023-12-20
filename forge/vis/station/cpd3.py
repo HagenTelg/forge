@@ -3509,6 +3509,7 @@ ozone_export: typing.Dict[str, DataExportList] = {
                 Name(station, 'raw', 'P1_G81'),                
                 Name(station, 'raw', 'Q1_G81'),
                 Name(station, 'raw', 'Q2_G81'),
+                Name(station, 'raw', 'Q_G81'),
                 Name(station, 'raw', 'C1_G81'),
                 Name(station, 'raw', 'C2_G81'),
                 Name(station, 'raw', 'WS1_XM1'),
@@ -3526,6 +3527,7 @@ ozone_export: typing.Dict[str, DataExportList] = {
                 Name(station, 'clean', 'P1_G81'),                
                 Name(station, 'clean', 'Q1_G81'),
                 Name(station, 'clean', 'Q2_G81'),
+                Name(station, 'clean', 'Q_G81'),
                 Name(station, 'clean', 'C1_G81'),
                 Name(station, 'clean', 'C2_G81'),
                 Name(station, 'clean', 'WS1_XM1'),
@@ -3543,6 +3545,7 @@ ozone_export: typing.Dict[str, DataExportList] = {
                 Name(station, 'avgh', 'P1_G81'),                
                 Name(station, 'avgh', 'Q1_G81'),
                 Name(station, 'avgh', 'Q2_G81'),
+                Name(station, 'avgh', 'Q_G81'),
                 Name(station, 'avgh', 'C1_G81'),
                 Name(station, 'avgh', 'C2_G81'),
                 Name(station, 'avgh', 'WS1_XM1'),
@@ -5695,8 +5698,8 @@ ozone_data = {
 
         'cells': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
-                Name(station, 'raw', 'Q1_G81'): 'Qa',
-                Name(station, 'raw', 'Q2_G81'): 'Qb',
+                Name(station, 'raw', 'Q1_G81'): 'Q',
+                Name(station, 'raw', 'Q_G81'): 'Q',
                 Name(station, 'raw', 'C1_G81'): 'Ca',
                 Name(station, 'raw', 'C2_G81'): 'Cb',
             }, send
@@ -5787,7 +5790,7 @@ ozone_data = {
 
         'cells': {
             RealtimeTranslator.Key('Q1_G81'): 'Qa',
-            RealtimeTranslator.Key('Q2_G81'): 'Qb',
+            RealtimeTranslator.Key('Q_G81'): 'Q',
             RealtimeTranslator.Key('C1_G81'): 'Ca',
             RealtimeTranslator.Key('C2_G81'): 'Cb',
         },

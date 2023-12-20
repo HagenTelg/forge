@@ -60,16 +60,10 @@ class Thermo49Cells(TimeSeries):
         flows.axes.append(lpm)
 
         a = TimeSeries.Trace(lpm)
-        a.legend = "Cell A Flow"
+        a.legend = "Flow"
         a.data_record = f'{mode}-cells'
-        a.data_field = 'Qa'
+        a.data_field = 'Q'
         flows.traces.append(a)
-
-        b = TimeSeries.Trace(lpm)
-        b.legend = "Cell B Flow"
-        b.data_record = f'{mode}-cells'
-        b.data_field = 'Qb'
-        flows.traces.append(b)
 
 
         counts = TimeSeries.Graph()
