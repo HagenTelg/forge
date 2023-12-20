@@ -82,7 +82,8 @@
   border-bottom: 2px solid red;
 }
 
-.export-entry label.invalid {
+.export-entry label.invalid,
+.export-entry table.invalid label.export-time-label {
   color: red;
 }
 

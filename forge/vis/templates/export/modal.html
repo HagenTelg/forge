@@ -1,14 +1,14 @@
 <form class="export-entry" action="{{ request.url_for('export_data', station=station, mode_name=mode_name) }}">
   <table id="export-parameters">
     <tr>
-      <td><label for="input-start-time">Start</label></td>
+      <td><label class="export-time-label" for="input-start-time">Start</label></td>
       <td><input type="text" id="input-start-time" name="start"></td>
-      <td><label id="parsed-start-time"></label></td>
+      <td><label class="export-time-label" id="parsed-start-time"></label></td>
     </tr>
     <tr>
-      <td><label for="input-end-time">End</label></td>
+      <td><label class="export-time-label" for="input-end-time">End</label></td>
       <td><input type="text" id="input-end-time" name="end"></td>
-      <td><label id="parsed-end-time"></label></td>
+      <td><label class="export-time-label" id="parsed-end-time"></label></td>
     </tr>
     <tr>
       <td><label for="export-type">Data</label></td>

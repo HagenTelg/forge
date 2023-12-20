@@ -5,13 +5,14 @@ const startTimeDisplay = document.getElementById("parsed-start-time");
 const endTimeEntry = document.getElementById("input-end-time");
 const endTimeDisplay = document.getElementById("parsed-end-time");
 const exportButton = document.getElementById("export-data");
+const displayTable = document.getElementById("export-parameters");
 
 function exportDownloadURL() {
     let parsedStart = TimeParse.parseTime(startTimeEntry.value, TimeSelect.end_ms, -1);
     const parsedEnd = TimeParse.parseTime(endTimeEntry.value, parsedStart, 1);
     parsedStart = TimeParse.parseTime(startTimeEntry.value, parsedEnd, -1);
 
-    if (!parsedStart || !parsedEnd) {
+    if (!parsedStart || !parsedEnd || parsedStart >= parsedEnd) {
         return undefined;
     }
 
@@ -145,8 +146,17 @@ function startTimeEdited() {
             endTimeDisplay.classList.remove('invalid');
             endTimeEntry.value = offset;
             endTimeDisplay.textContent = TimeParse.toDisplayTime(setTime);
+            displayTable.classList.remove('invalid');
+            exportButton.disabled = false;
+            return;
         }
     }
+
+    if (!!parsedEnd && parsedStart >= parsedEnd) {
+        displayTable.classList.add('invalid');
+        return
+    }
+    displayTable.classList.remove('invalid');
 }
 $('#input-start-time').change(startTimeEdited);
 $('#input-start-time').on('input', startTimeEdited);
@@ -161,6 +171,7 @@ function endTimeEdited() {
     if (!parsedEnd) {
         endTimeEntry.classList.add('invalid');
         endTimeDisplay.classList.add('invalid');
+        displayTable.classList.remove('invalid');
 
         endTimeDisplay.textContent = "ERROR";
         exportButton.disabled = true;
@@ -180,8 +191,17 @@ function endTimeEdited() {
             startTimeDisplay.classList.remove('invalid');
             startTimeEntry.value = offset;
             startTimeDisplay.textContent = TimeParse.toDisplayTime(setTime);
+            displayTable.classList.remove('invalid');
+            exportButton.disabled = false;
+            return;
         }
     }
+
+    if (!!parsedStart && parsedStart >= parsedEnd) {
+        displayTable.classList.add('invalid');
+        return
+    }
+    displayTable.classList.remove('invalid');
 }
 $('#input-end-time').change(endTimeEdited);
 $('#input-end-time').on('input', endTimeEdited);
