@@ -5789,7 +5789,7 @@ ozone_data = {
         },
 
         'cells': {
-            RealtimeTranslator.Key('Q1_G81'): 'Qa',
+            RealtimeTranslator.Key('Q1_G81'): 'Q',
             RealtimeTranslator.Key('Q_G81'): 'Q',
             RealtimeTranslator.Key('C1_G81'): 'Ca',
             RealtimeTranslator.Key('C2_G81'): 'Cb',
