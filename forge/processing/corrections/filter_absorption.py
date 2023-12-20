@@ -217,3 +217,38 @@ def bond_1999_coarse(
         k1[angstrom <= 0.2] = 0.00668
 
         _apply_bond1999_inner(ba, bs, be, k1, k2, wavelength_adjustment=wavelength_adjustment)
+
+
+def remove_low_transmittance(
+        data,
+        threshold: float = 0.5,
+) -> None:
+    data = SelectedData.ensure_data(data)
+    data.append_history("forge.correction.removelowtransmittance")
+
+    def select_threshold_wavelength(wavelengths: typing.List[float]) -> int:
+        best = 0
+        for idx in range(1, len(wavelengths)):
+            if abs(wavelengths[idx] - 528) > abs(wavelengths[best] - 528):
+                continue
+            best = idx
+        return best
+
+    for absorption, transmittance in data.select_variable((
+            {"variable_name": "light_absorption"},
+            {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
+            {"standard_name": "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles"},
+    ), {"variable_name": "transmittance"}):
+        if transmittance.has_changing_wavelengths:
+            for wavelengths, value_select, _ in transmittance.select_wavelengths():
+                if len(wavelengths) <= 1:
+                    trigger = transmittance[value_select[0]] < threshold
+                else:
+                    threshold_wavelength = select_threshold_wavelength(wavelengths)
+                    trigger = transmittance[value_select[threshold_wavelength]] < threshold
+                for widx in range(len(wavelengths)):
+                    absorption[value_select[widx]] = np.where(trigger, nan, absorption[value_select[widx]])
+        else:
+            threshold_wavelength = select_threshold_wavelength(transmittance.wavelengths)
+            trigger = transmittance[..., threshold_wavelength] < threshold
+            absorption[trigger] = nan

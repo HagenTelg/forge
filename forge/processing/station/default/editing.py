@@ -40,6 +40,7 @@ def standard_absorption_corrections(data: AvailableData) -> None:
             {"instrument": "psap1w"},
             {"instrument": "psap3w"},
     ), {"tags": "scattering -secondary"}):
+        remove_low_transmittance(absorption)
         weiss(absorption)
         bond_1999(absorption, scattering)
 

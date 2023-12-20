@@ -3,6 +3,7 @@ import logging
 import netCDF4
 import numpy as np
 import forge.data.structure.variable as netcdf_var
+from forge.data.flags import parse_flags
 from forge.data.structure.stp import standard_temperature, standard_pressure
 from ..context import SelectedData, SelectedVariable
 from ..context.variable import EmptySelectedVariable
@@ -325,16 +326,9 @@ def write_extensives(
             except FileNotFoundError:
                 return
 
-            flag_meanings = source_flags.variable.flag_meanings.split()
-            flag_masks = source_flags.variable.flag_masks
-            for i in range(len(flag_meanings)):
-                flag_name = flag_meanings[i]
+            for flag_bits, flag_name in parse_flags(source_flags.variable).items():
                 if not propagate_flag(flag_name):
                     continue
-                if len(flag_meanings) == 1:
-                    flag_bits = int(flag_masks)
-                else:
-                    flag_bits = flag_masks[i]
 
                 hit_times = np.bitwise_and(source_flags.values, flag_bits) != 0
                 if not np.any(hit_times):

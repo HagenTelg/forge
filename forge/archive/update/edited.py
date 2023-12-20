@@ -50,6 +50,9 @@ class DataController(StationsController):
                 if start_time is None or end_time is None or modified_time is None:
                     _LOGGER.debug("Invalid edits file structure")
                     return []
+                start_time = start_time[:].data
+                end_time = end_time[:].data
+                modified_time = modified_time[:].data
 
                 if modified_after > 0.0:
                     modified_edits = modified_time > int(floor(modified_after * 1000))

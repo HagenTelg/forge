@@ -126,11 +126,12 @@ def _declare_time_variable(target: Dataset, name: str,
                            data_type: typing.Union[str, dtype, typing.Type[str]] = None) -> Variable:
     if not data_type:
         data_type = "f8"
+        fill_value = nan
     if dimensions:
-        dimensions = tuple((*dimensions, "time"))
+        dimensions = ("time", *dimensions)
     else:
         dimensions = ("time",)
-    var = target.createVariable(name, data_type, dimensions, fill_value=False)
+    var = target.createVariable(name, data_type, dimensions, fill_value=fill_value)
 
     variable_coordinates(target, var)
 
@@ -139,7 +140,7 @@ def _declare_time_variable(target: Dataset, name: str,
 
 def _attribute_kwargs(var: Variable, **kwargs) -> None:
     for key, value in kwargs.items():
-        if not key:
+        if not key or value is None:
             continue
         var.setncattr(key, value)
 

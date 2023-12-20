@@ -1,7 +1,6 @@
 import typing
 import logging
 import netCDF4
-import re
 import numpy as np
 from math import floor, ceil, nan, inf, isfinite
 from forge.const import MAX_I64
@@ -10,43 +9,13 @@ from forge.timeparse import parse_iso8601_time
 from forge.formattime import format_iso8601_time
 from forge.data.structure.variable import variable_flags, variable_cutsize
 from .enum import MergeEnum
+from ..state import is_state_group
+from ..flags import parse_flags
 
 if typing.TYPE_CHECKING:
     from pathlib import Path
 
 _LOGGER = logging.getLogger(__name__)
-_CELL_METHOD_STATE = re.compile(r"(^|\s)time:\s+point(\s|$)")
-
-
-def _is_state_group(group: netCDF4.Dataset) -> typing.Optional[bool]:
-    time_variable = group.variables.get('time')
-    if time_variable:
-        try:
-            # Explicit description is conclusive
-            if time_variable.long_name == "time of change":
-                return True
-            if time_variable.long_name == "start time of measurement":
-                return False
-        except AttributeError:
-            pass
-
-    # If all variables with time are point values, assume it's a state measurement, if any have other non-point
-    # values, then it can't be state.  If there are no variables with time, then remain unknown.
-    result = None
-    for var in group.variables.values():
-        if len(var.dimensions) == 0:
-            continue
-        if var.dimensions[0] != 'time':
-            continue
-        try:
-            methods = var.cell_methods
-        except AttributeError:
-            continue
-        if _CELL_METHOD_STATE.search(methods):
-            result = True
-            continue
-        return False
-    return result
 
 
 def _parse_history(value: typing.Optional[str],
@@ -765,30 +734,9 @@ class _FlagsVariable(_DataVariable):
         self.bits: typing.Dict[int, str] = dict()
         self.dtype = np.uint64
 
-    @staticmethod
-    def _parse_flags(contents: netCDF4.Variable) -> typing.Dict[int, str]:
-        flag_meanings = getattr(contents, 'flag_meanings', "").split()
-        if not flag_meanings:
-            return dict()
-        flag_masks = getattr(contents, 'flag_masks', None)
-        if flag_masks is None:
-            _LOGGER.warning("Flags variable (%s) with no flags masks", contents.name)
-            return dict()
-        result = dict()
-        for i in range(len(flag_meanings)):
-            flag_name = flag_meanings[i]
-            if len(flag_meanings) == 1 and i == 0:
-                flag_bits = int(flag_masks)
-            elif i < len(flag_masks):
-                flag_bits = int(flag_masks[i])
-            else:
-                break
-            result[flag_bits] = flag_name
-        return result
-
     def incorporate_structure(self, contents: netCDF4.Variable, is_state: typing.Optional[bool]) -> None:
         super().incorporate_structure(contents, is_state)
-        merge_flags = self._parse_flags(contents)
+        merge_flags = parse_flags(contents)
         unassigned_flags = list()
         for bit, flag in merge_flags.items():
             if self.flags.get(flag) is not None:
@@ -816,7 +764,7 @@ class _FlagsVariable(_DataVariable):
         variable_flags(self.variable, self.bits)
 
     def convert_values(self, source: netCDF4.Variable, data: np.ndarray) -> typing.Optional[np.ndarray]:
-        merge_bits = self._parse_flags(source)
+        merge_bits = parse_flags(source)
         if not merge_bits:
             return np.full(data.shape, 0, dtype=self.dtype)
 
@@ -999,7 +947,7 @@ class _Record:
                 self.enums[name] = target
             target.incorporate_structure(etype)
 
-        is_state = _is_state_group(contents)
+        is_state = is_state_group(contents)
         if is_state is None:
             is_state = is_parent_state
 

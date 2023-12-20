@@ -47,6 +47,9 @@ class DataController(StationsController):
                 if start_time is None or end_time is None or pass_time is None:
                     _LOGGER.debug("Invalid passed file structure")
                     return []
+                start_time = start_time[:].data
+                end_time = end_time[:].data
+                pass_time = pass_time[:].data
 
                 if modified_after > 0.0:
                     modified_passed = pass_time > int(floor(modified_after * 1000))

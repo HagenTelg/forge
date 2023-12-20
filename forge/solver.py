@@ -1,5 +1,6 @@
 import typing
-from math import isfinite, sqrt
+import numpy as np
+from math import isfinite, sqrt, nan
 from cmath import sqrt as csqrt
 
 
@@ -45,6 +46,16 @@ def _poly_2nd_order(coefficients: typing.List[float], value: float) -> typing.Li
     return [negative, positive]
 
 
+def _array_poly_2nd_order(coefficients: np.ndarray, value: np.ndarray) -> np.ndarray:
+    d = coefficients[1] ** 2 - 4.0 * coefficients[2] * (coefficients[0] - value)
+    valid = d >= 0
+    d[valid] = np.sqrt(d[valid])
+    d[np.invert(valid)] = nan
+    negative = (-coefficients[1] - d) / (2.0 * coefficients[2])
+    positive = (-coefficients[1] + d) / (2.0 * coefficients[2])
+    return np.stack((negative, positive), axis=-1)
+
+
 def _poly_3nd_order(coefficients: typing.List[float], value: float) -> typing.List[float]:
     a = complex(coefficients[3], 0.0)
     b = complex(coefficients[2], 0.0)
@@ -80,6 +91,38 @@ def _poly_3nd_order(coefficients: typing.List[float], value: float) -> typing.Li
         return [x1.real, x2.real]
     else:
         return [x1.real, x2.real, x3.real]
+
+
+def _array_poly_3nd_order(coefficients: np.ndarray, value: np.ndarray) -> np.ndarray:
+    a = complex(coefficients[3], 0.0)
+    b = complex(coefficients[2], 0.0)
+    c = complex(coefficients[1], 0.0)
+    d = np.array(coefficients[0] - value, dtype=np.complex128)
+    i1 = 2.0 * b * b * b - 9.0 * a * b * c + 27.0 * a * a * d
+    i2 = b * b - 3.0 * a * c
+    Q = np.sqrt(i1 * i1 - 4.0 * i2 * i2 * i2)
+    C = (0.5 * (Q + 2.0 * b * b * b - 9.0 * a * b * c + 27.0 * a * a * d)) ** (1.0 / 3.0)
+
+    valid = np.abs(C) > 0.0
+    C = C[valid]
+    x1 = -b / (3.0 * a) - C / (3.0 * a) - i2 / (3.0 * a * C)
+    i3 = complex(1.0, sqrt(3.0))
+    i4 = complex(1.0, -sqrt(3.0))
+    x2 = -b / (3.0 * a) + (C * i3) / (6.0 * a) + (i4 * i2) / (6.0 * a * C)
+    x3 = -b / (3.0 * a) + (C * i4) / (6.0 * a) + (i3 * i2) / (6.0 * a * C)
+
+    result = np.full((*value.shape, 3), nan, dtype=np.float64)
+
+    def set_result(values: np.ndarray, index: int):
+        assign = np.array(valid)
+        assign[valid] = np.abs(np.imag(values)) < 1E-8
+        result[assign, index] = values[assign]
+
+    set_result(x1, 0)
+    set_result(x2, 1)
+    set_result(x3, 2)
+
+    return result
 
 
 def _poly_Nth_order(coefficients: typing.List[float], value: float, guess: float) -> typing.List[float]:
@@ -121,10 +164,70 @@ def _poly_Nth_order(coefficients: typing.List[float], value: float, guess: float
     return [x0]
 
 
-def polynomial(poly: typing.Iterable[float], value: float = 0.0, guess: float = 0.0) -> typing.List[float]:
+def _array_poly_Nth_order(coefficients: np.ndarray, value: np.ndarray, guess: np.ndarray) -> np.ndarray:
+    poly = np.polynomial.Polynomial(coefficients)
+    first_der = poly.deriv()
+
+    epsilon0 = 1E-9
+    x0 = np.full(value.shape, guess, dtype=np.float64)
+    iterating = np.full(value.shape, True, dtype=bool)
+    for _ in range(500):
+        dYdX = first_der(x0[iterating])
+        y = poly(x0[iterating])
+
+        eeps = np.abs(y) * epsilon0
+        eeps[eeps < epsilon0] = epsilon0
+        dy = value - y
+        continue_iteration = np.abs(dy) > eeps
+
+        if not np.any(continue_iteration):
+            break
+        iterating[iterating] = continue_iteration
+
+        x0[iterating] += dy[continue_iteration] / dYdX[continue_iteration]
+
+    result = poly(x0)
+    eeps = (np.abs(result) + np.abs(value)) * epsilon0 * 2.0
+    eeps[eeps < epsilon0] = epsilon0
+    x0[np.abs(value - result) > eeps] = nan
+    return x0.reshape((*x0.shape, 1))
+
+
+def _array_polynomial(poly: np.ndarray, value: np.ndarray, guess: np.ndarray = None) -> np.ndarray:
+    value = np.array(value, copy=False)
+
+    poly = np.array(poly, copy=False, dtype=np.float64)
+    if len(poly.shape) != 1:
+        raise ValueError
+    poly = np.trim_zeros(poly, "b")
+    if poly.shape[0] < 2:
+        return np.full((1, value.shape), nan, dtype=np.float64)
+
+    elif poly.shape[0] == 2:
+        root = (value - poly[0]) / poly[1]
+        return root.reshape((*root.shape, 1))
+    elif poly.shape[0] == 3:
+        return _array_poly_2nd_order(poly, value)
+    elif poly.shape[0] == 4:
+        return _array_poly_3nd_order(poly, value)
+    else:
+        if guess is None:
+            guess = np.zeros_like(value, dtype=np.float64)
+        return _array_poly_Nth_order(poly, value, guess)
+
+
+def polynomial(
+        poly: typing.Union[typing.Iterable[float], np.ndarray],
+        value: typing.Union[float, np.ndarray] = 0.0,
+        guess: typing.Union[float, np.ndarray] = None,
+) -> typing.Union[typing.List[float], np.ndarray]:
+    if not isinstance(value, (int, float)):
+        return _array_polynomial(poly, value, guess)
+
     value = float(value)
     if not isfinite(value):
         raise ValueError
+
     coefficients: typing.List[float] = list()
     for v in poly:
         v = float(v)
@@ -133,6 +236,10 @@ def polynomial(poly: typing.Iterable[float], value: float = 0.0, guess: float = 
         coefficients.append(v)
     while len(coefficients) > 0 and coefficients[-1] == 0.0:
         del coefficients[-1]
+
+    if guess is not None:
+        guess = 0.0
+
     if len(coefficients) < 2:
         return []
     elif len(coefficients) == 2:

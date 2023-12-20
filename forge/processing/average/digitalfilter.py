@@ -50,8 +50,7 @@ def single_pole_low_pass(
     result = np.array(values, dtype=np.float64)
     if len(result.shape) > 1:
         for idx in np.ndindex(*result.shape[1:]):
-            print(idx)
-            _apply_single_pole_low_pass_1d(times, result[:, *idx], tc, gap, reset_on_invalid)
+            _apply_single_pole_low_pass_1d(times, result[(slice(None), *idx)], tc, gap, reset_on_invalid)
     else:
         _apply_single_pole_low_pass_1d(times, result, tc, gap, reset_on_invalid)
     return result

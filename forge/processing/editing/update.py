@@ -55,13 +55,13 @@ async def _run_editing(connection: Connection, working_directory: Path, station:
 
             if run_args[target_index] is None:
                 total_days += 1
-                year_start = start_of_year(int(match.group(2)))
+                year_number = int(match.group(2))
 
                 edit_files: typing.List[str] = list()
-                add_edit_file = working_directory / "edits" / edit_directives_file_name(station, None)
+                add_edit_file = working_directory / "edits" / f"{station.upper()}-EDITS_UNBOUNDED.nc"
                 if add_edit_file.exists():
                     edit_files.append(str(add_edit_file))
-                add_edit_file = working_directory / "edits" / edit_directives_file_name(station, year_start)
+                add_edit_file = working_directory / "edits" / f"{station.upper()}-EDITS_s{year_number:04}0101.nc"
                 if add_edit_file.exists():
                     edit_files.append(str(add_edit_file))
 

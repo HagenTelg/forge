@@ -207,7 +207,11 @@ def process_day(
         for directives_file in edit_files:
             directives_file = Dataset(directives_file, 'r')
             try:
-                apply_edit_directives(directives_file, open_data_files)
+                apply_edit_directives(
+                    directives_file, open_data_files,
+                    day_start * 1000,
+                    (day_start + 24 * 60 * 60) * 1000,
+                )
             finally:
                 directives_file.close()
 
