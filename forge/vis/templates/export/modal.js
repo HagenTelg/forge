@@ -127,6 +127,7 @@ function startTimeEdited() {
     if (!parsedStart) {
         startTimeEntry.classList.add('invalid');
         startTimeDisplay.classList.add('invalid');
+        displayTable.classList.remove('invalid');
 
         startTimeDisplay.textContent = "ERROR";
         exportButton.disabled = true;
@@ -144,9 +145,9 @@ function startTimeEdited() {
         if (setTime) {
             endTimeEntry.classList.remove('invalid');
             endTimeDisplay.classList.remove('invalid');
+            displayTable.classList.remove('invalid');
             endTimeEntry.value = offset;
             endTimeDisplay.textContent = TimeParse.toDisplayTime(setTime);
-            displayTable.classList.remove('invalid');
             exportButton.disabled = false;
             return;
         }
@@ -189,9 +190,9 @@ function endTimeEdited() {
         if (setTime) {
             startTimeEntry.classList.remove('invalid');
             startTimeDisplay.classList.remove('invalid');
+            displayTable.classList.remove('invalid');
             startTimeEntry.value = offset;
             startTimeDisplay.textContent = TimeParse.toDisplayTime(setTime);
-            displayTable.classList.remove('invalid');
             exportButton.disabled = false;
             return;
         }
