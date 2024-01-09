@@ -16,6 +16,7 @@ from .flow import Flow
 from .filter import FilterStatus, SecondFilterStatus
 from .umac import UMACStatus
 from .counts import ParticleConcentration, EditingParticleConcentration, ADMagicCPC250StatusSecondary
+from .pressure import Pressure
 
 
 station_views = detach(aerosol_views, ozone_views, met_views, radiation_views)
@@ -46,6 +47,9 @@ station_views['aerosol-realtime-temperature'] = Temperature('aerosol-realtime', 
     ('{code}filter', 'Filter {type}'),
     ('{code}filterrack', 'Filter rack {type}'),
 ]), omit_traces={'TDnephinlet', 'TDfilterrack', 'Ufilterrack'}, realtime=True)
+
+station_views['aerosol-raw-pressure'] = Pressure('aerosol-raw')
+station_views['aerosol-realtime-pressure'] = Pressure('aerosol-realtime', realtime=True)
 
 station_views['aerosol-raw-counts'] = ParticleConcentration('aerosol-raw')
 station_views['aerosol-realtime-counts'] = ParticleConcentration('aerosol-realtime', realtime=True)

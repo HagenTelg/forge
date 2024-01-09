@@ -3,6 +3,7 @@ from collections import OrderedDict
 from ..default.view import detach, View, aerosol_views
 from ..default.aerosol.wind import Wind
 from .counts import ParticleConcentration, EditingParticleConcentration, ADMagicCPC250StatusSecondary
+from .pressure import Pressure
 
 
 station_views = detach(aerosol_views)
@@ -23,6 +24,9 @@ station_views['aerosol-raw-wind'] = Wind('aerosol-raw', measurements=measurement
 station_views['aerosol-editing-wind'] = Wind('aerosol-editing', measurements=measurements)
 station_views['aerosol-clean-wind'] = Wind('aerosol-clean', measurements=measurements)
 station_views['aerosol-avgh-wind'] = Wind('aerosol-avgh', measurements=measurements)
+
+station_views['aerosol-raw-pressure'] = Pressure('aerosol-raw')
+station_views['aerosol-realtime-pressure'] = Pressure('aerosol-realtime', realtime=True)
 
 
 def get(station: str, view_name: str) -> typing.Optional[View]:

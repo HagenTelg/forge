@@ -71,6 +71,33 @@ station_profile_data['aerosol']['realtime']['cpcstatus2'] = {
     RealtimeTranslator.Key('V_N62'): 'Vpulse',
 }
 
+station_profile_data['aerosol']['raw']['pressure'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'P_XM1'): 'ambient',
+        Name(station, 'raw', 'Pd_P01'): 'pitot',
+        Name(station, 'raw', 'Pd_P12'): 'vacuum',
+        Name(station, 'raw', 'Pd_P12', {'pm10'}): 'vacuum',
+        Name(station, 'raw', 'Pd_P12', {'pm1'}): 'vacuum',
+        Name(station, 'raw', 'Pd_P12', {'pm25'}): 'vacuum',
+        Name(station, 'raw', 'P_S11'): 'dPneph-whole',
+        Name(station, 'raw', 'P_S11', {'pm10'}): 'dPneph-pm10',
+        Name(station, 'raw', 'P_S11', {'pm25'}): 'dPneph-pm25',
+        Name(station, 'raw', 'P_S11', {'pm1'}): 'dPneph-pm1',
+    }, send
+)
+station_profile_data['aerosol']['realtime']['pressure'] = {
+    RealtimeTranslator.Key('P_XM1'): 'ambient',
+    RealtimeTranslator.Key('P_S11'): 'neph',
+    RealtimeTranslator.Key('Pd_P01'): 'pitot',
+    RealtimeTranslator.Key('Pd_P12'): 'vacuum',
+    RealtimeTranslator.Key('Pd_P12', {'pm10'}): 'vacuum',
+    RealtimeTranslator.Key('Pd_P12', {'pm1'}): 'vacuum',
+    RealtimeTranslator.Key('Pd_P12', {'pm25'}): 'vacuum',
+    RealtimeTranslator.Key('P_S11', {'pm10'}): 'neph',
+    RealtimeTranslator.Key('P_S11', {'pm25'}): 'neph',
+    RealtimeTranslator.Key('P_S11', {'pm1'}): 'neph',
+}
+
 
 def get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
         send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:

@@ -18,7 +18,7 @@ class Summary(TimeSeries):
             super().__init__()
             self.components.append('generic_operations')
             self.script = r"""(function(dataName) {
-    return new GenericOperations.ApplyToFields(dataName, {
+return new GenericOperations.ApplyToFields(dataName, {
     'thermo': (value) => {
         """ + f'return GenericOperations.calibration(value, {Summary.THERMO_OZONE_INTERCEPT}, {Summary.THERMO_OZONE_SLOPE});' + r"""
     },

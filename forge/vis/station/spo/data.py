@@ -205,6 +205,24 @@ station_profile_data['aerosol']['editing']['aethalometer'] = lambda station, sta
     ), send
 )
 
+station_profile_data['aerosol']['raw']['pressure'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'P_XM1'): 'ambient',
+        Name(station, 'raw', 'P_S11'): 'neph',
+        Name(station, 'raw', 'P_S11', {'pm10'}): 'neph',
+        Name(station, 'raw', 'P_S11', {'pm25'}): 'neph',
+        Name(station, 'raw', 'P_S11', {'pm1'}): 'neph',
+    }, send
+)
+station_profile_data['aerosol']['realtime']['pressure'] = {
+    RealtimeTranslator.Key('P_XM1'): 'ambient',
+    RealtimeTranslator.Key('P_S11'): 'neph',
+    RealtimeTranslator.Key('P_S11', {'pm10'}): 'neph',
+    RealtimeTranslator.Key('P_S11', {'pm25'}): 'neph',
+    RealtimeTranslator.Key('P_S11', {'pm1'}): 'neph',
+}
+
+
 station_profile_data['met']['raw']['wind'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
     start_epoch_ms, end_epoch_ms, {
         Name(station, 'raw', 'WS1_XM1'): 'WSambient', Name(station, 'raw', 'WD1_XM1'): 'WDambient',

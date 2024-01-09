@@ -11,6 +11,7 @@ from ..default.met.editing.tower import EditingTowerTemperatureDifference as Met
 from ..default.radiation.ambient import Ambient as RadiationAmbient
 from .counts import ParticleConcentration, EditingParticleConcentration, ADMagicCPC250StatusSecondary
 from .dmps import DMPSCounts, DMPSStatus, DMPSDistribution
+from .pressure import Pressure
 
 
 station_views = detach(aerosol_views, ozone_views, met_views, radiation_views)
@@ -28,6 +29,9 @@ station_views['aerosol-raw-dmpsstatus'] = DMPSStatus('aerosol-raw')
 station_views['aerosol-editing-dmps'] = DMPSDistribution('aerosol-editing')
 station_views['aerosol-clean-dmps'] = DMPSDistribution('aerosol-clean')
 station_views['aerosol-avgh-dmps'] = DMPSDistribution('aerosol-avgh')
+
+station_views['aerosol-raw-pressure'] = Pressure('aerosol-raw')
+station_views['aerosol-realtime-pressure'] = Pressure('aerosol-realtime', realtime=True)
 
 
 temperature_measurements = OrderedDict([
