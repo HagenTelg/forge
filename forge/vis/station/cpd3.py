@@ -3691,7 +3691,7 @@ acquisition_translator = AcquisitionTranslator(interfaces=[
         'FRAMDataInvalid': 'fram_data_invalid',
         'BadThermistor': 'thermistor_fault',
         'SampleFlowOutOfRange': 'sample_flow_out_of_range',
-        'I2CMultiplexerError': 'ic2_multiplexer_error',
+        'I2CMultiplexerError': 'i2c_multiplexer_error',
         'LowClockBattery': 'low_clock_battery',
         'ClockStopped': 'clock_stopped',
     }, flags_set_warning={

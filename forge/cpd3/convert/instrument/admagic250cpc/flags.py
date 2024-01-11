@@ -21,6 +21,7 @@ lookup: typing.Dict[str, CPD3Flag] = {
     'fram_data_invalid': CPD3Flag("FRAMDataInvalid", "FRAM data invalid", 0x80000000),
     'thermistor_fault': CPD3Flag("BadThermistor", "Bad thermistor reading", 0x200000000),
     'sample_flow_out_of_range': CPD3Flag("SampleFlowOutOfRange", "Sample flow out of range", 0x400000000),
+    'i2c_multiplexer_error': CPD3Flag("I2CMultiplexerError", "I²C multiplexer error", 0x1000000000),
     'ic2_multiplexer_error': CPD3Flag("I2CMultiplexerError", "I²C multiplexer error", 0x1000000000),
     'low_clock_battery': CPD3Flag("LowClockBattery", "Low clock battery", 0x2000000000),
     'clock_stopped': CPD3Flag("ClockStopped", "Instrument clock stopped", 0x4000000000),

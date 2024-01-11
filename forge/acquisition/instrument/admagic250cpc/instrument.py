@@ -123,7 +123,7 @@ class Instrument(StreamingInstrument):
                 self.flag_bit(self.bit_flags, 0x0020000, "thermistor_fault", is_warning=True),
                 self.flag(self.notify_sample_flow_out_of_range, 0x0040000),
                 # 0x080000 reserved
-                self.flag_bit(self.bit_flags, 0x0100000, "ic2_multiplexer_error"),
+                self.flag_bit(self.bit_flags, 0x0100000, "i2c_multiplexer_error"),
                 self.flag_bit(self.bit_flags, 0x0200000, "low_clock_battery"),
                 self.flag_bit(self.bit_flags, 0x0400000, "clock_stopped"),
                 self.flag_bit(self.bit_flags, 0x0800000, "differential_pressure_saturated", is_warning=True),
