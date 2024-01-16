@@ -1,6 +1,6 @@
 import typing
 import numpy as np
-from netCDF4 import Dataset, Variable
+from netCDF4 import Dataset, Variable, Group
 from forge.const import MAX_I64
 from .timeseries import variable_coordinates
 
@@ -26,7 +26,7 @@ def edit_bounds(target: Dataset) -> typing.Tuple[Variable, Variable]:
 
 
 def edit_modified(target: Dataset) -> Variable:
-    var = target.createVariable("modified_time", "i8", ("index",), fill_value=False)
+    var = target.createVariable("modified_time", "i8", ("index",), fill_value=0)
     variable_coordinates(target, var)
     var.long_name = "modification time"
     var.standard_name = "time"
@@ -35,7 +35,7 @@ def edit_modified(target: Dataset) -> Variable:
 
 
 def edit_unique_id(target: Dataset) -> Variable:
-    var = target.createVariable("unique_id", "u8", ("index",), fill_value=False)
+    var = target.createVariable("unique_id", "u8", ("index",), fill_value=0)
     variable_coordinates(target, var)
     var.long_name = "unique identifier of the edit across files"
     var.C_format = "%016llX"
@@ -54,11 +54,15 @@ def edit_deleted(target: Dataset) -> Variable:
     return var
 
 
-def edit_profile(target: Dataset, profiles: typing.List[str]) -> Variable:
+def edit_profile(target: Dataset, profiles: typing.Union[typing.List[str], typing.Dict[str, int]]) -> Variable:
     dtype = None
+    if isinstance(profiles, dict):
+        max_number = max(profiles.values())
+    else:
+        max_number = len(profiles)
     for check_type in (np.uint8, np.uint16, np.uint32, np.uint64):
         ti = np.iinfo(check_type)
-        if ti.max <= len(profiles):
+        if ti.max < max_number:
             continue
         dtype = check_type
         break
@@ -144,3 +148,19 @@ def edit_history(target: Dataset) -> Variable:
     var.text_encoding = "UTF-8"
     return var
 
+
+def edit_file_structure(root: Dataset, profiles: typing.Union[typing.List[str], typing.Dict[str, int]]) -> Group:
+    edits = root.createGroup("edits")
+    edit_bounds(edits)
+    edit_modified(edits)
+    edit_unique_id(edits)
+    edit_deleted(edits)
+    edit_profile(edits, sorted(profiles))
+    edit_action_type(edits)
+    edit_action_parameters(edits)
+    edit_condition_type(edits)
+    edit_condition_parameters(edits)
+    edit_author(edits)
+    edit_comment(edits)
+    edit_history(edits)
+    return edits

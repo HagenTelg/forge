@@ -132,26 +132,29 @@ class _DataSocket(WebSocketEndpoint):
                 try:
                     stall = await stream.stall()
                     if stall:
-                        active_stream.stall = stall
-
-                        async def wait_stall():
-                            await stall.block()
-
-                        stall_task = asyncio.ensure_future(wait_stall())
-                        active_stream.stall_task = stall_task
-
                         _LOGGER.debug(f"Stalling stream {stream_id} to {websocket.client.host}")
-                        await self._update_stall_state(websocket)
+                        while True:
+                            active_stream.stall = stall
 
-                        try:
-                            await stall_task
-                        except asyncio.CancelledError:
-                            pass
+                            stall_task = asyncio.ensure_future(stall.block())
+                            active_stream.stall_task = stall_task
+                            await self._update_stall_state(websocket)
 
-                        active_stream.stall_task = None
-                        active_stream.stall = None
-                        await self._update_stall_state(websocket)
-                        _LOGGER.debug(f"Stall completed for {stream_id} to {websocket.client.host}")
+                            try:
+                                again = await stall_task
+                            except asyncio.CancelledError:
+                                again = False
+
+                            active_stream.stall_task = None
+                            active_stream.stall = None
+                            if again:
+                                stall = await stream.stall()
+                            else:
+                                stall = None
+                            if not stall:
+                                await self._update_stall_state(websocket)
+                                _LOGGER.debug(f"Stall completed for {stream_id} to {websocket.client.host}")
+                                break
 
                     if active_stream.stopped:
                         return

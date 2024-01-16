@@ -1355,7 +1355,7 @@ class DataReader(RecordStream):
             self.readers = readers
             self.writers = writers
 
-        async def block(self):
+        async def block(self) -> bool:
             for r in self.readers:
                 try:
                     await r.read(1)
@@ -1366,6 +1366,7 @@ class DataReader(RecordStream):
                     w.close()
                 except OSError:
                     pass
+            return False
 
     def stall_stations(self) -> typing.Set[str]:
         blocking_stations: typing.Set[str] = set()

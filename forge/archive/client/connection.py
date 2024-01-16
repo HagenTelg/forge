@@ -34,7 +34,7 @@ class Connection:
         self._internal_run: typing.Optional[asyncio.Task] = None
 
     @classmethod
-    async def default_connection(cls, name: str) -> "Connection":
+    async def default_connection(cls, name: str, use_environ: bool = True) -> "Connection":
         from forge.archive import CONFIGURATION, DEFAULT_ARCHIVE_TCP_PORT
         from starlette.datastructures import URL
 
@@ -86,13 +86,14 @@ class Connection:
             except AttributeError:
                 pass
 
-            server = os.environ.get("FORGE_ARCHIVE")
-            connect = try_url(URL(url=server))
-            if connect:
-                return connect
-            connect = try_direct(server)
-            if connect:
-                return connect
+            if use_environ:
+                server = os.environ.get("FORGE_ARCHIVE")
+                connect = try_url(URL(url=server))
+                if connect:
+                    return connect
+                connect = try_direct(server)
+                if connect:
+                    return connect
 
             return asyncio.open_unix_connection('/run/forge-archive.socket')
 

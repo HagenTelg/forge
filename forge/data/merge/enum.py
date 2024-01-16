@@ -61,8 +61,8 @@ class MergeEnum:
     def map_variables(source: netCDF4.Variable, destination: netCDF4.Variable,
                       data: np.ndarray) -> typing.Optional[np.ndarray]:
         return MergeEnum._apply_map(
-            source.group().enumtypes[source.datatype.name].enum_dict,
-            destination.group().enumtypes[destination.datatype.name].enum_dict,
+            source.datatype.enum_dict,
+            destination.datatype.enum_dict,
             data,
             destination.dtype
         )
@@ -70,7 +70,7 @@ class MergeEnum:
     def apply(self, source: netCDF4.Variable, data: np.ndarray, copy: bool = True) -> np.ndarray:
         target_dtype = self.storage_dtype
         mapped = self._apply_map(
-            source.group().enumtypes[source.datatype.name].enum_dict,
+            source.datatype.enum_dict,
             self.values,
             data,
             target_dtype

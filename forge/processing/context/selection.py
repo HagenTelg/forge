@@ -23,7 +23,7 @@ class InstrumentSelection:
             tags = selection.get("tags", None)
             if tags:
                 if isinstance(tags, str):
-                    tags = tags.split()
+                    tags = tags.strip().split()
                 for t in tags:
                     if t.startswith('+'):
                         self.require_tags.add(t[1:])
@@ -34,12 +34,12 @@ class InstrumentSelection:
             tags = selection.get("require_tags", None)
             if tags:
                 if isinstance(tags, str):
-                    tags = tags.split()
+                    tags = tags.strip().split()
                 self.require_tags.update(tags)
             tags = selection.get("exclude_tags", None)
             if tags:
                 if isinstance(tags, str):
-                    tags = tags.split()
+                    tags = tags.strip().split()
                 self.exclude_tags.update(tags)
 
             if self.matches_everything:

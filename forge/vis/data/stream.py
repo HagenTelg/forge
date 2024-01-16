@@ -12,7 +12,7 @@ class DataStream(ABC):
             self.reason = reason
 
         @abstractmethod
-        async def block(self):
+        async def block(self) -> bool:
             pass
 
     def __init__(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):

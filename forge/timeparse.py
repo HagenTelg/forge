@@ -52,3 +52,7 @@ def parse_iso8601_time(s: str) -> datetime.datetime:
 
 def parse_time_argument(s: str) -> datetime.datetime:
     return parse_iso8601_time(s)
+
+
+def parse_time_bounds_arguments(args: typing.List[str]) -> typing.Tuple[datetime.datetime, datetime.datetime]:
+    return parse_time_argument(args[0]), parse_time_argument(args[1])

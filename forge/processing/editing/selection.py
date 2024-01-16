@@ -35,12 +35,12 @@ class Selection:
             tags: typing.Optional[typing.Union[str, typing.List[str]]] = selection.get("require_tags", None)
             if tags:
                 if isinstance(tags, str):
-                    tags = tags.split()
+                    tags = tags.strip().split()
                 self.require_tags.update(tags)
             tags: typing.Optional[typing.Union[str, typing.List[str]]] = selection.get("exclude_tags", None)
             if tags:
                 if isinstance(tags, str):
-                    tags = tags.split()
+                    tags = tags.strip().split()
                 self.exclude_tags.update(tags)
 
             self.variable_id: typing.Optional[str] = selection.get("variable_id", None)
