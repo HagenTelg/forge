@@ -53,13 +53,18 @@ class BasicEntry(BaseEntry):
     NOTIFICATION_CODES: typing.Dict[str, typing.Type["BasicEntry.Notification"]] = {}
 
     class Watchdog(BaseWatchdog):
-        ALERT_THRESHOLD = 26 * 60 * 60
+        ALERT_THRESHOLD: typing.Optional[float] = None
 
         @classmethod
         def from_db(cls, entry: "BasicEntry", db: DatabaseWatchdog) -> typing.Optional["BasicEntry.Watchdog"]:
             last_seen = db.last_seen.replace(tzinfo=datetime.timezone.utc)
             age = (datetime.datetime.now(tz=datetime.timezone.utc) - last_seen).total_seconds()
-            if age < cls.ALERT_THRESHOLD:
+            alert_threshold = cls.ALERT_THRESHOLD
+            if alert_threshold is None:
+                alert_threshold = entry.OFFLINE_THRESHOLD
+            if not alert_threshold:
+                return None
+            if age < alert_threshold:
                 return None
             if entry.status == BasicEntry.Status.OFFLINE:
                 return None
@@ -69,7 +74,7 @@ class BasicEntry(BaseEntry):
         def simple_override(cls, name: typing.Optional[str] = None,
                             alert: typing.Optional[float] = None) -> typing.Type["BasicEntry.Watchdog"]:
             class Override(BasicEntry.Watchdog):
-                ALERT_THRESHOLD = alert if alert else cls.ALERT_THRESHOLD
+                ALERT_THRESHOLD = alert if alert is not None else cls.ALERT_THRESHOLD
 
                 @property
                 def display(self) -> str:
