@@ -1,9 +1,8 @@
 import typing
-import logging
 import asyncio
+import logging
 import time
 import random
-import re
 import os
 import numpy as np
 import base64
@@ -13,6 +12,7 @@ from tempfile import TemporaryDirectory, mkstemp
 from pathlib import Path
 from json import loads as from_json, dumps as to_json
 from netCDF4 import Dataset, Variable
+from starlette.requests import Request
 from forge.logicaltime import containing_year_range, start_of_year, start_of_year_ms, round_to_year, year_bounds
 from forge.formattime import format_export_time
 from forge.const import STATIONS, MAX_I64
@@ -21,8 +21,10 @@ from forge.vis.data.stream import DataStream
 from forge.archive.client import edit_directives_lock_key, edit_directives_file_name, edit_directives_notification_key
 from forge.archive.client.get import read_file_or_nothing
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
+from forge.data.enum import remap_enum
 from forge.data.structure import edit_directives
 from forge.data.structure.editdirectives import edit_file_structure
+from forge.processing.clean.passing import apply_pass as archive_apply_pass
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -124,7 +126,7 @@ def _sanitize_selection(selection: typing.List[typing.Dict[str, typing.Any]]) ->
             if not value:
                 continue
             if isinstance(value, str):
-                value = value.strip().split()
+                value = value.split()
             elif not isinstance(value, list):
                 raise ValueError
             value = set(value)
@@ -589,7 +591,6 @@ async def _apply_edit_save(
         if updated_deleted != prior_deleted:
             item['deleted'] = updated_deleted
 
-
         prior = int(original_root['start_time'][original_idx])
         if prior != updated_start:
             if prior == -MAX_I64:
@@ -789,15 +790,7 @@ async def _apply_edit_save(
                 for input_idx in range(input_var.shape[0]):
                     output_var[input_idx] = input_var[input_idx]
             for var in ("profile", "action_type", "condition_type"):
-                input_var = existing_root.variables[var]
-                input_values = input_var[...].data
-                output_var = output_root.variables[var]
-                output_map = output_var.datatype.enum_dict
-                assign_values = np.empty(output_var.shape, dtype=output_var.dtype)
-                for input_code, input_value in input_var.datatype.enum_dict.items():
-                    idx = input_values == input_code
-                    assign_values[idx] = output_map[input_code]
-                output_var[:] = assign_values
+                remap_enum(existing_root.variables[var], output_root.variables[var])
 
             filename = source.filepath()
             source.close()
@@ -1002,8 +995,35 @@ def available_selections(station: str, mode_name: str, start_epoch_ms: int, end_
     raise NotImplementedError
 
 
-async def apply_pass(station: str, mode_name: str, start_epoch_ms: int,
+async def apply_pass(request: Request, station: str, mode_name: str, start_epoch_ms: int,
                      end_epoch_ms: int, comment: typing.Optional[str] = None) -> None:
+    station = station.lower()
+    if station not in STATIONS:
+        raise ValueError(f"Invalid station {station}")
+    profile = mode_name.split('-', 1)[0].lower()
+    if not profile:
+        raise ValueError(f"Invalid profile {profile}")
+
+    auxiliary = {
+        "type": "web",
+        "id": request.user.display_id,
+        "name": request.user.display_name,
+        "initials": request.user.initials,
+        "host": request.client.host,
+    }
+
     async with await Connection.default_connection("pass data", use_environ=False) as connection:
-        pass
-    raise NotImplementedError
+        backoff = LockBackoff()
+        while True:
+            try:
+                async with connection.transaction(True):
+                    await archive_apply_pass(
+                        connection, station, profile,
+                        start_epoch_ms / 1000.0, end_epoch_ms / 1000.0,
+                        comment.strip() or "", auxiliary,
+                    )
+                break
+            except LockDenied as ld:
+                _LOGGER.debug("Archive busy: %s", ld.status)
+                await backoff()
+                continue

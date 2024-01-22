@@ -58,6 +58,7 @@ setup(
         "forge-processing-ingest-receive = forge.processing.transfer.ingest.receive:main",
         "forge-processing-edits-read = forge.processing.editing.cli.read:main",
         "forge-processing-edits-write = forge.processing.editing.cli.write:main",
+        "forge-pass = forge.processing.clean.cli.passdata:main",
 
         "forge-telemetry = forge.telemetry.__main__:main",
         "forge-telemetry-control = forge.telemetry.cli.__main__:main",

@@ -445,7 +445,7 @@ class DataVariable(SelectedVariable):
     @property
     def ancillary_variables(self) -> typing.Set[str]:
         if self._ancillary_variables is None:
-            self._ancillary_variables = set(getattr(self.variable, "ancillary_variables", "").strip().split())
+            self._ancillary_variables = set(getattr(self.variable, "ancillary_variables", "").split())
         return self._ancillary_variables
 
     @property

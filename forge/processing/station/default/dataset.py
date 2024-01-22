@@ -2,6 +2,12 @@ import typing
 
 
 def feature_type(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
+    if tags and 'eventlog' in tags:
+        return "point"
+    if tags and 'edits' in tags:
+        return "point"
+    if tags and 'passed' in tags:
+        return "point"
     return "timeSeries"
 
 
@@ -12,6 +18,10 @@ def source(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typin
 def title(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     if tags and 'eventlog' in tags:
         return "Acquisition System Event Log"
+    if tags and 'edits' in tags:
+        return "QA/QC Mentor Edits"
+    if tags and 'passed' in tags:
+        return "Data Pass Record"
     if tags and 'ozone' in tags:
         return "Surface Ozone Measurements"
     if tags and 'met' in tags:
@@ -38,6 +48,12 @@ def keywords(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typ
         keywords.append("GCMD:RELATIVE HUMIDITY")
         keywords.append("GCMD:DEW POINT TEMPERATURE")
         keywords.append("GCMD:LIQUID SURFACE PRECIPITATION RATE")
+    elif tags and 'eventlog' in tags:
+        pass
+    elif tags and 'edits' in tags:
+        pass
+    elif tags and 'passed' in tags:
+        pass
     else:
         keywords.append("GCMD:AEROSOL MONITOR")
         if tags and 'scattering' in tags:
@@ -53,6 +69,12 @@ def keywords(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typ
 
 
 def doi(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
+    if tags and 'eventlog' in tags:
+        return None
+    if tags and 'edits' in tags:
+        return None
+    if tags and 'passed' in tags:
+        return None
     if tags and ('ozone' in tags and 'aerosol' not in tags):
         return "10.7289/V57P8WBF"
     if tags and ('met' in tags and 'aerosol' not in tags):
@@ -61,6 +83,14 @@ def doi(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.O
 
 
 def summary(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
+    if tags and 'eventlog' in tags:
+        return "This dataset represents a log of events that occurred on the acquisition system."
+    elif tags and 'edits' in tags:
+        return "This dataset contains logical edits made to the data by the station mentor in the process of " \
+               "performing QA/QC to produce the final data for analysis."
+    elif tags and 'passed' in tags:
+        return "This dataset represents a record of when QA/QC was completed on data and it was marked as ready " \
+               "for analysis."
     if tags and 'ozone' in tags:
         return "This data set contains continuous UV Photometric data of surface level ozone collected and processed " \
                "by the National Oceanic and Atmospheric Administration, Global Monitoring Division."
@@ -74,6 +104,12 @@ def summary(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typi
 
 
 def references(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
+    if tags and 'eventlog' in tags:
+        return None
+    if tags and 'edits' in tags:
+        return None
+    if tags and 'passed' in tags:
+        return None
     if tags and 'ozone' in tags:
         return """WMO/GAW Report No. 209, Guidelines for Continuous Measurements of Ozone in the Troposphere, 2013, available at https://www.wmo.int/pages/prog/arep/gaw/documents/Final_GAW_209_web.pdf
 Oltmans, S. J. and Lefohn, A. S. and Scheel, H. E. and Harris, J. M. and Levy, H. and Galbally, I. E. and Brunke, E.-G. and Meyer, C. P. and Lathrop, J. A. and Johnson, B. J. and Shadwick, D. S. and Cuevas, E. and Schmidlin, F. J. and Tarasick, D. W. and Claude, H. and Kerr, J. B. and Uchino, O. and Mohnen, V., Trends of ozone in the troposphere, in Geophysical Research Letters 1998, Issue 1944-8007, Vol 25, Num 2, pg 139-142, http://dx.doi.org/10.1029/97GL03505, available at http://onlinelibrary.wiley.com/doi/10.1029/97GL03505/abstract"""

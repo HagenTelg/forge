@@ -32,7 +32,7 @@ async def save_edit(request: Request) -> Response:
         raise HTTPException(starlette.status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Invalid directive")
     if not station_data(station, 'editing', 'writable')(request.user, station, mode_name, contents):
         raise HTTPException(starlette.status.HTTP_403_FORBIDDEN, detail="Modification not permitted")
-    result = await station_data(station, 'editing', 'save')(request.user, station, mode_name, contents)
+    result = await station_data(station, 'editing', 'save')(request, station, mode_name, contents)
     if result is None:
         raise HTTPException(starlette.status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Modification failed")
     return JSONResponse(result)

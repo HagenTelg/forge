@@ -7,7 +7,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def parse_flags(contents: Variable) -> typing.Dict[int, str]:
-    flag_meanings = getattr(contents, 'flag_meanings', "").strip().split()
+    flag_meanings = getattr(contents, 'flag_meanings', "").split()
     if not flag_meanings:
         return dict()
     flag_masks = getattr(contents, 'flag_masks', None)

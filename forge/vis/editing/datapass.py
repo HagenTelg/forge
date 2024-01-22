@@ -76,7 +76,7 @@ async def pass_data(request: Request) -> Response:
 
     _LOGGER.info(f"Passing data for {station} {mode_name} on {start_epoch_ms} to {end_epoch_ms}")
 
-    await station_data(station, 'editing', 'pass_data')(station, mode_name, start_epoch_ms, end_epoch_ms, comment)
+    await station_data(station, 'editing', 'pass_data')(request, station, mode_name, start_epoch_ms, end_epoch_ms, comment)
 
     return JSONResponse({'status': 'ok'})
 

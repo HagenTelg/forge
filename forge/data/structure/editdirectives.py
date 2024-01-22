@@ -55,11 +55,16 @@ def edit_deleted(target: Dataset) -> Variable:
 
 
 def edit_profile(target: Dataset, profiles: typing.Union[typing.List[str], typing.Dict[str, int]]) -> Variable:
-    dtype = None
     if isinstance(profiles, dict):
         max_number = max(profiles.values())
+        profile_enum_dict = profiles
     else:
         max_number = len(profiles)
+        profile_enum_dict = {
+            profiles[index]: index for index in range(len(profiles))
+        }
+
+    dtype = None
     for check_type in (np.uint8, np.uint16, np.uint32, np.uint64):
         ti = np.iinfo(check_type)
         if ti.max < max_number:
@@ -69,9 +74,7 @@ def edit_profile(target: Dataset, profiles: typing.Union[typing.List[str], typin
     else:
         raise ValueError("Invalid profile count")
 
-    profile_t = target.createEnumType(dtype, "profile_t", {
-        profiles[index]: index for index in range(len(profiles))
-    })
+    profile_t = target.createEnumType(dtype, "profile_t", profile_enum_dict)
 
     var = target.createVariable("profile", profile_t, ("index",), fill_value=False)
     variable_coordinates(target, var)
@@ -155,7 +158,7 @@ def edit_file_structure(root: Dataset, profiles: typing.Union[typing.List[str], 
     edit_modified(edits)
     edit_unique_id(edits)
     edit_deleted(edits)
-    edit_profile(edits, sorted(profiles))
+    edit_profile(edits, profiles)
     edit_action_type(edits)
     edit_action_parameters(edits)
     edit_condition_type(edits)

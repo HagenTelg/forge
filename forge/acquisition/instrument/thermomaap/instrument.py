@@ -460,7 +460,7 @@ class Instrument(StreamingInstrument):
         self._prior_volume_time = now
 
     def _process_pf12_start(self, line: bytes, last_field_space: bool = True) -> None:
-        fields = line.strip().split()
+        fields = line.split()
         try:
             (
                 raw_data, raw_time,
@@ -546,7 +546,7 @@ class Instrument(StreamingInstrument):
         self.data_Bac(X * self._ebc_efficiency)
 
     def _process_pf12_end(self, line: bytes) -> None:
-        fields = line.strip().split()
+        fields = line.split()
         try:
             (
                 _,  # Iterations to converge,
@@ -663,7 +663,7 @@ class Instrument(StreamingInstrument):
         Qinstrument = self.data_Qinstrument(Q)
         self.data_Q(Qinstrument)
 
-        fields = status.strip().split()
+        fields = status.split()
         try:
             (
                 error_status1,

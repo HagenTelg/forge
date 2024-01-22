@@ -1,10 +1,12 @@
 import typing
+import logging
 import asyncio
 import argparse
 import time
 import random
 import re
 import os
+import sys
 import numpy as np
 from math import ceil
 from tempfile import TemporaryDirectory, mkstemp
@@ -14,8 +16,11 @@ from forge.logicaltime import containing_year_range, start_of_year, year_bounds
 from forge.const import STATIONS, MAX_I64
 from forge.archive.client import edit_directives_lock_key, edit_directives_file_name, edit_directives_notification_key
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
+from forge.data.enum import remap_enum
 from forge.data.structure import edit_directives
 from forge.data.structure.editdirectives import edit_file_structure
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def main():
@@ -239,15 +244,7 @@ def main():
                             for input_idx in range(input_var.shape[0]):
                                 output_var[input_idx] = input_var[input_idx]
                         for var in ("profile", "action_type", "condition_type"):
-                            input_var = copy_root.variables[var]
-                            input_values = input_var[...].data
-                            output_var = output_root.variables[var]
-                            output_map = output_var.datatype.enum_dict
-                            assign_values = np.empty(output_var.shape, dtype=output_var.dtype)
-                            for input_code, input_value in input_var.datatype.enum_dict.items():
-                                idx = input_values == input_code
-                                assign_values[idx] = output_map[input_code]
-                            output_var[:] = assign_values
+                            remap_enum(copy_root.variables[var], output_root.variables[var])
                     else:
                         output_root = edit_file_structure(output_file, input_profile_values)
 
@@ -377,7 +374,12 @@ def main():
                                 await connection.write_file(edit_directives_file_name(station, start_of_year(year) if year != 0 else None), f)
                         year_files.clear()
                         break
-                except LockDenied:
+                except LockDenied as ld:
+                    _LOGGER.debug("Archive busy: %s", ld.status)
+                    if sys.stdout.isatty():
+                        if not backoff.has_failed:
+                            sys.stdout.write("\n")
+                        sys.stdout.write(f"\x1B[2K\rBusy: {ld.status}")
                     await backoff()
                     continue
                 finally:

@@ -1,4 +1,5 @@
 import typing
+from starlette.requests import Request
 from forge.vis.access import AccessUser
 from forge.vis.data.stream import DataStream
 
@@ -20,13 +21,13 @@ def writable(user: AccessUser, station: str, mode_name: str, directive: typing.D
     return editing_writable(user, station, mode_name, directive)
 
 
-def save(user: AccessUser, station: str, mode_name: str,
+def save(request: Request, station: str, mode_name: str,
          directive: typing.Dict[str, typing.Any]) -> typing.Optional[typing.Awaitable[typing.Optional[typing.Dict[str, typing.Any]]]]:
     from forge.vis.station.cpd3 import editing_save
-    return editing_save(user, station, mode_name, directive)
+    return editing_save(request.user, station, mode_name, directive)
 
 
-def pass_data(station: str, mode_name: str, start_epoch_ms: int,
+def pass_data(request: Request, station: str, mode_name: str, start_epoch_ms: int,
               end_epoch_ms: int, comment: typing.Optional[str] = None) -> typing.Awaitable[None]:
     from forge.vis.station.cpd3 import editing_pass
     return editing_pass(station, mode_name, start_epoch_ms, end_epoch_ms, comment)

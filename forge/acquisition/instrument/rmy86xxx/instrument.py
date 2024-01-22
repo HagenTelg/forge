@@ -109,7 +109,7 @@ class Instrument(StreamingInstrument):
         if v != checksum:
             raise CommunicationsError(f"checksum mismatch on {line} (got {v:02X})")
 
-        fields = frame.strip().split()
+        fields = frame.split()
         try:
             (address, WS, WD, status) = fields
         except ValueError:

@@ -1,6 +1,8 @@
 import typing
+import logging
 import asyncio
 import argparse
+import sys
 import numpy as np
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -15,6 +17,8 @@ from forge.archive.client.get import read_file_or_nothing
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
 from forge.data.structure import edit_directives
 from forge.data.structure.editdirectives import edit_file_structure
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def main():
@@ -78,7 +82,12 @@ def main():
                         for year in range(*containing_year_range(start, end)):
                             year_start = start_of_year(year)
                             await read_file_or_nothing(connection, edit_directives_file_name(station, year_start), tmpdir)
-                except LockDenied:
+                except LockDenied as ld:
+                    _LOGGER.debug("Archive busy: %s", ld.status)
+                    if sys.stdout.isatty():
+                        if not backoff.has_failed:
+                            sys.stdout.write("\n")
+                        sys.stdout.write(f"\x1B[2K\rBusy: {ld.status}")
                     await backoff()
                     continue
                 break

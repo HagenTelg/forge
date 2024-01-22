@@ -83,7 +83,7 @@ class DataController(StationsController):
                                     except FileNotFoundError:
                                         continue
                                     f.flush()
-                                    passed_modified.extend(self.get_modified_edits(f.name, modified_after))
+                                    passed_modified.extend(self.get_modified_passed(f.name, modified_after))
                         break
                     except LockDenied as ld:
                         _LOGGER.debug("Initial passed read busy: %s", ld.status)

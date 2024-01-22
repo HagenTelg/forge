@@ -156,7 +156,7 @@ async def add_network_configuration(telemetry: typing.Dict[str, typing.Any]) -> 
 
     connection_lines = await command_lines('nmcli', 'connection', 'show')
     for line in connection_lines[1:]:
-        fields = line.strip().split()
+        fields = line.split()
         if len(fields) < 3:
             continue
         uuid = fields[-3].strip()

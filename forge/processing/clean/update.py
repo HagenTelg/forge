@@ -63,16 +63,23 @@ async def _run_pass(connection: Connection, working_directory: Path, station: st
         await connection.set_transaction_status(f"Processing clean data, {(day_index / total_count) * 100.0:.0f}% done")
 
         file_start = (day_index + index_offset) * (24 * 60 * 60)
+        file_end = file_start + 24 * 60 * 60
         file_year = time.gmtime(file_start).tm_year
         if file_year != current_year:
+            if current_filter:
+                current_filter.close()
             current_year = file_year
             passed_file = working_directory / f"passed/{station.upper()}-PASSED_s{current_year:04}0101.nc"
             if not passed_file.exists():
-                if current_filter:
-                    current_filter.close()
                 current_filter = None
             else:
-                current_filter = AcceptIntoClean(str(passed_file))
+                year_start = start_of_year(current_year)
+                year_end = start_of_year(current_year + 1)
+                current_filter = AcceptIntoClean(
+                    station, str(passed_file),
+                    max(year_start, file_start),
+                    min(year_end, end),
+                )
 
         if current_filter is None:
             for remove_file in day_files[day_index]:
@@ -90,6 +97,8 @@ async def _run_pass(connection: Connection, working_directory: Path, station: st
                 data.close()
             total_file_count += 1
 
+    if current_filter:
+        current_filter.close()
     return total_file_count
 
 
