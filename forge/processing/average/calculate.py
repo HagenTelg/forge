@@ -50,7 +50,7 @@ def fixed_interval_weighted_average(
     return average, bin_times
 
 
-def coverage_weight(
+def fixed_interval_coverage_weight(
         times: np.ndarray,
         averaged_time: np.ndarray,
         nominal_spacing: typing.Optional[typing.Union[int, float, np.ndarray]] = None,
@@ -105,6 +105,6 @@ def fixed_interval_cover_average(
     return fixed_interval_weighted_average(
         times,
         values,
-        coverage_weight(times, averaged_time, nominal_spacing),
+        fixed_interval_coverage_weight(times, averaged_time, nominal_spacing),
         interval
     )
