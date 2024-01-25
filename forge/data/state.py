@@ -1,6 +1,7 @@
 import typing
 import re
 from netCDF4 import Dataset
+from .attrs import cell_methods
 
 
 _CELL_METHOD_STATE = re.compile(r"(^|\s)time:\s+point(\s|$)")
@@ -26,11 +27,8 @@ def is_state_group(group: Dataset) -> typing.Optional[bool]:
             continue
         if var.dimensions[0] != 'time':
             continue
-        try:
-            methods = var.cell_methods
-        except AttributeError:
-            continue
-        if _CELL_METHOD_STATE.search(methods):
+        methods = cell_methods(var)
+        if methods.get('time') == 'point':
             result = True
             continue
         return False

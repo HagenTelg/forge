@@ -96,7 +96,7 @@ async def _run_pass(connection: Connection, working_directory: Path, station: st
             data, profile_pass_time = data
             try:
                 append_history(data, "forge.pass", pass_time)
-                data.setncattr("forge_pass_time", format_iso8601_time(profile_pass_time))
+                data.setncattr("data_pass_time", format_iso8601_time(profile_pass_time))
             finally:
                 data.close()
             total_file_count += 1
@@ -124,12 +124,12 @@ async def _write_data(connection: Connection, station: str, start: int, end: int
             if original is None:
                 return True
 
-            original_pass_time = getattr(original, 'forge_pass_time', None)
+            original_pass_time = getattr(original, 'data_pass_time', None)
             if original_pass_time is None:
                 return True
             original_pass_time = parse_iso8601_time(str(original_pass_time)).timestamp()
 
-            replace_pass_time = getattr(replacement, 'forge_pass_time', None)
+            replace_pass_time = getattr(replacement, 'data_pass_time', None)
             if replace_pass_time is None:
                 return True
             replace_pass_time = parse_iso8601_time(str(replace_pass_time)).timestamp()

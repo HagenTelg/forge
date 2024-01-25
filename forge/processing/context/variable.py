@@ -399,7 +399,7 @@ class DataVariable(SelectedVariable):
         if source_var is None or "time" not in source_var.dimensions:
             return np.full(self.times.shape[0], 1.0, dtype=np.float64)
 
-        from forge.processing.average.calculate import coverage_weight
+        from forge.processing.average.calculate import fixed_interval_coverage_weight
         from forge.timeparse import parse_iso8601_duration
 
         root = self.parent
@@ -415,13 +415,13 @@ class DataVariable(SelectedVariable):
 
         if self._time_origin_indices is None:
             selection = slice(*self._time_slice(self._raw_times, int(self.times[0]), int(self.times[-1])))
-            return coverage_weight(
+            return fixed_interval_coverage_weight(
                 self.times,
                 source_var[selection].data,
                 time_coverage_resolution
             )
 
-        weights = coverage_weight(
+        weights = fixed_interval_coverage_weight(
             self._raw_times,
             source_var[...].data,
             time_coverage_resolution,

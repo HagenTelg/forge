@@ -2,16 +2,18 @@ import typing
 import asyncio
 import logging
 import time
-import shutil
+import os
 from math import floor, ceil
 from tempfile import TemporaryDirectory
 from pathlib import Path
+from concurrent.futures import ProcessPoolExecutor
 from netCDF4 import Dataset
 from forge.logicaltime import round_to_year
 from forge.archive.client.connection import Connection
 from forge.archive.client.put import ArchivePut
 from forge.archive.client.get import get_all_daily_files, get_all_yearly_files
 from forge.data.structure.history import append_history
+from .run import process_avgh, process_avgd, process_avgm
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,14 +46,51 @@ async def _write_files(connection: Connection, put: ArchivePut, source: Path, st
     await put.commit_index()
 
 
+async def _concurrent_run(connection: Connection, executor: ProcessPoolExecutor, station: str,
+                          run: typing.Callable,
+                          args: typing.List[typing.Tuple], status: str) -> None:
+    concurrent_limit = max(os.cpu_count() + 2, 32)
+    completed_calls: int = 0
+    launched_calls: typing.Set[asyncio.Future] = set()
+
+    async def process_launched():
+        nonlocal launched_calls
+        nonlocal completed_calls
+
+        done, pending = await asyncio.wait(launched_calls, return_when=asyncio.FIRST_COMPLETED)
+        launched_calls = set(pending)
+        for check in done:
+            check.result()
+            completed_calls += 1
+        await connection.set_transaction_status(status.format(percent_done=(completed_calls / len(args)) * 100.0))
+
+    for a in args:
+        launched = asyncio.get_event_loop().run_in_executor(executor, run, station, *a)
+
+        launched_calls.add(launched)
+        while len(launched_calls) > concurrent_limit:
+            await process_launched()
+
+    while launched_calls:
+        await process_launched()
+
+
 async def _run_avgh(connection: Connection, input_directory: Path, output_directory: Path,
                     station: str, start: int, end: int) -> None:
-    for f in input_directory.iterdir():
-        if not f.is_file():
-            continue
-        # connection.set_transaction_status()
-        await asyncio.get_event_loop().run_in_executor(None, shutil.move,
-                                                       str(f), str(output_directory / f.name))
+    with ProcessPoolExecutor() as executor:
+        run_args: typing.List[typing.Tuple[str, str]] = list()
+        for input_file in input_directory.iterdir():
+            if not input_file.name.endswith('.nc'):
+                continue
+            if not input_file.is_file():
+                continue
+            run_args.append((str(input_file), str(output_directory / input_file.name)))
+
+        await _concurrent_run(
+            connection, executor, station, process_avgh, run_args,
+            "Generating hourly averages, {percent_done:.0f}% done"
+        )
+        executor.shutdown(wait=True)
 
 
 async def _write_avgh(connection: Connection, station: str, start: int, end: int,
@@ -88,13 +127,26 @@ async def update_avgh_data(connection: Connection, station: str, start: float, e
 
 async def _run_avgd(connection: Connection, input_directory: Path, output_directory: Path,
                     station: str, start: int, end: int) -> None:
-    # connection.set_transaction_status()
-    pass
+    with ProcessPoolExecutor() as executor:
+        run_args: typing.List[typing.Tuple[str, str]] = list()
+        for input_file in input_directory.iterdir():
+            if not input_file.name.endswith('.nc'):
+                continue
+            if not input_file.is_file():
+                continue
+            run_args.append((str(input_file), str(output_directory / input_file.name)))
+
+        await _concurrent_run(
+            connection, executor, station, process_avgd, run_args,
+            "Generating daily averages, {percent_done:.0f}% done"
+        )
+        executor.shutdown(wait=True)
 
 
 async def _write_avgd(connection: Connection, station: str, start: int, end: int,
                       source: Path) -> None:
     put = ArchivePut(connection)
+    start, end = round_to_year(start, end)
     await put.preemptive_lock_range(station, "avgd", start * 1000, end * 1000)
 
     await _write_files(connection, put, source, station, "avgd", False, "forge.average.daily",
@@ -126,8 +178,20 @@ async def update_avgd_data(connection: Connection, station: str, start: float, e
 
 async def _run_avgm(connection: Connection, input_directory: Path, output_directory: Path,
                     station: str, start: int, end: int) -> None:
-    # connection.set_transaction_status()
-    pass
+    with ProcessPoolExecutor() as executor:
+        run_args: typing.List[typing.Tuple[str, str]] = list()
+        for input_file in input_directory.iterdir():
+            if not input_file.name.endswith('.nc'):
+                continue
+            if not input_file.is_file():
+                continue
+            run_args.append((str(input_file), str(output_directory / input_file.name)))
+
+        await _concurrent_run(
+            connection, executor, station, process_avgm, run_args,
+            "Generating monthly averages, {percent_done:.0f}% done"
+        )
+        executor.shutdown(wait=True)
 
 
 async def _write_avgm(connection: Connection, station: str, start: int, end: int,
@@ -135,7 +199,7 @@ async def _write_avgm(connection: Connection, station: str, start: int, end: int
     put = ArchivePut(connection)
     await put.preemptive_lock_range(station, "avgm", start * 1000, end * 1000)
 
-    await _write_files(connection, put, source, station, "avgm", False, "forge.average.monthly",
+    await _write_files(connection, put, source, station, "avgm", True, "forge.average.monthly",
                        "Writing daily monthly data, {percent_done:.0f}% done")
 
 

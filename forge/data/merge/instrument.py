@@ -49,6 +49,16 @@ def _reduce_to_slice(indices) -> typing.Union[slice, np.ndarray]:
     return np.array(indices, dtype=np.uint32)
 
 
+def _find_dimension(data: netCDF4.Dataset, name: str) -> netCDF4.Dimension:
+    while True:
+        try:
+            return data.dimensions[name]
+        except KeyError:
+            data = data.parent
+            if data is None:
+                raise KeyError(f"Dimension {name} not found")
+
+
 def _wavelength_mapping(wavelength_source: netCDF4.Variable, destination_size: int):
     if destination_size == 0:
         destination_size = 1
@@ -288,6 +298,10 @@ class _Variable:
         return False
 
     @property
+    def is_time_dimension(self) -> bool:
+        return False
+
+    @property
     def bind_dimensions(self) -> typing.List[str]:
         dimension_sort: typing.List[typing.Tuple[int, str]] = list()
         for dim in self.dimensions:
@@ -432,8 +446,8 @@ class _Variable:
     def map_data(self, contents: netCDF4.Variable, time_mapping: _TimeMapping) -> None:
         data_mapping = self.data_mapping(
             contents,
-            [contents.group().dimensions[name] for name in contents.dimensions[1:]],
-            [self.variable.group().dimensions[name] for name in self.variable.dimensions[1:]],
+            [_find_dimension(contents.group(), name) for name in contents.dimensions[1:]],
+            [_find_dimension(self.variable.group(), name) for name in self.variable.dimensions[1:]],
         )
 
         # Python compat: star expressions in subscriptions are not supported on older versions, so we just
@@ -489,8 +503,8 @@ class _ConstantVariable(_Variable):
 
         data_mapping = self.data_mapping(
             contents,
-            [contents.group().dimensions[name] for name in source_dimensions],
-            [self.variable.group().dimensions[name] for name in self.variable.dimensions],
+            [_find_dimension(contents.group(), name) for name in source_dimensions],
+            [_find_dimension(self.variable.group(), name) for name in self.variable.dimensions],
         )
 
         source_data = source_values[data_mapping.source_selection]
@@ -600,8 +614,8 @@ class _HistoryConstantVariable(_Variable):
 
         data_mapping = self.data_mapping(
             contents,
-            [contents.group().dimensions[name] for name in source_dimensions],
-            [self.variable.group().dimensions[name] for name in self.variable.dimensions],
+            [_find_dimension(contents.group(), name) for name in source_dimensions],
+            [_find_dimension(self.variable.group(), name) for name in self.variable.dimensions],
         )
 
         self._handle_existing_history(start, end, contents, data_mapping)
@@ -668,6 +682,10 @@ class _TimeVariable(_Variable):
 
     @property
     def time_dependent(self) -> bool:
+        return True
+
+    @property
+    def is_time_dimension(self) -> bool:
         return True
 
     @property
@@ -973,6 +991,16 @@ class _Record:
         for var in self.variables.values():
             if not var.time_dependent:
                 continue
+            if not var.is_time_dimension:
+                check_group = self.root.parent
+                outer_time_dimension = False
+                while check_group is not None:
+                    if 'time' in check_group.dimensions:
+                        outer_time_dimension = True
+                        break
+                    check_group = check_group.parent
+                if outer_time_dimension:
+                    continue
             self.root.createDimension('time', None)
             break
 
@@ -1002,22 +1030,22 @@ class _Record:
         for name, root in contents.groups.items():
             self.groups[name].apply_empty_data(root)
 
-    def apply_data(self, start: int, end: int, contents: netCDF4.Dataset) -> None:
+    def apply_data(self, start: int, end: int, contents: netCDF4.Dataset,
+                   time_mapping: typing.Optional[_TimeMapping] = None) -> None:
         for attr in self.history_attrs:
             attr.apply_data(start, end, contents)
 
-        mapping: typing.Optional[_TimeMapping] = None
         for name, var in contents.variables.items():
             result = self.variables[name].apply_time(start, end, var)
             if result:
-                mapping = result
+                time_mapping = result
 
-        if mapping:
+        if time_mapping:
             for name, var in contents.variables.items():
-                self.variables[name].apply_data(start, end, var, mapping)
+                self.variables[name].apply_data(start, end, var, time_mapping)
 
         for name, root in contents.groups.items():
-            self.groups[name].apply_data(start, end, root)
+            self.groups[name].apply_data(start, end, root, time_mapping)
 
     def finish(self) -> None:
         for attr in self.history_attrs:

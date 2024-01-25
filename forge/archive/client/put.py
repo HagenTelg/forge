@@ -72,7 +72,14 @@ class Index:
                     self._variable_ids[var_id] = variable_info
 
                 if 'wavelength' in var.dimensions:
-                    count = group.dimensions['wavelength'].size
+                    check_group = group
+                    while True:
+                        try:
+                            count = check_group.dimensions['wavelength'].size
+                            break
+                        except KeyError:
+                            check_group = check_group.parent
+                            assert check_group is not None
                     variable_info[instrument_id] = max(count, variable_info.get(instrument_id, 0))
                 elif 'wavelength' in getattr(var, 'ancillary_variables', "").split():
                     variable_info[instrument_id] = variable_info.get(instrument_id, 1)
@@ -120,6 +127,8 @@ class Index:
                 record_standard_name_name(var)
 
             for g in group.groups.values():
+                if g.name == 'statistics':
+                    continue
                 recurse_group(g)
 
         recurse_group(file)
@@ -334,8 +343,6 @@ class ArchivePut:
         file_id(file, instrument_id, archive_file_start / 1000.0, archive_file_end / 1000.0, now)
         file.time_coverage_start = format_iso8601_time(archive_file_start / 1000.0)
         file.time_coverage_end = format_iso8601_time(archive_file_end / 1000.0)
-
-        self._get_index(station, archive, archive_file_start).integrate_file(file)
 
     async def _merge_data_file(self, file: Dataset, station: str, archive: str, instrument_id: str,
                                archive_file_start: int, archive_file_end: int) -> None:

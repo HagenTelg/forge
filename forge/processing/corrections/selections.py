@@ -14,4 +14,6 @@ VOLUME_DEPENDENT_MEASUREMENTS = (
     {"variable_name": "normalized_number_distribution"},
     {"variable_name": "polar_scattering_coefficient"},
     {"variable_name": "mass_concentration"},
+    {"variable_name": "spot_one_light_absorption"},
+    {"variable_name": "spot_two_light_absorption"},
 )

@@ -6,6 +6,8 @@ from json import loads as from_json
 from math import nan, isfinite
 from netCDF4 import Dataset
 from forge.data.flags import declare_flag
+from forge.data.structure.variable import variable_flags
+from forge.data.structure.timeseries import variable_coordinates
 from forge.solver import polynomial as solve_polynomial
 from .selection import Selection
 
@@ -90,14 +92,22 @@ class _FlaggingAction(Action):
     def _flag_bit(self) -> typing.Optional[int]:
         return None
 
-    def filter_data(self, _root: Dataset, data: Dataset) -> bool:
-        return 'system_flags' in data.variables
+    def filter_data(self, _root: Dataset, _data: Dataset) -> bool:
+        return True
 
     def apply(self, _root: Dataset, data: Dataset, time_selection: typing.Union[slice, np.ndarray]) -> None:
         var = data.variables.get('system_flags')
-        if var is None:
-            return
-        bit = declare_flag(var, self._flag_name, self._flag_bit)
+        if var is not None:
+            bit = declare_flag(var, self._flag_name, self._flag_bit)
+        else:
+            bit = self._flag_bit or 0x01
+            var = data.createVariable('system_flags', 'u8', ('time',), fill_value=False)
+            variable_coordinates(data, var)
+            var.coverage_content_type = "physicalMeasurement"
+            var.variable_id = "F1"
+            variable_flags(var, {bit: self._flag_name})
+            var[:] = 0
+
         if isinstance(time_selection, slice):
             var[time_selection] = np.bitwise_or(var[:].data[time_selection], bit)
         else:

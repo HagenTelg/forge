@@ -1,8 +1,11 @@
 import typing
+import logging
 import numpy as np
 from abc import ABC, abstractmethod
 from netCDF4 import Dataset
 from forge.processing.station.lookup import station_data
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class StationFileFilter(ABC):
@@ -58,6 +61,7 @@ class AcceptIntoClean:
 
     def accept_file(self, file_start: int, file_end: int, file: str) -> typing.Optional[typing.Tuple[Dataset, float]]:
         if self._passed_file is None or self._filter is None:
+            _LOGGER.debug(f"Unavailable passed for {file}")
             return None
 
         file_start_ms = file_start * 1000
@@ -73,6 +77,7 @@ class AcceptIntoClean:
             return_index=True
         )
         if len(passed_profiles.shape) == 0 or passed_profiles.shape[0] == 0:
+            _LOGGER.debug(f"No data passed for {file_start},{file_end}")
             return None
         latest_profile_pass = passed_times[passed_time_order[first_profile_idx]]
 
@@ -85,8 +90,10 @@ class AcceptIntoClean:
                     continue
                 profile = self._profile_map[int(passed_profiles[profile_idx])]
                 if not self._filter.profile_accepts_file(profile, data):
+                    _LOGGER.debug(f"Profile {profile} rejected file {file}")
                     continue
-                latest_pass = latest_pass
+                latest_pass = profile_pass_time
+                _LOGGER.debug(f"Profile {profile} accepted file {file} for {latest_pass}")
             if latest_pass is not None:
                 result = data
                 data = None
