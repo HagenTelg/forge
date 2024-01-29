@@ -202,11 +202,16 @@ class FileAverager(ABC):
         Construct the averager.
 
         :param times_epoch_ms: the times in ms since the epoch that the values and averaged times start at
-        :param averaged_time: the amount of time each value represents
+        :param averaged_time_ms: the amount of time each value represents in ms
         :param nominal_spacing_ms: the nominal time between each value in ms
         """
+
+        assert len(times_epoch_ms.shape) == 1
+
         self._original_times = times_epoch_ms
-        if averaged_time_ms:
+        self._original_averaged_time = averaged_time_ms
+        if averaged_time_ms is not None:
+            assert self._original_times.shape == averaged_time_ms.shape
             self._weights = fixed_interval_coverage_weight(times_epoch_ms, averaged_time_ms, nominal_spacing_ms)
         else:
             self._weights = np.full(times_epoch_ms.shape, 1.0, dtype=np.float64)
@@ -221,3 +226,68 @@ class FileAverager(ABC):
 
     def __call__(self, values: np.ndarray) -> np.ndarray:
         return _bin_weighted_average(self._bin_start, values, self._weights)
+
+    @property
+    def times(self) -> np.ndarray:
+        raise NotImplementedError
+
+    @property
+    def averaged_count(self) -> np.ndarray:
+        if self._original_times.shape[0] == 0:
+            return np.empty((0,), dtype=np.uint32)
+        elif self._original_times.shape[0] == 1:
+            return np.array([1], dtype=np.uint32)
+        count = np.empty(self._bin_start.shape, dtype=np.uint32)
+        if self._bin_start.shape[0] > 1:
+            count[:-1] = self._bin_start[1:] - self._bin_start[:-1]
+        count[-1] = self._original_times.shape[0] - self._bin_start[-1]
+        return count
+
+    @property
+    def averaged_time_ms(self) -> typing.Optional[np.ndarray]:
+        if self._original_averaged_time is None:
+            return None
+        return np.add.reduceat(self._original_averaged_time, self._bin_start, dtype=np.uint64)
+
+
+class FixedIntervalFileAverager(FileAverager):
+    """
+    A class that handles fixed interval (e.x. hourly) averaging files.
+    """
+    def __init__(
+            self,
+            interval_ms: int,
+            times_epoch_ms: np.ndarray,
+            averaged_time_ms: typing.Optional[np.ndarray] = None,
+            nominal_spacing_ms: typing.Optional[typing.Union[int, float]] = None,
+    ):
+        """
+        Construct the averager.
+
+        :param interval_ms: the interval to average at in ms
+        :param times_epoch_ms: the times in ms since the epoch that the values and averaged times start at
+        :param averaged_time_ms: the amount of time each value represents in ms
+        :param nominal_spacing_ms: the nominal time between each value in ms
+        """
+        self._interval = interval_ms
+        super().__init__(times_epoch_ms, averaged_time_ms, nominal_spacing_ms)
+
+    def calculate_bins(self) -> typing.Tuple[np.ndarray, np.ndarray]:
+        return _fixed_interval_bins(self._original_times, self._interval)
+
+    @property
+    def times(self) -> np.ndarray:
+        return _fixed_interval_times(self._bin_numbers, np.int64, self._interval)
+
+
+class MonthFileAverager(FileAverager):
+    """
+    A class that handles monthly averaging files.
+    """
+
+    def calculate_bins(self) -> typing.Tuple[np.ndarray, np.ndarray]:
+        return _month_bins(self._original_times)
+
+    @property
+    def times(self) -> np.ndarray:
+        return _month_times(self._bin_numbers)
