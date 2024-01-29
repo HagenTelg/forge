@@ -199,13 +199,13 @@ class EditingPyranometerTemperature(SolarTimeSeries):
             trace = SolarTimeSeries.Trace(T_C)
             trace.legend = self._RAW_FORMAT.format(site=site, parameter="Upwelling PIR Case", code='Tuic')
             trace.data_record = f'{profile}-raw-pyranometertemperature'
-            trace.data_field = f'Tdic_{site.instrument_code}'
+            trace.data_field = f'Tuic_{site.instrument_code}'
             raw.traces.append(trace)
 
             trace = SolarTimeSeries.Trace(T_C)
             trace.legend = self._RAW_FORMAT.format(site=site, parameter="Upwelling PIR Dome", code='Tuid')
             trace.data_record = f'{profile}-raw-pyranometertemperature'
-            trace.data_field = f'Tdid_{site.instrument_code}'
+            trace.data_field = f'Tuid_{site.instrument_code}'
             raw.traces.append(trace)
 
             trace = SolarTimeSeries.Trace(T_C)
@@ -241,13 +241,13 @@ class EditingPyranometerTemperature(SolarTimeSeries):
             trace = SolarTimeSeries.Trace(T_C)
             trace.legend = self._EDITED_FORMAT.format(site=site, parameter="Upwelling PIR Case", code='Tuic')
             trace.data_record = f'{profile}-editing-pyranometertemperature'
-            trace.data_field = f'Tdic_{site.instrument_code}'
+            trace.data_field = f'Tuic_{site.instrument_code}'
             edited.traces.append(trace)
 
             trace = SolarTimeSeries.Trace(T_C)
             trace.legend = self._EDITED_FORMAT.format(site=site, parameter="Upwelling PIR Dome", code='Tuid')
             trace.data_record = f'{profile}-editing-pyranometertemperature'
-            trace.data_field = f'Tdid_{site.instrument_code}'
+            trace.data_field = f'Tuid_{site.instrument_code}'
             edited.traces.append(trace)
 
             trace = SolarTimeSeries.Trace(T_C)
