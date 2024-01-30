@@ -6141,6 +6141,21 @@ radiation_data = {
                 Name(station, 'raw', 'P_XM1'): 'Pambient',
             }, send
         ),
+
+        'bsrnqc': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'raw', 'T1_XM1'): 'Tambient',
+                Name(station, 'raw', 'ZSA_R81'): 'zsa',
+                Name(station, 'raw', 'ZS0_R81'): 'S0',
+                Name(station, 'raw', 'ZAU_R81'): 'AU',
+                Name(station, 'raw', 'Rdg_R81'): 'Rdg',
+                Name(station, 'raw', 'Rug_R81'): 'Rug',
+                Name(station, 'raw', 'Rdn_R81'): 'Rdn',
+                Name(station, 'raw', 'Rdf_R81'): 'Rdf',
+                Name(station, 'raw', 'Rdi_R81'): 'Rdi',
+                Name(station, 'raw', 'Rui_R81'): 'Rui',
+            }, send
+        ),
     },
 
     'editing': {
@@ -6248,6 +6263,21 @@ radiation_data = {
         'pressure': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
             start_epoch_ms, end_epoch_ms, station, 'radiationmet', {
                 Name(station, 'clean', 'P_XM1'): 'Pambient',
+            }, send
+        ),
+
+        'bsrnqc': lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
+            start_epoch_ms, end_epoch_ms, station, 'radiationmet', {
+                Name(station, 'clean', 'T1_XM1'): 'Tambient',
+                Name(station, 'clean', 'ZSA_R81'): 'zsa',
+                Name(station, 'clean', 'ZS0_R81'): 'S0',
+                Name(station, 'clean', 'ZAU_R81'): 'AU',
+                Name(station, 'clean', 'Rdg_R81'): 'Rdg',
+                Name(station, 'clean', 'Rug_R81'): 'Rug',
+                Name(station, 'clean', 'Rdn_R81'): 'Rdn',
+                Name(station, 'clean', 'Rdf_R81'): 'Rdf',
+                Name(station, 'clean', 'Rdi_R81'): 'Rdi',
+                Name(station, 'clean', 'Rui_R81'): 'Rui',
             }, send
         ),
     },
@@ -6370,6 +6400,21 @@ radiation_data = {
         'pressure': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
             start_epoch_ms, end_epoch_ms, {
                 Name(station, 'clean', 'P_XM1'): 'Pambient',
+            }, send
+        ),
+        
+        'bsrnqc': lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+            start_epoch_ms, end_epoch_ms, {
+                Name(station, 'clean', 'T1_XM1'): 'Tambient',
+                Name(station, 'clean', 'ZSA_R81'): 'zsa',
+                Name(station, 'clean', 'ZS0_R81'): 'S0',
+                Name(station, 'clean', 'ZAU_R81'): 'AU',
+                Name(station, 'clean', 'Rdg_R81'): 'Rdg',
+                Name(station, 'clean', 'Rug_R81'): 'Rug',
+                Name(station, 'clean', 'Rdn_R81'): 'Rdn',
+                Name(station, 'clean', 'Rdf_R81'): 'Rdf',
+                Name(station, 'clean', 'Rdi_R81'): 'Rdi',
+                Name(station, 'clean', 'Rui_R81'): 'Rui',
             }, send
         ),
     },

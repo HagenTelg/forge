@@ -1,0 +1,24 @@
+<style>
+div.view {
+  flex-grow: 1;
+}
+
+div.scroll {
+  height: {{ 6*300 }}px;
+}
+</style>
+
+<div class="view" id="view_timeseries"></div>
+{% include 'view/controls.html' %}
+
+<script>
+(function() {
+{% include 'view/components/solar.js' %}
+{% if contamination %}{% include 'view/components/contamination.js' %}{% endif %}
+{% include 'view/common/replot.js' %}
+{% include 'view/common/timeseries.js' %}
+{% include 'view/common/shapes.js' %}
+{% include 'view/layout/bsrnqc.js' %}
+{% include 'view/bsrnqc.js' %}
+})();
+</script>

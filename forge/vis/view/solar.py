@@ -62,3 +62,34 @@ class SolarPosition(View):
             longitude=longitude,
             **kwargs
         ))
+
+
+class BSRNQC(View):
+    def __init__(self, mode: str, latitude: typing.Optional[float] = None, longitude: typing.Optional[float] = None):
+        super().__init__()
+        self.latitude = latitude
+        self.longitude = longitude
+        self.record = f"{mode}-bsrnqc"
+        self.contamination = f"{mode}-contamination"
+
+    async def __call__(self, request: Request, **kwargs) -> Response:
+        latitude = self.latitude
+        if latitude is None:
+            station = kwargs.get('station')
+            if station is not None:
+                latitude = station_data(station, 'site', 'latitude')(station)
+        longitude = self.longitude
+        if longitude is None:
+            station = kwargs.get('station')
+            if station is not None:
+                longitude = station_data(station, 'site', 'longitude')(station)
+
+        return HTMLResponse(await package_template('view', 'bsrnqc.html').render_async(
+            request=request,
+            view=self,
+            contamination=self.contamination,
+            record=self.record,
+            latitude=latitude,
+            longitude=longitude,
+            **kwargs
+        ))

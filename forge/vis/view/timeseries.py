@@ -18,7 +18,7 @@ class TimeSeries(View):
     class Trace:
         def __init__(self, axis: "TimeSeries.Axis"):
             self.axis: TimeSeries.Axis = axis
-            self.legend = ""
+            self.legend: str = ""
             self.color: typing.Optional[str] = None
             self.format_code: typing.Optional[str] = None
             self.data_record: typing.Optional[str] = None
@@ -86,7 +86,7 @@ class TimeSeries(View):
                         continue
                     self.graphs.append(self.timeseries.graphs[i])
             else:
-                self.graphs = timeseries.graphs
+                self.graphs = self.timeseries.graphs
 
         def __getattr__(self, item):
             return getattr(self.timeseries, item)
