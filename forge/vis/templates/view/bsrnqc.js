@@ -545,12 +545,12 @@ class Calculator extends DataSocket.RecordStream {
             }
         }, "Rdi");
         generate(data_air_temperature_Rdi, "Temperature", (Rdi, Tambient) => {
-            const stephan_boltzman_constant = 4.67E-8;
+            const stephan_boltzmann_constant = 5.67E-8;
             const Ta = Tambient + 273.15;
             if (Ta < 170 || Ta > 350) {
                 return undefined;
             }
-            const base = stephan_boltzman_constant * Math.pow(Tambient, 4);
+            const base = stephan_boltzmann_constant * Math.pow(Ta, 4);
             if (Rdi < 0.4 * base) {
                 return -1;
             } else if (Rdi > base + 25) {
@@ -580,14 +580,14 @@ class Calculator extends DataSocket.RecordStream {
             }
         }, "Rui");
         generate(data_air_temperature_Rui, "Temperature", (Rui, Tambient) => {
-            const stephan_boltzman_constant = 4.67E-8;
+            const stephan_boltzmann_constant = 5.67E-8;
             const Ta = Tambient + 273.15;
             if (Ta < 170 || Ta > 350) {
                 return undefined;
             }
-            if (Rui < stephan_boltzman_constant * Math.pow(Tambient - 15, 4)) {
+            if (Rui < stephan_boltzmann_constant * Math.pow(Ta - 15, 4)) {
                 return -1;
-            } else if (Rui > stephan_boltzman_constant * Math.pow(Tambient + 25, 4)) {
+            } else if (Rui > stephan_boltzmann_constant * Math.pow(Ta + 25, 4)) {
                 return 1;
             }
         }, "Rui", "Tambient");
