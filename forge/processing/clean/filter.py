@@ -32,6 +32,7 @@ class AcceptIntoClean:
             if passed_data is not None:
                 self._pass_start: np.ndarray = passed_data.variables["start_time"][...].data
                 self._pass_end: np.ndarray = passed_data.variables["end_time"][...].data
+                self._pass_time: np.ndarray = passed_data.variables["pass_time"][...].data
                 profile = passed_data.variables["profile"]
                 self._profile_map: typing.Dict[int, str] = dict()
                 for name, value in profile.datatype.enum_dict.items():
@@ -55,7 +56,7 @@ class AcceptIntoClean:
             self._passed_file.close()
             self._passed_file = None
 
-    def accept_file(self, file_start: int, file_end: int, file: str) -> typing.Optional[Dataset]:
+    def accept_file(self, file_start: int, file_end: int, file: str) -> typing.Optional[typing.Tuple[Dataset, float]]:
         if self._passed_file is None or self._filter is None:
             return None
 
@@ -65,19 +66,31 @@ class AcceptIntoClean:
             file_start_ms < self._pass_end,
             file_end_ms > self._pass_start,
         ), axis=0)
-        passed_profiles = np.unique(self._pass_profile[passed_indices])
+        passed_times = self._pass_time[passed_indices]
+        passed_time_order = np.flip(np.argsort(passed_times))
+        passed_profiles, first_profile_idx = np.unique(
+            self._pass_profile[passed_indices][passed_time_order],
+            return_index=True
+        )
         if len(passed_profiles.shape) == 0 or passed_profiles.shape[0] == 0:
             return None
+        latest_profile_pass = passed_times[passed_time_order[first_profile_idx]]
 
         data = Dataset(file, 'r+')
         try:
-            for profile_number in passed_profiles:
-                profile = self._profile_map[int(profile_number)]
+            latest_pass = None
+            for profile_idx in range(len(passed_profiles)):
+                profile_pass_time = float(latest_profile_pass[profile_idx]) / 1000
+                if latest_pass and profile_pass_time <= latest_pass:
+                    continue
+                profile = self._profile_map[int(passed_profiles[profile_idx])]
                 if not self._filter.profile_accepts_file(profile, data):
                     continue
+                latest_pass = latest_pass
+            if latest_pass is not None:
                 result = data
                 data = None
-                return result
+                return result, latest_pass
         finally:
             if data is not None:
                 data.close()

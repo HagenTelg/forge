@@ -31,7 +31,10 @@ async def _write_files(connection: Connection, put: ArchivePut, source: Path, st
         data = Dataset(str(write_files[idx]), 'r+')
         try:
             append_history(data, history, history_time)
-            await put.data(data, archive=archive, station=station, exact_contents=whole_file)
+            if whole_file:
+                await put.replace_exact(data, archive=archive, station=station)
+            else:
+                await put.data(data, archive=archive, station=station)
         finally:
             if not whole_file:
                 data.close()

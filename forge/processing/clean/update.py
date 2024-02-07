@@ -9,6 +9,8 @@ from tempfile import TemporaryDirectory
 from pathlib import Path
 from netCDF4 import Dataset
 from forge.logicaltime import containing_year_range, start_of_year
+from forge.formattime import format_iso8601_time
+from forge.timeparse import parse_iso8601_time
 from forge.archive.client.connection import Connection
 from forge.archive.client.put import ArchivePut
 from forge.archive.client.get import read_file_or_nothing, get_all_daily_files
@@ -87,12 +89,14 @@ async def _run_pass(connection: Connection, working_directory: Path, station: st
             continue
 
         for check_file in day_files[day_index]:
-            data = current_filter.accept_file(file_start, str(check_file))
+            data = current_filter.accept_file(file_start, file_end, str(check_file))
             if data is None:
                 check_file.unlink()
                 continue
+            data, profile_pass_time = data
             try:
                 append_history(data, "forge.pass", pass_time)
+                data.setncattr("forge_pass_time", format_iso8601_time(profile_pass_time))
             finally:
                 data.close()
             total_file_count += 1
@@ -116,8 +120,24 @@ async def _write_data(connection: Connection, station: str, start: int, end: int
             continue
         await connection.set_transaction_status(f"Writing clean data, {(total_written / expected_count) * 100.0:.0f}% done")
 
+        def replace_file(original: typing.Optional[Dataset], replacement: Dataset) -> bool:
+            if original is None:
+                return True
+
+            original_pass_time = getattr(original, 'forge_pass_time', None)
+            if original_pass_time is None:
+                return True
+            original_pass_time = parse_iso8601_time(str(original_pass_time)).timestamp()
+
+            replace_pass_time = getattr(replacement, 'forge_pass_time', None)
+            if replace_pass_time is None:
+                return True
+            replace_pass_time = parse_iso8601_time(str(replace_pass_time)).timestamp()
+
+            return original_pass_time < replace_pass_time
+
         data = Dataset(str(file), 'r+')
-        await put.data(data, archive="clean", station=station, exact_contents=True)
+        await put.replace_exact(data, archive="clean", station=station, replace_existing=replace_file)
 
         total_written += 1
 

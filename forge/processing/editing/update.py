@@ -116,7 +116,7 @@ async def _write_data(connection: Connection, station: str, start: int, end: int
     for idx in range(len(write_files)):
         data = Dataset(str(write_files[idx]), 'r+')
         append_history(data, "forge.editing", history_time)
-        await put.data(data, archive="edited", station=station, exact_contents=True)
+        await put.replace_exact(data, archive="edited", station=station)
 
         percent_done = ((idx + 1) / len(write_files)) * 100.0
         await connection.set_transaction_status(f"Writing edited data, {percent_done:.0f}% done")
