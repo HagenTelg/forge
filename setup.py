@@ -87,6 +87,8 @@ setup(
         "forge-archive-avgm-updater = forge.archive.update.avgm:updater",
         "forge-archive-avgm-flush = forge.archive.update.avgm:flush",
 
+        "forge-data-command = forge.cli.__main__:main",
+
         "forge-cpd3-cache-client = forge.cpd3.cache.client:main",
         "forge-cpd3-cache-server = forge.cpd3.cache.server:main",
         "forge-cpd3-pass-server = forge.cpd3.pass.server:main",

@@ -1,5 +1,5 @@
 import typing
-from netCDF4 import Variable
+from netCDF4 import Variable, Dataset
 
 
 def cell_methods(var: Variable) -> typing.Dict[str, str]:
@@ -18,3 +18,10 @@ def cell_methods(var: Variable) -> typing.Dict[str, str]:
             var_methods = " ".join(components[idx].split()[:-1])
         result[var_name] = var_methods
     return result
+
+
+def copy(source: typing.Union[Variable, Dataset], destination: typing.Union[Variable, Dataset]) -> None:
+    for attr in source.ncattrs():
+        if attr.startswith('_'):
+            continue
+        destination.setncattr(attr, source.getncattr(attr))

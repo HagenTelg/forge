@@ -2,11 +2,12 @@ import typing
 from abc import ABC, abstractmethod
 import numpy as np
 from math import nan, isfinite
-from netCDF4 import Dataset, Group, Variable, EnumType, VLType
+from netCDF4 import Dataset, Group, Variable, EnumType
 from forge.timeparse import parse_iso8601_duration
 from forge.data.structure.timeseries import time_coordinate, cutsize_coordinate, averaged_time_variable, averaged_count_variable
-from forge.data.attrs import cell_methods
+from forge.data.attrs import cell_methods, copy as copy_attrs
 from forge.data.state import is_state_group
+from forge.data.values import create_and_copy_variable
 from .calculate import FileAverager
 from . import STANDARD_QUANTILES
 
@@ -47,31 +48,6 @@ def _exclude_averaged_variable(variable: Variable) -> bool:
     if variable.name == 'averaged_count':
         return True
     return False
-
-
-def _copy_variable(input_variable: Variable, output_root: Dataset) -> None:
-    if isinstance(input_variable.datatype, EnumType):
-        dtype = output_root.enumtypes[input_variable.datatype.name]
-    else:
-        dtype = input_variable.dtype
-
-    fill_value = False
-    try:
-        fill_value = input_variable._FillValue
-    except AttributeError:
-        pass
-
-    output_variable = output_root.createVariable(input_variable.name, dtype, input_variable.dimensions,
-                                                 fill_value=fill_value)
-    for attr in input_variable.ncattrs():
-        if attr.startswith('_'):
-            continue
-        output_variable.setncattr(attr, input_variable.getncattr(attr))
-    if isinstance(input_variable.datatype, VLType):
-        for idx in np.ndindex(output_variable.shape):
-            output_variable[idx] = input_variable[idx]
-    else:
-        output_variable[:] = input_variable[:].data
 
 
 class _AverageController(ABC):
@@ -505,20 +481,17 @@ def _average_group(
         make_averager: typing.Callable[[np.ndarray, typing.Optional[np.ndarray], typing.Optional[typing.Union[int, float]]], FileAverager],
         time_coverage_resolution: typing.Optional[typing.Union[int, float]] = None,
 ) -> None:
-    for attr in input_root.ncattrs():
-        if attr.startswith('_'):
-            continue
-        output_root.setncattr(attr, input_root.getncattr(attr))
+    copy_attrs(input_root, output_root)
     for name, input_dimension in input_root.dimensions.items():
         if name == 'time':
             continue
         output_root.createDimension(name, input_dimension.size)
     for name, input_enum in input_root.enumtypes.items():
-        output_root.createEnumType(name, input_enum.datatype, input_enum.enum_dict)
+        output_root.createEnumType(name, input_enum.dtype, input_enum.enum_dict)
     for name, input_variable in input_root.variables.items():
         if 'time' in input_variable.dimensions:
             continue
-        _copy_variable(input_variable, output_root)
+        create_and_copy_variable(input_variable, output_root)
 
     _average_data(input_root, output_root, make_averager, time_coverage_resolution)
 

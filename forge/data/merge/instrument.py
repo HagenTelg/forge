@@ -9,6 +9,7 @@ from forge.timeparse import parse_iso8601_time
 from forge.formattime import format_iso8601_time
 from forge.data.structure.variable import variable_flags, variable_cutsize
 from .enum import MergeEnum
+from .timeselect import selected_time_range
 from ..state import is_state_group
 from ..flags import parse_flags
 
@@ -141,7 +142,7 @@ def _cut_size_mapping(cut_size_source: netCDF4.Variable, cut_size_destination: n
     output_apply: typing.List[int] = [0] * cut_size_source.shape[0]
     for sidx in range(cut_size_source.shape[0]):
         cut_size = to_wavelength(cut_size_source[sidx])
-        didx = int(np.where(cut_size_destination[:] == cut_size)[0])
+        didx = int(np.where(cut_size_destination[:].data == cut_size)[0])
         output_apply[sidx] = didx
     return _reduce_to_slice(output_apply), len(output_apply)
 
@@ -161,12 +162,12 @@ class _TimeMapping:
 class _DataMapping:
     def __init__(
             self,
-            source_shape: typing.Tuple[int, ...],
-            source_selection: typing.Tuple[slice, ...],
-            source_reshape: typing.Optional[typing.Tuple[int, ...]],
-            source_transpose: typing.Optional[typing.Tuple[int, ...]],
-            source_apply: typing.Tuple[slice, ...],
-            destination_apply: typing.Tuple[typing.Union[slice, np.ndarray], ...],
+            source_shape: "typing.Tuple[int, ...]",
+            source_selection: "typing.Tuple[slice, ...]",
+            source_reshape: "typing.Optional[typing.Tuple[int, ...]]",
+            source_transpose: "typing.Optional[typing.Tuple[int, ...]]",
+            source_apply: "typing.Tuple[slice, ...]",
+            destination_apply: "typing.Tuple[typing.Union[slice, np.ndarray], ...]",
     ):
         self.source_shape = source_shape
         self.source_selection = source_selection
@@ -175,7 +176,7 @@ class _DataMapping:
         self.source_apply = source_apply
         self.destination_apply = destination_apply
 
-    def netcdf_assignments(self, source_shape: typing.Tuple[int, ...]):
+    def netcdf_assignments(self, source_shape: "typing.Tuple[int, ...]"):
         # Complicated handling because NetCDF variables do not support advanced indexing, so we need to unroll
         # that case
 
@@ -700,29 +701,20 @@ class _TimeVariable(_Variable):
             return None
         if contents.shape[0] == 0:
             return None
-        source_start = np.searchsorted(contents[:], start)
-        source_end = np.searchsorted(contents[:], end)
-        if source_end < contents.shape[0] and contents[source_end] < end:
-            source_end += 1
-        if self.is_state:
-            # State incorporates the time before the interval, since that value overlaps the interval
-            if source_start >= contents.shape[0]:
-                source_start = contents.shape[0] - 1
-            elif source_start > 0 and contents[source_start] > start:
-                source_start -= 1
-        if source_start >= contents.shape[0]:
+        time_values = contents[:].data
+        selected = selected_time_range(time_values, start, end, self.is_state)
+        if selected is None:
             return None
-        if source_start == source_end:
-            return None
+        source_start, source_end = selected
 
         time_count = source_end - source_start
         destination_start = self.next_time_index
-        if self.last_time_value and contents[source_start] <= self.last_time_value:
+        if self.last_time_value and time_values[source_start] <= self.last_time_value:
             destination_start -= 1
         destination_end = destination_start + time_count
 
         self.next_time_index = destination_end
-        self.last_time_value = contents[source_end - 1]
+        self.last_time_value = time_values[source_end - 1]
 
         mapping = _TimeMapping(source_start, source_end, destination_start, destination_end)
         self.map_data(contents, mapping)
@@ -891,9 +883,9 @@ class _CutSizeVariable(_Variable):
 
         dimensions = contents.dimensions
         if not dimensions:
-            source_data = contents[:]
+            source_data = contents[:].data
         else:
-            source_data = contents[time_mapping.source_start:time_mapping.source_end]
+            source_data = contents[time_mapping.source_start:time_mapping.source_end].data
         source_data = self.convert_values(contents, source_data)
         if source_data is None:
             return

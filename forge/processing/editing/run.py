@@ -41,7 +41,7 @@ class EditingAvailableDay(AvailableData):
             start: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             end: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             always_tuple: bool = False,
-    ) -> typing.Iterator[typing.Union[SelectedData, typing.Tuple[SelectedData, ...]]]:
+    ) -> "typing.Iterator[typing.Union[SelectedData, typing.Tuple[SelectedData, ...]]]":
         start, end = self._to_bounds_ms(start, end)
         if not intersects(self._day_start_ms, self._day_end_ms, start, end):
             return
@@ -82,7 +82,7 @@ class EditingAvailableDay(AvailableData):
             start: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             end: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             always_tuple: bool = False,
-    ) -> typing.Iterator[typing.Union[SelectedData, typing.Tuple[SelectedData, ...]]]:
+    ) -> "typing.Iterator[typing.Union[SelectedData, typing.Tuple[SelectedData, ...]]]":
         assert len(selected) > 0
         start, end = self._to_bounds_ms(start, end)
         if not intersects(self._day_start_ms, self._day_end_ms, start, end):
@@ -116,7 +116,7 @@ class EditingAvailableDay(AvailableData):
             start: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             end: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             peer_times: bool = False,
-    ) -> typing.Iterator[typing.Tuple[SelectedData, ...]]:
+    ) -> "typing.Iterator[typing.Tuple[SelectedData, ...]]":
         assert instrument_id
         assert len(inputs) > 0
 

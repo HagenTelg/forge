@@ -47,7 +47,7 @@ class RunAvailable(AvailableData):
             start: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             end: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             always_tuple: bool = False,
-    ) -> typing.Iterator[typing.Union[SelectedData, typing.Tuple[SelectedData, ...]]]:
+    ) -> "typing.Iterator[typing.Union[SelectedData, typing.Tuple[SelectedData, ...]]]":
         start, end = self._to_bounds_ms(start, end)
         match_instrument = InstrumentSelection.matcher(instrument)
         match_auxiliary = [InstrumentSelection.matcher(aux) for aux in auxiliary]
@@ -112,10 +112,10 @@ class RunAvailable(AvailableData):
 
     def _combined_matches(
             self,
-            inputs: typing.Tuple[typing.Union[typing.Dict[str, typing.Any], InstrumentSelection, typing.Iterable], ...],
+            inputs: "typing.Tuple[typing.Union[typing.Dict[str, typing.Any], InstrumentSelection, typing.Iterable], ...]",
             start: int, end: int,
             open_mode: str,
-    ) -> typing.Iterator[typing.Tuple[SelectedData, ...]]:
+    ) -> "typing.Iterator[typing.Tuple[SelectedData, ...]]":
         match_inputs = [InstrumentSelection.matcher(inp) for inp in inputs]
         covered_ranges: typing.List[typing.Tuple[int, int]] = list()
         for first_file in self._files:
@@ -189,7 +189,7 @@ class RunAvailable(AvailableData):
             start: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             end: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             always_tuple: bool = False,
-    ) -> typing.Iterator[typing.Union[SelectedData, typing.Tuple[SelectedData, ...]]]:
+    ) -> "typing.Iterator[typing.Union[SelectedData, typing.Tuple[SelectedData, ...]]]":
         assert len(selected) > 0
         start, end = self._to_bounds_ms(start, end)
 
@@ -207,7 +207,7 @@ class RunAvailable(AvailableData):
             start: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             end: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             peer_times: bool = False,
-    ) -> typing.Iterator[typing.Tuple[SelectedData, ...]]:
+    ) -> "typing.Iterator[typing.Tuple[SelectedData, ...]]":
         assert instrument_id
         assert len(inputs) > 0
         
@@ -216,7 +216,7 @@ class RunAvailable(AvailableData):
         if isinstance(tags, str):
             tags = tags.split()
 
-        def _valid_output(candidate_data: typing.Tuple[SelectedData, ...]) -> bool:
+        def _valid_output(candidate_data: "typing.Tuple[SelectedData, ...]") -> bool:
             for i in candidate_data:
                 if i.placeholder:
                     continue

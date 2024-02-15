@@ -117,8 +117,8 @@ def wavelength_extrapolate(
 class AdjustWavelengthParameters:
     def __init__(
             self,
-            fixed_angstrom_exponent: typing.Optional[typing.Union[float, typing.List[float], typing.Tuple[float, ...]]] = None,
-            fallback_angstrom_exponent: typing.Optional[typing.Union[float, typing.List[float], typing.Tuple[float, ...]]] = None,
+            fixed_angstrom_exponent: "typing.Optional[typing.Union[float, typing.List[float], typing.Tuple[float, ...]]]" = None,
+            fallback_angstrom_exponent: "typing.Optional[typing.Union[float, typing.List[float], typing.Tuple[float, ...]]]" = None,
             maximum_wavelength_interpolation: typing.Optional[float] = None,
             maximum_angstrom_extrapolation: typing.Optional[float] = None,
     ):
@@ -130,7 +130,7 @@ class AdjustWavelengthParameters:
 
 def _adjust_single_wavelength(
         input_values: np.ndarray,
-        input_wavelengths: typing.Union[typing.List[float], typing.Tuple[float, ...]],
+        input_wavelengths: "typing.Union[typing.List[float], typing.Tuple[float, ...]]",
         output_wavelength: float,
         parameters: typing.Optional[AdjustWavelengthParameters] = None,
 ) -> np.ndarray:
@@ -205,7 +205,7 @@ def _adjust_single_wavelength(
 
 def adjust_wavelengths(
         data: SelectedVariable,
-        target_wavelengths: typing.Union[typing.List[float], typing.Tuple[float, ...]],
+        target_wavelengths: "typing.Union[typing.List[float], typing.Tuple[float, ...]]",
         parameters: typing.Optional[AdjustWavelengthParameters] = None,
 ) -> np.ndarray:
     if not data.has_changing_wavelengths:

@@ -8,9 +8,9 @@ from ..derived.angstrom import angstrom_exponent_adjacent
 class Coefficients:
     def __init__(
             self,
-            total_coarse_angstrom: typing.Dict[float, typing.Tuple[float, ...]],
+            total_coarse_angstrom: "typing.Dict[float, typing.Tuple[float, ...]]",
             total_coarse_no_angstrom: typing.Dict[float, float],
-            total_fine_angstrom: typing.Dict[float, typing.Tuple[float, ...]],
+            total_fine_angstrom: "typing.Dict[float, typing.Tuple[float, ...]]",
             total_fine_no_angstrom: typing.Dict[float, float],
             back_coarse_no_angstrom: typing.Dict[float, float],
             back_fine_no_angstrom: typing.Dict[float, float],
@@ -40,7 +40,7 @@ class Coefficients:
             self,
             scattering: np.ndarray,
             angstrom: np.ndarray,
-            wavelengths: typing.Union[float, typing.List[float], typing.Tuple[float, ...]],
+            wavelengths: "typing.Union[float, typing.List[float], typing.Tuple[float, ...]]",
             angstrom_fit: typing.Dict[float, np.polynomial.Polynomial],
             no_angstrom_coefficients: typing.Dict[float, float],
     ) -> np.ndarray:
@@ -78,7 +78,7 @@ class Coefficients:
             self,
             scattering: np.ndarray,
             angstrom: np.ndarray,
-            wavelengths: typing.Union[float, typing.List[float], typing.Tuple[float, ...]],
+            wavelengths: "typing.Union[float, typing.List[float], typing.Tuple[float, ...]]",
     ) -> np.ndarray:
         return self._apply_total_inner(scattering, angstrom, wavelengths, self.total_coarse_angstrom,
                                        self.total_coarse_no_angstrom)
@@ -87,7 +87,7 @@ class Coefficients:
             self,
             scattering: np.ndarray,
             angstrom: np.ndarray,
-            wavelengths: typing.Union[float, typing.List[float], typing.Tuple[float, ...]],
+            wavelengths: "typing.Union[float, typing.List[float], typing.Tuple[float, ...]]",
     ) -> np.ndarray:
         return self._apply_total_inner(scattering, angstrom, wavelengths, self.total_fine_angstrom,
                                        self.total_fine_no_angstrom)
@@ -95,7 +95,7 @@ class Coefficients:
     def _apply_back_inner(
             self,
             scattering: np.ndarray,
-            wavelengths: typing.Union[float, typing.List[float], typing.Tuple[float, ...]],
+            wavelengths: "typing.Union[float, typing.List[float], typing.Tuple[float, ...]]",
             no_angstrom_coefficients: typing.Dict[float, float],
     ) -> np.ndarray:
         if isinstance(wavelengths, (float, int)):
@@ -110,14 +110,14 @@ class Coefficients:
     def apply_back_coarse(
             self,
             scattering: np.ndarray,
-            wavelengths: typing.Union[typing.List[float], typing.Tuple[float, ...]],
+            wavelengths: "typing.Union[typing.List[float], typing.Tuple[float, ...]]",
     ) -> np.ndarray:
         return self._apply_back_inner(scattering, wavelengths, self.back_coarse_no_angstrom)
 
     def apply_back_fine(
             self,
             scattering: np.ndarray,
-            wavelengths: typing.Union[typing.List[float], typing.Tuple[float, ...]],
+            wavelengths: "typing.Union[typing.List[float], typing.Tuple[float, ...]]",
     ) -> np.ndarray:
         return self._apply_back_inner(scattering, wavelengths, self.back_fine_no_angstrom)
 

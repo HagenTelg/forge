@@ -1,6 +1,6 @@
 import typing
 import re
-from netCDF4 import Dataset
+from netCDF4 import Dataset, Variable
 from .attrs import cell_methods
 
 
@@ -33,3 +33,14 @@ def is_state_group(group: Dataset) -> typing.Optional[bool]:
             continue
         return False
     return result
+
+
+def is_in_state_group(var: Variable) -> typing.Optional[bool]:
+    group = var.group()
+    is_state = is_state_group(group)
+    while is_state is None:
+        group = group.parent
+        if group is None:
+            break
+        is_state = is_state_group(group)
+    return group

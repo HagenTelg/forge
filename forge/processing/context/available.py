@@ -81,7 +81,7 @@ class AvailableData(ABC):
             start: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             end: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             always_tuple: bool = False,
-    ) -> typing.Iterator[typing.Union[SelectedData, typing.Tuple[SelectedData, ...]]]:
+    ) -> "typing.Iterator[typing.Union[SelectedData, typing.Tuple[SelectedData, ...]]]":
         pass
 
     @abstractmethod
@@ -91,7 +91,7 @@ class AvailableData(ABC):
             start: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             end: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             always_tuple: bool = False,
-    ) -> typing.Iterator[typing.Union[SelectedData, typing.Tuple[SelectedData, ...]]]:
+    ) -> "typing.Iterator[typing.Union[SelectedData, typing.Tuple[SelectedData, ...]]]":
         pass
 
     @abstractmethod
@@ -103,5 +103,5 @@ class AvailableData(ABC):
             start: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             end: typing.Optional[typing.Union[str, float, int, datetime.datetime]] = None,
             peer_times: bool = False,
-    ) -> typing.Iterator[typing.Tuple[SelectedData, ...]]:
+    ) -> "typing.Iterator[typing.Tuple[SelectedData, ...]]":
         pass

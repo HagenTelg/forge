@@ -5,7 +5,7 @@
 ## Aerosol Dynamics MAGIC 200 CPC
 
 ```toml
-[instruments.N71]
+[instrument.N71]
 type = "admagic200cpc"
 serial_port = "/dev/serial/by-id/..."
 cut_size = false
@@ -17,7 +17,7 @@ cut_size = false
 ## Aerosol Dynamics MAGIC 250 CPC
 
 ```toml
-[instruments.N71]
+[instrument.N71]
 type = "admagic250cpc"
 serial_port = "/dev/serial/by-id/..."
 cut_size = false
@@ -29,7 +29,7 @@ cut_size = false
 ## BMI MCPC 1710
 
 ```toml
-[instruments.N71]
+[instrument.N71]
 type = "bmi1710cpc"
 serial_port = "/dev/serial/by-id/..."
 cut_size = false
@@ -42,7 +42,7 @@ serial_number = 123
 ## BMI MCPC 1720
 
 ```toml
-[instruments.N71]
+[instrument.N71]
 type = "bmi1720cpc"
 serial_port = "/dev/serial/by-id/..."
 cut_size = false
@@ -119,7 +119,7 @@ Q = [0.0, 1.082]
 ## DMT CCN
 
 ```toml
-[instruments.N11]
+[instrument.N11]
 type = "dmtccn"
 serial_port = "/dev/serial/by-id/..."
 cut_size = false

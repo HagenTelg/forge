@@ -52,7 +52,7 @@ class SelectedData(ABC):
     def append_history(self, component: str) -> None:
         append_history(self.root, component)
 
-    def set_wavelengths(self, wavelengths: typing.Union[typing.List[float], typing.Tuple[float, ...], np.ndarray]) -> None:
+    def set_wavelengths(self, wavelengths: "typing.Union[typing.List[float], typing.Tuple[float, ...], np.ndarray]") -> None:
         data_group = self.root.groups.get("data")
         if data_group is None:
             data_group = self.root.createGroup("data")
@@ -92,7 +92,7 @@ class SelectedData(ABC):
             always_tuple: bool = False,
             commit_variable: bool = True,
             commit_auxiliary: bool = False,
-    ) -> typing.Iterator[typing.Union[SelectedVariable, typing.Tuple[SelectedVariable, ...]]]:
+    ) -> "typing.Iterator[typing.Union[SelectedVariable, typing.Tuple[SelectedVariable, ...]]]":
         pass
 
     @abstractmethod
@@ -139,7 +139,7 @@ class SelectedData(ABC):
             name: str,
             error_when_duplicate: bool = False,
             wavelength: bool = False,
-            dimensions: typing.Optional[typing.Tuple[str, ...]] = None,
+            dimensions: "typing.Optional[typing.Tuple[str, ...]]" = None,
             dtype=np.float64,
     ) -> "SelectedData.OutputContext":
         pass
@@ -180,7 +180,7 @@ class EmptySelectedData(SelectedData):
             always_tuple: bool = False,
             commit_variable: bool = True,
             commit_auxiliary: bool = False,
-    ) -> typing.Iterator[typing.Union[SelectedVariable, typing.Tuple[SelectedVariable, ...]]]:
+    ) -> "typing.Iterator[typing.Union[SelectedVariable, typing.Tuple[SelectedVariable, ...]]]":
         return iter(())
 
     def get_input(
@@ -199,7 +199,7 @@ class EmptySelectedData(SelectedData):
             name: str,
             error_when_duplicate: bool = False,
             wavelength: bool = False,
-            dimensions: typing.Optional[typing.Tuple[str, ...]] = None,
+            dimensions: "typing.Optional[typing.Tuple[str, ...]]" = None,
             dtype=np.float64,
     ) -> SelectedData.OutputContext:
         shape = None
@@ -294,7 +294,7 @@ class FileData(SelectedData):
             always_tuple: bool = False,
             commit_variable: bool = True,
             commit_auxiliary: bool = False,
-    ) -> typing.Iterator[typing.Union[SelectedVariable, typing.Tuple[SelectedVariable, ...]]]:
+    ) -> "typing.Iterator[typing.Union[SelectedVariable, typing.Tuple[SelectedVariable, ...]]]":
         aux_matchers: typing.List[typing.Callable[[Variable], bool]] = list()
         for aux in auxiliary:
             aux_matchers.append(VariableSelection.matcher(aux))
@@ -346,7 +346,7 @@ class FileData(SelectedData):
             name: str,
             error_when_duplicate: bool = False,
             wavelength: bool = False,
-            dimensions: typing.Optional[typing.Tuple[str, ...]] = None,
+            dimensions: "typing.Optional[typing.Tuple[str, ...]]" = None,
             dtype=np.float64,
     ) -> SelectedData.OutputContext:
         def is_same_file() -> bool:

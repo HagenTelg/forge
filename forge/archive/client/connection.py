@@ -27,10 +27,10 @@ class Connection:
         self._request_queue = asyncio.Queue()
         self._callback_queue = asyncio.Queue()
         self._closed = asyncio.Event()
-        self._response_handler: typing.Optional[typing.Tuple[typing.Callable[["Connection", ServerPacket, ...], typing.Awaitable], typing.Tuple, typing.Dict, asyncio.Future]] = None
-        self._notification_handlers: typing.Dict[str, typing.List[typing.Tuple[typing.Callable[[str, int, int, ...], typing.Awaitable], typing.Tuple, typing.Dict]]] = dict()
-        self._intent_handlers: typing.Dict[str, typing.List[typing.Tuple[typing.Callable[[str, int, int, ...], typing.Awaitable], typing.Tuple, typing.Dict]]] = dict()
-        self._transaction_intents: typing.Optional[typing.Dict["Connection.IntentHandle", bool]] = None
+        self._response_handler: "typing.Optional[typing.Tuple[typing.Callable[[Connection, ServerPacket, ...], typing.Awaitable], typing.Tuple, typing.Dict, asyncio.Future]]" = None
+        self._notification_handlers: "typing.Dict[str, typing.List[typing.Tuple[typing.Callable[[str, int, int, ...], typing.Awaitable], typing.Tuple, typing.Dict]]]" = dict()
+        self._intent_handlers: "typing.Dict[str, typing.List[typing.Tuple[typing.Callable[[str, int, int, ...], typing.Awaitable], typing.Tuple, typing.Dict]]]" = dict()
+        self._transaction_intents: "typing.Optional[typing.Dict[Connection.IntentHandle, bool]]" = None
         self._internal_run: typing.Optional[asyncio.Task] = None
 
     @classmethod
@@ -127,9 +127,8 @@ class Connection:
         self._internal_run = asyncio.get_event_loop().create_task(self.run())
 
     async def _request_response(self,
-                                request: typing.Callable[["Connection", ...], typing.Awaitable],
-                                response: typing.Optional[
-                                   typing.Callable[["Connection", ServerPacket, ...], typing.Awaitable]],
+                                request: "typing.Callable[[Connection, ...], typing.Awaitable]",
+                                response: "typing.Optional[typing.Callable[[Connection, ServerPacket, ...], typing.Awaitable]]",
                                 *args, **kwargs) -> typing.Any:
         completed = asyncio.Future()
 
@@ -586,7 +585,7 @@ class Connection:
 
         await self._request_response(request, response)
 
-    async def listen_notification(self, key: str, handler: typing.Callable[[str, int, int, ...], typing.Awaitable],
+    async def listen_notification(self, key: str, handler: "typing.Callable[[str, int, int, ...], typing.Awaitable]",
                                   *args, **kwargs) -> None:
         target = self._notification_handlers.get(key)
         if target is not None:
@@ -605,7 +604,7 @@ class Connection:
 
         await self._request_response(request, response)
 
-    async def listen_intent(self, key: str, handler: typing.Callable[[str, int, int, ...], typing.Awaitable],
+    async def listen_intent(self, key: str, handler: "typing.Callable[[str, int, int, ...], typing.Awaitable]",
                             *args, **kwargs) -> None:
         target = self._intent_handlers.get(key)
         if target is None:

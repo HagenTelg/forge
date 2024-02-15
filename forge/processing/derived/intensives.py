@@ -84,7 +84,7 @@ def generate_intensives(
         scattering,
         absorption,
         extinction=None,
-        wavelengths: typing.Union[typing.List[float], typing.Tuple[float, ...]] = (450.0, 550.0, 700.0),
+        wavelengths: "typing.Union[typing.List[float], typing.Tuple[float, ...]]" = (450.0, 550.0, 700.0),
         is_stp: bool = True,
         wavelength_adjustment: typing.Optional[AdjustWavelengthParameters] = None,
 ) -> None:

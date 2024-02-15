@@ -4,6 +4,7 @@ import netCDF4
 import numpy as np
 import forge.data.structure.variable as netcdf_var
 from forge.data.flags import parse_flags
+from forge.data.attrs import copy as copy_attrs
 from forge.data.structure.stp import standard_temperature, standard_pressure
 from ..context import SelectedData, SelectedVariable
 from ..context.variable import EmptySelectedVariable
@@ -39,13 +40,13 @@ def write_extensives(
         scattering,
         absorption,
         extinction=None,
-        wavelengths: typing.Union[typing.List[float], typing.Tuple[float, ...]] = (450.0, 550.0, 700.0),
+        wavelengths: "typing.Union[typing.List[float], typing.Tuple[float, ...]]" = (450.0, 550.0, 700.0),
         is_stp: bool = True,
         wavelength_adjustment: typing.Optional[AdjustWavelengthParameters] = None,
 ) -> typing.Tuple[SelectedVariable, SelectedVariable, SelectedVariable, SelectedVariable, SelectedVariable]:
     extensives.set_wavelengths(wavelengths)
 
-    def find_variable(source: SelectedData, selector, *auxiliary) -> typing.Optional[typing.Union[SelectedVariable, typing.Tuple[SelectedVariable, ...]]]:
+    def find_variable(source: SelectedData, selector, *auxiliary) -> "typing.Optional[typing.Union[SelectedVariable, typing.Tuple[SelectedVariable, ...]]]":
         for var in source.select_variable(selector, *auxiliary, commit_variable=False, commit_auxiliary=False):
             return var
         return None
@@ -95,8 +96,7 @@ def write_extensives(
                     continue
                 dest_var = dest_group.createVariable(name, source_var.dtype)
                 dest_var[0] = source_var[0]
-                for attr in source_var.ncattrs():
-                    dest_var.setncattr(attr, source_var.getncattr(attr))
+                copy_attrs(source_var, dest_var)
 
     def apply_wavelengths(destination: SelectedVariable, source: SelectedVariable) -> None:
         destination[:] = adjust_wavelengths(source, wavelengths, parameters=wavelength_adjustment)

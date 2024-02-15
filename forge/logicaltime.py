@@ -113,3 +113,49 @@ def round_to_month(start: float, end: float) -> typing.Tuple[int, int]:
     start_month_number, end_month_number = containing_epoch_month_range(start, end)
     return start_of_epoch_month(start_month_number), start_of_epoch_month(end_month_number)
 
+
+def _day_of_week(year: int, month: int, day: int) -> int:
+    dt = datetime.date(year, month, day)
+    return (dt.weekday() + 1) % 7
+
+
+def julian_day(year: int, month: int, day: int) -> int:
+    if month > 2:
+        month -= 3
+    else:
+        year -= 1
+        month += 9
+    c = int(floor(year / 100))
+    ya = year - 100 * c
+    return int(floor((146097 * c) / 4) + floor((1461 * ya) / 4) + floor((153 * month + 2) / 5) + day + 1721119)
+
+
+def start_of_week(year: int, week: int) -> int:
+    _week_offset = (0, -1, -2, -3, 3, 2, 1)
+
+    dow = (_day_of_week(year, 1, 1) + 6) % 7
+    base_jd = julian_day(year, 1, 1)
+    jd = base_jd + _week_offset[dow] + (week - 1) * 7
+    if jd - base_jd < 0:
+        year -= 1
+    count = 1
+    while (jd - julian_day(year + count, 1, 1)) > 0:
+        count += 1
+    year += count - 1
+    return start_of_year(year) + (jd - julian_day(year, 1, 1)) * 24 * 60 * 60
+
+
+def end_of_week(year: int, week: int) -> int:
+    return start_of_week(year, week) + 7 * 24 * 60 * 60
+
+
+def start_of_quarter(year: int, quarter: int) -> int:
+    _quarter_start_doy = (1, 91, 182, 274)
+    return start_of_year(year) + (_quarter_start_doy[quarter-1] - 1) * 24 * 60 * 60
+
+
+def end_of_quarter(year: int, quarter: int) -> int:
+    _quarter_start_doy = (1, 91, 182, 274)
+    if quarter == 4:
+        return start_of_year(year + 1)
+    return start_of_year(year) + (_quarter_start_doy[quarter] - 1) * 24 * 60 * 60
