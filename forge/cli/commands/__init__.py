@@ -44,5 +44,7 @@ def available_commands() -> typing.List[typing.Type[ParseCommand]]:
     result.append(GetCommand)
     from .netcdf import Command as NetCDFCommand
     result.append(NetCDFCommand)
+    from .importcmd import Command as ImportCommand
+    result.append(ImportCommand)
 
     return result

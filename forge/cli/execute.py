@@ -275,6 +275,11 @@ class Execute:
 
             return
 
+    def attach_external_files(self, files: typing.Iterable[Path]) -> None:
+        assert not self._writable_data_path
+        assert not self._read_only_combined_input
+        self._read_only_input_files.extend(files)
+
     def data_files(self) -> typing.Iterator[Path]:
         self.ensure_readable()
         source = self._writable_data_path or self._read_only_combined_input
