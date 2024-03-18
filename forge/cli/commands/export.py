@@ -1655,10 +1655,14 @@ class _ExportStage(ExecuteStage):
                 for header_generator in self._headers:
                     for header_columns in header_generator(all_columns):
                         header_line = self._header_prefix + join_fields(header_columns)
-                        if self._header_stderr:
-                            sys.stderr.write(header_line + "\n")
-                        else:
-                            print(header_line)
+                        try:
+                            if self._header_stderr:
+                                sys.stderr.write(header_line + "\n")
+                                sys.stderr.flush()
+                            else:
+                                print(header_line, flush=True)
+                        except BrokenPipeError:
+                            pass
 
                 column_values: typing.List[str] = list()
                 for row_idx in range(output_times.shape[0]):
@@ -1668,7 +1672,11 @@ class _ExportStage(ExecuteStage):
                         col = all_columns[col_idx]
                         source_indices = [int(v[row_idx]) for v in alignment_indices[col_idx]]
                         column_values.append(col(row_time, source_indices))
-                    print(join_fields(column_values))
+                    try:
+                        print(join_fields(column_values))
+                    except BrokenPipeError:
+                        _LOGGER.debug("Output pipe closed, export aborted", exc_info=True)
+                        break
 
             if not sys.stdout.isatty() and not self.exec.stderr_is_output:
                 with self.progress("Exporting data"):
