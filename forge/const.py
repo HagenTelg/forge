@@ -26,6 +26,7 @@ STATIONS = frozenset({
     'egb',
     'etl',
     'euk',
+    'fiaq',
     'gsn',
     'hac',
     'hih',
