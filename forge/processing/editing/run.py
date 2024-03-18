@@ -22,12 +22,13 @@ class EditingSelectedData(SelectedData):
 
 
 class EditingAvailableDay(AvailableData):
-    def __init__(self, station: str, output_directory: Path, day_start: int, data_files: typing.List[Dataset]):
+    def __init__(self, station: str, output_directory: Path, day_start: int, data_files: typing.List[Dataset],
+                 day_end: typing.Optional[int] = None):
         self._station = station
         self._output_directory = output_directory
         self._data_files = data_files
         self._day_start_ms = day_start * 1000
-        self._day_end_ms = self._day_start_ms + 24 * 60 * 60 * 1000
+        self._day_end_ms = day_end * 1000 if day_end is not None else self._day_start_ms + 24 * 60 * 60 * 1000
 
     def close(self) -> None:
         for f in self._data_files:

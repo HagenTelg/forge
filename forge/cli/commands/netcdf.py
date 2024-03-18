@@ -217,7 +217,7 @@ class MergeFlatten(ExecuteStage):
                 open_files.append(file)
 
                 station_name = file.variables.get("station_name")
-                if station_name is not None and isinstance(station_name.dtype, str):
+                if station_name is not None:
                     station_name = str(station_name[0]).upper()
                     unique_stations.add(station_name)
                 else:

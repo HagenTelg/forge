@@ -265,7 +265,7 @@ class DataSelection:
 
             if self.station:
                 station_name = root.variables.get("station_name")
-                if station_name is None or not isinstance(station_name.dtype, str):
+                if station_name is None:
                     return False
                 if not self.station.fullmatch(str(station_name[0])):
                     return False

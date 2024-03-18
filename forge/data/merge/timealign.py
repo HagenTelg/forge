@@ -46,6 +46,9 @@ def incoming_before(
     :returns: indices in incoming that target the destination, with the same size as destination
     """
 
+    assert incoming.shape[0] > 0
+    assert destination.shape[0] > 0
+
     incoming_much_larger = incoming.shape[0] > max(int(ceil(log2(incoming.shape[0])))*destination.shape[0], 2048)
 
     if not sort_destination and not sort_incoming and not incoming_much_larger:

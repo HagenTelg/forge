@@ -2,29 +2,9 @@ import typing
 import asyncio
 import logging
 import argparse
-import enum
-import time
-import shutil
-import re
-import os
-import numpy as np
-from math import floor, ceil
-from json import loads as from_json
 from pathlib import Path
-from netCDF4 import Dataset, Variable, Group, EnumType, VLType
-from forge.const import STATIONS, MAX_I64
-from forge.timeparse import parse_time_bounds_arguments, parse_iso8601_time
-from forge.formattime import format_iso8601_time
-from forge.logicaltime import containing_year_range, start_of_year, end_of_year_ms, year_bounds_ms, containing_epoch_month_range, start_of_epoch_month_ms
-from forge.archive.client import index_lock_key, index_file_name, data_lock_key, data_file_name
-from forge.archive.client.connection import Connection, LockDenied, LockBackoff
-from forge.data.state import is_state_group, is_in_state_group
-from forge.data.attrs import copy as copy_attrs
-from forge.data.values import create_and_copy_variable
-from forge.data.statistics import find_statistics_origin
-from forge.data.merge.timeselect import selected_time_range
-from ..execute import Execute, ExecuteStage, Progress, mkstemp_like
-from .parse import split_tagged_regex
+from netCDF4 import Dataset
+from ..execute import Execute, ExecuteStage
 from . import ParseCommand, ParseArguments
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,6 +32,8 @@ class Command(ParseCommand):
     def instantiate(cls, cmd: ParseArguments.SubCommand, execute: Execute,
                     parser: argparse.ArgumentParser,
                     args: argparse.Namespace, extra_args: typing.List[str]) -> None:
+        cls.no_extra_args(parser, extra_args)
+
         execute.install(_ImportStage(execute, parser, [
             Path(p) for p in args.import_data
         ]))

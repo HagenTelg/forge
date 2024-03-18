@@ -532,6 +532,10 @@ class _ColumnVariable(_Column):
             except AttributeError:
                 prefix = variable.name
                 suffix = ""
+            try:
+                archive_suffix = "_" + str(self.file.forge_archive).upper()
+            except AttributeError:
+                archive_suffix = ""
 
             if self.name_suffix:
                 prefix += self.name_suffix
@@ -541,8 +545,8 @@ class _ColumnVariable(_Column):
                 suffix += self.identifier_suffix
 
             if not suffix:
-                return prefix
-            return prefix + "_" + suffix
+                return prefix + archive_suffix
+            return prefix + "_" + suffix + archive_suffix
 
         def header_name(self, modifier_suffix: str = "") -> str:
             return self.construct_name(self.variable, modifier_suffix=modifier_suffix)

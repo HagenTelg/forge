@@ -46,5 +46,7 @@ def available_commands() -> typing.List[typing.Type[ParseCommand]]:
     result.append(NetCDFCommand)
     from .importcmd import Command as ImportCommand
     result.append(ImportCommand)
+    from .edit import Command as EditCommand
+    result.append(EditCommand)
 
     return result

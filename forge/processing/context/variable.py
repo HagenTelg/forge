@@ -282,6 +282,15 @@ class DataVariable(SelectedVariable):
             v._values = v._values[v._time_origin_indices]
             return v
 
+        if v._times.shape[0] == 0:
+            v._time_origin_indices = np.empty((0,), dtype=np.uint64)
+            v._times = sibling.times
+            if np.issubdtype(v._values.dtype, np.floating):
+                v._values = np.full((v._times.shape[0], *v._values.shape[1:]), nan, dtype=v._values.dtype)
+            else:
+                v._values = np.empty((v._times.shape[0], *v._values.shape[1:]), dtype=v._values.dtype)
+            return v
+
         from forge.data.merge.timealign import incoming_before
         indices = incoming_before(sibling.times, v._times)
         if indices.shape[0] == 1 or np.all(indices[1:] == indices[:-1] + 1):
@@ -367,6 +376,9 @@ class DataVariable(SelectedVariable):
                 return
             begin_index, end_index = self._time_slice(self._raw_times, int(self._times[0]), int(self._times[-1]))
             self.variable[begin_index:end_index] = self._values
+            return
+
+        if len(self._time_origin_indices) == 0:
             return
 
         raw_times = self._raw_times

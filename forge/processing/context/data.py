@@ -406,8 +406,15 @@ class FileData(SelectedData):
                     size_var[:] = source_cut[:]
                     return
 
+                dest_time = destination.variables["time"][:].data
+                if dest_time.shape[0] == 0:
+                    return
+                inc_time = for_time_variable()[:].data
+                if inc_time.shape[0] == 0:
+                    return
+
                 from forge.data.merge.timealign import incoming_before
-                size_idx = incoming_before(destination.variables["time"][:].data, for_time_variable()[:].data)
+                size_idx = incoming_before(dest_time, inc_time)
                 size_var[:] = source_cut[size_idx]
 
             setup_cut_size()
