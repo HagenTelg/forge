@@ -62,7 +62,7 @@ def standard_intensives(data: AvailableData) -> None:
     for intensives, scattering, absorption, cpc in data.derive_output(
             "XI",
             {"tags": "scattering -secondary"},
-            {"tags": "absorption -secondary"},
+            {"tags": "absorption -secondary -aethalometer -thermomaap"},
             {"tags": "cpc -secondary"},
             tags=("aerosol", "intensives"),
     ):
