@@ -28,7 +28,7 @@ class BusInterface(BaseBusInterface):
 
         self._bypass_held: typing.Set[str] = set()
         self.bypass_ignore_source: typing.Set[str] = set()
-        self.bypass_only_source: typing.Optional[typing.Set[str]] = set()
+        self.bypass_only_source: typing.Optional[typing.Set[str]] = None
 
         self._command_dispatch: typing.Dict[str, typing.List[typing.Callable[[typing.Any], None]]] = dict()
 
