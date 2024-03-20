@@ -182,8 +182,11 @@ class Instrument(StreamingInstrument):
         else:
             raise CommunicationsError(f"unknown units in {line}")
 
-        self.data_WD(parse_number(WD))
-        self.data_WS(converter(parse_number(WS)))
+        # Empty seems to happen occasionally (calculation failure?)
+        if len(WD.strip()) != 0:
+            self.data_WD(parse_number(WD))
+        if len(WS.strip()) != 0:
+            self.data_WS(converter(parse_number(WS)))
 
         status = status.strip()
         try:
