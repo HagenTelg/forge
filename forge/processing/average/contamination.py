@@ -17,7 +17,7 @@ class StationContamination:
         return True
 
 
-def _invalidate_group(group: Group, apply: StationContamination) -> None:
+def _invalidate_group(group: Dataset, apply: StationContamination) -> None:
     for g in group.groups.values():
         _invalidate_group(g, apply)
     flags = group.variables.get('system_flags')
@@ -54,6 +54,7 @@ def _invalidate_group(group: Group, apply: StationContamination) -> None:
 def invalidate_contamination(
         file: Dataset,
         station: typing.Optional[str] = None,
+        tags: typing.Optional[typing.Set[str]] = None,
 ) -> None:
     if station is None:
         station_var = file.variables.get("station_name")
@@ -69,7 +70,8 @@ def invalidate_contamination(
     if time_coverage_end is not None:
         time_coverage_end = int(ceil(parse_iso8601_time(str(time_coverage_end)).timestamp()))
 
-    tags = set(str(getattr(file, 'forge_tags', "")).split())
+    if tags is None:
+        tags = set(str(getattr(file, 'forge_tags', "")).split())
 
     if station:
         apply = station_data(station, 'contamination', 'apply')(station, tags, time_coverage_start, time_coverage_end)
