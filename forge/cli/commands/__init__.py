@@ -42,6 +42,8 @@ def available_commands() -> typing.List[typing.Type[ParseCommand]]:
     result.append(ExportCommand)
     from .get import Command as GetCommand
     result.append(GetCommand)
+    from .average import Command as AverageCommand
+    result.append(AverageCommand)
     from .netcdf import Command as NetCDFCommand
     result.append(NetCDFCommand)
     from .importcmd import Command as ImportCommand

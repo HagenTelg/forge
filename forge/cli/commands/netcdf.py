@@ -47,6 +47,9 @@ class Command(ParseCommand):
         parser.add_argument('--no-round-times',
                             dest='no_round_times', action='store_true',
                             help="disable time rounding when full merging")
+        parser.add_argument('--discard-statistics',
+                            dest='discard_statistics', action='store_true',
+                            help="discard implied statistics during implicit filtering")
 
     @classmethod
     def instantiate(cls, cmd: ParseArguments.SubCommand, execute: "Execute",
@@ -65,7 +68,7 @@ class Command(ParseCommand):
             GetCommand.instantiate_pure(cmd, execute, parser, args, extra_args)
         else:
             cls.no_extra_args(parser, extra_args)
-        FilterStage.instantiate_if_available(execute)
+        FilterStage.instantiate_if_available(execute, retain_statistics=not args.discard_statistics)
 
         if args.merge == 'instrument':
             execute.install(MergeInstrument(execute))

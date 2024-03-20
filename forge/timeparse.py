@@ -146,29 +146,35 @@ def _parse_any_offset(s: str) -> float:
     if s.startswith('P'):
         return parse_iso8601_duration(s)
 
+    def valid_number(n: str) -> float:
+        n = int(n)
+        if n <= 0:
+            raise ValueError
+        return n
+
     if s.endswith('s'):
         try:
-            return int(s[:-1])
+            return valid_number(s[:-1])
         except ValueError:
             pass
     elif s.endswith('m'):
         try:
-            return int(s[:-1]) * 60
+            return valid_number(s[:-1]) * 60
         except ValueError:
             pass
     elif s.endswith('h'):
         try:
-            return int(s[:-1]) * 60 * 60
+            return valid_number(s[:-1]) * 60 * 60
         except ValueError:
             pass
     elif s.endswith('d'):
         try:
-            return int(s[:-1]) * 24 * 60 * 60
+            return valid_number(s[:-1]) * 24 * 60 * 60
         except ValueError:
             pass
     elif s.endswith('w'):
         try:
-            return int(s[:-1]) * 7 * 24 * 60 * 60
+            return valid_number(s[:-1]) * 7 * 24 * 60 * 60
         except ValueError:
             pass
 
@@ -425,3 +431,51 @@ def parse_time_bounds_arguments(args: typing.List[str]) -> typing.Tuple[datetime
     if remaining:
         raise ValueError("unrecognized extra time arguments")
     return start, end
+
+
+def parse_interval_argument(s: str) -> float:
+    s = s.strip()
+
+    if s.startswith('P'):
+        return parse_iso8601_duration(s)
+
+    def valid_number(n: str) -> float:
+        n = int(n)
+        if n <= 0:
+            raise ValueError
+        return n
+
+    s = s.lower()
+
+    if s.endswith('s'):
+        try:
+            return valid_number(s[:-1])
+        except ValueError:
+            pass
+    elif s.endswith('m'):
+        try:
+            return valid_number(s[:-1]) * 60
+        except ValueError:
+            pass
+    elif s.endswith('h'):
+        try:
+            return valid_number(s[:-1]) * 60 * 60
+        except ValueError:
+            pass
+    elif s.endswith('d'):
+        try:
+            return valid_number(s[:-1]) * 24 * 60 * 60
+        except ValueError:
+            pass
+    elif s.endswith('w'):
+        try:
+            return valid_number(s[:-1]) * 7 * 24 * 60 * 60
+        except ValueError:
+            pass
+
+    try:
+        return valid_number(s)
+    except ValueError:
+        pass
+
+    raise ValueError("invalid interval format")
