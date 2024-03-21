@@ -52,5 +52,7 @@ def available_commands() -> typing.List[typing.Type[ParseCommand]]:
     result.append(EditCommand)
     from .contamination import Command as ContaminationCommand
     result.append(ContaminationCommand)
+    from .cutsize import Command as CutSizeCommand
+    result.append(CutSizeCommand)
 
     return result

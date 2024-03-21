@@ -458,8 +458,10 @@ class _ColumnTimeCutString(_Column):
             if var is not None:
                 if len(var.dimensions) != 0 and var.dimensions[0] == 'time':
                     self._cut_time_variables.append(var)
+                elif var.shape:
+                    self._always_present_sizes.update([float(c) for c in var[:].data])
                 else:
-                    self._always_present_sizes.update(var[:].data)
+                    self._always_present_sizes.add(float(var[0].data))
             for g in root.groups.values():
                 scan_group(g)
         scan_group(file)
