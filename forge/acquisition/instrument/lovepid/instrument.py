@@ -258,6 +258,18 @@ class Instrument(StreamingInstrument):
         self._report_interval: float = float(context.config.get('REPORT_INTERVAL', default=1.0))
         self._sleep_time: float = 0.0
 
+        command_delay: float = float(context.config.get('COMMAND_DELAY', default=0.1))
+        if command_delay > 0.0:
+            async def delay():
+                await asyncio.sleep(command_delay)
+
+            self._command_delay = delay
+        else:
+            async def delay():
+                pass
+
+            self._command_delay = delay
+
         self.data_value = self.input_array("value")
         self.data_raw = self.input_array("raw")
         self.data_setpoint = self.persistent("setpoint", save_value=False)
@@ -370,25 +382,43 @@ class Instrument(StreamingInstrument):
         self.writer.write(controller.assemble_packet(payload))
         return await self._read_response(controller)
 
+    async def _retry_command(self, controller: "Instrument._Controller",
+                             command: "Instrument._Command", data: bytes = None) -> bytes:
+        await self._command_delay()
+
+        retry = 0
+        while True:
+            try:
+                return await wait_cancelable(self._command_response(controller, command, data), min(2.0 + retry, 4.0))
+            except (asyncio.TimeoutError, CommunicationsError):
+                if retry >= 4:
+                    raise
+                retry += 1
+
+            await self.writer.drain()
+            await self.drain_reader(0.5)
+
     async def _start_controller_communications(self, controller: "Instrument._Controller") -> None:
         _LOGGER.debug(f"Starting communications with controller {controller.address:X}")
 
         controller.current_input = None
         controller.current_setpoint = None
 
-        status = await wait_cancelable(self._command_response(controller, self._Command.READ_STATUS), 4.0)
+        status = await self._retry_command(controller, self._Command.READ_STATUS)
         status = self._StatusResponse(status)
 
         if not status.remote_mode:
-            await wait_cancelable(self._command_response(controller, self._Command.SET_REMOTE_MODE), 4.0)
+            await self._retry_command(controller, self._Command.SET_REMOTE_MODE)
         if status.manual_mode and not controller.manual_mode:
-            await wait_cancelable(self._command_response(controller, self._Command.DISABLE_MANUAL_MODE), 4.0)
+            await self._retry_command(controller, self._Command.DISABLE_MANUAL_MODE)
         elif not status.manual_mode and controller.manual_mode:
-            await wait_cancelable(self._command_response(controller, self._Command.ENABLE_MANUAL_MODE), 4.0)
+            await self._retry_command(controller, self._Command.ENABLE_MANUAL_MODE)
 
         try:
+            await self._command_delay()
             response = await wait_cancelable(self._command_response(controller, self._Command.READ_EEPROM_SAVE), 4.0)
             if response[:1] != b'0' and (len(response) == 1 or response[1:2] != b'0'):
+                await self._command_delay()
                 await wait_cancelable(self._command_response(controller, self._Command.DISABLE_EEPROM_SAVE), 4.0)
         except (asyncio.TimeoutError, CommunicationsError):
             # Not fatal, since some controllers do not support it
@@ -397,7 +427,7 @@ class Instrument(StreamingInstrument):
             await self.writer.drain()
             await self.drain_reader(2.0)
 
-        response = await wait_cancelable(self._command_response(controller, self._Command.READ_CONTROLLER_DATA), 4.0)
+        response = await self._retry_command(controller, self._Command.READ_CONTROLLER_DATA)
         if response[:4] == b'LOVE':
             response = response[4:]
         try:
@@ -417,11 +447,11 @@ class Instrument(StreamingInstrument):
         controller.reported_mode = model
         controller.reported_id = f"{year:04d}w{week:02d}-{model}"
 
-        response = await wait_cancelable(self._command_response(controller, self._Command.READ_FIRMWARE_DATA), 4.0)
+        response = await self._retry_command(controller, self._Command.READ_FIRMWARE_DATA)
         if len(response) >= 2:
             controller.reported_firmware = response.decode('ascii')
 
-        response = await wait_cancelable(self._command_response(controller, self._Command.READ_DECIMAL_POINT), 4.0)
+        response = await self._retry_command(controller, self._Command.READ_DECIMAL_POINT)
         try:
             digits = int(response, 16)
         except (TypeError, ValueError):
@@ -430,8 +460,8 @@ class Instrument(StreamingInstrument):
             raise CommunicationsError(f"invalid number of decimal digits {digits}")
 
         if controller.decimal_digits is not None and digits != controller.decimal_digits:
-            await wait_cancelable(self._command_response(controller, self._Command.WRITE_DECIMAL_POINT,
-                                                         b"000%02X00" % controller.decimal_digits), 4.0)
+            await self._retry_command(controller, self._Command.WRITE_DECIMAL_POINT,
+                                      b"000%02X00" % controller.decimal_digits)
             digits = controller.decimal_digits
         controller.reported_decimal_digits = digits
 
@@ -473,7 +503,7 @@ class Instrument(StreamingInstrument):
                 payload = b"%04d" % output_number
             payload = payload + b"00"
 
-            response = await self._command_response(controller, self._Command.WRITE_MANUAL_SP1, payload)
+            response = await self._retry_command(controller, self._Command.WRITE_MANUAL_SP1, payload)
             if response != b'00':
                 raise CommunicationsError(f"invalid setpoint change response {response}")
 
@@ -496,7 +526,7 @@ class Instrument(StreamingInstrument):
             payload = b"%04d" % output_number
         payload = payload + sign
 
-        response = await self._command_response(controller, self._Command.WRITE_SP1, payload)
+        response = await self._retry_command(controller, self._Command.WRITE_SP1, payload)
         if response != b'00':
             raise CommunicationsError(f"invalid setpoint change response {response}")
 
@@ -512,7 +542,12 @@ class Instrument(StreamingInstrument):
             if not force and value == out.controller.current_setpoint:
                 continue
 
-            applied_value = await wait_cancelable(self._write_analog_output(out.controller, value), 4.0)
+            try:
+                applied_value = await self._write_analog_output(out.controller, value)
+            except CommunicationsError as e:
+                raise CommunicationsError(f"error setting controller {out.controller.address:X} output") from e
+            except asyncio.TimeoutError as e:
+                raise asyncio.TimeoutError(f"timeout setting controller {out.controller.address:X} output") from e
             out.current_setpoint = applied_value
 
     async def communicate(self) -> None:
@@ -531,26 +566,31 @@ class Instrument(StreamingInstrument):
         setpoint_values: typing.List[float] = [nan] * len(self.controllers)
         output_values: typing.List[float] = [nan] * len(self.controllers)
         for controller in self.controllers:
-            status = await wait_cancelable(self._command_response(controller, self._Command.READ_STATUS), 4.0)
-            status = self._StatusResponse(status)
-            raw_values[controller.index] = status.value
-            controller.current_input = status.value
+            try:
+                status = await self._retry_command(controller, self._Command.READ_STATUS)
+                status = self._StatusResponse(status)
+                raw_values[controller.index] = status.value
+                controller.current_input = status.value
 
-            if False and status.has_error:
-                error_status = await wait_cancelable(self._command_response(controller, self._Command.READ_ERROR_STATUS), 4.0)
-                error_status = self._ErrorStatusResponse(error_status)
+                if False and status.has_error:
+                    error_status = await self._retry_command(controller, self._Command.READ_ERROR_STATUS)
+                    error_status = self._ErrorStatusResponse(error_status)
 
-            if status.manual_mode:
-                setpoint = await wait_cancelable(self._command_response(controller, self._Command.READ_MANUAL_SP1), 4.0)
-            else:
-                setpoint = await wait_cancelable(self._command_response(controller, self._Command.READ_SP1), 4.0)
-            setpoint = self._ValueResponse(setpoint)
-            setpoint_values[controller.index] = setpoint.value
-            controller.current_setpoint = setpoint.value
+                if status.manual_mode:
+                    setpoint = await self._retry_command(controller, self._Command.READ_MANUAL_SP1)
+                else:
+                    setpoint = await self._retry_command(controller, self._Command.READ_SP1)
+                setpoint = self._ValueResponse(setpoint)
+                setpoint_values[controller.index] = setpoint.value
+                controller.current_setpoint = setpoint.value
 
-            output_percent = await wait_cancelable(self._command_response(controller, self._Command.READ_OUTPUT_PERCENT), 4.0)
-            output_percent = self._ValueResponse(output_percent)
-            output_values[controller.index] = output_percent.value
+                output_percent = await self._retry_command(controller, self._Command.READ_OUTPUT_PERCENT)
+                output_percent = self._ValueResponse(output_percent)
+                output_values[controller.index] = output_percent.value
+            except CommunicationsError as e:
+                raise CommunicationsError(f"error updating controller {controller.address:X}") from e
+            except asyncio.TimeoutError as e:
+                raise asyncio.TimeoutError(f"timeout updating controller {controller.address:X}") from e
 
         self.data_raw(raw_values)
         self.data_setpoint(setpoint_values)
