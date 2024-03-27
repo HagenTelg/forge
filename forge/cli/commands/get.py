@@ -62,11 +62,85 @@ class Command(ParseCommand):
             from .export import Command as ExportCommand
             ExportCommand.instantiate_pure(cmd, execute, parser, args, extra_args)
 
+    STATION_DESCRIPTION = r"""
+The station specification consists of one or more station codes (usually GAW station IDs), separated by commas, 
+  semicolons, colons, or spaces.
+However, spaces and semicolons require quoting to prevent shell interpretation.  
+The special value 'ALLSTATIONS' can also be used to select all possible stations.  
+The station selection is not case sensitive.
+"""
+    DATA_DESCRIPTION = r"""
+The data selection consists of one or more variable selectors or modifiers separated by commas.
+If a component of the data selector begins with the form 'KEY:', then it is interpreted with respect to the key.
+Otherwise, it is a raw regular expression selecting a variable code.
+So a data selection like 'BsG_S11' selects the 'BsG' (green scattering) variable of the instrument 'S11'.
+If no instrument suffix is provided, then variables from all instruments will match.
+Likewise, if no wavelength suffix is present then all wavelengths will match.
+So simply 'Bs' selects scattering from all instruments on all wavelengths, while 'Bs_S11' selects scattering
+  on all wavelengths from the 'S11' instrument.
+Wavelength selection only has any effect if the output of the command is wavelength limiting, so it is generally
+  only meaningful when exporting CSV data.
+The data selection can also 'EVERYTHING' (case insensitive) to select all variables (subject to active restrictions,
+  below).
+Aliases are also available to select data like old style records.
+These aliases are of the form '<INSTRUMENT>a' or '<INSTRUMENT>m'.
+So a specification like 'S11a' selects average/analysis variables from the S11 instrument.
+There are also 'XIs' and 'XIl' aliases available for intensives variables in edited, clean, or averaged data.
+Keys are not case sensitive. 
+The key 'TAG' or 'TAGS' means that subsequent variables selected are required to have the specified tags (separated
+  by semicolons, colons, or spaces) present.
+This can be inverted by prefixing the tag with a '-', so that the variable must NOT have that tag present.
+So 'TAG:cpc' selects variables from any type of CPC.
+The key 'INSTRUMENT' or 'INSTRUMENT_ID' means that subsequent variables are only selected if from the given
+  instrument ID as a regular expression (case insensitive).
+So 'INSTRUMENT:S11' selects variables from the 'S11' instrument.
+The key 'INSTRUMENT_TYPE' or 'SOURCE_TYPE' means that subsequent variables are only selected if from the given
+  instrument type as a regular expression (case insensitive).
+So 'SOURCE_TYPE:admagic250cpc' selects variables from a MAGIC 250 CPC.
+Refer to the metadata for instrument type codes.
+The key 'STATION', 'STATION_NAME' or 'STATION_CODE' means that subsequent variables are only selected if from the given
+  station as a regular expression (case insensitive).
+This is used to limit subsequent variables to the given station from a wider 'global' station selection.
+The key 'VARIABLE_TYPE' or 'TYPE' means that subsequent variables are only selected if they are of the specified 
+  type.
+Variable types not case sensitive and must be one of 'ANY' (or empty), 'NORMAL'/'STANDARD'/'TIMESERIES'/'VARIABLE',
+  'STATE', or 'OTHER'/'CONSTANT'/'CONST'/'PARAMETERS'.
+So 'TYPE:STATE' eans that subsequent variables are only selected if they are classified as instrument state
+  (usually not averaged and infrequently changing).
+The key 'VARIABLE_NAME, 'NETCDF_VARIABLE', or 'NCVAR' selects variables based on the NetCDF variable name
+  as a regular expression (case insensitive).
+So 'NCVAR:scattering_coefficient' selects any scattering coefficient variables based on the NetCDF variable name.
+The key 'STANDARD_NAME' or 'STDNAME' selects variables based on the CF conveientions standard name assigned.
+So 'STANDARD_NAME:mole_fraction_of_ozone_in_air' selects ozone concentrations.
+The key 'VARIABLE_ID' selects data as the raw variable ID described above.
+So 'VARIABLE_ID:BsG_S11' is the same as just 'BsG_S11'.
+"""
+    TIME_DESCRIPTION = r"""
+The time selection can either be a single time (e.x. '2024-02-01') which implies an end time (on day in this case),
+  or a range of times '2024-02-01 2024-02-10' which selects a range of data (start inclusive, end exclusive).
+All times are in UTC.
+The start time may be 'undef' or 'none' for the beginning of data and the end time may be 'now' for the current time.
+A week of year is specified as '<YEAR>w<WEEK>' (e.x. '2024w3').
+A quarter of a year is specified as '<YEAR>Q<QUARTER>' (e.x. '2024Q1').
+A fractional year is specified as '<YEAR>.<FRACTIONAL>' (e.x '2024.1234')
+A start time and an interval can also be used (e.x. '2024-02-01 12h').
+A DOY may be specified as '<YEAR>:<DOY>' or simply '<DOY>' with the year inferred (e.x. '2024:91').
+ISO8601 times are interpreted in UTC only (e.x. '2024-02-12T12:00:00Z').
+Both simple specifications ('s', 'm', 'h', 'd', and 'w') as well as ISO8601 durations (e.x. 'PT12H') are supported.
+Finally, the time specification can also just be 'FOREVER' (case insensitive) to select all possible data.
+"""
+    ARCHIVE_DESCRIPTION = r"""
+If the command ends with a series of valid archives (separated by commas, semicolons, colons, or spaces),
+  then the data is read from those archives instead of the default 'raw' archive.
+Archive selections are not case sensitive.
+Available archive are 'raw', 'edited', 'clean', 'avgh', 'avgd', 'avgm', or 'ALLARCHIVES' for all available archives.
+"""
+
     @classmethod
     def install_pure(cls, cmd: ParseArguments.SubCommand, execute: Execute,
                      parser: argparse.ArgumentParser, can_filter: bool = True) -> None:
         parser.add_argument('station',
-                            help="GAW station code")
+                            help="station code")
         parser.add_argument('data',
                             help="data selections")
         parser.add_argument('time',
@@ -80,6 +154,8 @@ class Command(ParseCommand):
             parser.add_argument('--keep-all',
                                 dest='keep_all', action='store_true',
                                 help="retain all data, instead of filtering to the selection")
+
+        parser.epilog = cls.STATION_DESCRIPTION + " " + cls.DATA_DESCRIPTION + " " + cls.TIME_DESCRIPTION + " " + cls.ARCHIVE_DESCRIPTION
 
     @classmethod
     def instantiate_pure(cls, cmd: ParseArguments.SubCommand, execute: Execute,
@@ -693,7 +769,7 @@ class DataSelection:
                     parser.error(f"Error parsing variable name '{component_value}'")
                     raise
                 self._variables.append(self._VariableName(file_match, variable_type, match))
-            elif component_type == 'standard_name' or component_type == 'standard_name' or component_type == 'stdname':
+            elif component_type == 'standard_name' or component_type == 'stdname':
                 try:
                     match = re.compile(component_value, flags=re.IGNORECASE)
                 except re.error:
@@ -757,7 +833,7 @@ class DataSelection:
         time_coverage_start = getattr(file, 'time_coverage_start', None)
         if time_coverage_start is not None:
             time_coverage_start = int(floor(parse_iso8601_time(str(time_coverage_start)).timestamp() * 1000.0))
-            if time_coverage_start < not_before_ms:
+            if not_before_ms is not None and time_coverage_start < not_before_ms:
                 return False
         elif not_before_ms is not None:
             return False
@@ -765,7 +841,7 @@ class DataSelection:
         time_coverage_end = getattr(file, 'time_coverage_end', None)
         if time_coverage_end is not None:
             time_coverage_end = int(ceil(parse_iso8601_time(str(time_coverage_end)).timestamp() * 1000.0))
-            if time_coverage_end > not_after_ms:
+            if not_after_ms is not None and time_coverage_end > not_after_ms:
                 return False
         elif not_after_ms is not None:
             return False
@@ -1277,21 +1353,31 @@ class ArchiveRead(ExecuteStage):
 
 
 class FilterStage(ExecuteStage):
-    def __init__(self, execute: Execute, read: ArchiveRead, retain_statistics: bool = False) -> None:
+    def __init__(
+            self, execute: Execute,
+            data_selection: DataSelection,
+            start_ms: typing.Optional[int] = None,
+            end_ms: typing.Optional[int] = None,
+            retain_statistics: bool = False,
+    ) -> None:
         super().__init__(execute)
-        self.read = read
+        self.data_selection = data_selection
+        self.start_ms = start_ms
+        self.end_ms = end_ms
         self._retain_statistics = retain_statistics
 
     @classmethod
     def instantiate_if_available(cls, execute: Execute, retain_statistics: bool = False) -> None:
-        if not execute.stages:
-            return
-        read = execute.stages[0]
-        if not isinstance(read, ArchiveRead):
-            return
-        if read.keep_all:
-            return
-        execute.install(cls(execute, read, retain_statistics=retain_statistics))
+        from .select import SelectStage
+
+        for stage in reversed(execute.stages):
+            if isinstance(stage, ArchiveRead):
+                if stage.keep_all:
+                    return
+                execute.install(cls(execute, stage.data_selection, stage.start_ms, stage.end_ms,
+                                    retain_statistics=retain_statistics))
+            elif isinstance(stage, SelectStage):
+                return
 
     async def __call__(self) -> None:
         _LOGGER.debug("Starting archive data filter")
@@ -1302,9 +1388,9 @@ class FilterStage(ExecuteStage):
 
                 input_root = Dataset(str(input_path), 'r')
                 try:
-                    if self.read.data_selection.accept_whole_file(
+                    if self.data_selection.accept_whole_file(
                             input_root,
-                            self.read.start_ms, self.read.end_ms,
+                            self.start_ms, self.end_ms,
                             accept_statistics=self._retain_statistics,
                     ):
                         input_root.close()
@@ -1315,9 +1401,9 @@ class FilterStage(ExecuteStage):
                     else:
                         output_root = Dataset(str(output_path), 'w', format='NETCDF4')
                         try:
-                            keep_file = self.read.data_selection.filter_file(
+                            keep_file = self.data_selection.filter_file(
                                 input_root, output_root,
-                                self.read.start_ms, self.read.end_ms,
+                                self.start_ms, self.end_ms,
                                 accept_statistics=self._retain_statistics,
                             )
                         finally:
@@ -1338,19 +1424,21 @@ class FilterStage(ExecuteStage):
 
 
 class WavelengthSelector:
-    def __init__(self, read: ArchiveRead):
-        self.read = read
+    def __init__(self, data_selection: DataSelection):
+        self.data_selection = data_selection
 
     @classmethod
     def instantiate_if_available(cls, execute: Execute) -> typing.Optional["WavelengthSelector"]:
-        if not execute.stages:
-            return None
-        read = execute.stages[0]
-        if not isinstance(read, ArchiveRead):
-            return None
-        if read.keep_all:
-            return None
-        return cls(read)
+        from .select import SelectStage
+
+        for stage in reversed(execute.stages):
+            if isinstance(stage, ArchiveRead):
+                if stage.keep_all:
+                    return None
+                return cls(stage.data_selection)
+            elif isinstance(stage, SelectStage):
+                return cls(stage.data_selection)
+        return None
 
     def __call__(self, file: Dataset, var: Variable, retain_statistics: bool = False) -> typing.Set[int]:
-        return self.read.data_selection.accepted_wavelengths(file, var, accept_statistics=retain_statistics)
+        return self.data_selection.accepted_wavelengths(file, var, accept_statistics=retain_statistics)
