@@ -9,7 +9,6 @@ import re
 import os
 import numpy as np
 from math import floor, ceil
-from json import loads as from_json
 from pathlib import Path
 from netCDF4 import Dataset, Variable, Group, EnumType, VLType
 from forge.const import STATIONS, MAX_I64
@@ -18,6 +17,7 @@ from forge.formattime import format_iso8601_time
 from forge.logicaltime import containing_year_range, start_of_year, end_of_year_ms, year_bounds_ms, containing_epoch_month_range, start_of_epoch_month_ms
 from forge.archive.client import index_lock_key, index_file_name, data_lock_key, data_file_name
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
+from forge.archive.client.get import ArchiveIndex as BaseArchiveIndex
 from forge.data.state import is_state_group, is_in_state_group
 from forge.data.attrs import copy as copy_attrs
 from forge.data.values import create_and_copy_variable
@@ -166,52 +166,14 @@ Available archive are 'raw', 'edited', 'clean', 'avgh', 'avgd', 'avgm', or 'ALLA
         return read
 
 
-class _ArchiveIndex:
-    INDEX_VERSION = 1
-    _EMPTY_SET = frozenset({})
-
+class _ArchiveIndex(BaseArchiveIndex):
     def __init__(self, station: str, json_data: bytes):
+        super().__init__(json_data)
         self.station = station
-
-        self._tags: typing.Dict[str, typing.Set[str]] = dict()
-        self._instrument_codes: typing.Dict[str, typing.Set[str]] = dict()
-        self._standard_names: typing.Dict[str, typing.Set[str]] = dict()
-        self._variable_ids: typing.Dict[str, typing.Dict[str, int]] = dict()
-        self._variable_names: typing.Dict[str, typing.Set[str]] = dict()
-
-        contents = from_json(json_data)
-        try:
-            version = contents['version']
-        except KeyError:
-            raise RuntimeError("No index version available")
-        if version != self.INDEX_VERSION:
-            raise RuntimeError(f"Index version mismatch ({version} vs {self.INDEX_VERSION})")
-
-        self._tags: typing.Dict[str, typing.Set[str]] = {k: set(v) for k, v in contents['instrument_tags'].items()}
-        self._instrument_codes: typing.Dict[str, typing.Set[str]] = {k: set(v) for k, v in contents['instrument_codes'].items()}
-        self._standard_names: typing.Dict[str, typing.Set[str]] = {k: set(v) for k, v in contents['standard_names'].items()}
-        self._variable_names: typing.Dict[str, typing.Set[str]] = {k: set(v) for k, v in contents['variable_names'].items()}
-        self._variable_ids: typing.Dict[str, typing.Dict[str, int]] = {
-            var: {
-                instrument: int(count) for instrument, count in wl.items()
-            } for var, wl in contents['variable_ids'].items()
-        }
-
-    def tags_for_instrument_id(self, instrument_id: str) -> typing.Set[str]:
-        return self._tags.get(instrument_id, self._EMPTY_SET)
-
-    def instrument_codes_for_instrument_id(self, instrument_id: str) -> typing.Set[str]:
-        return self._instrument_codes.get(instrument_id, self._EMPTY_SET)
-
-    def all_instrument_ids(self) -> typing.Set[str]:
-        result: typing.Set[str] = set()
-        for instruments in self._variable_names.values():
-            result.update(instruments)
-        return result
 
     def match_variable_name(self, match: re.Pattern) -> typing.Set[str]:
         result: typing.Set[str] = set()
-        for check, contents in self._variable_names.items():
+        for check, contents in self.variable_names.items():
             if not match.fullmatch(check):
                 continue
             result.update(contents)
@@ -219,7 +181,7 @@ class _ArchiveIndex:
 
     def match_standard_name(self, match: re.Pattern) -> typing.Set[str]:
         result: typing.Set[str] = set()
-        for check, contents in self._standard_names.items():
+        for check, contents in self.standard_names.items():
             if not match.fullmatch(check):
                 continue
             result.update(contents)
@@ -260,7 +222,7 @@ class _ArchiveIndex:
             return False
 
         result: typing.Set[str] = set()
-        for name, contents in self._variable_ids.items():
+        for name, contents in self.variable_ids.items():
             for instrument_id, wavelength_count in contents.items():
                 if instrument_id in result:
                     continue

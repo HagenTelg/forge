@@ -13,6 +13,9 @@ class StationFileFilter(ABC):
     def profile_accepts_file(self, profile: str, file: Dataset) -> bool:
         pass
 
+    def profile_filter_tags(self, profile: str, tags: typing.Set[str]) -> typing.Optional[bool]:
+        return None
+
     @staticmethod
     def load_station(station: typing.Optional[str], limit_start: int = None, limit_end: int = None) -> "StationFileFilter":
         if station is None:

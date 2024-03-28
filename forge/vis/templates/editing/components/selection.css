@@ -28,6 +28,27 @@ table.details-selection-list > tbody > tr.selected:not(:nth-child(odd)) {
   background-color: #3bf;
 }
 
+table.details-selection-list > tbody td:first-child {
+  width: 100%;
+}
+table.details-selection-list > tbody td:not(:first-child) {
+  white-space: nowrap;
+  padding-right: 10px;
+  max-width: 200px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+@media screen and (max-width: 500px) {
+  table.details-selection-list > tbody td:not(:first-child) {
+    display: none;
+  }
+}
+@media screen and (max-width: 800px) {
+  table.details-selection-list > tbody td:not(:first-child) {
+    max-width: 100px;
+  }
+}
+
 nav.details-selection-options {
   flex-grow: 0;
   display: flex;

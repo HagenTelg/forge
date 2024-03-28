@@ -2,7 +2,6 @@ import typing
 import asyncio
 import logging
 import struct
-from pathlib import Path
 from forge.service import SocketServer
 from forge.crypto import PublicKey
 from forge.processing.transfer import CONFIGURATION

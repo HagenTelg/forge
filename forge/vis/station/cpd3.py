@@ -30,6 +30,16 @@ from forge.cpd3.timeinterval import TimeUnit, TimeInterval
 _LOGGER = logging.getLogger(__name__)
 _interface = CONFIGURATION.get('CPD3.INTERFACE', 'cpd3_forge_interface')
 _read_timeout = CONFIGURATION.get('CPD3.READTIMEOUT', 2 * 60 * 60)
+_enable_forge_archive = bool(CONFIGURATION.get('ARCHIVE.ENABLE_FORGE', False))
+_forge_translated_stations = frozenset({
+    "bos",
+})
+
+
+def use_cpd3(station: str) -> bool:
+    if not _enable_forge_archive:
+        return True
+    return station not in _forge_translated_stations
 
 
 def _to_cpd3_selection(selection: typing.List[typing.Dict[str, str]]) -> typing.List[typing.Any]:
@@ -39,7 +49,7 @@ def _to_cpd3_selection(selection: typing.List[typing.Dict[str, str]]) -> typing.
     for entry in selection:
         if not isinstance(entry, dict):
             continue
-        if entry.get('type') != 'variable':
+        if entry.get('type') != 'cpd3_variable':
             continue
         variable = entry.get('variable')
         if not variable or not isinstance(variable, str):
@@ -121,7 +131,7 @@ def _from_cpd3_selection(selection: typing.Any) -> typing.List[typing.Dict[str, 
     result: typing.List[typing.Dict[str, typing.Any]] = list()
     for entry in selection:
         converted: typing.Dict[str, typing.Any] = {
-            'type': 'variable',
+            'type': 'cpd3_variable',
         }
         if 'Station' in entry:
             converted['station'] = single_or_list(entry['Station'])
@@ -188,7 +198,7 @@ def _selection_to_single_cutsize(selection: typing.List[typing.Dict[str, typing.
 
     selection = selection[0]
     if selection == {
-        'type': 'variable',
+        'type': 'cpd3_variable',
         'has_flavors': ['pm10']
     } or selection == {
         'type': 'variable',
@@ -198,31 +208,31 @@ def _selection_to_single_cutsize(selection: typing.List[typing.Dict[str, typing.
         return 'pm10'
 
     if selection == {
-        'type': 'variable',
+        'type': 'cpd3_variable',
         'has_flavors': ['pm25']
     } or selection == {
-        'type': 'variable',
+        'type': 'cpd3_variable',
         'has_flavors': ['pm25'],
         'lacks_flavors': []
     }:
         return 'pm25'
 
     if selection == {
-        'type': 'variable',
+        'type': 'cpd3_variable',
         'has_flavors': ['pm1']
     } or selection == {
-        'type': 'variable',
+        'type': 'cpd3_variable',
         'has_flavors': ['pm1'],
         'lacks_flavors': []
     }:
         return 'pm1'
 
     if selection == {
-        'type': 'variable',
+        'type': 'cpd3_variable',
         'lacks_flavors': ['pm1', 'pm10', 'pm25'],
         'variable': _any_sized_variable,
     } or selection == {
-        'type': 'variable',
+        'type': 'cpd3_variable',
         'lacks_flavors': ['pm1', 'pm10', 'pm25'],
         'has_flavors': [],
         'variable': _any_sized_variable,
@@ -1650,7 +1660,7 @@ class EditAvailable(DataStream):
                 if not line:
                     continue
                 await self.send({
-                    'type': 'variable',
+                    'type': 'cpd3_variable',
                     'variable': line,
                 })
 

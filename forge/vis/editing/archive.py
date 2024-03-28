@@ -8,7 +8,7 @@ import numpy as np
 import base64
 import struct
 from math import floor, ceil, isfinite
-from tempfile import TemporaryDirectory, mkstemp
+from tempfile import TemporaryDirectory, NamedTemporaryFile, mkstemp
 from pathlib import Path
 from json import loads as from_json, dumps as to_json
 from netCDF4 import Dataset, Variable
@@ -18,13 +18,16 @@ from forge.formattime import format_export_time
 from forge.const import STATIONS, MAX_I64
 from forge.vis.access import AccessUser
 from forge.vis.data.stream import DataStream
-from forge.archive.client import edit_directives_lock_key, edit_directives_file_name, edit_directives_notification_key
-from forge.archive.client.get import read_file_or_nothing
+from forge.archive.client import edit_directives_lock_key, edit_directives_file_name, edit_directives_notification_key, data_lock_key, data_file_name, index_lock_key, index_file_name
+from forge.archive.client.get import read_file_or_nothing, ArchiveIndex
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
 from forge.data.enum import remap_enum
+from forge.data.state import is_state_group
 from forge.data.structure import edit_directives
 from forge.data.structure.editdirectives import edit_file_structure
 from forge.processing.clean.passing import apply_pass as archive_apply_pass
+from forge.processing.clean.filter import StationFileFilter
+from forge.processing.editing.selection import ignore_variable
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -76,6 +79,7 @@ class _BaseReadStream(DataStream):
     async def stall(self) -> typing.Optional["DataStream.Stall"]:
         if self._lock_held:
             return None
+        await self._open_connection()
         try:
             await self._begin()
         except LockDenied as ld:
@@ -275,7 +279,7 @@ def _to_archive_action(action: typing.Dict[str, typing.Any]) -> typing.Tuple[str
     }
 
 
-def _from_archive_condition(code: str, parameters: str) -> typing.Dict[str, typing.Any]:
+def _from_archive_condition(code: str, parameters: str) -> typing.Optional[typing.Dict[str, typing.Any]]:
     code = code.lower()
     if code == 'periodic':
         parameters = from_json(parameters)
@@ -302,7 +306,7 @@ def _to_archive_condition(condition: typing.Dict[str, typing.Any]) -> typing.Tup
     if not isinstance(condition, dict):
         raise ValueError
 
-    code = condition.get('action', 'none').lower()
+    code = condition.get('type', 'none').lower()
     if code == 'periodic':
         moments = condition.get('moments')
         if not isinstance(moments, list):
@@ -336,6 +340,8 @@ def _to_archive_condition(condition: typing.Dict[str, typing.Any]) -> typing.Tup
             if isfinite(upper):
                 parameters['upper'] = upper
         return "Threshold", parameters
+
+    return "None", None
 
 
 def _from_archive_history(history: str) -> typing.List[typing.Dict[str, typing.Any]]:
@@ -402,7 +408,7 @@ def _from_archive_edit(
         condition: str, condition_parameters: str,
         author: str, comment: str, history: str
 ) -> typing.Dict[str, typing.Any]:
-    return {
+    result = {
         '_id': base64.b64encode(
             struct.pack('<qqQ', start_epoch_ms, end_epoch_ms, unique_id)
         ).decode('ascii'),
@@ -415,9 +421,11 @@ def _from_archive_edit(
         'type': profile.title(),
         'deleted': is_deleted,
         'history': _from_archive_history(history),
-        'action': _from_archive_action(action, action_parameters),
         'condition': _from_archive_condition(condition, condition_parameters),
     }
+    for k, v in _from_archive_action(action, action_parameters).items():
+        result[k] = v
+    return result
 
 
 class _EditReadStream(_BaseReadStream):
@@ -436,11 +444,11 @@ class _EditReadStream(_BaseReadStream):
 
     @property
     def connection_name(self) -> str:
-        raise "read edits"
+        return "read edits"
 
     async def acquire_locks(self) -> None:
-        lock_start = floor(start_of_year(self._year_start) * 1000)
-        lock_end = ceil(start_of_year(self._year_end) * 1000)
+        lock_start = int(floor(start_of_year(self._year_start) * 1000))
+        lock_end = int(ceil(start_of_year(self._year_end) * 1000))
         await self.connection.lock_read(edit_directives_lock_key(self.station), lock_start, lock_end)
 
     async def with_locks_held(self) -> None:
@@ -517,6 +525,7 @@ class _EditReadStream(_BaseReadStream):
         for file in Path(self._edit_file_storage.name).iterdir():
             if not file.is_file():
                 continue
+            _LOGGER.debug("Sending edits from file: %s", file.name)
             try:
                 file = Dataset(file, 'r')
                 await self._stream_file(file)
@@ -558,8 +567,8 @@ async def _apply_edit_save(
     notify_end = updated_end
     updated_unique_id = 0
 
-    updated_action, updated_action_parameters = _to_archive_action(directive.get('action'))
-    updated_condition, updated_condition_parameters = _to_archive_action(directive.get('condition'))
+    updated_action, updated_action_parameters = _to_archive_action(directive)
+    updated_condition, updated_condition_parameters = _to_archive_condition(directive.get('condition'))
     updated_author = str(directive.get('author', ''))
     updated_comment = str(directive.get('comment', '')).strip()
     updated_deleted = bool(directive.get('deleted', False))
@@ -573,7 +582,7 @@ async def _apply_edit_save(
     original_profile: typing.Optional[str] = None
     first_history: typing.Optional[str] = None
 
-    def modified_history(original_file: Dataset, original_idx: int) -> str:
+    def updated_history(original_file: Dataset, original_idx: int) -> str:
         original_root = original_file.groups["edits"]
         history = str(original_root['history'][original_idx])
         if history:
@@ -725,9 +734,8 @@ async def _apply_edit_save(
                 file_start = None
                 file_end = None
             edit_directives(output_file, station, file_start, file_end)
-            output_root = edit_file_structure(output_file, sorted(profiles))
-            modified_files[start_ms] = output_root
-            return output_root
+            edit_file_structure(output_file, sorted(profiles))
+            return output_file
 
         def remove_existing(source: Dataset, start_ms: int) -> bool:
             nonlocal notify_start
@@ -746,10 +754,10 @@ async def _apply_edit_save(
             notify_start = min(notify_start, exiting_start_time)
             notify_end = max(notify_end, exiting_end_time)
 
-            modified_history[start_ms] = modified_history(source, remove_index)
+            modified_history[start_ms] = updated_history(source, remove_index)
 
             existing_profiles = existing_root.variables["profile"]
-            existing_profiles_lookup = existing_profiles.datatype.enum_dict.items()
+            existing_profiles_lookup = existing_profiles.datatype.enum_dict
             existing_profiles = existing_profiles[...].data
             remove_profile_value = int(existing_profiles[...].data[remove_index])
             for check, value in existing_profiles_lookup.items():
@@ -845,7 +853,7 @@ async def _apply_edit_save(
             output_file = await fetch_file(-MAX_I64)
             if output_file is None:
                 output_file = construct_modified(-MAX_I64, [profile])
-                modified_files[-MAX_I64] = output_file
+                _LOGGER.debug("Created unlimited edits file for year %s", station)
             else:
                 if file_contains_unique_id(output_file, updated_unique_id):
                     updated_unique_id = new_unique_id()
@@ -867,7 +875,7 @@ async def _apply_edit_save(
                 output_file = modified_files.get(file_start_ms)
                 if output_file is None:
                     output_file = construct_modified(file_start_ms, [profile])
-                    modified_files[file_start_ms] = output_file
+                    _LOGGER.debug("Created new edits file for %s/%d", station, year)
 
                 history = modified_history.get(file_start_ms)
                 if history is None:
@@ -937,7 +945,7 @@ async def edit_save(user: AccessUser, station: str, mode_name: str,
     updated_end = directive.get('end_epoch_ms')
     updated_start = floor(updated_start) if updated_start else -MAX_I64
     updated_end = ceil(updated_end) if updated_end else MAX_I64
-    if updated_end >= updated_end:
+    if updated_start >= updated_end:
         _LOGGER.debug(f"Invalid time bounds from {user.display_id} on {station}:{profile}")
         return None
     if updated_start != -MAX_I64 and updated_start <= 0:
@@ -975,7 +983,7 @@ async def edit_save(user: AccessUser, station: str, mode_name: str,
                 async with connection.transaction(True):
                     await connection.lock_write(edit_directives_lock_key(station), lock_start, lock_end)
                     try:
-                        await _apply_edit_save(
+                        return await _apply_edit_save(
                             user, station, profile, directive, connection,
                             original_start_ms, original_end_ms, original_unique_id,
                             updated_start, updated_end
@@ -984,15 +992,249 @@ async def edit_save(user: AccessUser, station: str, mode_name: str,
                         _LOGGER.debug(f"Error saving directive for {user.display_id} on {station}:{profile}",
                                       exc_info=True)
                         return None
-                break
             except LockDenied:
                 await backoff()
                 continue
 
 
+class _AvailableReadStream(_BaseReadStream):
+    ARCHIVE = "raw"
+
+    class _Index(ArchiveIndex):
+        def apply_filter(self, profile: str, file_filter: StationFileFilter) -> typing.Set[str]:
+            check_instruments: typing.Set[str] = set()
+            for instrument_id, tags in self.instrument_codes.items():
+                accept = file_filter.profile_filter_tags(profile, tags)
+                if accept is not None and not accept:
+                    # If it's ambiguous, then we have to load the files anyway
+                    continue
+                check_instruments.add(instrument_id)
+            return check_instruments
+
+    class _AvailableVariableID:
+        def __init__(self, variable_id: str):
+            self.variable_id = variable_id
+            self.wavelengths: typing.Set[float] = set()
+            self.long_name: typing.Optional[str] = None
+
+        @staticmethod
+        def _find_dimension_values(data: Dataset, name: str) -> Variable:
+            while True:
+                if name in data.dimensions:
+                    var = data.variables.get(name)
+                    if var is not None:
+                        return var
+                data = data.parent
+                if data is None:
+                    raise KeyError(f"Dimension {name} not found")
+
+        def _integrate_wavelengths(self, var: Variable) -> None:
+            if 'wavelength' not in var.dimensions:
+                return
+            wavelengths = self._find_dimension_values(var.group(), 'wavelength')
+            for wl in wavelengths[:].data:
+                wl = float(wl)
+                if not isfinite(wl):
+                    continue
+                self.wavelengths.add(wl)
+
+        def integrate_variable(self, var: Variable) -> None:
+            self._integrate_wavelengths(var)
+            try:
+                self.long_name = str(var.long_name).strip()
+            except (AttributeError, ValueError, TypeError):
+                pass
+
+        async def write(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]], instrument: "_AvailableReadStream._AvailableInstrument") -> None:
+            selection: typing.Dict[str, typing.Any] = {
+                'type': 'variable_id',
+                'instrument_id': instrument.instrument_id,
+                'variable_id': self.variable_id,
+            }
+            if self.wavelengths:
+                selection['wavelengths'] = sorted(self.wavelengths)
+            if self.long_name:
+                selection['description'] = self.long_name
+            if instrument.instrument:
+                selection['instrument'] = instrument.instrument
+            if instrument.manufacturer:
+                selection['manufacturer'] = instrument.manufacturer
+            if instrument.model:
+                selection['model'] = instrument.model
+            if instrument.serial_number:
+                selection['serial_number'] = instrument.serial_number
+            await send(selection)
+
+    class _AvailableInstrument:
+        def __init__(self, instrument_id: str):
+            self.instrument_id = instrument_id
+            self.instrument: typing.Optional[str] = None
+            self.manufacturer: typing.Optional[str] = None
+            self.model: typing.Optional[str] = None
+            self.serial_number: typing.Optional[str] = None
+            self._variable_id: typing.Dict[str, "_AvailableReadStream._AvailableVariableID"] = dict()
+
+        def integrate_file(self, root: Dataset) -> None:
+            instrument = getattr(root, 'instrument', None)
+            if instrument:
+                self.instrument = str(instrument)
+
+            instrument_data = root.groups.get("instrument")
+            if instrument_data is not None:
+                try:
+                    self.manufacturer = str(instrument_data.variables["manufacturer"][0])
+                except (KeyError, AttributeError, TypeError, ValueError):
+                    pass
+                try:
+                    self.model = str(instrument_data.variables["model"][0])
+                except (KeyError, AttributeError, TypeError, ValueError):
+                    pass
+                try:
+                    self.serial_number = str(instrument_data.variables["serial_number"][0])
+                except (KeyError, AttributeError, TypeError, ValueError):
+                    pass
+
+        def _integrate_variable_id(self, var: Variable) -> None:
+            variable_id = getattr(var, 'variable_id', None)
+            if not variable_id:
+                return
+            v = self._variable_id.get(variable_id)
+            if v is None:
+                v = _AvailableReadStream._AvailableVariableID(variable_id)
+                self._variable_id[variable_id] = v
+            v.integrate_variable(var)
+
+        def integrate_variable(self, var: Variable) -> None:
+            if ignore_variable(var):
+                return
+            self._integrate_variable_id(var)
+
+        async def write(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> None:
+            for v in self._variable_id.values():
+                await v.write(send, self)
+
+    class _AvailableTracking:
+        def __init__(self):
+            self._instrument_id: typing.Dict[str, "_AvailableReadStream._AvailableInstrument"] = dict()
+
+        def instrument(self, instrument_id) -> "_AvailableReadStream._AvailableInstrument":
+            i = self._instrument_id.get(instrument_id)
+            if i is None:
+                i = _AvailableReadStream._AvailableInstrument(instrument_id)
+                self._instrument_id[instrument_id] = i
+            return i
+
+        async def write(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> None:
+            _LOGGER.debug("Sending available data for %d instruments", len(self._instrument_id))
+            for i in self._instrument_id.values():
+                await i.write(send)
+
+    def __init__(self, station: str, profile: str, start_epoch_ms: int, end_epoch_ms: int,
+                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
+        super().__init__(send)
+        self.station = station.lower()
+        self.profile = profile.lower()
+        self.start_epoch_ms = start_epoch_ms
+        self.end_epoch_ms = end_epoch_ms
+        year_start, year_end = containing_year_range(start_epoch_ms / 1000.0, end_epoch_ms / 1000.0)
+        self._year_start = year_start
+        self._year_end = year_end
+        self._tracking = self._AvailableTracking()
+
+    @property
+    def connection_name(self) -> str:
+        return "read available"
+
+    async def acquire_locks(self) -> None:
+        lock_start = int(floor(start_of_year(self._year_start) * 1000))
+        lock_end = int(ceil(start_of_year(self._year_end) * 1000))
+        await self.connection.lock_read(index_lock_key(self.station, self.ARCHIVE), lock_start, lock_end)
+        lock_start = int(floor(self.start_epoch_ms / (24 * 60 * 60 * 1000)) * 24 * 60 * 60 * 1000)
+        lock_end = int(ceil(self.end_epoch_ms / (24 * 60 * 60 * 1000)) * 24 * 60 * 60 * 1000)
+        await self.connection.lock_read(data_lock_key(self.station, self.ARCHIVE), lock_start, lock_end)
+
+    async def _load_index(self, year: int) -> typing.Optional["_AvailableReadStream._Index"]:
+        try:
+            index_contents = await self.connection.read_bytes(index_file_name(self.station, self.ARCHIVE, start_of_year(year)))
+        except FileNotFoundError:
+            return None
+        try:
+            return self._Index(index_contents)
+        except RuntimeError:
+            _LOGGER.warning(f"Invalid index for {self.station.upper()}/{year}", exc_info=True)
+        return None
+
+    async def _process_file(self, file_filter: StationFileFilter, root: Dataset) -> None:
+        if not file_filter.profile_accepts_file(self.profile, root):
+            return
+
+        instrument_id = getattr(root, 'instrument_id', None)
+        if not instrument_id:
+            return
+        tracking_instrument = self._tracking.instrument(instrument_id)
+        tracking_instrument.integrate_file(root)
+
+        def walk_group(group: Dataset, is_parent_state: typing.Optional[bool] = None) -> None:
+            is_state = is_state_group(group)
+            if is_state is None:
+                is_state = is_parent_state
+
+            if not is_state:
+                for var in group.variables.values():
+                    tracking_instrument.integrate_variable(var)
+
+            for child in group.groups.values():
+                walk_group(child, is_state)
+
+        walk_group(root)
+
+    async def with_locks_held(self) -> None:
+        file_filter = StationFileFilter.load_station(
+            self.station,
+            int(floor(self.start_epoch_ms / 1000)),
+            int(ceil(self.end_epoch_ms / 1000))
+        )
+
+        file_start_ms = int(floor(self.start_epoch_ms / (24 * 60 * 60 * 1000)) * 24 * 60 * 60 * 1000)
+        file_end_ms = int(ceil(self.end_epoch_ms / (24 * 60 * 60 * 1000)) * 24 * 60 * 60 * 1000)
+
+        for year in range(self._year_start, self._year_end):
+            index = await self._load_index(year)
+            if index is None:
+                continue
+
+            file_start_ms = max(file_start_ms, int(floor(start_of_year(year) * 1000)))
+            file_end_ms = min(file_end_ms, int(ceil(start_of_year(year+1) * 1000)))
+
+            for instrument in index.apply_filter(self.profile, file_filter):
+                for file_time_ms in range(file_start_ms, file_end_ms, 24 * 60 * 60 * 1000):
+                    with NamedTemporaryFile(suffix=".nc") as archive_file:
+                        try:
+                            await self.connection.read_file(
+                                data_file_name(
+                                    self.station, self.ARCHIVE, instrument, file_time_ms / 1000.0
+                                ), archive_file
+                            )
+                        except FileNotFoundError:
+                            continue
+                        archive_file.flush()
+                        try:
+                            data_file = Dataset(archive_file.name, 'r')
+                            await self._process_file(file_filter, data_file)
+                        finally:
+                            data_file.close()
+
+    async def run(self) -> None:
+        await super().run()
+        await self._tracking.write(self.send)
+
+
 def available_selections(station: str, mode_name: str, start_epoch_ms: int, end_epoch_ms: int,
                          send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
-    raise NotImplementedError
+    if station not in STATIONS:
+        return None
+    profile = mode_name.split('-', 1)[0]
+    return _AvailableReadStream(station, profile, start_epoch_ms, end_epoch_ms, send)
 
 
 async def apply_pass(request: Request, station: str, mode_name: str, start_epoch_ms: int,

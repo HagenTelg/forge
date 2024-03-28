@@ -24,8 +24,9 @@
 
 <script>
 Instrument.setSelectionFilter(
-  { type: 'variable', variable: '^Qt?1?_', },
-  { type: 'variable', variable: '^L1?_', },
+  { type: 'cpd3_variable', variable: '^Qt?1?_', },
+  { type: 'cpd3_variable', variable: '^L1?_', },
+  { type: 'variable_id', variable_id: 'Ld', },
 );
 selectEditDirectiveAction = function(directive, lockController) {
   OldCalibration.configure(directive, 'reverse_calibration');

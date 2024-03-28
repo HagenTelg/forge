@@ -1,26 +1,42 @@
 Selection.target = [];
 Selection.changed = function(selected) {}
 
-
-function updateSummary(selected) {
-    if (selected.length === 0) {
-        Selection.summary_text.textContent = "";
-        return;
+function constructVariableIDText(selection) {
+    let text = selection.variable_id;
+    if (!text.includes("_")) {
+        text = text + "_" + selection.instrument_id;
     }
+    if (isFinite(selection.wavelength)) {
+        text = text + " (" + selection.wavelength.toFixed(0) + " nm)"
+    }
+    return text;
+}
 
-    const variables = [];
-    for (let i=0; i<selected.length; i++) {
-        const item = selected[i];
-        if (item.type === 'variable') {
-            variables.push(item.variable);
+function updateSummary() {
+    const summaryItems = [];
+
+    for (let i=0; i<Selection.list.rows.length; i++) {
+        const tr = Selection.list.rows[i];
+        if (!tr.classList.contains('selected')) {
+            continue;
+        }
+
+        if (tr.originAvailable === undefined) {
+            if (tr.originSelection.type === 'cpd3_variable') {
+                summaryItems.push(tr.originSelection.variable);
+            } else {
+                summaryItems.push(constructVariableIDText(tr.originSelection));
+            }
+        } else {
+            summaryItems.push(tr.originAvailable.selectionText());
         }
     }
-    if (variables.length === 0) {
+
+    if (summaryItems.length === 0) {
         Selection.summary_text.textContent = "";
         return;
     }
-
-    Selection.summary_text.textContent = variables.join(", ");
+    Selection.summary_text.textContent = summaryItems.join(", ");
 }
 
 function updateTarget() {
@@ -39,7 +55,7 @@ function updateTarget() {
         }
     }
 
-    updateSummary(Selection.target);
+    updateSummary();
     Selection.changed(Selection.target);
 }
 
@@ -66,7 +82,7 @@ function sortList() {
 
 function addListRow() {
     const tr = Selection.list.insertRow();
-    for (let i=0; i<1; i++) {
+    for (let i=0; i<5; i++) {
         tr.insertCell();
     }
     $(tr).click(function(event) {
@@ -76,14 +92,25 @@ function addListRow() {
 }
 function configureRowAvailable(tr, available) {
     tr.originAvailable = available;
+    tr.title = available.titleText();
     tr.children[0].textContent = available.selectionText();
+    const manufacturer = available.manufacturerText();
+    const model = available.modelText();
+    if (manufacturer || model) {
+        tr.children[1].textContent = manufacturer;
+        tr.children[2].textContent = model;
+    } else {
+        tr.children[1].textContent = available.instrumentTypeText();
+    }
+    tr.children[3].textContent = available.serialNumberText();
+    tr.children[4].textContent = available.wavelengthText();
 }
 function configureRowSelection(tr, selection) {
     tr.originSelection = selection;
-    if (selection.type === 'variable') {
+    if (selection.type === 'cpd3_variable') {
         tr.children[0].textContent = selection.variable;
     } else {
-        tr.children[0].textContent = "UNKNOWN";
+        tr.children[0].textContent = constructVariableIDText(selection);
     }
 }
 function availableMatchesRow(tr, available) {
@@ -121,12 +148,15 @@ class SelectionShortcut {
     }
 
     matches(available) {
-        if (!available.variable) {
+        const variable = available.variableID();
+        const instrument = available.instrumentID();
+        if (!variable || !instrument) {
             return false;
         }
 
+        const variable_code = variable + "_" + instrument;
         for (let i=0; i<this.patterns.length; i++) {
-            if (this.patterns[i].exec(available.variable)) {
+            if (this.patterns[i].exec(variable_code)) {
                 return true;
             }
         }
@@ -240,28 +270,18 @@ class InstrumentSelectionShortcut {
     }
 
     matchesAvailable(instrument, available) {
-        if (!available.variable) {
+        if (available.instrumentID() !== instrument) {
             return false;
         }
-
-        const parts = available.variable.split('_', 2);
-        if (parts.length !== 2) {
-            return false;
-        }
-
-        const variable = parts[0];
-        if (parts[1] !== instrument) {
-            return false;
-        }
-
         if (this.instrument !== undefined) {
             if (!this.instrument.exec(instrument)) {
                 return false;
             }
         }
 
+        const availableVariable = available.variableID();
         for (let i=0; i<this.patterns.length; i++) {
-            if (this.patterns[i].exec(variable)) {
+            if (this.patterns[i].exec(availableVariable)) {
                 return true;
             }
         }
@@ -328,13 +348,10 @@ const instrumentSelections = [
 EditDirectiveAvailable.ready(() => {
     const instrumentVariables = new Map();
     EditDirectiveAvailable.available.forEach((available) => {
-        if (available.variable) {
-            const parts = available.variable.split('_', 2);
-            if (parts.length !== 2) {
-                return;
-            }
-            const variable = parts[0];
-            const instrument = parts[1];
+        const variable = available.variableID();
+        const instrument = available.instrumentID();
+
+        if (variable && instrument) {
             if (!instrumentVariables.has(instrument)) {
                 instrumentVariables.set(instrument, new Set());
             }
@@ -460,6 +477,6 @@ Selection.configure = function(directive, field) {
 
     sortList();
 
-    updateSummary(Selection.target);
+    updateSummary();
     Selection.changed(Selection.target);
 };

@@ -77,7 +77,7 @@ class ExampleEditDirectives(DataStream):
                     {'time_epoch_ms': 1618963200000, 'user': "Derek Hageman", 'operation': "Created"},
                 ],
                 'selection': [
-                    {'type': 'variable', 'variable': 'BsG_S11'},
+                    {'variable_id': 'Bs', 'instrument_id': 'S11'},
                 ],
                 'condition': {'type': 'none'},
                 '_id': i,
@@ -95,8 +95,8 @@ class ExampleEditDirectives(DataStream):
                 {'time_epoch_ms': 1619049600000, 'user': "Derek Hageman", 'operation': "Removed"},
             ],
             'selection': [
-                {'type': 'variable', 'variable': 'BsG_S11'},
-                {'type': 'variable', 'variable': 'BaG_A11'},
+                {'variable_id': 'Bs', 'instrument_id': 'S11'},
+                {'variable_id': 'Ba', 'instrument_id': 'A11'},
             ],
             'condition': {'type': 'none'},
             'deleted': True,
@@ -118,15 +118,33 @@ class ExampleEditDirectives(DataStream):
 
 class ExampleEditAvailable(DataStream):
     async def run(self) -> None:
-        for name in ["BsG_S11", "BaG_A11", "N_N71", "Q_A11"]:
-            await self.send({
-                'type': 'variable',
-                'variable': name,
-            })
+        await self.send({
+            'type': 'variable_id',
+            'variable_id': "Bs",
+            'instrument_id': "S11",
+            'wavelengths': [450, 550, 700],
+        })
+        await self.send({
+            'type': 'variable_id',
+            'variable_id': "Ba",
+            'instrument_id': "A11",
+            'wavelengths': [467, 528, 660],
+        })
+        await self.send({
+            'type': 'variable_id',
+            'variable_id': "N",
+            'instrument_id': "N71",
+        })
+        await self.send({
+            'type': 'variable_id',
+            'variable_id': "Q",
+            'instrument_id': "A11",
+        })
         for index in range(20):
             await self.send({
-                'type': 'variable',
-                'variable': f'N{index+1}_N11',
+                'type': 'variable_id',
+                'variable_id': f'N{index+1}',
+                'instrument_id': 'N11',
             })
 
 

@@ -16,7 +16,7 @@ _NEVER_MATCH_VARIABLES = frozenset({
 })
 
 
-def _ignore_variable(var: Variable) -> bool:
+def ignore_variable(var: Variable) -> bool:
     if len(var.dimensions) < 1:
         return False
     if var.dimensions[0] != 'time':
@@ -145,7 +145,7 @@ class Selection:
 
         def matches_data(self, root: Dataset, data: Dataset) -> bool:
             for var in data.variables.values():
-                if _ignore_variable(var):
+                if ignore_variable(var):
                     continue
                 if self.matches_variable(root, data, var):
                     return True
@@ -169,7 +169,7 @@ class Selection:
 
     def select_data(self, root: Dataset, data: Dataset) -> typing.Iterator[typing.Tuple[Variable, typing.Tuple]]:
         for var in data.variables.values():
-            if _ignore_variable(var):
+            if ignore_variable(var):
                 continue
 
             selected_wavelengths: typing.Optional[typing.Set[int]] = None
@@ -220,7 +220,7 @@ class Selection:
                     yield var, tuple(effective_idx)
 
         for var in data.variables.values():
-            if _ignore_variable(var):
+            if ignore_variable(var):
                 continue
 
             selected_wavelengths: typing.Optional[typing.Set[int]] = None
