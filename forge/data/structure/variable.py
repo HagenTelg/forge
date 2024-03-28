@@ -171,7 +171,7 @@ def variable_air_dewpoint(var: Variable) -> None:
 
 def variable_rh(var: Variable) -> None:
     var.units = "%"
-    var.C_format = "%4.1f"
+    var.C_format = "%5.1f"
 
 
 def variable_air_rh(var: Variable) -> None:
