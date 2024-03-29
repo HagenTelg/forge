@@ -10,6 +10,7 @@ from copy import deepcopy
 from math import isfinite, nan, floor, ceil, log2
 from netCDF4 import Variable, Dataset, Dimension
 from forge.logicaltime import start_of_year, julian_day
+from forge.timeparse import parse_interval_argument
 from forge.data.flags import parse_flags
 from forge.data.state import is_in_state_group
 from forge.data.statistics import find_statistics_origin
@@ -183,6 +184,10 @@ class Command(ParseCommand):
                             dest='header_flags', action='store_true',
                             help="output a header with the values of flags in the variable")
 
+        parser.add_argument('--latest-in-gaps',
+                            dest='latest_in_gaps', action='store_true',
+                            help="use the latest value in data gaps instead of missing")
+
         group = parser.add_mutually_exclusive_group()
         group.add_argument('--no-round-times',
                            dest='no_round_times', action='store_true',
@@ -190,6 +195,9 @@ class Command(ParseCommand):
         group.add_argument('--no-fill-times',
                            dest='no_fill_times', action='store_true',
                            help="disable filling time based on source archive spacing")
+        group.add_argument('--fill',
+                           dest='fill_interval',
+                           help="set the record fill interval")
 
     @classmethod
     def instantiate_pure(cls, cmd: ParseArguments.SubCommand, execute: "Execute",
@@ -256,7 +264,7 @@ class _Column:
     def prepare_file(self, file: Dataset) -> None:
         pass
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
         raise NotImplementedError
 
 
@@ -285,7 +293,7 @@ class _ColumnStation(_Column):
             self._stations.add(str(station_var[0]).upper())
             self._output = ";".join(sorted(self._stations))
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
         return self._output
 
 
@@ -306,7 +314,7 @@ class _ColumnTimeEpoch(_ColumnTime):
     def description(self) -> str:
         return "Epoch time: seconds from 1970-01-01T00:00:00Z"
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
         return str(int(round(time_value)))
 
 
@@ -323,7 +331,7 @@ class _ColumnTimeExcel(_ColumnTime):
     def description(self) -> str:
         return "Date String (YYYY-MM-DD hh:mm:ss) UTC"
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
         ts = time.gmtime(time_value)
         return f"{ts.tm_year:04}-{ts.tm_mon:02}-{ts.tm_mday:02} {ts.tm_hour:02}:{ts.tm_min:02}:{ts.tm_sec:02}"
 
@@ -341,7 +349,7 @@ class _ColumnTimeISO(_ColumnTime):
     def description(self) -> str:
         return "Date String (YYYY-MM-DDThh:mm:ssZ) UTC"
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
         ts = time.gmtime(time_value)
         return f"{ts.tm_year:04}-{ts.tm_mon:02}-{ts.tm_mday:02}T{ts.tm_hour:02}:{ts.tm_min:02}:{ts.tm_sec:02}Z"
 
@@ -359,7 +367,7 @@ class _ColumnTimeYear(_ColumnTime):
     def description(self) -> str:
         return "Year"
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
         ts = time.gmtime(time_value)
         return f"{ts.tm_year:04}"
 
@@ -377,7 +385,7 @@ class _ColumnTimeDOY(_ColumnTime):
     def description(self) -> str:
         return "Fractional day of year (Midnight January 1 UTC = 1.00000)"
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
         year_start = start_of_year(time.gmtime(time_value).tm_year)
         doy = (time_value - year_start) / (24.0 * 60.0 * 60.0) + 1.0
         return f"{doy:09.5f}"
@@ -396,7 +404,7 @@ class _ColumnTimeJulian(_ColumnTime):
     def description(self) -> str:
         return "Fractional Julian day (12:00 January 1, 4713 BC UTC)"
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
         fractional_day = time_value - floor(time_value / (24 * 60 * 60)) * 24 * 60 * 60
         fractional_day /= 24 * 60 * 60
         ts = time.gmtime(time_value)
@@ -417,7 +425,7 @@ class _ColumnTimeFractionalYear(_ColumnTime):
     def description(self) -> str:
         return "Fractional year"
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
         year = time.gmtime(time_value).tm_year
         year_start = start_of_year(year)
         year_end = start_of_year(year + 1)
@@ -466,11 +474,13 @@ class _ColumnTimeCutString(_Column):
                 scan_group(g)
         scan_group(file)
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
         effective_sizes: typing.Set[float] = set(self._always_present_sizes)
         for idx in range(len(self._cut_time_variables)):
-            var = self._cut_time_variables[idx]
             time_idx = time_indices[idx]
+            if time_idx is None:
+                continue
+            var = self._cut_time_variables[idx]
             effective_sizes.add(float(var[time_idx].data))
         combined_sizes: typing.List[str] = list()
         for s in sorted(effective_sizes):
@@ -576,8 +586,7 @@ class _ColumnVariable(_Column):
     @property
     def time_sources(self) -> typing.List[typing.Tuple[Variable, bool]]:
         _, time_var = _find_dimension(self.source.variable.group(), 'time')
-        is_state = is_in_state_group(self.source.variable)
-        return [(time_var, is_state)]
+        return [(time_var, self.is_state)]
 
 
 class _ColumnVariableNumeric(_ColumnVariable):
@@ -735,13 +744,16 @@ class _ColumnVariableNumeric(_ColumnVariable):
             return self._to_mvc(format_code)
 
     def __init__(self, source: "_ColumnVariableNumeric.Source",
-                 formatter: typing.Callable[[typing.Any], str], mvc: str):
+                 formatter: typing.Callable[[typing.Any, bool], str], mvc: str):
         super().__init__(source)
         self.formatter = formatter
         self._mvc = mvc
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
-        return self.formatter(self.source(time_indices[0]))
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
+        var_idx = time_indices[0]
+        if var_idx is None:
+            return self.formatter(None, True)
+        return self.formatter(self.source(var_idx), False)
 
     @property
     def mvc(self) -> str:
@@ -835,7 +847,7 @@ class _ColumnVariableStatisticsQuantile(_ColumnVariableFloat):
             return y
 
     def __init__(self, source: "_ColumnVariableStatisticsQuantile.Source",
-                 formatter: typing.Callable[[typing.Any], str], mvc: str, q: float):
+                 formatter: typing.Callable[[typing.Any, bool], str], mvc: str, q: float):
         super().__init__(source, formatter, mvc)
         self.q = q
 
@@ -869,8 +881,11 @@ class _ColumnVariableStatisticsQuantile(_ColumnVariableFloat):
 
         self._lookup = make_lookup()
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
-        return self.formatter(self._lookup(time_indices[0]))
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
+        var_idx = time_indices[0]
+        if var_idx is None:
+            return self.formatter(None, True)
+        return self.formatter(self._lookup(var_idx), False)
 
     @property
     def header_name(self) -> str:
@@ -916,7 +931,10 @@ class _ColumnVariableMVCFlag(_ColumnVariable):
         else:
             return 0, self.header_name, 1
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
+        var_idx = time_indices[0]
+        if var_idx is None:
+            return "1"
         value = self.source(time_indices[0])
         if value is None or not isfinite(value):
             return "1"
@@ -934,7 +952,10 @@ class _ColumnVariableFlags(_ColumnVariable):
 
 
 class _ColumnVariableFlagsList(_ColumnVariableFlags):
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
+        var_idx = time_indices[0]
+        if var_idx is None:
+            return self.mvc
         bits = int(self.source(time_indices[0]))
         set_flags: typing.Set[str] = set()
         for flag_bit, flag_name in self.flag_lookup:
@@ -965,7 +986,10 @@ class _ColumnVariableFlagsHex(_ColumnVariableFlags):
     def mvc(self) -> str:
         return self._mvc
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
+        var_idx = time_indices[0]
+        if var_idx is None:
+            return self.mvc
         bits = int(self.source(time_indices[0]))
         return self.format % bits
 
@@ -992,7 +1016,10 @@ class _ColumnVariableFlagsBreakdown(_ColumnVariableFlags):
     def sort_key(self) -> typing.Tuple[int, str, int]:
         return -1, super().header_name, self.bit
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
+        var_idx = time_indices[0]
+        if var_idx is None:
+            return self.mvc
         bits = int(self.source(time_indices[0]))
         return "1" if (bits & self.bit) != 0 else "0"
 
@@ -1002,7 +1029,10 @@ class _ColumnVariableOther(_ColumnVariable):
         super().__init__(source)
         self._mvc = mvc or ""
 
-    def __call__(self, time_value: float, time_indices: typing.List[int]) -> str:
+    def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
+        var_idx = time_indices[0]
+        if var_idx is None:
+            return self.mvc
         return str(self.source(time_indices[0]))
 
     @property
@@ -1164,6 +1194,12 @@ class _ExportStage(ExecuteStage):
 
         self._round_times: bool = not args.no_round_times
         self._fill_archive_time: bool = not args.no_fill_times
+        try:
+            self._fill_interval: typing.Optional[float] = parse_interval_argument(args.fill_interval) if args.fill_interval else None
+        except ValueError:
+            _LOGGER.debug("Error parsing fill argument", exc_info=True)
+            parser.error(f"invalid fill interval: '{args.fill_interval}'")
+        self._keep_latest: bool = args.latest_in_gaps
 
         station = False
         time_epoch = False
@@ -1624,11 +1660,17 @@ class _ExportStage(ExecuteStage):
                 state_time_variables: typing.Set[Variable] = set()
                 data_time_variables: typing.Set[Variable] = set()
                 time_variable_lookup: typing.List[typing.List[Variable]] = list()
+                source_is_state: typing.List[typing.List[bool]] = list()
                 for col in all_columns:
                     col_time_sources: typing.List[Variable] = list()
                     time_variable_lookup.append(col_time_sources)
+
+                    col_is_state: typing.List[bool] = list()
+                    source_is_state.append(col_is_state)
+
                     for var, is_state in col.time_sources:
                         col_time_sources.append(var)
+                        col_is_state.append(is_state)
                         if is_state:
                             state_time_variables.add(var)
                         else:
@@ -1637,7 +1679,20 @@ class _ExportStage(ExecuteStage):
                 if len(data_time_variables) == 0:
                     data_time_variables = state_time_variables
 
-                if self._fill_archive_time:
+                if self._fill_interval:
+                    begin_time = min([
+                        int(v[:].data[0]) for v in data_time_variables
+                    ])
+                    end_time = max([
+                        int(v[:].data[-1]) for v in data_time_variables
+                    ])
+                    interval_ms = int(ceil(self._fill_interval * 1000))
+                    begin_rounded = int(floor(begin_time / interval_ms) * interval_ms)
+                    end_rounded = int(floor(end_time / interval_ms) * interval_ms)
+                    if end_rounded < end_time:
+                        end_rounded += interval_ms
+                    output_times = np.arange(begin_rounded, end_rounded + interval_ms, interval_ms, dtype=np.int64)
+                elif self._fill_archive_time:
                     output_times = ArchiveRead.nominal_record_spacing(self.exec)
                 else:
                     output_times = None
@@ -1676,7 +1731,22 @@ class _ExportStage(ExecuteStage):
                     row_time = float(output_times[row_idx]) / 1000.0
                     for col_idx in range(len(all_columns)):
                         col = all_columns[col_idx]
-                        source_indices = [int(v[row_idx]) for v in alignment_indices[col_idx]]
+                        col_aligned_indices = alignment_indices[col_idx]
+
+                        source_indices: typing.List[typing.Optional[int]] = [
+                            int(v[row_idx]) for v in col_aligned_indices
+                        ]
+
+                        if not self._keep_latest and row_idx > 0:
+                            for source_num in range(len(source_indices)):
+                                if source_is_state[col_idx][source_num]:
+                                    continue
+                                if col_aligned_indices[source_num][row_idx-1] != source_indices[source_num]:
+                                    continue
+                                # A repeat index means that there was a gap: multiple values inserted into different
+                                # rows.  So we set it to unavailable if it wasn't state (which always has this true).
+                                source_indices[source_num] = None
+
                         column_values.append(col(row_time, source_indices))
                     try:
                         print(join_fields(column_values))

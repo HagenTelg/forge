@@ -43,4 +43,4 @@ def is_in_state_group(var: Variable) -> typing.Optional[bool]:
         if group is None:
             break
         is_state = is_state_group(group)
-    return group
+    return is_state
