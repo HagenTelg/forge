@@ -538,7 +538,7 @@ def test_preserve_single_state(tmp_path):
     var = state_change_coordinate(group)
     var[:] = [1696896000000]
 
-    var = group.createVariable("value", str, ("time",), fill_value=nan)
+    var = group.createVariable("value", str, ("time",))
     var.cell_methods = "time: point"
     var[0] = "A"
 
@@ -564,6 +564,58 @@ def test_preserve_single_state(tmp_path):
     assert var.dtype == str
     assert var.getncattr("cell_methods") == "time: point"
     assert list(var[:]) == ["A"]
+
+
+def test_fragmented_state(tmp_path):
+    under = Dataset(str(tmp_path / "under.nc"), 'w', format='NETCDF4')
+    under.setncattr("time_coverage_start", "2023-10-11T00:00:00Z")
+    under.setncattr("time_coverage_end", "2023-10-12T00:00:00Z")
+
+    group = under.createGroup("state")
+    var = state_change_coordinate(group)
+    var[:] = [1696978800000, 1696982400001]
+
+    var = group.createVariable("value", "f8", ("time",), fill_value=nan)
+    var.cell_methods = "time: point"
+    var[:] = [1.0, 2.0]
+
+    over = Dataset(str(tmp_path / "over.nc"), 'w', format='NETCDF4')
+    over.setncattr("time_coverage_start", "2023-10-11T01:00:00Z")
+    over.setncattr("time_coverage_end", "2023-10-11T02:00:00Z")
+
+    group = over.createGroup("state")
+    var = state_change_coordinate(group)
+    var[:] = [1696982400001, 1696989000000]
+
+    var = group.createVariable("value", "f8", ("time",), fill_value=nan)
+    var.cell_methods = "time: point"
+    var[:] = [2.0, 3.0]
+
+    merge = MergeInstrument()
+    merge.overlay(under, not_before_ms=1696982400000, not_after_ms=1697068800000)
+    merge.overlay(over, not_before_ms=1696982400000, not_after_ms=1697068800000)
+    output = merge.execute(tmp_path / "output.nc")
+    merge = None
+    under.close()
+    under = None
+    over.close()
+    over = None
+
+    group = output.groups["state"]
+    assert len(group.dimensions) == 1
+    dim = group.dimensions["time"]
+    assert dim.isunlimited()
+    #assert dim.size == 3
+
+    assert len(group.variables) == 2
+    var = group.variables["time"]
+    assert var.dtype == np.int64
+    assert list(var[:]) == [1696978800000, 1696982400001, 1696989000000]
+
+    var = group.variables["value"]
+    assert var.dtype == np.float64
+    assert var.getncattr("cell_methods") == "time: point"
+    assert list(var[:]) == [1.0, 2.0, 3.0]
 
 
 def test_flags(tmp_path):

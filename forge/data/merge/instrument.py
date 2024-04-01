@@ -707,6 +707,15 @@ class _TimeVariable(_Variable):
             return None
         source_start, source_end = selected
 
+        if self.is_state and self.last_time_value:
+            # For a state record, we can have an underlay value that only contains already inserted data when it
+            # was fragmented from a greater record by an overlay.  When this happens the state logic of "include the
+            # value before" means that we get a time we've already handled.
+            if time_values[source_start] <= self.last_time_value:
+                source_start += 1
+            if source_start >= source_end:
+                return None
+
         time_count = source_end - source_start
         destination_start = self.next_time_index
         if self.last_time_value and time_values[source_start] <= self.last_time_value:
