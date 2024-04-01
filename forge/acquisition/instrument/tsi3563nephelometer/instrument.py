@@ -968,11 +968,11 @@ class Instrument(StreamingInstrument):
             wl[0.0].measurement_counts(Cs)
             wl[0.0].reference_counts(Cf)
             wl[0.0].dark_counts(Cd)
-            wl[0.0].dark_counts(total_revs)
+            wl[0.0].revolutions(total_revs)
             wl[90.0].measurement_counts(Cbs)
             wl[90.0].reference_counts(Cf)
             wl[90.0].dark_counts(Cbd)
-            wl[90.0].dark_counts(back_revs)
+            wl[90.0].revolutions(back_revs)
 
         self._advance_BGR(wavelength)
 
