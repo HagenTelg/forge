@@ -163,9 +163,17 @@ class ExampleEventLog(DataStream):
             })
         await self.send({
             'epoch_ms': self.start_epoch_ms,
-            'type': "Acquisition",
+            'type': "Instrument",
             'author': "S11",
-            'message': "Example Communications Loss",
+            'message': "Example Instrument Error",
+            'acquisition': True,
+            'error': True,
+        })
+        await self.send({
+            'epoch_ms': self.start_epoch_ms + 60 * 1000,
+            'type': "Communications",
+            'author': "S11",
+            'message': "Example Communications Established",
             'acquisition': True,
         })
 

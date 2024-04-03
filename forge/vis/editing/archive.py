@@ -17,7 +17,7 @@ from forge.logicaltime import containing_year_range, start_of_year, start_of_yea
 from forge.formattime import format_export_time
 from forge.const import STATIONS, MAX_I64
 from forge.vis.access import AccessUser
-from forge.vis.data.stream import DataStream
+from forge.vis.data.stream import DataStream, ArchiveReadStream
 from forge.archive.client import edit_directives_lock_key, edit_directives_file_name, edit_directives_notification_key, data_lock_key, data_file_name, index_lock_key, index_file_name
 from forge.archive.client.get import read_file_or_nothing, ArchiveIndex
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
@@ -30,83 +30,6 @@ from forge.processing.clean.filter import StationFileFilter
 from forge.processing.editing.selection import ignore_variable
 
 _LOGGER = logging.getLogger(__name__)
-
-
-class _BaseReadStream(DataStream):
-    class Stall(DataStream.Stall):
-        def __init__(self, backoff: LockBackoff, reason: typing.Optional[str] = None):
-            super().__init__(reason)
-            self._backoff = backoff
-
-        async def block(self) -> bool:
-            await self._backoff()
-            return True
-
-    def __init__(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
-        super().__init__(send)
-        self.connection: typing.Optional[Connection] = None
-        self._lock_backoff = LockBackoff()
-        self._lock_held: bool = False
-
-    @property
-    def connection_name(self) -> str:
-        raise NotImplementedError
-
-    async def acquire_locks(self) -> None:
-        raise NotImplementedError
-
-    async def _open_connection(self) -> None:
-        if self.connection is not None:
-            return
-        self._lock_backoff.clear()
-        self._lock_held = False
-        self.connection = await Connection.default_connection(self.connection_name, use_environ=False)
-        await self.connection.startup()
-
-    async def _begin(self) -> None:
-        if self._lock_held:
-            return
-
-        await self.connection.transaction_begin(False)
-        try:
-            await self.acquire_locks()
-        except LockDenied:
-            await self.connection.transaction_abort()
-            raise
-
-        self._lock_held = True
-
-    async def stall(self) -> typing.Optional["DataStream.Stall"]:
-        if self._lock_held:
-            return None
-        await self._open_connection()
-        try:
-            await self._begin()
-        except LockDenied as ld:
-            return self.Stall(self._lock_backoff, ld.status)
-        return None
-
-    async def with_locks_held(self) -> None:
-        raise NotImplementedError
-
-    async def run(self) -> None:
-        await self._open_connection()
-        try:
-            while True:
-                try:
-                    await self._begin()
-                except LockDenied:
-                    await self._lock_backoff()
-                    continue
-                break
-
-            await self.with_locks_held()
-
-            await self.connection.transaction_commit()
-            self._lock_held = False
-        finally:
-            await self.connection.shutdown()
-            self.connection = None
 
 
 def _sanitize_selection(selection: typing.List[typing.Dict[str, typing.Any]]) -> typing.List[typing.Dict[str, typing.Any]]:
@@ -428,7 +351,7 @@ def _from_archive_edit(
     return result
 
 
-class _EditReadStream(_BaseReadStream):
+class _EditReadStream(ArchiveReadStream):
     def __init__(self, station: str, profile: str, start_epoch_ms: int, end_epoch_ms: int,
                  send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
         super().__init__(send)
@@ -997,7 +920,7 @@ async def edit_save(user: AccessUser, station: str, mode_name: str,
                 continue
 
 
-class _AvailableReadStream(_BaseReadStream):
+class _AvailableReadStream(ArchiveReadStream):
     ARCHIVE = "raw"
 
     class _Index(ArchiveIndex):

@@ -1873,6 +1873,7 @@ class EventLogReader(DataStream):
                     result['type'] = "Instrument"
                     result['author'] = value.get('Source', "")
                     result['acquisition'] = True
+                    result['error'] = True
 
             return result
 

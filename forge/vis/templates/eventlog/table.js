@@ -112,9 +112,14 @@ $(document).ready(function() {
         tr.children[3].textContent = event.message || "";
 
         if (event.acquisition) {
-            tr.classList.add('event-system-type');
+            tr.classList.add('event-acquisition-type');
         } else {
-            tr.classList.remove('event-system-type');
+            tr.classList.remove('event-acquisition-type');
+        }
+        if (event.error) {
+            tr.classList.add('event-system-error');
+        } else {
+            tr.classList.remove('event-system-error');
         }
 
         setRowVisibility(tr);

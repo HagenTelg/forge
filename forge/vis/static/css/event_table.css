@@ -95,12 +95,16 @@ table.events > tbody > tr td:nth-child(1) {
   padding-top: 6px;
 }
 
-table.events > tbody > tr.event-system-type td:nth-child(2) {
+table.events > tbody > tr.event-system-error td:nth-child(2) {
   color: #f66;
   vertical-align: top;
 }
+table.events > tbody > tr.event-acquisition-type:not(.event-system-error) td:nth-child(2) {
+  color: #009;
+  vertical-align: top;
+}
 
-table.events > tbody > tr.event-system-type td:nth-child(3) {
+table.events > tbody > tr.event-system-error td:nth-child(3) {
   vertical-align: top;
 }
 
