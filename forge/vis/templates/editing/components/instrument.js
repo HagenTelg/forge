@@ -127,7 +127,7 @@ Instrument.setSelectionFilter = function(...selections) {
 EditDirectiveAvailable.ready(() => {
     const unclaimedAvailable = new Map();
     EditDirectiveAvailable.available.forEach((available) => {
-        const availableInstrument = available.instrument();
+        const availableInstrument = available.instrumentID();
         if (!availableInstrument) {
             return;
         }
