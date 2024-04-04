@@ -290,9 +290,7 @@ class DataSelection:
             if self.require_tags:
                 if not self.require_tags.issubset(index.tags_for_instrument_id(instrument_id)):
                     return False
-            if self.exclude_tags:
-                if not self.exclude_tags.isdisjoint(index.tags_for_instrument_id(instrument_id)):
-                    return False
+            # Can't filter on excluded tags since the index is a union, so an individual file may lack them
 
             return True
 

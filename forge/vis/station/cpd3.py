@@ -36,9 +36,11 @@ _forge_translated_stations = frozenset({
 })
 
 
-def use_cpd3(station: str) -> bool:
+def use_cpd3(station: typing.Optional[str] = None) -> bool:
     if not _enable_forge_archive:
         return True
+    if not station:
+        return False
     return station not in _forge_translated_stations
 
 

@@ -156,6 +156,8 @@ class _ArchiveStall(DataStream.Stall):
 
 
 class _BaseArchiveReadStream(ABC):
+    MAXIMUM_LOCK_HOLD_TIME: typing.Optional[float] = 30 * 60
+
     def __init__(self):
         self.connection: typing.Optional[Connection] = None
         self._lock_backoff = LockBackoff()
@@ -215,7 +217,10 @@ class _BaseArchiveReadStream(ABC):
                     continue
                 break
 
-            await self.with_locks_held()
+            if self.MAXIMUM_LOCK_HOLD_TIME:
+                await wait_cancelable(self.with_locks_held(), self.MAXIMUM_LOCK_HOLD_TIME)
+            else:
+                await self.with_locks_held()
 
             await self.connection.transaction_commit()
             self._lock_held = False
@@ -235,7 +240,7 @@ class ArchiveReadStream(DataStream, _BaseArchiveReadStream):
         return await self._stream_stall(self.Stall)
 
     async def run(self) -> None:
-        return await self._stream_run()
+        await self._stream_run()
 
 
 class ArchiveRecordStream(RecordStream, _BaseArchiveReadStream):
@@ -249,4 +254,5 @@ class ArchiveRecordStream(RecordStream, _BaseArchiveReadStream):
         return await self._stream_stall(self.Stall)
 
     async def run(self) -> None:
-        return await self._stream_run()
+        await self._stream_run()
+        await RecordStream.flush(self)
