@@ -8,7 +8,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class InstrumentSelection:
     def __init__(self, selection: typing.Dict[str, typing.Any] = None):
-        self.instrument_id: typing.Optional[re.Pattern] = None
+        self.instrument_id: typing.Optional["re.Pattern"] = None
         self.instrument: typing.Optional[str] = None
         self.require_tags: typing.Set[str] = set()
         self.exclude_tags: typing.Set[str] = set()
@@ -109,7 +109,7 @@ class InstrumentSelection:
 
 class VariableSelection:
     def __init__(self, selection: typing.Union[typing.Dict[str, typing.Any], str] = None):
-        self.variable_id: typing.Optional[re.Pattern] = None
+        self.variable_id: typing.Optional["re.Pattern"] = None
         self.variable_name: typing.Optional[str] = None
         self.standard_name: typing.Optional[str] = None
         self.units: typing.Optional[str] = None

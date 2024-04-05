@@ -112,7 +112,7 @@ class AnalogInput:
             'wd': wind_direction,
             'none': instrument.variable,
         }
-        name_match: typing.Dict[re.Pattern, typing.Callable] = {
+        name_match: typing.Dict["re.Pattern", typing.Callable] = {
             re.compile(r'^T\d*(?:_|$)'): instrument.variable_temperature,
             re.compile(r'^U\d*(?:_|$)'): instrument.variable_rh,
             re.compile(r'^Pd\d*(?:_|$)'): instrument.variable_delta_pressure,

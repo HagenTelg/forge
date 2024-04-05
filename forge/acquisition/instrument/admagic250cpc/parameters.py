@@ -430,7 +430,7 @@ class Parameters:
         set_temperature("tmod")
         set_temperature("topt")
 
-    INTEGER_PARSE: typing.List[typing.Tuple[str, re.Pattern]] = [
+    INTEGER_PARSE: typing.List[typing.Tuple[str, "re.Pattern"]] = [
         ("lset",    re.compile(rb"^lset\s+(\d+)", flags=re.IGNORECASE)),
         ("lcur",    re.compile(rb"^lset\s+\d+\s*[^;]*;\s*current\s*=\s*(\d+)", flags=re.IGNORECASE)),
         ("doslope", re.compile(rb"doslope\s+(\d+)", flags=re.IGNORECASE)),
@@ -456,7 +456,7 @@ class Parameters:
         ("wmin",    re.compile(rb"^wMin/Wmax\s+(\d+)/\d+", flags=re.IGNORECASE)),
     ]
 
-    FLOAT_PARSE: typing.List[typing.Tuple[str, re.Pattern]] = [
+    FLOAT_PARSE: typing.List[typing.Tuple[str, "re.Pattern"]] = [
         ("qset",    re.compile(rb"^qtrg\s+\d+[^(]*\(\s*qset\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
         ("qset",    re.compile(rb"^qset\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
         ("heff",    re.compile(rb"^heff\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),

@@ -171,7 +171,7 @@ class _ArchiveIndex(BaseArchiveIndex):
         super().__init__(json_data)
         self.station = station
 
-    def match_variable_name(self, match: re.Pattern) -> typing.Set[str]:
+    def match_variable_name(self, match: "re.Pattern") -> typing.Set[str]:
         result: typing.Set[str] = set()
         for check, contents in self.variable_names.items():
             if not match.fullmatch(check):
@@ -179,7 +179,7 @@ class _ArchiveIndex(BaseArchiveIndex):
             result.update(contents)
         return result
 
-    def match_standard_name(self, match: re.Pattern) -> typing.Set[str]:
+    def match_standard_name(self, match: "re.Pattern") -> typing.Set[str]:
         result: typing.Set[str] = set()
         for check, contents in self.standard_names.items():
             if not match.fullmatch(check):
@@ -187,7 +187,7 @@ class _ArchiveIndex(BaseArchiveIndex):
             result.update(contents)
         return result
 
-    def match_variable_id(self, match: re.Pattern) -> typing.Set[str]:
+    def match_variable_id(self, match: "re.Pattern") -> typing.Set[str]:
         def match_permute(name: str, instrument_id: str, wavelength_count: int) -> bool:
             if match.fullmatch(name):
                 return True
@@ -251,8 +251,8 @@ class DataSelection:
 
     class _FileMatch:
         def __init__(self, require_tags: typing.Set[str], exclude_tags: typing.Set[str],
-                     instrument_id: typing.Optional[re.Pattern], instrument_type: typing.Optional[re.Pattern],
-                     station: typing.Optional[re.Pattern]):
+                     instrument_id: typing.Optional["re.Pattern"], instrument_type: typing.Optional["re.Pattern"],
+                     station: typing.Optional["re.Pattern"]):
             self.require_tags = require_tags
             self.exclude_tags = exclude_tags
             self.instrument_id = instrument_id
@@ -400,7 +400,7 @@ class DataSelection:
     class _VariableRegex(_VariableMatch):
         def __init__(self, file: "DataSelection._FileMatch",
                      variable_type: typing.Optional["DataSelection._VariableType"],
-                     match: re.Pattern):
+                     match: "re.Pattern"):
             super().__init__(file, variable_type)
             self.match = match
 
@@ -589,9 +589,9 @@ class DataSelection:
 
         require_tags: typing.Set[str] = set()
         exclude_tags: typing.Set[str] = set()
-        instrument_id: typing.Optional[re.Pattern] = None
-        instrument_type: typing.Optional[re.Pattern] = None
-        station: typing.Optional[re.Pattern] = None
+        instrument_id: typing.Optional["re.Pattern"] = None
+        instrument_type: typing.Optional["re.Pattern"] = None
+        station: typing.Optional["re.Pattern"] = None
         variable_type: typing.Optional[DataSelection._VariableType] = None
         for component_type, component_value in split_tagged_regex(selection):
             component_type = component_type.lower()

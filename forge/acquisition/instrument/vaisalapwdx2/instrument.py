@@ -75,7 +75,7 @@ class Instrument(StreamingInstrument):
                 i(parse_number(value))
             return wrapped
 
-        self._status_match: typing.List[typing.Tuple[re.Pattern, typing.Dict[int, typing.Callable[[bytes], typing.Any]]]] = [
+        self._status_match: typing.List[typing.Tuple["re.Pattern", typing.Dict[int, typing.Callable[[bytes], typing.Any]]]] = [
             (re.compile(rb"SIGNAL\*?\s+\*?(\S+)\s+OFFSET\*?\s+\*?(\S+)\s+DRIFT\*?\s+\*?(\S+)"), {
                 1: wrap_input(self.data_Csignal),
                 2: wrap_input(self.data_Coffset),

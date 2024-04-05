@@ -115,7 +115,7 @@ def main():
             else:
                 raise ValueError
 
-    filenames: typing.List[re.Pattern] = list()
+    filenames: typing.List["re.Pattern"] = list()
     if args.filename:
         for p in args.filename:
             filenames.append(re.compile(p))
