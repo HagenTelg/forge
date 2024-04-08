@@ -95,6 +95,7 @@ setup(
         "forge-cpd3-acquisition-incoming = forge.cpd3.acquisition.incoming.__main__:main",
         "forge-cpd3-acquisition-uplink = forge.cpd3.acquisition.incoming.uplink.__main__:main",
         "forge-cpd3-convert-acquisition = forge.cpd3.convert.acquisition:main",
+        "forge-cpd3-read-archive = forge.cpd3.archive.__main__:main",
     ], "gui_scripts": [
         "forge-acquisition-serial-setup = forge.acquisition.serial.setup.__main__:main",
     ]},

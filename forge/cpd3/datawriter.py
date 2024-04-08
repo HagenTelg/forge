@@ -115,3 +115,12 @@ class StandardDataOutput(ABC):
     @abstractmethod
     def output_ready(self, packet: bytes) -> None:
         pass
+
+
+def serialize_archive_value(identity: Identity, value: typing.Any, modified: float,
+                            remote_referenced: bool = False) -> bytes:
+    return (struct.pack('<dd', identity.start if identity.start else nan, identity.end if identity.end else nan) +
+            identity.name.serialize() +
+            struct.pack('<i', identity.priority) +
+            serialize(value) +
+            struct.pack('<dB', modified, 1 if remote_referenced else 0))
