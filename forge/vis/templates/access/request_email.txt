@@ -1,5 +1,4 @@
-An access request has been submitted for {{ user.name }} <{{ user.email }}> requesting access to
-{{ station|upper }}.  If this is not a valid request, simply disregard this email.
+An access request has been submitted for {% if user.name %}{{ user.name }} <{{ user.email }}>{% else %}{{ user.email }}{% endif %}  requesting access to {{ station|upper }}.  If this is not a valid request, simply disregard this email.
 
 {% if comment %}
 The comment with the request was:
