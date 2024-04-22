@@ -560,7 +560,7 @@ def data_get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: in
     rec = data.get(data_name)
     if not rec:
         return None
-    return rec.stream(station, data_name, start_epoch_ms, end_epoch_ms, send)
+    return rec(station, data_name, start_epoch_ms, end_epoch_ms, send)
 
 
 def get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,

@@ -100,19 +100,19 @@ def peer_output_time(
     """
 
     if len(peer_times) == 0:
-        return np.array([], dtype=np.int64)
+        return np.empty((0,), dtype=np.int64)
     if len(peer_times) == 1:
         return peer_times[0]
 
     combined_time = np.unique(np.concatenate(peer_times))
-    if not apply_rounding:
+    if not apply_rounding or combined_time.shape[0] <= 2:
         return combined_time
 
     time_difference = combined_time[1:] - combined_time[:-1]
     time_step_values, time_step_count = np.unique(time_difference, return_counts=True)
     time_step = time_step_values[np.argmax(time_step_count)]
     if time_step == 0:
-        return np.array([], dtype=peer_times[0].dtype)
+        return np.empty((0,), dtype=peer_times[0].dtype)
 
     combined_time = np.round(combined_time / time_step) * time_step
     combined_time = np.unique(combined_time)

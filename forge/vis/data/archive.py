@@ -31,12 +31,12 @@ _NEVER_MATCH_ROOT_VARIABLES = frozenset({
 
 class Record(ABC):
     @abstractmethod
-    def stream(self, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
-               send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
+    def __call__(self, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
+                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
         pass
 
 
-def _walk_selectable(root: Dataset) -> typing.Iterator[VariableContext]:
+def walk_selectable(root: Dataset) -> typing.Iterator[VariableContext]:
     root_ctx = VariableRootContext(root)
     for var in root.variables.values():
         if var.name in _NEVER_MATCH_ROOT_VARIABLES:
@@ -57,7 +57,7 @@ def _walk_selectable(root: Dataset) -> typing.Iterator[VariableContext]:
 
 
 class FieldStream:
-    class _Source(ABC):
+    class Source(ABC):
         def __init__(self, stream: "FieldStream", priority: int, times: np.ndarray, values: np.ndarray,
                      convert: typing.Callable[[np.ndarray], typing.Any] = None):
             self.stream = stream
@@ -81,7 +81,11 @@ class FieldStream:
         def expected_interval_ms(self) -> typing.Optional[int]:
             return None
 
-    class _ConstantSource(_Source):
+        @property
+        def round_interval_ms(self) -> typing.Optional[int]:
+            return None
+
+    class ConstantSource(Source):
         def __init__(self, stream: "FieldStream", priority: int, times: np.ndarray, values: np.ndarray,
                      convert: typing.Callable[[np.ndarray], typing.Any] = None):
             super().__init__(stream, priority, times, values, convert)
@@ -96,7 +100,7 @@ class FieldStream:
         def next(self) -> typing.Optional[typing.Tuple[int, typing.Any]]:
             return self._begin_time, self.convert(self.values)
 
-    class _DataSource(_Source):
+    class DataSource(Source):
         def __init__(self, stream: "FieldStream", priority: int, times: np.ndarray, values: np.ndarray,
                      interval: typing.Optional[float] = None,
                      convert: typing.Callable[[np.ndarray], typing.Any] = None):
@@ -173,7 +177,11 @@ class FieldStream:
                 return int(self.times[self._current_index]) - int(self.times[self._current_index-1])
             return int(self.times[1]) - int(self.times[0])
 
-    class _StateSource(_Source):
+        @property
+        def round_interval_ms(self) -> typing.Optional[int]:
+            return self.interval_ms
+
+    class StateSource(Source):
         def __init__(self, stream: "FieldStream", priority: int, times: np.ndarray, values: np.ndarray,
                      convert: typing.Callable[[np.ndarray], typing.Any] = None):
             super().__init__(stream, priority, times, values, convert)
@@ -232,7 +240,7 @@ class FieldStream:
         self.end_epoch_ms = end_epoch_ms
         self._latest: int = start_epoch_ms
         self._advanced_interval: typing.Optional[int] = None
-        self._streams: typing.List["FieldStream._Source"] = list()
+        self.streams: typing.List["FieldStream.Source"] = list()
         self._first: bool = True
 
     def add_data(self, matched: InstrumentSelection, times: np.ndarray, values: np.ndarray,
@@ -240,25 +248,25 @@ class FieldStream:
                  convert: typing.Callable[[np.ndarray], typing.Any] = None) -> None:
         selection_index = self.selections.index(matched)
         if not times.shape:
-            self._streams.append(self._ConstantSource(self, selection_index, times, values, convert))
+            self.streams.append(self.ConstantSource(self, selection_index, times, values, convert))
         else:
-            self._streams.append(self._DataSource(self, selection_index, times, values, interval, convert))
-        self._streams.sort(key=lambda x: x.priority)
+            self.streams.append(self.DataSource(self, selection_index, times, values, interval, convert))
+        self.streams.sort(key=lambda x: x.priority)
 
     def add_state(self, matched: InstrumentSelection, times: np.ndarray, values: np.ndarray,
                   convert: typing.Callable[[np.ndarray], typing.Any] = None) -> None:
         selection_index = self.selections.index(matched)
         if not times.shape:
-            self._streams.append(self._ConstantSource(self, selection_index, times, values, convert))
+            self.streams.append(self.ConstantSource(self, selection_index, times, values, convert))
         else:
-            self._streams.append(self._StateSource(self, selection_index, times, values, convert))
-        self._streams.sort(key=lambda x: x.priority)
+            self.streams.append(self.StateSource(self, selection_index, times, values, convert))
+        self.streams.sort(key=lambda x: x.priority)
 
     @property
     def next(self) -> typing.Optional[typing.Tuple[int, typing.Any]]:
         selected_time: typing.Optional[int] = None
         selected_value: typing.Any = None
-        for source in self._streams:
+        for source in self.streams:
             hit = source.next
             if not hit:
                 continue
@@ -273,23 +281,31 @@ class FieldStream:
         return selected_time, selected_value
 
     def advance(self, completed_epoch_ms: int) -> None:
-        idx: int = len(self._streams) - 1
+        idx: int = len(self.streams) - 1
         while idx >= 0:
-            if not self._streams[idx].advance(completed_epoch_ms):
-                interval = self._streams[idx].expected_interval_ms
+            if not self.streams[idx].advance(completed_epoch_ms):
+                interval = self.streams[idx].expected_interval_ms
                 if interval:
                     self._advanced_interval = interval
-                del self._streams[idx]
+                del self.streams[idx]
             idx -= 1
         self._first = False
 
     @property
     def expected_interval_ms(self) -> typing.Optional[int]:
-        for source in self._streams:
+        for source in self.streams:
             interval = source.expected_interval_ms
             if interval:
                 return interval
         return self._advanced_interval
+
+    @property
+    def round_interval_ms(self) -> typing.Optional[int]:
+        for source in self.streams:
+            interval = source.round_interval_ms
+            if interval:
+                return interval
+        return None
 
 
 class ContaminationRecord(Record):
@@ -363,7 +379,7 @@ class ContaminationRecord(Record):
             self._contamination_begin = None
             self._contamination_end = None
 
-        async def _drain_ready(self, before_ms: int):
+        async def _drain_ready(self, before_ms: int) -> None:
             if before_ms < self.files.start_epoch_ms:
                 return
             while True:
@@ -393,7 +409,7 @@ class ContaminationRecord(Record):
                 await self._drain_ready(chunk_begin)
                 for src, file_selections in chunk_files.items():
                     for file, selections in file_selections:
-                        for var in _walk_selectable(file):
+                        for var in walk_selectable(file):
                             if var.variable_name != 'system_flags':
                                 continue
                             if len(var.variable.dimensions) < 1 or var.variable.dimensions[0] != 'time':
@@ -407,8 +423,8 @@ class ContaminationRecord(Record):
     def __init__(self, sources: typing.List[InstrumentSelection]):
         self.sources = sources
 
-    def stream(self, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
-               send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
+    def __call__(self, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
+                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
         components = data_name.split('-', 2)
         archive = "raw"
         if len(components) >= 2:
@@ -501,7 +517,7 @@ class DataRecord(Record):
                 await self._drain_ready(chunk_begin)
                 for src, file_selections in chunk_files.items():
                     for file, selections in file_selections:
-                        for var in _walk_selectable(file):
+                        for var in walk_selectable(file):
                             for sel in selections:  # type: Selection
                                 hit = sel.variable_values(var)
                                 if hit is None:
@@ -519,8 +535,8 @@ class DataRecord(Record):
         for add in fields.values():
             self._all_selections.extend(add)
 
-    def stream(self, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
-               send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
+    def __call__(self, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
+                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
         components = data_name.split('-', 2)
         archive = "raw"
         if len(components) >= 2:
@@ -623,8 +639,8 @@ class RealtimeRecord(DataRecord):
         super().__init__(fields, hold_fields=hold_fields)
         self.expected_interval = expected_interval
 
-    def stream(self, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
-               send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
+    def __call__(self, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
+                 send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
         now_ms = round(time.time() * 1000)
         if end_epoch_ms < now_ms - 60 * 60 * 1000:
             end_epoch_ms = now_ms - 60 * 60 * 1000

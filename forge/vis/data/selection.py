@@ -68,7 +68,7 @@ class FileContext:
 class VariableRootContext:
     def __init__(self, root: Dataset):
         self._root = root
-        self._group_wavelength: typing.Dict[Dataset, typing.List[float]] = dict()
+        self._group_wavelength: typing.Dict[Dataset, np.ndarray] = dict()
         self._group_cut_size_dimension: typing.Dict[Dataset, np.ndarray] = dict()
         self._group_cut_size_time: typing.Dict[Dataset, typing.Optional[np.ndarray]] = dict()
         self._group_quantile: typing.Dict[Dataset, typing.Optional[np.ndarray]] = dict()
@@ -88,12 +88,12 @@ class VariableRootContext:
             if data is None:
                 raise KeyError(f"Dimension {name} not found")
 
-    def group_wavelength(self, group: Dataset) -> typing.List[float]:
+    def group_wavelength(self, group: Dataset) -> np.ndarray:
         hit = self._group_wavelength.get(group)
         if hit is not None:
             return hit
         wl_values = self.find_dimension_values(group, 'wavelength')
-        hit = list(wl_values[:].data)
+        hit = wl_values[:].data
         self._group_wavelength[group] = hit
         return hit
 
@@ -237,14 +237,14 @@ class VariableContext:
         return self._statistics_type
 
     @property
-    def wavelengths(self) -> typing.Tuple[typing.Optional[int], typing.List[float]]:
+    def wavelengths(self) -> typing.Tuple[typing.Optional[int], np.ndarray]:
         if self._wavelengths is None:
             try:
                 wl_dimension = self.variable.dimensions.index('wavelength')
                 wl_values = self._root.group_wavelength(self.variable.group())
                 self._wavelengths = (wl_dimension, wl_values)
             except ValueError:
-                self._wavelengths = (None, [])
+                self._wavelengths = (None, np.empty((), dtype=np.float64))
         return self._wavelengths
 
     @property
@@ -259,14 +259,14 @@ class VariableContext:
         return self._quantiles
     
     @property
-    def cut_size_dimension(self) -> typing.Tuple[typing.Optional[int], typing.List[float]]:
+    def cut_size_dimension(self) -> typing.Tuple[typing.Optional[int], np.ndarray]:
         if self._cut_size_dimension is None:
             try:
                 cut_dimension = self.variable.dimensions.index('cut_size')
                 cut_values = self._root.group_cut_size_dimension(self.variable.group())
                 self._cut_size_dimension = (cut_dimension, cut_values)
             except ValueError:
-                self._cut_size_dimension = (None, [])
+                self._cut_size_dimension = (None, np.empty((), dtype=np.float64))
         return self._cut_size_dimension
 
     @property
@@ -625,7 +625,13 @@ class Selection(InstrumentSelection):
             return index.all_instrument_ids()
         return possible_instruments
 
-    def variable_values(self, var: VariableContext) -> typing.Optional[typing.Tuple[typing.Optional[np.ndarray], np.ndarray]]:
+    def variable_values(
+            self,
+            var: VariableContext,
+            return_wavelength: bool = False,
+            return_cut_size_times: bool = False,
+            return_cut_size_dimension: bool = False,
+    ):
         if self.variable_id and self.variable_id != var.variable_id:
             return None
         if self.variable_name and self.variable_name != var.variable_name:
@@ -650,11 +656,12 @@ class Selection(InstrumentSelection):
 
         wavelength_dimension_number: typing.Optional[int] = None
         wavelength_dimension_selector: typing.Optional[int] = None
+        possible_wavelengths: typing.Optional[np.ndarray] = None
         if self.wavelength:
             wavelength_dimension_number, possible_wavelengths = var.wavelengths
             wavelength_min, wavelength_max = self.wavelength
             for wl_number in range(len(possible_wavelengths)):
-                wavelength = possible_wavelengths[wl_number]
+                wavelength = float(possible_wavelengths[wl_number])
                 if wavelength_min is not None and wavelength < wavelength_min:
                     continue
                 if wavelength_max is not None and wavelength >= wavelength_max and wavelength_min != wavelength_max:
@@ -668,6 +675,10 @@ class Selection(InstrumentSelection):
             if self.wavelength_number >= len(possible_wavelengths):
                 return None
             wavelength_dimension_selector = self.wavelength_number
+        elif return_wavelength:
+            check, possible_wavelengths = var.wavelengths
+            if check is None:
+                possible_wavelengths = None
 
         quantile_dimension_number: typing.Optional[int] = None
         quantile_dimension_selector: typing.Optional[typing.Tuple[int, int]] = None
@@ -698,6 +709,8 @@ class Selection(InstrumentSelection):
         time_selector = None
         cut_size_dimension_number: typing.Optional[int] = None
         cut_size_dimension_selector: typing.Optional[int] = None
+        cut_size_times: typing.Optional[np.ndarray] = None
+        possible_cut_size: typing.Optional[np.ndarray] = None
         if self.cut_size:
             cut_size_dimension_number, possible_cut_size = var.cut_size_dimension
             cut_size_min, cut_size_max = self.cut_size
@@ -705,6 +718,8 @@ class Selection(InstrumentSelection):
                 if time_values is None:
                     if cut_size_max is not None and isfinite(cut_size_max):
                         return None
+                    if return_cut_size_times:
+                        cut_size_times = var.cut_size_time
                 else:
                     cut_size_times = var.cut_size_time
                     if cut_size_times is None:
@@ -722,6 +737,8 @@ class Selection(InstrumentSelection):
                                     np.invert(np.isfinite(cut_size_times)),
                                     cut_size_times >= cut_size_min,
                                 ), axis=0)
+                                if return_cut_size_times:
+                                    result_cut_sizes = cut_size_times[time_selector]
                             elif not isfinite(cut_size_max):
                                 time_selector = cut_size_times >= cut_size_min
                             elif cut_size_min != cut_size_max:
@@ -766,6 +783,13 @@ class Selection(InstrumentSelection):
             if self.cut_size_number >= len(possible_cut_size):
                 return None
             cut_size_dimension_selector = self.wavelength_number
+        else:
+            if return_cut_size_dimension:
+                check, possible_cut_size = var.cut_size_dimension
+                if check is None:
+                    possible_cut_size = None
+            if return_cut_size_times:
+                cut_size_times = var.cut_size_time
 
         data_values = var.values
 
@@ -775,16 +799,22 @@ class Selection(InstrumentSelection):
                 return None
             time_values = time_values[time_selector]
             data_values = data_values[time_selector]
+            if return_cut_size_times and cut_size_times is not None:
+                cut_size_times = cut_size_times[time_selector]
 
         data_selector = list()
         if cut_size_dimension_selector is not None:
             if cut_size_dimension_number >= len(data_selector):
                 data_selector.extend([slice(None)] * (cut_size_dimension_number - len(data_selector) + 1))
             data_selector[cut_size_dimension_number] = cut_size_dimension_selector
+            if return_cut_size_dimension and possible_cut_size is not None:
+                possible_cut_size = possible_cut_size[cut_size_dimension_selector]
         if wavelength_dimension_selector is not None:
             if wavelength_dimension_number >= len(data_selector):
                 data_selector.extend([slice(None)] * (wavelength_dimension_number - len(data_selector) + 1))
             data_selector[wavelength_dimension_number] = wavelength_dimension_selector
+            if return_wavelength and possible_wavelengths is not None:
+                possible_wavelengths = possible_wavelengths[wavelength_dimension_selector]
         if quantile_dimension_selector is not None:
             if quantile_dimension_number >= len(data_selector):
                 data_selector.extend([slice(None)] * (quantile_dimension_number - len(data_selector) + 1))
@@ -810,7 +840,25 @@ class Selection(InstrumentSelection):
             q_upper = data_values[..., 1]
             data_values = (q_upper - q_lower) * quantile_fraction + q_lower
 
-        return time_values, data_values
+        result = [time_values, data_values]
+
+        if return_wavelength:
+            if possible_wavelengths is not None:
+                result.append(possible_wavelengths)
+            else:
+                result.append(None)
+        if return_cut_size_times:
+            if cut_size_times is not None:
+                result.append(cut_size_times)
+            else:
+                result.append(None)
+        if return_cut_size_dimension:
+            if possible_cut_size is not None:
+                result.append(possible_cut_size)
+            else:
+                result.append(None)
+
+        return tuple(result)
 
 
 class RealtimeSelection(Selection):
