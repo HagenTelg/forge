@@ -369,8 +369,6 @@ class ContaminationRecord(Record):
             while True:
                 stream_next = self._stream.next
                 if not stream_next:
-                    if self._contamination_begin:
-                        await self._complete_contamination()
                     break
                 epoch_ms, is_contaminated = stream_next
                 if epoch_ms >= before_ms:

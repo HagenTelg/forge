@@ -1739,7 +1739,7 @@ class ContaminationReader(DataStream):
             self.state.convert(start, record)
 
         def record_break(self, start: float, end: float) -> None:
-            start = round(start * 1000)
+            start = round(end * 1000)  # Extend contam over gaps
             if start < self.reader.clip_start_ms:
                 start = self.reader.clip_start_ms
             self.state.record_break(start)
