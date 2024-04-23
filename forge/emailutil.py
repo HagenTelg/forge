@@ -13,7 +13,7 @@ from dynaconf import Dynaconf
 
 _LOGGER = logging.getLogger(__name__)
 
-valid_email = re.compile(r"[^@]+@[^@]+")
+valid_email = re.compile(r"[^@\s\"'(),:;<>\[\\\]]+@[^@\s\"'(),:;<>]+")
 
 _executor = ThreadPoolExecutor(thread_name_prefix="EmailSend")
 
