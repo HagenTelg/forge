@@ -108,6 +108,8 @@ class ParseArguments:
                 elif args.archive_unix_socket:
                     exec.set_archive_unix(args.archive_unix_socket)
 
+            if not args.command:
+                parser.error("no command specified")
             parse, cmd_subparse = parse_lookup[args.command]
             parse.instantiate(cmd, exec, cmd_subparse, args, extra_args)
 

@@ -136,6 +136,8 @@ def _parse_unambiguous_absolute(
                 end += datetime.timedelta(days=1)
         return start, end
 
+    raise ValueError("invalid time format")
+
 
 def _parse_any_offset(s: str) -> float:
     s = s.strip()
@@ -209,11 +211,30 @@ def _parse_any_single_time(parts: typing.List[str],
         except ValueError:
             pass
 
+    if len(parts) == 1:
+        try:
+            year = int(parts[0])
+            if 1970 <= year <= 2999:
+                if is_end:
+                    year += 1
+                year = datetime.datetime(year, 1, 1, tzinfo=datetime.timezone.utc)
+                if reference:
+                    if is_end and year > reference:
+                        return year
+                    elif not is_end and year < reference:
+                        return year
+                else:
+                    return year
+        except ValueError:
+            pass
+
     if len(parts) == 2:
         try:
             year = int(parts[0])
             doy = float(parts[1])
             if 1970 <= year <= 2999 and 1.0 <= doy <= 366.0:
+                if is_end and int(doy) == doy:
+                    doy += 1
                 doy = round((doy - 1) * (24 * 60)) * 60
                 doy = datetime.datetime(year, 1, 1, tzinfo=datetime.timezone.utc).timestamp() + doy
                 doy = datetime.datetime.fromtimestamp(doy, tz=datetime.timezone.utc)
@@ -261,7 +282,9 @@ def _parse_any_single_time(parts: typing.List[str],
                     tzinfo=datetime.timezone.utc
                 )
                 if is_end:
-                    if len(parts) == 4:
+                    if len(parts) == 3:
+                        dt += datetime.timedelta(hours=24)
+                    elif len(parts) == 4:
                         dt += datetime.timedelta(hours=1)
                     elif len(parts) == 5:
                         dt += datetime.timedelta(minutes=1)
