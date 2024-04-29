@@ -119,9 +119,19 @@ def main():
             reader, writer = await asyncio.open_unix_connection(args.socket)
 
         for file_name in args.file:
+            try:
+                resolved_file = Path(file_name).resolve(strict=True)
+                file_name = str(resolved_file)
+            except (FileNotFoundError, RuntimeError):
+                _LOGGER.error(f"Error resolving '{file_name}'", exc_info=True)
+                any_errors = True
+                continue
+
+            _LOGGER.debug(f"Sending notification for '{file_name}'")
+
             file_begin = time.monotonic()
             if not await send_file_notification(reader, writer, file_name, args.station, key):
-                _LOGGER.error(f"Failed to process {file_name}")
+                _LOGGER.error(f"Failed to process '{file_name}'")
                 any_errors = True
                 if args.station:
                     await file_error(Path(file_name), args.station.lower(), time.monotonic() - file_begin)

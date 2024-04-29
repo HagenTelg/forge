@@ -140,6 +140,8 @@ def process_files(files: typing.List[File], station: str) -> None:
     except RuntimeError:
         loop = asyncio.new_event_loop()
 
+    _LOGGER.debug("Processing %d files for %s", len(files), station.upper())
+
     async def run():
         connection = await Connection.default_connection("data ingest")
 
