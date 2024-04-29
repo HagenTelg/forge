@@ -32,6 +32,12 @@ code_records: typing.Dict[str, Record] = {
         name="Fallback SSH remote access",
         offline=4 * 60 * 60,
     ),
+    'aerodb-e-forge-update': BasicRecord.simple_override(
+        name="Automatic archive server Forge software update",
+    ),
+    'aeroweb-forge-update': BasicRecord.simple_override(
+        name="Automatic web server Forge software update",
+    ),
     'met-raw-ingest-cr1000': FileIngestRecord.simple_override(
         name="Ingest observatories meteorological data",
         offline=50 * 60 * 60,
@@ -74,6 +80,9 @@ code_records: typing.Dict[str, Record] = {
     ),
     'forge-archive-flush-avgm': BasicRecord.simple_override(
         name="Forge archive monthly averaged data flush",
+    ),
+    'forge-update': BasicRecord.simple_override(
+        name="Automatic Forge software update",
     ),
 }
 
