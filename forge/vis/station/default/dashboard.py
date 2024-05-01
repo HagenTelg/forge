@@ -38,6 +38,9 @@ code_records: typing.Dict[str, Record] = {
     'aeroweb-forge-update': BasicRecord.simple_override(
         name="Automatic web server Forge software update",
     ),
+    'aeroweb-forge-dashboard-emailsend': BasicRecord.simple_override(
+        name="Daily email send",
+    ),
     'met-raw-ingest-cr1000': FileIngestRecord.simple_override(
         name="Ingest observatories meteorological data",
         offline=50 * 60 * 60,
