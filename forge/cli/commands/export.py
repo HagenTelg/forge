@@ -586,7 +586,8 @@ class _ColumnVariable(_Column):
     @property
     def time_sources(self) -> typing.List[typing.Tuple[Variable, bool]]:
         _, time_var = _find_dimension(self.source.variable.group(), 'time')
-        return [(time_var, self.is_state)]
+        is_state = is_in_state_group(self.source.variable)
+        return [(time_var, is_state)]
 
 
 class _ColumnVariableNumeric(_ColumnVariable):
