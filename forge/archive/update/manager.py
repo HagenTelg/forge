@@ -617,7 +617,7 @@ class StationsController:
             async def notify_dashboard():
                 nonlocal last_notification
 
-                now = time.time()
+                now = time.monotonic()
                 if not last_notification or (now - last_notification) > 300:
                     last_notification = time.monotonic()
                     await report_ok(args.dashboard)
