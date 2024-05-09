@@ -17,7 +17,7 @@ from forge.formattime import format_iso8601_time
 from forge.logicaltime import containing_year_range, start_of_year, end_of_year_ms, year_bounds_ms, containing_epoch_month_range, start_of_epoch_month_ms
 from forge.archive.client import index_lock_key, index_file_name, data_lock_key, data_file_name
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
-from forge.archive.client.get import ArchiveIndex as BaseArchiveIndex
+from forge.archive.client.archiveindex import ArchiveIndex as BaseArchiveIndex
 from forge.data.state import is_state_group, is_in_state_group
 from forge.data.attrs import copy as copy_attrs
 from forge.data.values import create_and_copy_variable
@@ -388,7 +388,7 @@ class DataSelection:
             return "EVERYTHING" + super().__str__()
 
         def integrate_index(self, index: _ArchiveIndex, instrument_ids: typing.Set[str]) -> None:
-            for check_id in index.all_instrument_ids():
+            for check_id in index.known_instrument_ids:
                 if check_id in instrument_ids:
                     continue
                 if not self.file.index_instrument_id_matches(index, check_id):

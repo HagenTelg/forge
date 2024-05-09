@@ -226,7 +226,7 @@ def main():
                             output_data: typing.List[typing.Tuple[Identity, typing.Any]] = await _read_events(connection, event_sources)
                             output_data.sort(key=lambda x: x[0].start)
                             if data_writer:
-                                for ident, value, _ in output_data:
+                                for ident, value in output_data:
                                     data_writer.incoming_value(ident, value)
                             else:
                                 for ident, value in output_data:
@@ -236,7 +236,7 @@ def main():
                             output_data: typing.List[typing.Tuple[Identity, typing.Any, float]] = await _read_passed(connection, passed_sources)
                             output_data.sort(key=lambda x: x[0].start)
                             if data_writer:
-                                for ident, value, _ in output_data:
+                                for ident, value in output_data:
                                     data_writer.incoming_value(ident, value)
                             else:
                                 for ident, value, modified in output_data:
@@ -272,7 +272,7 @@ def main():
                                 clip_start = output_data[-1][0].start
 
                             if data_writer:
-                                for ident, value, _ in output_data:
+                                for ident, value in output_data:
                                     data_writer.incoming_value(ident, value)
                             else:
                                 if latest_modified is None:

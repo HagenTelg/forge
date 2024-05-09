@@ -16,7 +16,7 @@ from forge.data.merge.timealign import peer_output_time, incoming_before
 from forge.vis.data.selection import InstrumentSelection, Selection, FileSource, FileContext, FileSequence, VariableContext
 from forge.vis.data.archive import FieldStream, walk_selectable
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
-from forge.archive.client.get import ArchiveIndex
+from forge.archive.client.archiveindex import ArchiveIndex
 from forge.archive.client import index_lock_key, index_file_name, data_lock_key, data_file_name
 from . import Export, ExportList
 

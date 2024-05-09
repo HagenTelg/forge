@@ -2,6 +2,7 @@ import typing
 import struct
 from collections import OrderedDict, deque
 from enum import Enum
+from json import JSONEncoder
 
 
 class Overlay(str):
@@ -471,3 +472,47 @@ def deserialize(data: typing.Union[bytearray, bytes]) -> typing.Any:
 
 def serialize(variant: typing.Any) -> bytes:
     return _serializers[type(variant)](variant)
+
+
+class _VariantJSONEncoder(JSONEncoder):
+    def default(self, o):
+        def simplify_dict(d) -> typing.Dict[str, typing.Any]:
+            return { str(k): v for k, v in d.items() }
+
+        if isinstance(o, MetadataChildren):
+            result = simplify_dict(o)
+            for k, v in o.children.items():
+                result[k] = v
+            return result
+        elif isinstance(o, Metadata) or isinstance(o, Keyframe):
+            return simplify_dict(o)
+        elif isinstance(o, set):
+            return sorted(o)
+        elif isinstance(o, Overlay):
+            return str(o)
+        elif isinstance(o, Matrix):
+            result = list()
+            for i in range(len(o)):
+                indices = [0 * len(o.shape)]
+                div = 1
+                for j in range(len(o.shape)):
+                    origin = i // div
+                    indices[j] = origin % o.shape[j]
+                    div *= o.shape[j]
+                target = result
+                for j in indices[:-1]:
+                    if len(target) <= j:
+                        target.extend([] * (j - len(target) + 1))
+                    target = target[j]
+                final_index = indices[-1]
+                if len(target) <= final_index:
+                    target.extend([None] * (final_index - len(target) + 1))
+                target[final_index] = o[i]
+            return result
+        elif isinstance(o, bytes) or isinstance(o, bytearray):
+            return o.decode('ascii', errors='backslashreplace')
+        return super().default(o)
+
+
+def to_json(variant: typing.Any, sort_keys: bool = False) -> str:
+    return _VariantJSONEncoder(sort_keys=sort_keys).encode(variant)

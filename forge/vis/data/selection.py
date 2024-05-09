@@ -10,7 +10,7 @@ from forge.const import STATIONS, MAX_I64
 from forge.logicaltime import containing_year_range, start_of_year
 from forge.timeparse import parse_iso8601_duration, parse_iso8601_time
 from forge.archive.client import index_lock_key, index_file_name, data_lock_key, data_file_name
-from forge.archive.client.get import ArchiveIndex
+from forge.archive.client.archiveindex import ArchiveIndex
 from forge.archive.client.connection import Connection
 from forge.data.state import is_state_group
 from forge.data.flags import parse_flags
@@ -397,7 +397,7 @@ class InstrumentSelection:
         # Can't filter on excluded tags since the index is a union, so an individual file may lack them
 
         if possible_instruments is None and everything:
-            return index.all_instrument_ids()
+            return set(index.known_instrument_ids)
         return possible_instruments
 
     def accept_file(self, file: FileContext) -> bool:
@@ -622,7 +622,7 @@ class Selection(InstrumentSelection):
             possible_instruments = selected_instruments
 
         if possible_instruments is None and everything:
-            return index.all_instrument_ids()
+            return set(index.known_instrument_ids)
         return possible_instruments
 
     def variable_values(

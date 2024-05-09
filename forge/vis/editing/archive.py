@@ -19,7 +19,8 @@ from forge.const import STATIONS, MAX_I64
 from forge.vis.access import AccessUser
 from forge.vis.data.stream import DataStream, ArchiveReadStream
 from forge.archive.client import edit_directives_lock_key, edit_directives_file_name, edit_directives_notification_key, data_lock_key, data_file_name, index_lock_key, index_file_name
-from forge.archive.client.get import read_file_or_nothing, ArchiveIndex
+from forge.archive.client.get import read_file_or_nothing
+from forge.archive.client.archiveindex import ArchiveIndex
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
 from forge.data.enum import remap_enum
 from forge.data.state import is_state_group

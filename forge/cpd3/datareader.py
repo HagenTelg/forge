@@ -133,3 +133,18 @@ class RecordInput(StandardDataInput):
 
     def record_break(self, start: float, end: float) -> None:
         pass
+
+
+def deserialize_archive_value(data: typing.Union[bytearray, bytes]) -> typing.Tuple[Identity, typing.Any, float, bool]:
+    if isinstance(data, bytes):
+        data = bytearray(data)
+    start, end = struct.unpack('<dd', data[:16])
+    del data[:16]
+    name = Name.deserialize(data)
+    priority = struct.unpack('<i', data[:4])[0]
+    del data[:4]
+    value = deserialize(data)
+    modified, remote_referenced = struct.unpack('<dB', data[:9])
+    del data[:9]
+    remote_referenced = (remote_referenced != 0)
+    return Identity(name=name, start=start, end=end, priority=priority), value, modified, remote_referenced

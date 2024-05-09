@@ -5,7 +5,7 @@ import enum
 from math import nan, isfinite
 from forge.const import STATIONS
 from forge.formattime import format_iso8601_time
-from forge.archive.client.get import ArchiveIndex
+from forge.archive.client.archiveindex import ArchiveIndex
 from forge.cpd3.identity import Name
 
 

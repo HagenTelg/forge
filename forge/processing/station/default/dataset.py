@@ -79,6 +79,8 @@ def doi(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.O
         return "10.7289/V57P8WBF"
     if tags and ('met' in tags and 'aerosol' not in tags):
         return None
+    if tags and ('radiation' in tags and 'aerosol' not in tags):
+        return None
     return None
 
 
@@ -141,7 +143,7 @@ def creator_type(station: str, tags: typing.Optional[typing.Set[str]] = None) ->
 def creator_name(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     if tags and ('ozone' in tags and 'aerosol' not in tags):
         return "Ozone and Water Vapor (OZWV)"
-    if tags and ('met' in tags and 'aerosol' not in tags):
+    if tags and ('met' in tags and 'aerosol' not in tags and 'radiation' not in tags):
         return "GML Observatory Operations (OBOP)"
     return "Global Radiation and Aerosols (GRAD)"
 
@@ -149,7 +151,7 @@ def creator_name(station: str, tags: typing.Optional[typing.Set[str]] = None) ->
 def creator_email(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     if tags and ('ozone' in tags and 'aerosol' not in tags):
         return "gml.ozwv@noaa.gov"
-    if tags and ('met' in tags and 'aerosol' not in tags):
+    if tags and ('met' in tags and 'aerosol' not in tags and 'radiation' not in tags):
         return "gmd.met@noaa.gov"
     return "gml.grad@noaa.gov"
 
@@ -161,7 +163,7 @@ def creator_institution(station: str, tags: typing.Optional[typing.Set[str]] = N
 def creator_url(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     if tags and ('ozone' in tags and 'aerosol' not in tags):
         return "https://gml.noaa.gov/ozwv/"
-    if tags and ('met' in tags and 'aerosol' not in tags):
+    if tags and ('met' in tags and 'aerosol' not in tags and 'radiation' not in tags):
         return "https://gml.noaa.gov/obop/"
     return "https://gml.noaa.gov/grad/"
 

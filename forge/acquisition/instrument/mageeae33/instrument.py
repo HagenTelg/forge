@@ -461,10 +461,14 @@ class Instrument(StreamingInstrument):
                 'C_format': "%9.6f",
             }),
 
-            self.variable_flow(self.data_Q1, "spot_one_flow", code="Q1",
-                               attributes={'C_format': "%7.3f"}),
-            self.variable_flow(self.data_Q2, "spot_two_flow", code="Q2",
-                               attributes={'C_format': "%7.3f"}),
+            self.variable_flow(self.data_Q1, "spot_one_flow", code="Q1", attributes={
+                'long_name': "sample flow through spot one",
+                'C_format': "%7.3f",
+            }),
+            self.variable_flow(self.data_Q2, "spot_two_flow", code="Q2", attributes={
+                'long_name': "sample flow through spot two",
+                'C_format': "%7.3f",
+            }),
             self.variable_temperature(self.data_Tcontroller, "controller_temperature", code="T1",
                                       attributes={'long_name': "controller board temperature"}),
             self.variable_temperature(self.data_Tsupply, "supply_temperature", code="T2",
@@ -540,6 +544,7 @@ class Instrument(StreamingInstrument):
         self.parameters_record.array_float_attr("mass_absorption_efficiency", self, '_ebc_efficiency', attributes={
             'long_name': "the efficiency factor used to convert absorption coefficients into an equivalent black carbon",
             'units': "m2 g",
+            'C_format': "%5.2f",
         })
 
     def _command_spot_advance(self, _) -> None:

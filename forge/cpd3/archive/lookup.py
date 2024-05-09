@@ -8,7 +8,7 @@ from netCDF4 import Dataset
 from forge.logicaltime import containing_year_range, start_of_year
 from forge.archive.client import index_lock_key, index_file_name, data_lock_key, data_file_name
 from forge.archive.client.connection import Connection
-from forge.archive.client.get import ArchiveIndex
+from forge.archive.client.archiveindex import ArchiveIndex
 from .selection import Selection, FileMatch
 
 _LOGGER = logging.getLogger(__name__)

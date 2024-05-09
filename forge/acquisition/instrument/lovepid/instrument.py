@@ -444,7 +444,7 @@ class Instrument(StreamingInstrument):
         if year > td.tm_year + 50:
             year -= 100
         model = response[4:].decode('ascii')
-        controller.reported_mode = model
+        controller.reported_model = model
         controller.reported_id = f"{year:04d}w{week:02d}-{model}"
 
         response = await self._retry_command(controller, self._Command.READ_FIRMWARE_DATA)

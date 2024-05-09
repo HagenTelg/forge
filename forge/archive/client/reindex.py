@@ -9,7 +9,7 @@ from forge.const import STATIONS
 from forge.logicaltime import year_bounds_ms
 from forge.archive.client import data_lock_key, data_file_name, index_lock_key, index_file_name
 from forge.archive.client.connection import Connection
-from forge.archive.client.put import Index
+from forge.archive.client.archiveindex import ArchiveIndex
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ async def reindex(connection: Connection, station: str, archive: str, year: int)
     index_file = index_file_name(station, archive, year_start / 1000.0)
     try:
         index_contents = await connection.read_bytes(index_file)
-        existing_index = Index()
+        existing_index = ArchiveIndex()
         existing_index.integrate_existing(index_contents)
         available_instruments.update(existing_index.known_instrument_ids)
     except FileNotFoundError:
@@ -48,7 +48,7 @@ async def reindex(connection: Connection, station: str, archive: str, year: int)
 
     _LOGGER.debug("Found %d instruments for %s/%s/%d", len(available_instruments), station, archive, year)
 
-    index = Index()
+    index = ArchiveIndex()
 
     async def integrate_file(name: str) -> bool:
         with NamedTemporaryFile(suffix=".nc") as data_file:

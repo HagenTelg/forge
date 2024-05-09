@@ -8,49 +8,7 @@ from forge.vis.dashboard.telemetry import TelemetryRecord
 
 code_records: typing.Dict[str, Record] = {
     TelemetryRecord.CODE: TelemetryRecord(),
-    'acquisition-ingest-cpd3': AcquisitionIngestRecord.simple_override(
-        name="CPD3 acquisition data processing",
-    ),
-    'acquisition-ingest-cpd3-forge': AcquisitionIngestRecord.simple_override(
-        name="CPD3 Forge data processing",
-    ),
-    'acquisition-ingest-data': AcquisitionIngestRecord.simple_override(
-        name="Acquisition data processing",
-    ),
-    'acquisition-transfer-data': FileIngestRecord.simple_override(
-        name="Acquisition data transfer",
-    ),
-    'acquisition-transfer-backup': FileIngestRecord.simple_override(
-        name="Acquisition computer backup transfer",
-        offline=(26 + 12) * 60 * 60,
-    ),
-    'acquisition-telemetry-uplink': BasicRecord.simple_override(
-        name="Telemetry uplink",
-        offline=(26 + 12) * 60 * 60,
-    ),
-    'acquisition-telemetry-tunnel': BasicRecord.simple_override(
-        name="Fallback SSH remote access",
-        offline=4 * 60 * 60,
-    ),
-    'aerodb-e-forge-update': BasicRecord.simple_override(
-        name="Automatic archive server Forge software update",
-    ),
-    'aeroweb-forge-update': BasicRecord.simple_override(
-        name="Automatic web server Forge software update",
-    ),
-    'aeroweb-forge-dashboard-emailsend': BasicRecord.simple_override(
-        name="Daily email send",
-    ),
-    'met-raw-ingest-cr1000': FileIngestRecord.simple_override(
-        name="Ingest observatories meteorological data",
-        offline=50 * 60 * 60,
-    ),
-    'radiation-raw-ingest-scaled': FileIngestRecord.simple_override(
-        name="Ingest scaled radiation data",
-    ),
-    'radiation-editing-ingest-basemod': BasicRecord.simple_override(
-        name="Ingest radiation edits from basemod.dat",
-    ),
+
     'forge-archive': BasicRecord.simple_override(
         name="Forge archive server",
     ),
@@ -87,6 +45,66 @@ code_records: typing.Dict[str, Record] = {
     'forge-update': BasicRecord.simple_override(
         name="Automatic Forge software update",
     ),
+    'station-hourly': BasicRecord.simple_override(
+        name="All stations hourly processing",
+    ),
+    'station-daily': BasicRecord.simple_override(
+        name="All stations daily processing",
+    ),
+
+    'acquisition-ingest-cpd3': AcquisitionIngestRecord.simple_override(
+        name="CPD3 acquisition data processing",
+    ),
+    'acquisition-ingest-cpd3-forge': AcquisitionIngestRecord.simple_override(
+        name="CPD3 Forge data processing",
+    ),
+    'acquisition-ingest-data': AcquisitionIngestRecord.simple_override(
+        name="Acquisition data processing",
+    ),
+    'acquisition-transfer-data': FileIngestRecord.simple_override(
+        name="Acquisition data transfer",
+    ),
+    'acquisition-transfer-backup': FileIngestRecord.simple_override(
+        name="Acquisition computer backup transfer",
+        offline=(26 + 12) * 60 * 60,
+    ),
+    'acquisition-telemetry-uplink': BasicRecord.simple_override(
+        name="Telemetry uplink",
+        offline=(26 + 12) * 60 * 60,
+    ),
+    'acquisition-telemetry-tunnel': BasicRecord.simple_override(
+        name="Fallback SSH remote access",
+        offline=4 * 60 * 60,
+    ),
+
+    'aerodb-e-forge-update': BasicRecord.simple_override(
+        name="Automatic archive server Forge software update",
+    ),
+    'aeroweb-forge-update': BasicRecord.simple_override(
+        name="Automatic web server Forge software update",
+    ),
+    'aeroweb-forge-dashboard-emailsend': BasicRecord.simple_override(
+        name="Daily email send",
+    ),
+
+    'met-raw-ingest-cr1000': FileIngestRecord.simple_override(
+        name="Ingest observatories meteorological data",
+        offline=50 * 60 * 60,
+    ),
+
+    'radiation-raw-ingest-scaled': FileIngestRecord.simple_override(
+        name="Ingest scaled radiation data",
+    ),
+    'radiation-raw-ingest-met': FileIngestRecord.simple_override(
+        name="Ingest radiation meteorological data",
+    ),
+    'radiation-editing-ingest-basemod': BasicRecord.simple_override(
+        name="Ingest radiation edits from basemod.dat",
+    ),
+
+    'ozone-raw-ingest-srclrc': FileIngestRecord.simple_override(
+        name="Ingest ozone SRC and LRC files",
+    ),
 }
 
 
@@ -104,6 +122,11 @@ def detach_irregular_reporting(threshold: float = 0) -> typing.Dict[str, Record]
             'radiation-raw-ingest-scaled',
     ):
         result[code] = result[code].simple_override(offline=threshold)
+
+    class IrregularTelemetry(TelemetryRecord):
+        OFFLINE_THRESHOLD = 0
+
+    result[TelemetryRecord.CODE] = IrregularTelemetry()
     return result
 
 

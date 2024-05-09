@@ -19,7 +19,7 @@ class Instrument(ModbusInstrument):
     MANUFACTURER = "Teledyne"
     MODEL = "N500"
     DISPLAY_LETTER = "G"
-    TAGS = frozenset({"aerosol", "ozone", _INSTRUMENT_TYPE})
+    TAGS = frozenset({"ozone", _INSTRUMENT_TYPE})
 
     class _Register(enum.IntEnum):
         NO2_CONCENTRATION = 12

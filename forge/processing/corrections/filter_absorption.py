@@ -271,3 +271,25 @@ def remove_low_transmittance(
             threshold_wavelength = select_threshold_wavelength(transmittance.wavelengths)
             trigger = transmittance[..., threshold_wavelength] < threshold
             absorption[trigger] = nan
+
+
+def correct_azumi_filter(
+        absorption: np.ndarray,
+        factor: float = 0.8,
+) -> np.ndarray:
+    return absorption * factor
+
+
+def azumi_filter(
+        data,
+        factor: float = 0.8,
+) -> None:
+    data = SelectedData.ensure_data(data)
+    data.append_history("forge.correction.azumifilter")
+
+    for absorption in data.select_variable((
+            {"variable_name": "light_absorption"},
+            {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
+            {"standard_name": "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles"},
+    )):
+        absorption[...] *= factor

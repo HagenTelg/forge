@@ -28,4 +28,6 @@ def name(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.
 def inlet_height(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[float]:
     if tags and 'met' in tags:
         return None
+    if tags and 'radiation' in tags:
+        return None
     return 10.0
