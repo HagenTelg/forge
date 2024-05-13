@@ -31,6 +31,7 @@ STATIONS = frozenset({
     'hac',
     'hih',
     'hmc',
+    'ice',
     'kps',
     'kwj',
     'lab',
