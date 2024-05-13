@@ -12,6 +12,7 @@ from math import floor, ceil
 from forge.range import FindIntersecting, Insertion, contains as range_contains
 from forge.const import STATIONS, MAX_I64
 from forge.logicaltime import year_bounds_ms
+from forge.tasks import wait_cancelable
 from forge.dashboard.report import report_ok, report_failed
 from ..client.connection import Connection, LockDenied, LockBackoff
 
@@ -447,9 +448,20 @@ class StationsController:
         while True:
             self._update_ready.clear()
             if not await self._do_any_update():
-                if before_idle:
-                    await before_idle()
-                await self._update_ready.wait()
+                if not before_idle:
+                    await self._update_ready.wait()
+                    continue
+                while True:
+                    wait_time = await before_idle()
+                    if wait_time is None:
+                        await self._update_ready.wait()
+                        break
+                    wait_time = max(wait_time, 0.001)
+                    try:
+                        await wait_cancelable(self._update_ready.wait(), wait_time)
+                        break
+                    except asyncio.TimeoutError:
+                        pass
 
     async def shutdown(self) -> None:
         self._shutdown_in_progress = True
@@ -485,7 +497,6 @@ class StationsController:
         import signal
         import struct
         from forge.archive import CONFIGURATION
-        from forge.tasks import wait_cancelable
 
         parser = argparse.ArgumentParser(description=cls.UPDATER_DESCRIPTION)
 
@@ -614,13 +625,14 @@ class StationsController:
         if args.dashboard:
             last_notification: typing.Optional[float] = None
 
-            async def notify_dashboard():
+            async def notify_dashboard() -> float:
                 nonlocal last_notification
 
                 now = time.monotonic()
-                if not last_notification or (now - last_notification) > 300:
-                    last_notification = time.monotonic()
+                if not last_notification or (now - last_notification) >= 300:
+                    last_notification = now
                     await report_ok(args.dashboard)
+                return 300 - (now - last_notification)
 
             dashboard = notify_dashboard
 
