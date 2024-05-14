@@ -231,6 +231,19 @@ cut_size = false
 - Instrument baud rate: 9600
 - Display letter: I
 
+## 2B Tech 205 Ozone Monitor
+
+```toml
+[instrument.G81]
+type = "tech2b205"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+- Instrument baud rate: 2400 
+- Display letter: Z
+- Configured baud rate displayed on instrument LCD after power on
+
 ## Teledyne N500
 
 ```toml

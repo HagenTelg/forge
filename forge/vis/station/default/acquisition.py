@@ -40,6 +40,7 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('ecotechnephelometer'))
         self.display_instrument.append(self.DisplayInstrumentSimple('thermo49'))
         self.display_instrument.append(self.DisplayInstrumentSimple('thermo49iq'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('tech2b205'))
         self.display_instrument.append(self.DisplayInstrumentSimple('thermomaap'))
         self.display_instrument.append(self.DisplayInstrumentSimple('csdpops'))
         self.display_instrument.append(self.DisplayInstrumentSimple('grimm110xopc'))
