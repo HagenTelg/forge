@@ -20,4 +20,4 @@ else:
     station_translator = RealtimeTranslator(data_records)
 
     def translator(station: str) -> typing.Optional[Translator]:
-        raise station_translator
+        return station_translator
