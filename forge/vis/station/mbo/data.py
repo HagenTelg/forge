@@ -297,6 +297,12 @@ station_profile_data['aerosol']['raw']['gasses'] = lambda station, start_epoch_m
         Name(station, 'raw', 'X2_G71'): 'CO2',
     }, send
 )
+station_profile_data['aerosol']['raw']['noy'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'X1_G72'): 'NO',
+        Name(station, 'raw', 'X2_G72'): 'NOy',
+    }, send
+)
 
 
 station_profile_data['aerosol']['raw']['flow'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(

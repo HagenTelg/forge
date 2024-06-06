@@ -67,3 +67,26 @@ class Gasses(TimeSeries):
         CO2.data_field = 'CO2'
         cox.traces.append(CO2)
         self.processing[CO2.data_record] = self.ScaleCO2()
+
+
+        no_noy = TimeSeries.Graph()
+        no_noy.title = "NOy"
+        no_noy.contamination = f'{mode}-contamination'
+        self.graphs.append(no_noy)
+
+        ppb = TimeSeries.Axis()
+        ppb.title = "ppb"
+        ppb.format_code = '.2f'
+        no_noy.axes.append(ppb)
+
+        no = TimeSeries.Trace(ppb)
+        no.legend = "NO"
+        no.data_record = f'{mode}-noy'
+        no.data_field = 'NO'
+        no_noy.traces.append(no)
+
+        noy = TimeSeries.Trace(ppb)
+        noy.legend = "NOy"
+        noy.data_record = f'{mode}-noy'
+        noy.data_field = 'NOy'
+        no_noy.traces.append(noy)
