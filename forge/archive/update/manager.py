@@ -109,6 +109,8 @@ class UpdateManager:
     async def load_existing(self) -> None:
         try:
             with open(self.state_file, "r") as f:
+                if os.fstat(f.fileno()).st_size == 0:
+                    raise FileNotFoundError
                 state = from_json(f)
         except FileNotFoundError:
             state = None
