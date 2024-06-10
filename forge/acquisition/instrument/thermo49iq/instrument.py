@@ -125,7 +125,7 @@ class Instrument(ModbusInstrument):
                 'C_format': "%7.0f"
             }),
             self.variable(self.register_map[self._Register.COUNTS_B],
-                          "cell_b_count_rate", code="C1", attributes={
+                          "cell_b_count_rate", code="C2", attributes={
                 'long_name': "cell B intensity count rate",
                 'units': "Hz",
                 'C_format': "%7.0f"
