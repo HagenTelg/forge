@@ -464,7 +464,7 @@ class Instrument(StreamingInstrument):
                                       attributes={'long_name': "controller board temperature"}),
             self.variable_temperature(self.data_Tsupply, "supply_temperature", code="T2",
                                       attributes={'long_name': "power supply board temperature"}),
-            self.variable_temperature(self.data_Tled, "led_temperature", code="T2",
+            self.variable_temperature(self.data_Tled, "led_temperature", code="T3",
                                       attributes={'long_name': "LED board temperature"}),
 
             flags=[
