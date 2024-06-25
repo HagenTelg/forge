@@ -58,7 +58,7 @@ class Command(ParseCommand):
                     args: argparse.Namespace, extra_args: typing.List[str]) -> None:
         read = cls.instantiate_pure(cmd, execute, parser, args, extra_args)
         if cmd.is_last:
-            execute.install(FilterStage(execute, read))
+            execute.install(FilterStage(execute, read.data_selection))
             from .export import Command as ExportCommand
             ExportCommand.instantiate_pure(cmd, execute, parser, args, extra_args)
 
