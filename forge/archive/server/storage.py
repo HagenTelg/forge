@@ -50,9 +50,13 @@ class _Redirection:
 
     def release(self) -> None:
         _LOGGER.debug("Releasing redirections for generation %d", self.generation)
-        for c in self.contents.values():
-            c.release()
-        self.root.rmdir()
+        try:
+            for c in self.contents.values():
+                c.release()
+            self.root.rmdir()
+        except:
+            _LOGGER.error("Backend redirection release failed on generation %d", self.generation, exc_info=True)
+            exit(1)
 
 
 def _remove_empty_directories(root: Path, destination: Path) -> None:
@@ -84,14 +88,18 @@ class _ActionWriteFile:
               redirection: typing.Optional[Path] = None) -> typing.Optional[typing.Union[_RedirectedWrittenFile, _RedirectedCreatedFile]]:
         destination = root / destination
         try:
-            created = not destination.exists()
-            if redirection:
-                redirection = redirection / self.contents.name
-                destination.rename(redirection)
-            else:
-                destination.unlink(missing_ok=True)
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            self.contents.rename(destination)
+            try:
+                created = not destination.exists()
+                if redirection and not created:
+                    redirection = redirection / self.contents.name
+                    destination.rename(redirection)
+                else:
+                    destination.unlink(missing_ok=True)
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                self.contents.rename(destination)
+            except:
+                _LOGGER.error("Write file action apply failed for %d (%s)", destination, redirection)
+                exit(1)
             if redirection:
                 if created:
                     return _RedirectedCreatedFile()
@@ -127,6 +135,9 @@ class _ActionRemoveFile:
                 destination.unlink(missing_ok=True)
             if redirection:
                 return _RedirectedWrittenFile(redirection)
+        except:
+            _LOGGER.error("Remove file action apply failed for %d (%s)", destination, redirection)
+            exit(1)
         finally:
             _remove_empty_directories(root, destination)
 
@@ -338,7 +349,11 @@ class Storage:
         def __init__(self, storage: "Storage"):
             super().__init__(storage)
             self._transaction_root = self.storage._root / (self.storage._TRANSACTION_PREFIX + str(self.generation))
-            self._transaction_root.mkdir()
+            try:
+                self._transaction_root.mkdir()
+            except:
+                _LOGGER.error("Unable to create transaction (%d) write directory", self.generation, exc_info=True)
+                exit(1)
             self._actions: typing.Dict[str, typing.Union[_ActionWriteFile, _ActionRemoveFile]] = dict()
 
         def commit(self) -> None:
@@ -386,7 +401,11 @@ class Storage:
 
             self.storage._pending_changes.add(name)
             self._actions[name] = _ActionWriteFile(destination)
-            return destination.open('wb')
+            try:
+                return destination.open('wb')
+            except OSError:
+                _LOGGER.error("Unable to write file (%s) in transaction (%d)", name, self.generation, exc_info=True)
+                exit(1)
 
         def remove_file(self, name: str) -> None:
             name = self.storage.normalize_filename(name)
@@ -449,17 +468,21 @@ class Storage:
     @staticmethod
     def _write_journal(journal_file: Path,
                        actions: typing.Dict[str, typing.Union[_ActionWriteFile, _ActionRemoveFile]]) -> None:
-        with journal_file.open('wb') as journal:
-            for name, act in actions.items():
-                raw = name.encode('utf-8')
-                journal.write(struct.pack('<H', len(raw)))
-                journal.write(raw)
-                act.journal(journal)
-            journal.flush()
-            try:
-                os.fdatasync(journal.fileno())
-            except AttributeError:
-                os.fsync(journal.fileno())
+        try:
+            with journal_file.open('wb') as journal:
+                for name, act in actions.items():
+                    raw = name.encode('utf-8')
+                    journal.write(struct.pack('<H', len(raw)))
+                    journal.write(raw)
+                    act.journal(journal)
+                journal.flush()
+                try:
+                    os.fdatasync(journal.fileno())
+                except AttributeError:
+                    os.fsync(journal.fileno())
+        except:
+            _LOGGER.error("Journal write failed", exc_info=True)
+            exit(1)
 
     def _commit(self, generation: int, transaction_root: Path,
                 actions: typing.Dict[str, typing.Union[_ActionWriteFile, _ActionRemoveFile]]) -> None:
@@ -472,7 +495,11 @@ class Storage:
         # Insert a redirection, if needed
         if len(self._refcount_generation) > 0 and self._refcount_generation[0] <= generation:
             redirection_root = self._root / (self._REDIRECTION_PREFIX + str(generation))
-            redirection_root.mkdir()
+            try:
+                redirection_root.mkdir()
+            except:
+                _LOGGER.error("Unable to create redirection directory on generation (%d)", generation, exc_info=True)
+                exit(1)
             redirection = _Redirection(generation, redirection_root)
             index = bisect_right(self._redirection_generation, generation)
             self._redirection_generation.insert(index, generation)
