@@ -40,7 +40,7 @@ class Diagnostics:
 
     def _list_connections(self) -> typing.Dict:
         result = dict()
-        for uid, connection in self.control.active_connections:
+        for uid, connection in self.control.active_connections.items():
             cdata = dict()
             cdata['identifier'] = connection.identifier
             cdata['name'] = connection.name
@@ -54,7 +54,7 @@ class Diagnostics:
 
     def _list_intents(self) -> typing.Dict:
         result = dict()
-        for uid, connection in self.control.active_connections:
+        for uid, connection in self.control.active_connections.items():
             cdata = list()
             intents = self.control.intent.get_held(connection)
             for intent in intents.values():
@@ -69,7 +69,7 @@ class Diagnostics:
 
     def _list_locks(self) -> typing.Dict:
         result = dict()
-        for uid, connection in self.control.active_connections:
+        for uid, connection in self.control.active_connections.items():
             cdata = list()
             for lock in connection.diagnostic_transaction_locks:
                 cdata.append({
@@ -84,13 +84,13 @@ class Diagnostics:
 
     def _list_notification_listeners(self) -> typing.Dict:
         result = dict()
-        for uid, connection in self.control.active_connections:
+        for uid, connection in self.control.active_connections.items():
             result[uid] = list(self.control.notify.get_listening(connection))
         return result
 
     def _list_notification_wait(self) -> typing.Dict:
         result = dict()
-        for uid, connection in self.control.active_connections:
+        for uid, connection in self.control.active_connections.items():
             pending = list()
             for p in self.control.notify.get_awaiting_send(connection):
                 pending.append({
