@@ -137,7 +137,7 @@ class AcquisitionSocket(AuthSocket):
         if not target:
             target = ''
         raw = target.encode('utf-8')
-        await self.websocket.send_bytes(struct.pack('<BH', PacketToAcquisition.MESSAGE_LOG.value, len(raw)) +
+        await self.websocket.send_bytes(struct.pack('<BH', PacketToAcquisition.COMMAND.value, len(raw)) +
                                         raw + serialize_variant(command))
         
     async def _command_and_string(self, command: PacketToAcquisition, s: str) -> None:

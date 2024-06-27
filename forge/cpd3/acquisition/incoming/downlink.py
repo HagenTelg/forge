@@ -193,7 +193,7 @@ class _AcquisitionTranslatorClient(AcquisitionClient):
             if interface:
                 result = interface.active.translate_command(command, data)
                 if result:
-                    await self.acquisition.command(target=target, command=data)
+                    await self.acquisition.command(target=target, command=result)
 
     async def acquisition_event(self, event: typing.Dict[str, typing.Any]) -> None:
         data = {

@@ -217,7 +217,7 @@ class UplinkConnection:
         elif packet_type == PacketToAcquisition.COMMAND:
             if self.acquisition:
                 data = bytearray(data[1:])
-                target_length = (struct.unpack('<H', data))[0]
+                target_length = (struct.unpack('<H', data[:2]))[0]
                 del data[:2]
                 target = data[:target_length].decode('utf-8')
                 del data[:target_length]
