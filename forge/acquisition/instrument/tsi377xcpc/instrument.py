@@ -54,7 +54,7 @@ class Instrument(StreamingInstrument):
 
             self.variable_sample_flow(self.data_Q, code="Q",
                                       attributes={'C_format': "%5.3f"}),
-            self.variable_flow(self.data_Q, code="Qu", attributes={
+            self.variable_flow(self.data_Qinlet, "inlet_flow", code="Qu", attributes={
                 'long_name': "inlet flow rate",
                 'C_format': "%5.3f",
             }),
