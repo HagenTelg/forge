@@ -122,7 +122,7 @@ class Instrument(StreamingInstrument):
 
         if model != "3750" and model != "3752" and not self.report_not_3750_3752:
             self.report_not_3750_3752 = self.report(
-                self.variable_flow(self.data_Q, code="Qu", attributes={
+                self.variable_flow(self.data_Qinlet, "inlet_flow", code="Qu", attributes={
                     'long_name': "inlet flow rate",
                     'C_format': "%5.3f",
                 }),
