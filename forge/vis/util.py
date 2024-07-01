@@ -1,7 +1,7 @@
 import typing
 import os.path
 from math import isfinite
-from forge.const import STATIONS, HELP_URL, __version__
+from forge.const import STATIONS, DISPLAY_STATIONS, HELP_URL, __version__
 from . import CONFIGURATION
 from jinja2 import Environment, PackageLoader, select_autoescape
 
@@ -14,6 +14,7 @@ TEMPLATE_ENV = Environment(
     enable_async=True,
 )
 TEMPLATE_ENV.globals['STATIONS'] = STATIONS
+TEMPLATE_ENV.globals['DISPLAY_STATIONS'] = DISPLAY_STATIONS
 TEMPLATE_ENV.globals['VERSION'] = __version__
 TEMPLATE_ENV.globals['HELP_URL'] = HELP_URL
 TEMPLATE_ENV.globals['DEBUG'] = CONFIGURATION.as_bool('SERVER.DEBUG')

@@ -13,20 +13,23 @@
 
   <div class="request-item">
     <label for="station_select"><b>Station</b></label>
-    <select name="station" id="station_select" class="request-field">
-      {% set display_stations = request.user.visible_stations %}
-      {% set request_station = request.query_params.get('station') %}
-      {% for station in STATIONS|sort %}
-        {% if station not in display_stations %}
-        <option value="{{ station }}" {% if station == request_station %}selected="selected"{% endif %}>{{ station|upper }}</option>
-        {% endif %}}
-      {% endfor %}
-      {% for station in STATIONS|sort %}
-        {% if station in display_stations %}
-        <option value="{{ station }}" {% if station == request_station %}selected="selected"{% endif %}>{{ station|upper }}</option>
-        {% endif %}}
-      {% endfor %}
-    </select>
+    <div>
+        <select name="station" id="station_select" class="request-field">
+          {% set display_stations = request.user.visible_stations %}
+          {% set request_station = request.query_params.get('station') %}
+          {% for station in DISPLAY_STATIONS|sort %}
+            {% if station not in display_stations %}
+            <option value="{{ station }}" {% if station == request_station %}selected="selected"{% endif %}>{{ station|upper }}</option>
+            {% endif %}
+          {% endfor %}
+          {% for station in DISPLAY_STATIONS|sort %}
+            {% if station in display_stations %}
+            <option value="{{ station }}" {% if station == request_station %}selected="selected"{% endif %}>{{ station|upper }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+        <span class="dropdown-arrow">&#9660;</span>
+    </div>
   </div>
 
   <div class="request-item">
