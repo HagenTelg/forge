@@ -135,10 +135,7 @@ class Threshold(Condition):
             if total_hit is None:
                 total_hit = hit
             else:
-                total_hit = np.any((
-                    hit,
-                    total_hit
-                ), axis=0)
+                total_hit &= hit
 
         if total_hit is not None:
             self._active.append((times, total_hit))

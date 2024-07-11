@@ -80,10 +80,7 @@ def wavelength_interpolate(
     if a_wavelength <= 0 or b_wavelength <= 0 or output_wavelength <= 0:
         return np.full_like(a_value, nan)
 
-    log_valid = np.all((
-        a_value > 0,
-        b_value > 0,
-    ), axis=0)
+    log_valid = (a_value > 0) & (b_value > 0)
     result = np.empty_like(a_value)
     result[log_valid] = _log_log_interpolate(
         a_value[log_valid], a_wavelength,

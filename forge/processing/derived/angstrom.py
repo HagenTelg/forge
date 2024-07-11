@@ -13,15 +13,13 @@ def calculate_angstrom_exponent(
 ) -> np.ndarray:
     a_value = np.array(a_value, copy=False)
     b_value = np.array(b_value, copy=False)
+    assert a_value.shape == b_value.shape
 
     result = np.full_like(a_value, nan)
     if a_wavelength <= 0 or b_wavelength <= 0 or a_wavelength == b_wavelength:
         return result
 
-    valid = np.all((
-        a_value > 0,
-        b_value > 0,
-    ), axis=0)
+    valid = (a_value > 0) & (b_value > 0)
     result[valid] = np.log(a_value[valid] / b_value[valid]) / log(b_wavelength / a_wavelength)
 
     return result

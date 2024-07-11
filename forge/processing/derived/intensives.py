@@ -9,12 +9,9 @@ from .wavelength import AdjustWavelengthParameters
 
 
 def _valid_div(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+    assert a.shape == b.shape
     result = np.full_like(a, nan)
-    valid = np.all((
-        np.isfinite(a),
-        np.isfinite(b),
-        b != 0,
-    ), axis=0)
+    valid = np.isfinite(a) & np.isfinite(b) & (b != 0)
     result[valid] = a[valid] / b[valid]
     return result
 
@@ -59,10 +56,7 @@ def calculate_radiative_forcing_efficiency(
     sas = 1.0 - surface_albedo
     sas = sas * sas
 
-    valid = np.all((
-        np.abs(beta) > 1E-10,
-        np.abs(ssa) > 1E-10,
-    ), axis=0)
+    valid =( np.abs(beta) > 1E-10) & (np.abs(ssa) > 1E-10)
 
     result = np.full_like(ssa, nan)
     result[valid] = (

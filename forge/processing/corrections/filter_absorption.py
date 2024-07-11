@@ -109,15 +109,9 @@ def _apply_bond1999_inner(
         absorption[scattering_valid] = scattering_corrected[scattering_valid]
         extinction_invalid = np.isnan(extinction_corrected)
         extinction_valid = np.invert(extinction_invalid)
-        extinction_valid = np.all((
-            scattering_invalid,
-            extinction_valid
-        ), axis=0)
+        extinction_valid = scattering_invalid & extinction_valid
         absorption[extinction_valid] = extinction_corrected[extinction_valid]
-        absorption[np.invert(np.any((
-            scattering_valid,
-            extinction_valid
-        ), axis=0))] = nan
+        absorption[np.invert(scattering_valid | extinction_valid)] = nan
     elif scattering:
         absorption.values = correct_bond1999(
             absorption.values,
