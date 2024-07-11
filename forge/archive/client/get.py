@@ -33,7 +33,7 @@ async def get_all_daily_files(connection: Connection, station: str, archive: str
     current_year: typing.Optional[int] = None
     instrument_ids: typing.Set[str] = set()
     for fetch_start in range(start, end, 24 * 60 * 60):
-        ts = time.gmtime(start)
+        ts = time.gmtime(fetch_start)
         if ts.tm_year != current_year:
             current_year = ts.tm_year
             year_start = start_of_year(current_year)
