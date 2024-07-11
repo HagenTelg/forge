@@ -14,6 +14,14 @@ from .selection import Selection
 _LOGGER = logging.getLogger(__name__)
 
 
+def _conditional_index(var, time_selection: typing.Union[slice, np.ndarray], apply_selection: typing.Tuple) -> np.ndarray:
+    hit_time = np.full(var.shape, False, dtype=np.bool_)
+    hit_time[time_selection] = True
+    hit_condition = np.full(var.shape, False, dtype=np.bool_)
+    hit_condition[apply_selection] = True
+    return hit_time & hit_condition
+
+
 class Action(ABC):
     def __init__(self, parameters: str):
         if parameters:
@@ -79,7 +87,7 @@ class Invalidate(Action):
                 var[time_selection] = fill_value
             else:
                 modified = var[:].data
-                modified[(time_selection, *apply_selection)] = fill_value
+                modified[_conditional_index(var, time_selection, apply_selection)] = fill_value
                 var[:] = modified
 
 
@@ -140,7 +148,8 @@ def _transform_selected_data(
             var[time_selection] = transform(var[:].data[time_selection])
         else:
             modified = var[:].data
-            modified[(time_selection, *apply_selection)] = transform(modified[(time_selection, *apply_selection)])
+            idx = _conditional_index(var, time_selection, apply_selection)
+            modified[idx] = transform(modified[idx])
             var[:] = modified
 
 

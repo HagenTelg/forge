@@ -113,11 +113,10 @@ def generate_intensives(
 
     with intensives.get_output(scattering_var, "backscatter_fraction",
                                wavelength=True) as output_bfr:
-        bfr = calculate_backscatter_fraction(
-            scattering_var[:],
-            intensives.get_input(output_bfr, {"variable_name": "backscattering_coefficient"},
-                                 error_when_missing=False).values,
-        )
+        if scattering_var.shape == backscatter_var.shape:
+            bfr = calculate_backscatter_fraction(scattering_var[:], backscatter_var[:])
+        else:
+            bfr = np.full(scattering_var.shape, nan, dtype=np.float64)
         setup_variable(output_bfr)
         output_bfr.variable.long_name = "ratio of backwards hemispheric light scattering to total light scattering"
         output_bfr.variable.standard_name = "backscattering_ratio"
@@ -139,11 +138,10 @@ def generate_intensives(
 
     with intensives.get_output(scattering_var, "single_scattering_albedo",
                                wavelength=True) as output_ssa:
-        ssa = calculate_ssa(
-            scattering_var[:],
-            intensives.get_input(output_ssa, {"variable_name": "light_extinction"},
-                                 error_when_missing=False).values
-        )
+        if scattering_var.shape == extinction_var.shape:
+            ssa = calculate_ssa(scattering_var[:], extinction_var[:])
+        else:
+            ssa = np.full(scattering_var.shape, nan, dtype=np.float64)
         setup_variable(output_ssa)
         output_ssa.variable.long_name = "single scattering albedo (ratio of scattering to extinction)"
         if not is_stp:
@@ -159,7 +157,10 @@ def generate_intensives(
         output_rfe.variable.long_name = "derived radiative forcing efficiency"
         output_rfe.variable.C_format = "%7.2f"
         output_rfe.variable.variable_id = "ZRFE"
-        output_rfe[:] = calculate_radiative_forcing_efficiency(bfr, ssa)
+        if bfr.shape == ssa.shape:
+            output_rfe[:] = calculate_radiative_forcing_efficiency(bfr, ssa)
+        else:
+            output_rfe[:] = nan
 
     if scattering:
         for scattering_in in scattering.select_variable((
