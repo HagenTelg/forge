@@ -121,7 +121,8 @@ def generate_intensives(
                                wavelength=True) as output_bfr:
         bfr = calculate_backscatter_fraction(
             scattering_var[:],
-            intensives.get_input(output_bfr, {"variable_name": "backscattering_coefficient"}).values
+            intensives.get_input(output_bfr, {"variable_name": "backscattering_coefficient"},
+                                 error_when_missing=False).values,
         )
         setup_variable(output_bfr)
         output_bfr.variable.long_name = "ratio of backwards hemispheric light scattering to total light scattering"
@@ -146,7 +147,8 @@ def generate_intensives(
                                wavelength=True) as output_ssa:
         ssa = calculate_ssa(
             scattering_var[:],
-            intensives.get_input(output_ssa, {"variable_name": "light_extinction"}).values
+            intensives.get_input(output_ssa, {"variable_name": "light_extinction"},
+                                 error_when_missing=False).values
         )
         setup_variable(output_ssa)
         output_ssa.variable.long_name = "single scattering albedo (ratio of scattering to extinction)"
