@@ -86,6 +86,8 @@ async def _run_editing(connection: Connection, working_directory: Path, station:
             await connection.set_transaction_status(f"Editing data, {(completed_days / total_days) * 100.0:.0f}% done")
 
         for day_args in run_args:
+            if day_args is None:
+                continue
             launched = asyncio.get_event_loop().run_in_executor(
                 executor, process_day,
                 station, output_directory, *day_args,
