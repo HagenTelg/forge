@@ -261,7 +261,7 @@ def write_extensives(
     def empty_wavelengths_out() -> SelectedVariable:
         return EmptySelectedVariable(
             extensives.times,
-            shape=(extensives.times, len(wavelengths)),
+            shape=(extensives.times.shape[0], len(wavelengths)),
             wavelengths=wavelengths,
         )
 
