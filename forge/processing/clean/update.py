@@ -37,6 +37,7 @@ async def _run_pass(connection: Connection, working_directory: Path, station: st
     index_offset = int(floor(start / (24 * 60 * 60)))
     total_count = int(ceil(end / (24 * 60 * 60))) - index_offset
     day_files: typing.List[typing.Set[Path]] = list()
+    total_file_count = 0
     for file in (working_directory / "data").iterdir():
         if not file.is_file():
             continue
@@ -54,8 +55,9 @@ async def _run_pass(connection: Connection, working_directory: Path, station: st
         while target_index >= len(day_files):
             day_files.append(set())
         day_files[target_index].add(file)
+        total_file_count += 1
 
-    _LOGGER.debug(f"Processing clean data {start},{end} split into {len(day_files)} days")
+    _LOGGER.debug(f"Processing clean data {start},{end} split into {len(day_files)} days with {total_file_count} files")
 
     pass_time = time.time()
     total_file_count = 0

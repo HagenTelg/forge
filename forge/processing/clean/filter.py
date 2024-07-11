@@ -89,7 +89,8 @@ class AcceptIntoClean:
             latest_pass = None
             for profile_idx in range(len(passed_profiles)):
                 profile_pass_time = float(latest_profile_pass[profile_idx]) / 1000
-                if latest_pass and profile_pass_time <= latest_pass:
+                if latest_pass is not None and profile_pass_time <= latest_pass:
+                    _LOGGER.debug(f"Already have passed for {file} ({profile_pass_time} <= {latest_pass})")
                     continue
                 profile = self._profile_map[int(passed_profiles[profile_idx])]
                 if not self._filter.profile_accepts_file(profile, data):
