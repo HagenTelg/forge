@@ -150,7 +150,7 @@ class MergeFlatten:
 
         def _recurse_copy_group(group: netCDF4.Group, path: str) -> None:
             self._add_copy_group_attrs(group, path)
-            for var in root.variables:
+            for var in root.variables.values():
                 self._add_copy_variable(var, path)
             for name, sub in group.groups.items():
                 _recurse_copy_group(sub, f"{path}/{name}")
