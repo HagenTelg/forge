@@ -42,8 +42,8 @@ class SelectedData(ABC):
     def station(self) -> str:
         station_name = self.root.variables.get("station_name")
         if station_name is not None:
-            return str(station_name[0])
-        return "NIL"
+            return str(station_name[0]).lower()
+        return "nil"
 
     @abstractmethod
     def restrict_times(self, start_ms: int, end_ms: int) -> None:
