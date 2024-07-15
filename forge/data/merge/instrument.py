@@ -814,6 +814,7 @@ class _CutSizeVariable(_Variable):
         super().__init__('cut_size', record)
         self.dtype = np.float64
         self.time_variable: typing.Optional[bool] = None
+        self.dimension_variable: typing.Optional[bool] = None
         self.constant_values: typing.Set[float] = set()
 
     def incorporate_structure(self, contents: netCDF4.Variable, is_state: typing.Optional[bool]) -> None:
@@ -836,15 +837,17 @@ class _CutSizeVariable(_Variable):
             raise ValueError("Invalid cut size dimensionality")
         else:
             if dimensions[0] == 'cut_size':
-                if self.time_variable == True:
+                if self.time_variable == True or self.dimension_variable == False:
                     raise ValueError("Unable to incorporate cut size dimension data with time dependant")
                 self.time_variable = False
+                self.dimension_variable = True
                 for v in contents[:]:
                     incorporate_constant(v)
             elif dimensions[0] == 'time':
-                if self.time_variable == False:
+                if self.time_variable == False or self.dimension_variable == False:
                     raise ValueError("Unable to incorporate cut size dimension data with time dependant")
                 self.time_variable = True
+                self.dimension_variable = False
             else:
                 raise ValueError("Invalid cut size dimensionality")
 
@@ -852,13 +855,13 @@ class _CutSizeVariable(_Variable):
 
     def complete_structure(self) -> None:
         if self.time_variable is None and len(self.constant_values) > 1:
-            self.time_variable = True
+            self.time_variable = False
+            self.dimension_variable = True
         if self.time_variable:
             return
-        if len(self.constant_values) <= 1:
-            self.record.dimension_size.pop('cut_size', None)
-        else:
-            self.record.dimension_size['cut_size'] = len(self.constant_values)
+        if not self.dimension_variable:
+            return
+        self.record.dimension_size['cut_size'] = len(self.constant_values)
 
     @property
     def time_dependent(self) -> bool:
@@ -868,7 +871,8 @@ class _CutSizeVariable(_Variable):
     def bind_dimensions(self) -> typing.List[str]:
         if self.time_variable:
             return ['time']
-        if len(self.constant_values) <= 1:
+        if not self.dimension_variable:
+            assert len(self.constant_values) <= 1
             return []
         else:
             return ['cut_size']
