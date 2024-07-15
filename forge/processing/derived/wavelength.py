@@ -1,6 +1,6 @@
 import typing
 import numpy as np
-from math import nan, inf, log, isfinite
+from math import nan, log
 from forge.processing.context import SelectedVariable
 
 
@@ -204,23 +204,28 @@ def adjust_wavelengths(
         data: SelectedVariable,
         target_wavelengths: "typing.Union[typing.List[float], typing.Tuple[float, ...]]",
         parameters: typing.Optional[AdjustWavelengthParameters] = None,
+        values: typing.Optional[np.ndarray] = None,
 ) -> np.ndarray:
     if not data.has_changing_wavelengths:
         if target_wavelengths == data.wavelengths:
-            return np.array(data.values)
+            return np.array(data.values if values is None else values)
         if not data.wavelengths:
             return np.full((*data.shape[:-1], len(target_wavelengths)), nan)
 
         result = np.empty((*data.shape[:-1], len(target_wavelengths)), dtype=np.float64)
         for output_idx in range(len(target_wavelengths)):
             result[..., output_idx] = _adjust_single_wavelength(
-                data.values, data.wavelengths, target_wavelengths[output_idx], parameters
+                data.values if values is None else values,
+                data.wavelengths, target_wavelengths[output_idx], parameters
             )
         return result
 
     result = np.full((*data.shape[:-1], len(target_wavelengths)), nan)
     for input_wavelengths, value_select, time_select in data.select_wavelengths():
-        wavelength_selected = np.stack([data[vs] for vs in value_select], axis=-1)
+        if values is not None:
+            wavelength_selected = np.stack([values[vs] for vs in value_select], axis=-1)
+        else:
+            wavelength_selected = np.stack([data[vs] for vs in value_select], axis=-1)
         for output_idx in range(len(target_wavelengths)):
             result[time_select, ..., output_idx] = _adjust_single_wavelength(
                 wavelength_selected, input_wavelengths, target_wavelengths[output_idx], parameters
@@ -232,6 +237,7 @@ def align_wavelengths(
         source: SelectedVariable,
         destination: SelectedVariable,
         parameters: typing.Optional[AdjustWavelengthParameters] = None,
+        source_values: typing.Optional[np.ndarray] = None,
 ) -> np.ndarray:
     assert source.times.shape[0] == destination.times.shape[0]
 
@@ -253,7 +259,10 @@ def align_wavelengths(
         return result
 
     for input_wavelengths, input_select, input_times in source.select_wavelengths(tail_index_only=True):
-        input_data = np.stack([source[..., vs] for vs in input_select], axis=-1)
+        if source_values is not None:
+            input_data = np.stack([source_values[..., vs] for vs in input_select], axis=-1)
+        else:
+            input_data = np.stack([source[..., vs] for vs in input_select], axis=-1)
         input_begin, input_end = source.times[input_times][[0, -1]]
         for target_wavelengths, output_select, output_times in destination.select_wavelengths(tail_index_only=True):
             output_begin, output_end = destination.times[output_times][[0, -1]]

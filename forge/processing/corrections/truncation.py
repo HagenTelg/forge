@@ -221,36 +221,14 @@ MUELLER_2011_ECOTECH_COEFFICIENTS = Coefficients(
 
 
 def hourly_angstrom_exponent(scattering: SelectedVariable) -> np.ndarray:
-    from forge.data.merge.timealign import incoming_before
-    from ..average.calculate import fixed_interval_weighted_average
-
-    smoothed_scattering = np.full_like(scattering.values, nan)
-    for _, value_select, time_select in scattering.select_cut_size():
-        selected_times = scattering.times[time_select]
-        selected_values = scattering.values[value_select]
-        smoothed_values, smoothed_start = fixed_interval_weighted_average(
-            selected_times,
-            selected_values,
-            scattering.average_weights[time_select],
-            60 * 60 * 1000,
-        )
-
-        smoothed_targets = incoming_before(selected_times, smoothed_start)
-        smoothed_scattering[value_select] = smoothed_values[smoothed_targets]
+    from ..derived.average import hourly_average
+    smoothed_scattering = hourly_average(scattering)
     return angstrom_exponent_adjacent(scattering, smoothed_scattering)
 
 
 def digital_filter_angstrom_exponent(scattering: SelectedVariable) -> np.ndarray:
-    from ..average.digitalfilter import single_pole_low_pass
-
-    smoothed_scattering = np.full_like(scattering.values, nan)
-    for _, value_select, time_select in scattering.select_cut_size():
-        smoothed_scattering[value_select] = single_pole_low_pass(
-            scattering.times[value_select],
-            scattering.values[time_select],
-            3 * 60 * 1000,
-            35 * 60 * 1000,
-        )
+    from ..derived.average import single_pole_low_pass_digital_filter
+    smoothed_scattering = single_pole_low_pass_digital_filter(scattering)
     return angstrom_exponent_adjacent(scattering, smoothed_scattering)
 
 

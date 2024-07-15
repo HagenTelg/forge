@@ -84,23 +84,40 @@ def correct_bond1999_extinction(
     return ((absorption.T * _BOND1999_WAVELENGTH_CORRECTION_FACTOR - k1.T * extinction.T) / (k2.T - k1.T)).T
 
 
+def hourly_smoothing(scattering: SelectedVariable) -> np.ndarray:
+    from ..derived.average import hourly_average
+    return hourly_average(scattering)
+
+
+def digital_filter_smoothing(scattering: SelectedVariable) -> np.ndarray:
+    from ..derived.average import single_pole_low_pass_digital_filter
+    return single_pole_low_pass_digital_filter(scattering)
+
+
+def no_smoothing(scattering: SelectedVariable) -> np.ndarray:
+    return scattering.values
+
+
 def _apply_bond1999_inner(
         absorption: SelectedVariable,
         scattering: typing.Optional[SelectedVariable],
         extinction: typing.Optional[SelectedVariable],
         k1: typing.Union[float, np.ndarray] = 0.02,
         k2: typing.Union[float, np.ndarray] = 1.22,
+        smoothing: typing.Callable[[SelectedVariable], np.ndarray] = hourly_smoothing,
         wavelength_adjustment: typing.Optional[AdjustWavelengthParameters] = None,
 ) -> None:
     if scattering and extinction:
         scattering_corrected = correct_bond1999(
             absorption.values,
-            align_wavelengths(scattering, absorption, parameters=wavelength_adjustment),
+            align_wavelengths(scattering, absorption, parameters=wavelength_adjustment,
+                              source_values=smoothing(scattering)),
             k1, k2
         )
         extinction_corrected = correct_bond1999_extinction(
             absorption.values,
-            align_wavelengths(extinction, absorption, parameters=wavelength_adjustment),
+            align_wavelengths(extinction, absorption, parameters=wavelength_adjustment,
+                              source_values=smoothing(extinction)),
             k1, k2
         )
 
@@ -115,13 +132,15 @@ def _apply_bond1999_inner(
     elif scattering:
         absorption.values = correct_bond1999(
             absorption.values,
-            align_wavelengths(scattering, absorption, parameters=wavelength_adjustment),
+            align_wavelengths(scattering, absorption, parameters=wavelength_adjustment,
+                              source_values=smoothing(scattering)),
             k1, k2
         )
     elif extinction:
         absorption.values = correct_bond1999_extinction(
             absorption.values,
-            align_wavelengths(extinction, absorption, parameters=wavelength_adjustment),
+            align_wavelengths(extinction, absorption, parameters=wavelength_adjustment,
+                              source_values=smoothing(extinction)),
             k1, k2
         )
     else:
@@ -135,6 +154,7 @@ def bond_1999(
         k1: typing.Union[float, np.ndarray] = 0.02,
         k2: typing.Union[float, np.ndarray] = 1.22,
         wavelength_adjustment: typing.Optional[AdjustWavelengthParameters] = None,
+        smoothing: typing.Callable[[SelectedVariable], np.ndarray] = hourly_smoothing,
 ) -> None:
     absorption = SelectedData.ensure_data(absorption)
     scattering_or_extinction = SelectedData.ensure_data(scattering_or_extinction)
@@ -160,7 +180,8 @@ def bond_1999(
         except FileNotFoundError:
             be = None
 
-        _apply_bond1999_inner(ba, bs, be, k1, k2, wavelength_adjustment=wavelength_adjustment)
+        _apply_bond1999_inner(ba, bs, be, k1, k2, wavelength_adjustment=wavelength_adjustment,
+                              smoothing=smoothing)
 
 
 def bond_1999_coarse(
@@ -168,6 +189,7 @@ def bond_1999_coarse(
         scattering_or_extinction,
         k2: typing.Union[float, np.ndarray] = 1.22,
         wavelength_adjustment: typing.Optional[AdjustWavelengthParameters] = None,
+        smoothing: typing.Callable[[SelectedVariable], np.ndarray] = hourly_smoothing,
 ) -> None:
     absorption = SelectedData.ensure_data(absorption)
     scattering_or_extinction = SelectedData.ensure_data(scattering_or_extinction)
@@ -187,7 +209,8 @@ def bond_1999_coarse(
             for wavelengths, value_select, _ in ba.select_wavelengths():
                 for widx in range(len(wavelengths)):
                     angstrom[value_select[widx]] = angstrom_exponent_at_wavelength(
-                        bs, wavelengths[widx], always_adjacent=False)
+                        bs, wavelengths[widx], always_adjacent=False,
+                        values=smoothing(bs))
         except FileNotFoundError:
             bs = None
         try:
@@ -198,7 +221,8 @@ def bond_1999_coarse(
             for wavelengths, value_select, _ in ba.select_wavelengths():
                 for widx in range(len(wavelengths)):
                     wavelength_selector = value_select[widx]
-                    be_ang = angstrom_exponent_at_wavelength(be, wavelengths[widx], always_adjacent=False)
+                    be_ang = angstrom_exponent_at_wavelength(be, wavelengths[widx], always_adjacent=False,
+                                                             values=smoothing(be))
                     be_ang[np.isfinite(angstrom[wavelength_selector])] = angstrom[wavelength_selector]
                     angstrom[wavelength_selector] = be_ang
         except FileNotFoundError:
@@ -210,7 +234,8 @@ def bond_1999_coarse(
         k1[angstrom >= 0.6] = 0.02
         k1[angstrom <= 0.2] = 0.00668
 
-        _apply_bond1999_inner(ba, bs, be, k1, k2, wavelength_adjustment=wavelength_adjustment)
+        _apply_bond1999_inner(ba, bs, be, k1, k2, wavelength_adjustment=wavelength_adjustment,
+                              smoothing=smoothing)
 
 
 def remove_low_transmittance(
