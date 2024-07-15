@@ -473,7 +473,24 @@ class DataVariable(SelectedVariable):
 
     @property
     def _cut_size_data(self) -> np.ndarray:
+        if self._cut_size_time_dependent:
+            if "time" not in self.variable.dimensions:
+                return np.empty((0,), dtype=np.float64)
+            if self._is_constant or self._is_empty:
+                return np.empty((0,), dtype=np.float64)
+            if self._time_origin_indices is not None:
+                if len(self._time_origin_indices) == 0:
+                    return np.empty((0,), dtype=np.float64)
+                return self.parent.variables["cut_size"][...].data[self._time_origin_indices]
+            elif self._values.shape[0] != self.variable.shape[0]:
+                begin_index, end_index = self._time_slice(self._raw_times, int(self._times[0]), int(self._times[-1]))
+                return self.parent.variables["cut_size"][...].data[begin_index:end_index]
         return self.parent.variables["cut_size"][...].data
+
+    @property
+    def _cut_size_time_dependent(self) -> bool:
+        cut_size = self.parent.variables["cut_size"]
+        return len(cut_size.dimensions) == 1 and cut_size.dimensions[0] == "time"
 
     @property
     def is_cut_split(self) -> bool:
@@ -616,6 +633,12 @@ class DataVariable(SelectedVariable):
             size_data = self._cut_size_data
             finite_cut_sizes = np.isfinite(size_data)
             unique_cut_sizes = np.unique(size_data[finite_cut_sizes])
+            if not self._cut_size_time_dependent:
+                for cut_size in unique_cut_sizes:
+                    yield float(cut_size), (slice(None),), (...,)
+                if np.any(np.invert(finite_cut_sizes)):
+                    yield nan, (slice(None),), (...,)
+                return
             for cut_size in unique_cut_sizes:
                 selector = size_data == cut_size
                 yield float(cut_size), (selector, ), (selector, )
