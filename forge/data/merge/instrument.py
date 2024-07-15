@@ -846,7 +846,7 @@ class _CutSizeVariable(_Variable):
                 for v in contents[:]:
                     incorporate_constant(v)
             elif dimensions[0] == 'time':
-                if self.time_variable == False or self.dimension_variable == False:
+                if self.time_variable == False or self.dimension_variable == True:
                     raise ValueError("Unable to incorporate cut size dimension data with time dependant")
                 self.time_variable = True
                 self.dimension_variable = False

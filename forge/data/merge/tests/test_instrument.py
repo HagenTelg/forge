@@ -1194,13 +1194,18 @@ def test_promote_cutsize(tmp_path):
     over = None
 
     var = output.groups["data"].variables["cut_size"]
-    assert var.shape == (4,)
-    assert list(var[:]) == [10.0, 10.0, 1.0, 1.0]
+    assert var.shape == (2,)
+    assert list(var[:]) == [1.0, 10.0]
 
     var = output.groups["data"].variables["var1"]
     assert var.ancillary_variables == "cut_size"
-    assert var.shape == (4,)
-    assert list(var[:]) == [20.0, 21.0, 12.0, 13.0]
+    assert var.shape == (4, 2)
+    assert var[:].data.tolist() == [
+        pytest.approx([nan, 20.0], nan_ok=True),
+        pytest.approx([nan, 21.0], nan_ok=True),
+        pytest.approx([12.0, nan], nan_ok=True),
+        pytest.approx([13.0, nan], nan_ok=True),
+    ]
 
 
 def test_dynamic_cutsize(tmp_path):
