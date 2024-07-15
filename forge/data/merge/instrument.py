@@ -309,6 +309,8 @@ class _Variable:
             priority = 0
             if dim == 'wavelength':
                 priority = 1
+            elif dim == 'quantile':
+                priority = 2
             elif dim == 'cut_size':
                 priority = -1
             dimension_sort.append((priority, dim))
