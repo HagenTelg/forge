@@ -23,7 +23,7 @@ def correct_weiss(
         a: float = 0.814,
         b: float = 1.237,
 ) -> np.ndarray:
-    return absorption / _weiss_factor(transmittance, a, b)
+    return (absorption.T / _weiss_factor(transmittance, a, b).T).T
 
 
 def weiss(
@@ -39,7 +39,7 @@ def weiss(
             {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
             {"standard_name": "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles"},
     ), {"variable_name": "transmittance"}):
-        absorption[...] /= _weiss_factor(transmittance[...], a, b)
+        absorption.values = correct_weiss(absorption.values, transmittance.values, a, b)
 
 
 def weiss_undo(
@@ -55,7 +55,7 @@ def weiss_undo(
             {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
             {"standard_name": "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles"},
     ), {"variable_name": "transmittance"}):
-        absorption[...] *= _weiss_factor(transmittance[...], a, b)
+        absorption.values = (absorption.values.T * _weiss_factor(transmittance[...], a, b).T).T
 
 
 # Wavelength adjustment factor embedded in the original formulation of the constants, which we need to undo
