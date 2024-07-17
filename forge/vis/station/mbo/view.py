@@ -2,8 +2,9 @@ import typing
 from ..default.view import detach, View, aerosol_views, ozone_views
 from ..default.aerosol.tsi3010cpc import TSI3010CPCStatus
 from .counts import ParticleConcentration, EditingParticleConcentration, EditingGrimm
-from .optical import OpticalTAP, EditingTAP
-from .tap import TAPStatus
+from .optical import OpticalCLAPSecondary, EditingCLAPSecondary, OpticalScatteringSecondary, EditingScatteringSecondary, EditingBackScatteringSecondary
+from .ecotechnephelometer import NephelometerStatusSecondary, NephelometerZeroSecondary
+from .clap import CLAPStatusSecondary
 from .green import Green
 from .grimm import GrimmDistribution, GrimmStatus
 from .flow import Flow
@@ -22,13 +23,26 @@ station_views['aerosol-avgh-counts'] = ParticleConcentration('aerosol-avgh')
 station_views['aerosol-raw-cpcstatus'] = TSI3010CPCStatus('aerosol-raw')
 station_views['aerosol-realtime-cpcstatus'] = TSI3010CPCStatus('aerosol-realtime', realtime=True)
 
-station_views['aerosol-raw-opticaltap'] = OpticalTAP('aerosol-raw')
-station_views['aerosol-realtime-opticaltap'] = OpticalTAP('aerosol-realtime', realtime=True)
-station_views['aerosol-editing-tap'] = EditingTAP()
-station_views['aerosol-clean-opticaltap'] = OpticalTAP('aerosol-clean')
-station_views['aerosol-avgh-opticaltap'] = OpticalTAP('aerosol-avgh')
-station_views['aerosol-raw-tapstatus'] = TAPStatus('aerosol-raw')
-station_views['aerosol-realtime-tapstatus'] = TAPStatus('aerosol-realtime', realtime=True)
+station_views['aerosol-raw-opticalclap2'] = OpticalCLAPSecondary('aerosol-raw')
+station_views['aerosol-editing-clap2'] = EditingCLAPSecondary()
+station_views['aerosol-clean-opticalclap2'] = OpticalCLAPSecondary('aerosol-clean')
+station_views['aerosol-avgh-opticalclap2'] = OpticalCLAPSecondary('aerosol-avgh')
+station_views['aerosol-realtime-opticalclap2'] = OpticalCLAPSecondary('aerosol-realtime', realtime=True)
+station_views['aerosol-raw-clapstatus2'] = CLAPStatusSecondary('aerosol-raw')
+station_views['aerosol-realtime-clapstatus2'] = CLAPStatusSecondary('aerosol-realtime', realtime=True)
+
+station_views['aerosol-raw-opticalscattering2'] = OpticalScatteringSecondary('aerosol-raw')
+station_views['aerosol-realtime-opticalscattering2'] = OpticalScatteringSecondary('aerosol-realtime', realtime=True)
+station_views['aerosol-editing-scattering2'] = EditingScatteringSecondary()
+station_views['aerosol-editing-backscattering2'] = EditingBackScatteringSecondary()
+station_views['aerosol-clean-opticalscattering2'] = OpticalScatteringSecondary('aerosol-clean')
+station_views['aerosol-avgh-opticalscattering2'] = OpticalScatteringSecondary('aerosol-avgh')
+station_views['aerosol-raw-nephelometerzero2'] = NephelometerZeroSecondary('aerosol-raw')
+station_views['aerosol-raw-nephelometerstatus2'] = NephelometerStatusSecondary('aerosol-raw')
+station_views['aerosol-raw-nephelometerzero2'] = NephelometerZeroSecondary('aerosol-raw')
+station_views['aerosol-raw-nephelometerstatus2'] = NephelometerStatusSecondary('aerosol-raw')
+station_views['aerosol-realtime-nephelometerzero2'] = NephelometerZeroSecondary('aerosol-realtime', realtime=True)
+station_views['aerosol-realtime-nephelometerstatus2'] = NephelometerStatusSecondary('aerosol-realtime', realtime=True)
 
 station_views['aerosol-raw-green'] = Green('aerosol-raw')
 station_views['aerosol-realtime-green'] = Green('aerosol-realtime', realtime=True)

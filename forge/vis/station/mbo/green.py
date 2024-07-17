@@ -34,6 +34,17 @@ class Green(TimeSeries):
                 ('BsB', 450), ('BsG', 550), ('BsR', 700),
             ]))
 
+        for size in [("Whole", 'whole', '#0f0'), ("PM10", 'pm10', '#0f0'),
+                     ("PM2.5", 'pm25', '#070'), ("PM1", 'pm1', '#070')]:
+            trace = TimeSeries.Trace(Mm_1)
+            trace.legend = f"Ecotech Scattering ({size[0]})"
+            trace.data_record = f'{mode}-scattering2-{size[1]}'
+            trace.data_field = 'G'
+            trace.color = size[2]
+            scattering.traces.append(trace)
+            self.processing[trace.data_record] = self.AdjustWavelength(OrderedDict([
+                ('BsB', 450), ('BsG', 525), ('BsR', 635),
+            ]))
 
         absorption = TimeSeries.Graph()
         absorption.title = "Light Absorption"
@@ -48,7 +59,7 @@ class Green(TimeSeries):
         for size in [("Whole", 'whole', '#0f0'), ("PM10", 'pm10', '#0f0'),
                      ("PM2.5", 'pm25', '#070'), ("PM1", 'pm1', '#070')]:
             trace = TimeSeries.Trace(Mm_1)
-            trace.legend = f"CLAP ({size[0]})"
+            trace.legend = f"CLAP/TAP ({size[0]})"
             trace.data_record = f'{mode}-absorption-{size[1]}'
             trace.data_field = 'G'
             trace.color = size[2]
@@ -60,8 +71,8 @@ class Green(TimeSeries):
         for size in [("Whole", 'whole', '#0f0'), ("PM10", 'pm10', '#0f0'),
                      ("PM2.5", 'pm25', '#070'), ("PM1", 'pm1', '#070')]:
             trace = TimeSeries.Trace(Mm_1)
-            trace.legend = f"TAP ({size[0]})"
-            trace.data_record = f'{mode}-tap-{size[1]}'
+            trace.legend = f"CLAP/TAP Secondary ({size[0]})"
+            trace.data_record = f'{mode}-clap2-{size[1]}'
             trace.data_field = 'G'
             absorption.traces.append(trace)
             self.processing[trace.data_record] = self.AdjustWavelength(OrderedDict([

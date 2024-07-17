@@ -12,6 +12,8 @@ class Summary(TimeSeries):
     THERMO_OZONE_INTERCEPT = 1.29191
     ECOTECH_OZONE_SLOPE = 0.882
     ECOTECH_OZONE_INTERCEPT = -4.82
+    TWOB_OZONE_SLOPE = 1
+    TWOB_OZONE_INTERCEPT = 0
 
     class CalibrateOzone(TimeSeries.Processing):
         def __init__(self):
@@ -25,6 +27,10 @@ return new GenericOperations.ApplyToFields(dataName, {
     
     'ecotech': (value) => {
         """ + f'return GenericOperations.calibration(value, {Summary.ECOTECH_OZONE_INTERCEPT}, {Summary.ECOTECH_OZONE_SLOPE});' + r"""
+    },
+    
+    'twob': (value) => {
+        """ + f'return GenericOperations.calibration(value, {Summary.TWOB_OZONE_INTERCEPT}, {Summary.TWOB_OZONE_SLOPE});' + r"""
     },
 });
 })"""
@@ -66,7 +72,7 @@ return new GenericOperations.ApplyToFields(dataName, {
         for size in [("Whole", 'whole', '#0f0'), ("PM10", 'pm10', '#0f0'),
                      ("PM2.5", 'pm25', '#070'), ("PM1", 'pm1', '#070')]:
             trace = TimeSeries.Trace(Mm_1)
-            trace.legend = f"absorption ({size[0]})"
+            trace.legend = f"Absorption ({size[0]})"
             trace.data_record = f'{optical_mode}-absorption-{size[1]}'
             trace.data_field = 'BaG'
             trace.color = size[2]
@@ -124,6 +130,12 @@ return new GenericOperations.ApplyToFields(dataName, {
         ecotech.data_field = 'ecotech'
         ozone.traces.append(ecotech)
 
+        twob = TimeSeries.Trace(ppb)
+        twob.legend = "2B Tech"
+        twob.data_record = f'{gas_mode}-ozone'
+        twob.data_field = 'twob'
+        ozone.traces.append(twob)
+
         self.processing[f'{gas_mode}-ozone'] = self.CalibrateOzone()
 
 
@@ -137,7 +149,7 @@ return new GenericOperations.ApplyToFields(dataName, {
         temperature.axes.append(T_C)
 
         for parameter in [("Ambient", 'Tambient'), ("Sheltered", 'Tsheltered'),
-                          ("Room 1", 'Troom'), ("Room 2 (CR1000)", 'Tcr1000')]:
+                          ("Room 1", 'Troom'), ("Room 2", 'Troom2'), ("CR1000 Room2", 'Tcr1000')]:
             trace = TimeSeries.Trace(T_C)
             trace.legend = parameter[0]
             trace.data_record = f'{gas_mode}-temperature'

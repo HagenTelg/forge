@@ -42,11 +42,25 @@ class ViewList(Mode):
         _LOGGER.warning(f"View {view_name} does not exist in the mode")
         self.views.append(entry)
 
+    def replace(self, entry: "ViewList.Entry"):
+        for i in range(len(self.views)):
+            if self.views[i].view_name == entry.view_name:
+                self.views[i] = entry
+                return
+        _LOGGER.warning(f"View {entry.view_name} does not exist in the mode")
+        self.views.append(entry)
+
     def remove(self, view_name: str):
         for i in range(len(self.views)):
             if self.views[i].view_name == view_name:
                 del self.views[i]
                 return
+
+    def __getitem__(self, key):
+        for i in range(len(self.views)):
+            if self.views[i].view_name == key:
+                return self.views[i]
+        raise IndexError
 
     def __deepcopy__(self, memo):
         y = type(self)(self.mode_name, self.display_name, deepcopy(self.views, memo))
