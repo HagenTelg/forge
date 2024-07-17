@@ -1096,8 +1096,34 @@ class ArchiveRead(ExecuteStage):
     def __str__(self):
         return f"{(' '.join(self.stations)).upper()}/{(' '.join(self.archives)).upper()} at ({format_iso8601_time(self.start_ms / 1000.0)},{format_iso8601_time(self.end_ms / 1000.0)}) selected: {str(self.data_selection)}"
 
+    async def _filter_file(self, output_file: Path, archive: str, archive_path: str,
+                           created_files: typing.List[Path], filter_tasks: typing.List[asyncio.Future]) -> None:
+        def apply_filter(output_file: Path, archive: str, archive_path: str):
+            contents = Dataset(str(output_file), 'r+')
+            try:
+                if not self.data_selection.accept_any_in_file(contents):
+                    try:
+                        output_file.unlink()
+                    except (OSError, FileNotFoundError):
+                        pass
+                    _LOGGER.debug(f"File {archive_path} rejected by post-fetch filtering")
+                    return
+                if len(self.archives) != 1:
+                    # Set this so merging can differentiate when needed
+                    contents.forge_archive = archive.upper()
+            finally:
+                contents.close()
+
+        async def filter_task():
+            await asyncio.get_event_loop().run_in_executor(self.netcdf_executor, apply_filter,
+                                                           output_file, archive, archive_path)
+            _LOGGER.debug(f"Fetched archive file {archive_path} into '{output_file}'")
+            created_files.append(output_file)
+
+        filter_tasks.append(asyncio.ensure_future(filter_task()))
+
     async def _fetch_file(self, connection: Connection, archive: str, archive_path: str,
-                          created_files: typing.List[Path]) -> None:
+                          created_files: typing.List[Path], filter_tasks: typing.List[asyncio.Future]) -> bool:
         archive_parts = Path(archive_path)
         output_file = self.data_path / archive_parts.name
         if output_file.exists():
@@ -1116,25 +1142,10 @@ class ArchiveRead(ExecuteStage):
             except (OSError, FileNotFoundError):
                 pass
             _LOGGER.debug(f"File {archive_path} does not exist in the archive")
-            return
+            return False
 
-        contents = Dataset(str(output_file), 'r+')
-        try:
-            if not self.data_selection.accept_any_in_file(contents):
-                try:
-                    output_file.unlink()
-                except (OSError, FileNotFoundError):
-                    pass
-                _LOGGER.debug(f"File {archive_path} rejected by post-fetch filtering")
-                return
-            if len(self.archives) != 1:
-                # Set this so merging can differentiate when needed
-                contents.forge_archive = archive.upper()
-        finally:
-            contents.close()
-
-        _LOGGER.debug(f"Fetched archive file {archive_path} into '{output_file}'")
-        created_files.append(output_file)
+        await self._filter_file(output_file, archive, archive_path, created_files, filter_tasks)
+        return True
 
     async def _read_year(self, station: str, archive: str, connection: Connection, current_year: int,
                          progress: Progress, fraction_start: float, fraction_end: float) -> typing.List[Path]:
@@ -1158,21 +1169,37 @@ class ArchiveRead(ExecuteStage):
 
         progress.set_title(f"Reading {station.upper()}/{archive.upper()}/{current_year} data")
 
-        def progress_number(n: int, total: int):
-            step_complete = n / total
+        filter_tasks: typing.List[asyncio.Future] = list()
+        completed_files: int = 0
+        total_files: int = 0
+
+        async def progress_filter(timeout: typing.Optional = 0):
+            nonlocal completed_files
+
+            if not filter_tasks:
+                return
+
+            done, pending = await asyncio.wait(filter_tasks, timeout=timeout, return_when=asyncio.FIRST_COMPLETED)
+            for v in done:
+                v.result()
+            completed_files += len(done)
+            filter_tasks.clear()
+            filter_tasks.extend(pending)
+
+            step_complete = completed_files / total_files
             progress(fraction_start + step_complete * (fraction_end - fraction_start))
 
         created_files: typing.List[Path] = list()
         if archive in ('avgd', 'avgm'):
-            completed_files: int = 0
+            total_files = len(read_instrument_ids)
             for instrument_id in read_instrument_ids:
-                progress_number(completed_files, len(read_instrument_ids))
-                await self._fetch_file(
+                await progress_filter()
+                if not await self._fetch_file(
                     connection, archive,
                     data_file_name(station, archive, instrument_id, year_start),
-                    created_files
-                )
-                completed_files += 1
+                    created_files, filter_tasks
+                ):
+                    completed_files += 1
         else:
             year_start_ms = int(floor(year_start * 1000))
             year_end_ms = end_of_year_ms(current_year)
@@ -1180,16 +1207,19 @@ class ArchiveRead(ExecuteStage):
             read_end_day = int(ceil(min(year_end_ms, self.end_ms) / (24 * 60 * 60 * 1000)))
             total_days = read_end_day - read_start_day
             total_files = len(read_instrument_ids) * total_days
-            completed_files: int = 0
             for instrument_id in read_instrument_ids:
                 for day_number in range(read_start_day, read_end_day):
-                    progress_number(completed_files, total_files)
-                    await self._fetch_file(
+                    await progress_filter()
+                    if not await self._fetch_file(
                         connection, archive,
                         data_file_name(station, archive, instrument_id, day_number * 24 * 60 * 60),
-                        created_files
-                    )
-                    completed_files += 1
+                        created_files, filter_tasks,
+                    ):
+                        completed_files += 1
+
+        _LOGGER.debug(f"Waiting for read completion on {len(filter_tasks)} files")
+        while filter_tasks:
+            await progress_filter(None)
 
         return created_files
 
@@ -1339,46 +1369,77 @@ class FilterStage(ExecuteStage):
             elif isinstance(stage, SelectStage):
                 return
 
+    def _apply_filter(self, input_path: Path, output_path: Path) -> None:
+        input_root = Dataset(str(input_path), 'r')
+        try:
+            if self.data_selection.accept_whole_file(
+                    input_root,
+                    self.start_ms, self.end_ms,
+                    accept_statistics=self._retain_statistics,
+            ):
+                input_root.close()
+                input_root = None
+                shutil.move(str(input_path), str(output_path))
+                _LOGGER.debug("Filter accepted whole file '%s'", str(output_path))
+            else:
+                output_root = Dataset(str(output_path), 'w', format='NETCDF4')
+                try:
+                    keep_file = self.data_selection.filter_file(
+                        input_root, output_root,
+                        self.start_ms, self.end_ms,
+                        accept_statistics=self._retain_statistics,
+                    )
+                finally:
+                    output_root.close()
+                if not keep_file:
+                    _LOGGER.debug("Filter rejected file '%s'", str(output_path))
+                    try:
+                        output_path.unlink()
+                    except (OSError, FileNotFoundError):
+                        pass
+                else:
+                    _LOGGER.debug("Filter accepted partial file '%s'", str(output_path))
+        finally:
+            if input_root is not None:
+                input_root.close()
+
     async def __call__(self) -> None:
         _LOGGER.debug("Starting archive data filter")
         begin_time = time.monotonic()
         with self.data_replacement() as output_base:
-            for input_path in self.data_file_progress("Filtering data"):
-                output_path = output_base / input_path.name
+            filter_tasks: typing.List[asyncio.Future] = list()
+            with self.progress("Filtering data") as progress:
+                input_files = list(self.data_files())
+                completed_files: int = 0
 
-                input_root = Dataset(str(input_path), 'r')
-                try:
-                    if self.data_selection.accept_whole_file(
-                            input_root,
-                            self.start_ms, self.end_ms,
-                            accept_statistics=self._retain_statistics,
-                    ):
-                        input_root.close()
-                        input_root = None
-                        await asyncio.get_event_loop().run_in_executor(None, shutil.move, str(input_path),
-                                                                       str(output_path))
-                        _LOGGER.debug("Filter accepted whole file '%s'", str(output_path))
-                    else:
-                        output_root = Dataset(str(output_path), 'w', format='NETCDF4')
-                        try:
-                            keep_file = self.data_selection.filter_file(
-                                input_root, output_root,
-                                self.start_ms, self.end_ms,
-                                accept_statistics=self._retain_statistics,
-                            )
-                        finally:
-                            output_root.close()
-                        if not keep_file:
-                            _LOGGER.debug("Filter rejected file '%s'", str(output_path))
-                            try:
-                                output_path.unlink()
-                            except (OSError, FileNotFoundError):
-                                pass
-                        else:
-                            _LOGGER.debug("Filter accepted partial file '%s'", str(output_path))
-                finally:
-                    if input_root is not None:
-                        input_root.close()
+                async def progress_filter(timeout: typing.Optional = 0):
+                    nonlocal completed_files
+
+                    if not filter_tasks:
+                        return
+
+                    done, pending = await asyncio.wait(filter_tasks, timeout=timeout, return_when=asyncio.FIRST_COMPLETED)
+                    for v in done:
+                        v.result()
+                    completed_files += len(done)
+                    filter_tasks.clear()
+                    filter_tasks.extend(pending)
+
+                    progress(completed_files / len(input_files))
+
+                for input_path in input_files:
+                    output_path = output_base / input_path.name
+
+                    filter_tasks.append(asyncio.ensure_future(asyncio.get_event_loop().run_in_executor(
+                        self.netcdf_executor, self._apply_filter, input_path, output_path
+                    )))
+                    await progress_filter()
+
+                _LOGGER.debug(f"Waiting for filter completion on {len(filter_tasks)} files")
+                while filter_tasks:
+                    await progress_filter(None)
+
+
         end_time = time.monotonic()
         _LOGGER.debug("Archive data filter completed in %.3f seconds", end_time - begin_time)
 

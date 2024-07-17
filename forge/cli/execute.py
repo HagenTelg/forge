@@ -8,6 +8,7 @@ from math import floor
 from shutil import copyfile
 from tempfile import TemporaryDirectory, mkstemp
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
 from forge.archive.client.connection import Connection
 
 _LOGGER = logging.getLogger(__name__)
@@ -45,9 +46,10 @@ class Progress:
         if not self._done_output:
             return
         sys.stderr.write(f"\x1B[2K\r")
+        sys.stderr.flush()
 
     def __call__(self, fraction: typing.Optional[float]) -> None:
-        self._fraction = fraction
+        self.fraction = fraction
         self._update()
 
     def set_title(self, title: str, reset: bool = False) -> None:
@@ -71,24 +73,30 @@ class Progress:
 
         if self.fraction is None:
             sys.stderr.write(self.title[:width - 1])
+            sys.stderr.flush()
             return
 
         prefix = self.title[:width - 13] + ": ["
-        percent = max(1, min(round(self._fraction * 100), 99))
+        percent = max(1, min(round(self.fraction * 100), 99))
         suffix = f"] {percent:2d}%"
 
         sys.stderr.write(prefix)
 
         total_bars = (width - 1) - (len(prefix) + len(suffix))
-        filled_bars = total_bars * self._fraction
+        filled_bars = total_bars * self.fraction
         complete_bars = int(floor(filled_bars))
         fractional_bar = filled_bars - complete_bars
         if complete_bars:
             sys.stderr.write("=" * complete_bars)
         if fractional_bar >= 0.5:
             sys.stderr.write("-")
+            complete_bars += 1
+        empty_bars = total_bars - complete_bars
+        if empty_bars:
+            sys.stderr.write(" " * empty_bars)
 
         sys.stderr.write(suffix)
+        sys.stderr.flush()
 
 
 class ExecuteStage(ABC):
@@ -157,6 +165,10 @@ class ExecuteStage(ABC):
     def data_replacement(self) -> "ExecuteStage.ReplacementPath":
         return self.ReplacementPath(self.exec)
 
+    @property
+    def netcdf_executor(self) -> ThreadPoolExecutor:
+        return self.exec.netcdf_executor
+
 
 class Execute:
     def __init__(self):
@@ -171,6 +183,17 @@ class Execute:
         self._read_only_input_files: typing.List[Path] = list()
         self._read_only_combined_input: typing.Optional[TemporaryDirectory] = None
         self._writable_data_path: typing.Optional[TemporaryDirectory] = None
+
+        self._netcdf_executor: typing.Optional[ThreadPoolExecutor] = None
+
+    @property
+    def netcdf_executor(self) -> ThreadPoolExecutor:
+        # This exists because NetCDF access is not reentrant:
+        #  https://github.com/Unidata/netcdf4-python/issues/844
+        #  https://github.com/Unidata/netcdf-c/projects/6
+        if self._netcdf_executor is None:
+            self._netcdf_executor = ThreadPoolExecutor(max_workers=1)
+        return self._netcdf_executor
 
     def set_archive_unix(self, socket: str) -> None:
         self._override_archive_unix = socket

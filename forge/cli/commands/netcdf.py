@@ -151,7 +151,8 @@ class MergeInstrument(ExecuteStage):
     async def __call__(self) -> None:
         with self.progress("Merging instruments") as progress, self.data_replacement() as output_path:
             merge_sets: typing.Dict[str, MergeInstrument._FileSet] = dict()
-            for input_file in self.data_files():
+
+            def process_file(input_file: Path) -> None:
                 input_data = Dataset(str(input_file), 'r')
                 try:
                     file_id: typing.List[str] = list()
@@ -166,7 +167,7 @@ class MergeInstrument(ExecuteStage):
                     instrument_id = getattr(input_data, 'instrument_id', None)
                     if not instrument_id:
                         _LOGGER.warning(f"No instrument available for {input_file}")
-                        continue
+                        return
                     file_id.append(instrument_id.upper())
 
                     start_time = getattr(input_data, 'time_coverage_start', None)
@@ -184,16 +185,46 @@ class MergeInstrument(ExecuteStage):
                 finally:
                     input_data.close()
 
+            process_tasks: typing.List[asyncio.Future] = list()
+            for input_file in self.data_files():
+                process_tasks.append(asyncio.ensure_future(asyncio.get_event_loop().run_in_executor(
+                    self.netcdf_executor, process_file, input_file
+                )))
+            done, _ = await asyncio.wait(process_tasks)
+            for v in done:
+                v.result()
+
             _LOGGER.debug(f"Located {len(merge_sets)} merge sets of files")
 
             count_completed: int = 0
-            for file_id, merge_files in merge_sets.items():
-                progress.set_title(f"Merging {file_id}")
+            process_tasks.clear()
+
+            async def progress_completed(timeout: typing.Optional = 0):
+                nonlocal count_completed
+
+                if not process_tasks:
+                    return
+
+                done, pending = await asyncio.wait(process_tasks, timeout=timeout, return_when=asyncio.FIRST_COMPLETED)
+                for v in done:
+                    v.result()
+                count_completed += len(done)
+                process_tasks.clear()
+                process_tasks.extend(pending)
+
                 progress(count_completed / len(merge_sets))
 
+            for file_id, merge_files in merge_sets.items():
+                await progress_completed()
+
                 _LOGGER.debug(f"Merging {len(merge_files.input_files)} files for {file_id}")
-                merge_files.execute()
-                count_completed += 1
+                process_tasks.append(asyncio.ensure_future(asyncio.get_event_loop().run_in_executor(
+                    self.netcdf_executor, merge_files.execute
+                )))
+
+            _LOGGER.debug(f"Waiting for merge completion on {len(process_tasks)} instruments")
+            while process_tasks:
+                await progress_completed(None)
 
 
 class MergeFlatten(ExecuteStage):
@@ -208,14 +239,15 @@ class MergeFlatten(ExecuteStage):
         self.align_state = align_state
         self.round_times = round_times
 
-    def _do_merge(self, output_file: Path) -> None:
+    async def _do_merge(self, output_file: Path) -> None:
         open_files: typing.List[Dataset] = list()
         try:
             unique_stations: typing.Set[str] = set()
             unique_archives: typing.Set[str] = set()
 
             merge_files: typing.List[typing.Tuple[Dataset, str, str, str]] = list()
-            for file in self.data_files():
+
+            def prepare_file(file: Path) -> None:
                 file = Dataset(str(file), 'r')
                 open_files.append(file)
 
@@ -233,16 +265,27 @@ class MergeFlatten(ExecuteStage):
 
                 merge_files.append((file, station_name, forge_archive, instrument_id))
 
-            merge = FlattenFiles(self.align_state, self.round_times)
-            for file, station, archive, instrument in merge_files:
-                merge_name: typing.List[str] = list()
-                if len(unique_stations) > 1 and station:
-                    merge_name.append(station)
-                if len(unique_archives) > 1 and archive:
-                    merge_name.append(archive)
-                merge_name.append(instrument)
-                merge.add_source(file, '_'.join(merge_name))
-            merge.execute(output_file).close()
+            tasks: typing.List[asyncio.Future] = list()
+            for file in self.data_files():
+                tasks.append(asyncio.ensure_future(asyncio.get_event_loop().run_in_executor(
+                    self.netcdf_executor, prepare_file, file
+                )))
+            await asyncio.wait(tasks)
+
+            def run_merge():
+                merge = FlattenFiles(self.align_state, self.round_times)
+                for file, station, archive, instrument in merge_files:
+                    merge_name: typing.List[str] = list()
+                    if len(unique_stations) > 1 and station:
+                        merge_name.append(station)
+                    if len(unique_archives) > 1 and archive:
+                        merge_name.append(archive)
+                    merge_name.append(instrument)
+                    merge.add_source(file, '_'.join(merge_name))
+                merge.execute(output_file).close()
+
+            await asyncio.get_event_loop().run_in_executor(self.netcdf_executor, run_merge)
+
         finally:
             for file in open_files:
                 file.close()
@@ -251,7 +294,7 @@ class MergeFlatten(ExecuteStage):
         with self.progress("Flattening data"):
             if not self.destination:
                 with self.data_replacement() as output_path:
-                    self._do_merge(output_path / "data.nc")
+                    await self._do_merge(output_path / "data.nc")
             else:
-                self._do_merge(self.destination)
+                await self._do_merge(self.destination)
 
