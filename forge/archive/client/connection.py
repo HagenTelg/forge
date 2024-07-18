@@ -326,7 +326,10 @@ class Connection:
             connection.writer.write(struct.pack('<BB', ClientPacket.TRANSACTION_BEGIN.value, write and 1 or 0))
 
         async def response(connection: "Connection", packet_type: ServerPacket):
-            return packet_type == ServerPacket.TRANSACTION_STARTED or None
+            if packet_type != ServerPacket.TRANSACTION_STARTED:
+                return None
+            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
+            return status == 1 or None
 
         await self._request_response(request, response)
         self._transaction_intents = dict()
@@ -338,7 +341,10 @@ class Connection:
             connection.writer.write(struct.pack('<B', ClientPacket.TRANSACTION_COMMIT.value))
 
         async def response(connection: "Connection", packet_type: ServerPacket):
-            return packet_type == ServerPacket.TRANSACTION_COMPLETE or None
+            if packet_type != ServerPacket.TRANSACTION_COMPLETE:
+                return None
+            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
+            return status == 1 or None
 
         await self._request_response(request, response)
         intents = self._transaction_intents
@@ -359,7 +365,10 @@ class Connection:
             connection.writer.write(struct.pack('<B', ClientPacket.TRANSACTION_ABORT.value))
 
         async def response(connection: "Connection", packet_type: ServerPacket):
-            return packet_type == ServerPacket.TRANSACTION_ABORTED or None
+            if packet_type != ServerPacket.TRANSACTION_ABORTED:
+                return None
+            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
+            return status == 1 or None
 
         await self._request_response(request, response)
         intents = self._transaction_intents
@@ -408,15 +417,18 @@ class Connection:
             write_string(connection.writer, name)
 
         async def response(connection: "Connection", packet_type: ServerPacket):
-            if packet_type == ServerPacket.READ_FILE_NOT_FOUND:
-                return 2
-            if packet_type == ServerPacket.READ_FILE_DATA:
+            if packet_type != ServerPacket.READ_FILE_DATA:
+                return None
+            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
+            if status == 1:
                 total_size = struct.unpack('<Q', await connection.reader.readexactly(8))[0]
                 while total_size > 0:
                     chunk = await connection.reader.readexactly(min(total_size, 64 * 1024))
                     total_size -= len(chunk)
                     await writer(chunk)
                 return 1
+            else:
+                return 2
 
         r = await self._request_response(request, response)
         if r == 2:
@@ -451,7 +463,10 @@ class Connection:
                 connection.writer.write(chunk)
 
         async def response(connection: "Connection", packet_type: ServerPacket):
-            return packet_type == ServerPacket.WRITE_FILE_RECEIVED or None
+            if packet_type != ServerPacket.WRITE_FILE_DATA:
+                return None
+            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
+            return status == 1 or None
 
         await self._request_response(request, response)
 
@@ -467,7 +482,10 @@ class Connection:
             await send_file_contents(source, connection.writer, total_size)
 
         async def response(connection: "Connection", packet_type: ServerPacket):
-            return packet_type == ServerPacket.WRITE_FILE_RECEIVED or None
+            if packet_type != ServerPacket.WRITE_FILE_DATA:
+                return None
+            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
+            return status == 1 or None
 
         await self._request_response(request, response)
 
@@ -479,7 +497,10 @@ class Connection:
             connection.writer.write(source)
 
         async def response(connection: "Connection", packet_type: ServerPacket):
-            return packet_type == ServerPacket.WRITE_FILE_RECEIVED or None
+            if packet_type != ServerPacket.WRITE_FILE_DATA:
+                return None
+            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
+            return status == 1 or None
 
         await self._request_response(request, response)
 
@@ -489,7 +510,10 @@ class Connection:
             write_string(connection.writer, name)
 
         async def response(connection: "Connection", packet_type: ServerPacket):
-            return packet_type == ServerPacket.REMOVE_FILE_OK or None
+            if packet_type != ServerPacket.REMOVE_FILE_OK:
+                return None
+            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
+            return status == 1 or None
 
         await self._request_response(request, response)
 

@@ -3,7 +3,6 @@ import asyncio
 import logging
 import time
 from abc import ABC, abstractmethod
-from .storage import Storage
 from .lock import ArchiveLocker, LockDenied
 from .notify import NotificationDispatch
 from .intent import IntentTracker
@@ -12,23 +11,25 @@ _LOGGER = logging.getLogger(__name__)
 
 if typing.TYPE_CHECKING:
     from .connection import Connection
+    from .control import Controller
 
 
 class _BaseTransaction(ABC):
-    def __init__(self, storage: Storage, locker: ArchiveLocker, intent: IntentTracker):
+    def __init__(self, storage: "Controller.StorageAccess", locker: ArchiveLocker, intent: IntentTracker):
         self.storage = storage
         self.locker = locker
         self.intent = intent
         self.status: str = None
         self.begin_time: float = None
-        self.storage_handle: typing.Union[Storage.ReadHandle, Storage.WriteHandle] = None
+        self.storage_handle: "Controller.StorageHandle" = None
         self.intent_origin: "Connection" = None
         self.locks: typing.List[ArchiveLocker.Lock] = list()
 
     def __del__(self):
         if self.storage_handle:
-            _LOGGER.error("Leaked storage handle in transaction (%d)", self.storage_handle.generation)
-            self.storage_handle.release()
+            with self.storage_handle as handle:
+                _LOGGER.error("Leaked storage handle in transaction (%d)", handle.generation)
+                handle.release()
             self.storage_handle = None
         if self.locks:
             _LOGGER.error("Leaked %d locks in transaction", len(self.locks))
@@ -53,12 +54,14 @@ class _BaseTransaction(ABC):
 
     @property
     def generation(self) -> int:
-        return self.storage_handle.generation
+        with self.storage_handle as handle:
+            return handle.generation
 
-    def read_file(self, name: str) -> typing.BinaryIO:
-        return self.storage_handle.read_file(name)
+    async def read_file(self, name: str) -> typing.BinaryIO:
+        async with self.storage_handle as handle:
+            return handle.read_file(name)
 
-    def write_file(self, name: str) -> typing.BinaryIO:
+    async def write_file(self, name: str) -> typing.BinaryIO:
         raise NotImplementedError
 
     def remove_file(self, name: str) -> None:
@@ -104,26 +107,27 @@ class _BaseTransaction(ABC):
 
 class ReadTransaction(_BaseTransaction):
     async def begin(self) -> None:
-        self.storage_handle = self.storage.begin_read()
+        self.storage_handle = await self.storage.begin_read()
         self.status = str(self.generation)
         self.begin_time = time.time()
 
-    def _end_transaction(self) -> None:
-        self.storage_handle.release()
+    async def _end_transaction(self) -> None:
+        await self.storage_handle.release()
         self.storage_handle = None
         for lock in self.locks:
             lock.release()
         self.locks.clear()
 
     async def commit(self) -> None:
-        self._end_transaction()
+        await self._end_transaction()
 
     async def abort(self) -> None:
-        self._end_transaction()
+        await self._end_transaction()
 
 
 class WriteTransaction(_BaseTransaction):
-    def __init__(self, storage: Storage, locker: ArchiveLocker, notify: NotificationDispatch, intent: IntentTracker):
+    def __init__(self, storage: "Controller.StorageAccess", locker: ArchiveLocker, notify: NotificationDispatch,
+                 intent: IntentTracker):
         super().__init__(storage, locker, intent)
         self.notify = notify
         self.queued_notifications: typing.List[NotificationDispatch.Queued] = list()
@@ -131,7 +135,7 @@ class WriteTransaction(_BaseTransaction):
         self.intents_to_release: typing.Set[int] = set()
 
     async def begin(self) -> None:
-        self.storage_handle = self.storage.begin_write()
+        self.storage_handle = await self.storage.begin_write()
         self.status = str(self.generation)
         self.begin_time = time.time()
 
@@ -145,7 +149,7 @@ class WriteTransaction(_BaseTransaction):
             await self.abort()
             raise
 
-        self.storage_handle.commit()
+        await self.storage_handle.commit()
         self.storage_handle = None
         for lock in self.locks:
             lock.release()
@@ -154,7 +158,7 @@ class WriteTransaction(_BaseTransaction):
         self.queued_notifications.clear()
 
     async def abort(self) -> None:
-        self.storage_handle.abort()
+        await self.storage_handle.abort()
         self.storage_handle = None
         for lock in self.locks:
             lock.release()
@@ -163,11 +167,13 @@ class WriteTransaction(_BaseTransaction):
         self.intents_to_acquire.clear()
         self.intents_to_release.clear()
 
-    def write_file(self, name: str) -> typing.BinaryIO:
-        return self.storage_handle.write_file(name)
+    async def write_file(self, name: str) -> typing.BinaryIO:
+        async with self.storage_handle as handle:
+            return handle.write_file(name)
 
-    def remove_file(self, name: str) -> None:
-        return self.storage_handle.remove_file(name)
+    async def remove_file(self, name: str) -> None:
+        async with self.storage_handle as handle:
+            return handle.remove_file(name)
 
     def lock_write(self, key: str, start: int, end: int) -> typing.Optional[str]:
         conflicting = self._check_intent_conflict(key, start, end)

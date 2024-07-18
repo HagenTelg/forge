@@ -149,6 +149,7 @@ class Connection:
             await self.writer.drain()
         elif packet_type == ClientPacket.TRANSACTION_BEGIN and not self._transaction:
             write = struct.unpack('<B', await self.reader.readexactly(1))[0]
+            self.writer.write(struct.pack('<B', ServerPacket.TRANSACTION_STARTED.value))
             if write:
                 self._transaction = await self.control.write_transaction()
                 self._logger.debug("Write transaction (%d) started", self._transaction.generation)
@@ -157,17 +158,21 @@ class Connection:
                 self._logger.debug("Read transaction (%d) started", self._transaction.generation)
             self._transaction.intent_origin = self
             self._transaction.status = f"Waiting for {self.name or self.identifier}"
-            self.writer.write(struct.pack('<B', ServerPacket.TRANSACTION_STARTED.value))
+            self.writer.write(struct.pack('<B', 1))
         elif packet_type == ClientPacket.TRANSACTION_COMMIT and self._transaction:
             self._logger.debug("Committing transaction (%d)", self._transaction.generation)
+            self.writer.write(struct.pack('<B', ServerPacket.TRANSACTION_COMPLETE.value))
             await self._transaction.commit()
             self._transaction = None
-            self.writer.write(struct.pack('<B', ServerPacket.TRANSACTION_COMPLETE.value))
+            self.writer.write(struct.pack('<B', 1))
+            await self.writer.drain()
         elif packet_type == ClientPacket.TRANSACTION_ABORT and self._transaction:
             self._logger.debug("Aborting transaction (%d)", self._transaction.generation)
+            self.writer.write(struct.pack('<B', ServerPacket.TRANSACTION_ABORTED.value))
             await self._transaction.abort()
             self._transaction = None
-            self.writer.write(struct.pack('<B', ServerPacket.TRANSACTION_ABORTED.value))
+            self.writer.write(struct.pack('<B', 1))
+            await self.writer.drain()
         elif packet_type == ClientPacket.SET_TRANSACTION_STATUS:
             status = await read_string(self.reader)
             if not self._transaction:
@@ -177,16 +182,17 @@ class Connection:
                 self._transaction.status = status
         elif packet_type == ClientPacket.READ_FILE and self._transaction:
             name = await read_string(self.reader)
-            source = self._transaction.read_file(name)
+            self.writer.write(struct.pack('<B', ServerPacket.READ_FILE_DATA.value))
+            source = await self._transaction.read_file(name)
             if not source:
                 self._logger.debug("File %s not found", name)
-                self.writer.write(struct.pack('<B', ServerPacket.READ_FILE_NOT_FOUND.value))
+                self.writer.write(struct.pack('<B', 0))
                 return
             try:
                 st = os.stat(source.fileno())
                 total_size = st.st_size
                 self._logger.debug("Sending %d bytes from file %s", total_size, name)
-                self.writer.write(struct.pack('<BQ', ServerPacket.READ_FILE_DATA.value, total_size))
+                self.writer.write(struct.pack('<BQ', 1, total_size))
                 await send_file_contents(source, self.writer, total_size)
             finally:
                 source.close()
@@ -194,7 +200,8 @@ class Connection:
             name = await read_string(self.reader)
             total_size = struct.unpack('<Q', await self.reader.readexactly(8))[0]
             self._logger.debug("Receiving %d bytes to file %s", total_size, name)
-            destination = self._transaction.write_file(name)
+            self.writer.write(struct.pack('<B', ServerPacket.WRITE_FILE_DATA.value))
+            destination = await self._transaction.write_file(name)
             try:
                 while total_size > 0:
                     chunk = await self.reader.readexactly(min(total_size, 64 * 1024))
@@ -202,12 +209,13 @@ class Connection:
                     destination.write(chunk)
             finally:
                 destination.close()
-            self.writer.write(struct.pack('<B', ServerPacket.WRITE_FILE_RECEIVED.value))
+            self.writer.write(struct.pack('<B', 1))
         elif packet_type == ClientPacket.REMOVE_FILE and self._transaction:
             name = await read_string(self.reader)
             self._logger.debug("Removing file %s", name)
-            self._transaction.remove_file(name)
             self.writer.write(struct.pack('<B', ServerPacket.REMOVE_FILE_OK.value))
+            await self._transaction.remove_file(name)
+            self.writer.write(struct.pack('<B', 1))
         elif packet_type == ClientPacket.LOCK_READ and self._transaction:
             key = await read_string(self.reader)
             (start, end) = struct.unpack('<qq', await self.reader.readexactly(16))
@@ -258,8 +266,9 @@ class Connection:
         elif packet_type == ClientPacket.LIST_FILES:
             name = await read_string(self.reader)
             modified_after = struct.unpack('<d', await self.reader.readexactly(8))[0]
-            contents = self.control.storage.list_files(name, modified_after)
-            self.writer.write(struct.pack('<BI', ServerPacket.LIST_RESULT.value, len(contents)))
+            self.writer.write(struct.pack('<B', ServerPacket.LIST_RESULT.value))
+            contents = await self.control.storage.list_files(name, modified_after)
+            self.writer.write(struct.pack('<I', len(contents)))
             for c in contents:
                 write_string(self.writer, c)
         else:

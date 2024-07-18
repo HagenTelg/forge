@@ -192,7 +192,7 @@ class Execute:
         #  https://github.com/Unidata/netcdf4-python/issues/844
         #  https://github.com/Unidata/netcdf-c/projects/6
         if self._netcdf_executor is None:
-            self._netcdf_executor = ThreadPoolExecutor(max_workers=1)
+            self._netcdf_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="NetCDFWorker")
         return self._netcdf_executor
 
     def set_archive_unix(self, socket: str) -> None:
