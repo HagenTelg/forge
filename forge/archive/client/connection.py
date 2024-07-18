@@ -111,7 +111,7 @@ class Connection:
         if check != Handshake.SERVER_TO_CLIENT.value:
             raise ProtocolError(f"Invalid handshake 0x{check:08X}")
         if version != Handshake.PROTOCOL_VERSION.value:
-            raise ProtocolError(f"Invalid protocol version {check}")
+            raise ProtocolError(f"Invalid protocol version {version}")
 
         self.writer.write(struct.pack('<I', Handshake.PROTOCOL_VERSION.value))
         write_string(self.writer, self.name)
