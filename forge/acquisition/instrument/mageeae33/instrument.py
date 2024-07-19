@@ -189,12 +189,17 @@ class _InletDrier(_ExternalSensor):
         except ValueError:
             raise CommunicationsError(f"invalid external sensor fields")
 
-        self.data_Tu(parse_number(Tu))
+        def temperature_maybe_k(t: float) -> float:
+            if t > 150.0:
+                t -= 273.15
+            return t
+
+        self.data_Tu(temperature_maybe_k(parse_number(Tu)))
         self.data_Uu(parse_number(Uu))
-        self.data_TDu(parse_number(TDu))
-        self.data_T(parse_number(T))
+        self.data_TDu(temperature_maybe_k(parse_number(TDu)))
+        self.data_T(temperature_maybe_k(parse_number(T)))
         self.data_U(parse_number(U))
-        self.data_TD(parse_number(TD))
+        self.data_TD(temperature_maybe_k(parse_number(TD)))
 
         return fields
 
