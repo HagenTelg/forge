@@ -84,7 +84,7 @@ station_views['aerosol-realtime-pressure'] = Pressure('aerosol-realtime', realti
 
 
 station_views['aerosol-raw-ccnstatus'] = CCNStatus('aerosol-raw')
-station_views['aerosol-realtime-ccnstatus'] = CCNStatus('aerosol-raw', realtime=True)
+station_views['aerosol-realtime-ccnstatus'] = CCNStatus('aerosol-realtime', realtime=True)
 
 
 station_views['aerosol-raw-smps'] = SMPSDistribution('aerosol-raw')
