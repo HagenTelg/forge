@@ -76,7 +76,7 @@ measurements = OrderedDict([
 ])
 omit_traces={'TDnephinlet', 'TDnephinlet2'}
 station_views['aerosol-raw-temperature'] = Temperature('aerosol-raw', measurements, omit_traces=omit_traces)
-station_views['aerosol-realtime-temperature'] = Temperature('aerosol-raw', measurements, omit_traces=omit_traces,
+station_views['aerosol-realtime-temperature'] = Temperature('aerosol-realtime', measurements, omit_traces=omit_traces,
                                                             realtime=True)
 
 station_views['aerosol-raw-pressure'] = Pressure('aerosol-raw')
