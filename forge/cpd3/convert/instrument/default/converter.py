@@ -404,8 +404,8 @@ class DataRecord(RecordConverter):
                 raise ValueError("undefined record times")
 
             cut_size = None
-            if record_cut_size:
-                if i > len(record_cut_size):
+            if record_cut_size is not None:
+                if i >= len(record_cut_size):
                     cut_size = record_cut_size[0]
                 else:
                     cut_size = record_cut_size[i]
