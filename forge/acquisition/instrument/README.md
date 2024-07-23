@@ -248,7 +248,7 @@ cut_size = false
 
 ```toml
 [instrument.G82]
-type = "teledynen640"
+type = "teledynen500"
 tcp = "140.172.50.74:502"
 cut_size = false
 serial_number = 1533
