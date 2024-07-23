@@ -123,11 +123,13 @@ def main():
     stations: typing.Set[str] = set()
     if args.station:
         for s in args.station:
-            stations.add(s.lower())
+            for add in s.split(','):
+                stations.add(add.lower())
     ignore_stations: typing.Set[str] = set()
     if args.ignore_station:
         for s in args.ignore_stations:
-            ignore_stations.add(s.lower())
+            for add in s.split(','):
+                ignore_stations.add(add.lower())
 
     output_directory: str = '.'
     if args.directory:
