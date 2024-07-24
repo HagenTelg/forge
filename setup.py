@@ -89,6 +89,8 @@ setup(
 
         "forge-data-command = forge.cli.__main__:main",
 
+        "forge-ebas-file = forge.product.ebas.cli:main",
+
         "forge-cpd3-cache-client = forge.cpd3.cache.client:main",
         "forge-cpd3-cache-server = forge.cpd3.cache.server:main",
         "forge-cpd3-pass-server = forge.cpd3.pass.server:main",

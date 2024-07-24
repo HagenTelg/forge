@@ -12,6 +12,7 @@ from .enum import MergeEnum
 from .timeselect import selected_time_range
 from ..state import is_state_group
 from ..flags import parse_flags
+from ..dimensions import find_dimension
 
 if typing.TYPE_CHECKING:
     from pathlib import Path
@@ -48,16 +49,6 @@ def _reduce_to_slice(indices) -> typing.Union[slice, np.ndarray]:
     else:
         return slice(indices[0], indices[-1] + 1)
     return np.array(indices, dtype=np.uint32)
-
-
-def _find_dimension(data: netCDF4.Dataset, name: str) -> netCDF4.Dimension:
-    while True:
-        try:
-            return data.dimensions[name]
-        except KeyError:
-            data = data.parent
-            if data is None:
-                raise KeyError(f"Dimension {name} not found")
 
 
 def _wavelength_mapping(wavelength_source: netCDF4.Variable, destination_size: int):
@@ -466,8 +457,8 @@ class _Variable:
     def map_data(self, contents: netCDF4.Variable, time_mapping: _TimeMapping) -> None:
         data_mapping = self.data_mapping(
             contents,
-            [_find_dimension(contents.group(), name) for name in contents.dimensions[1:]],
-            [_find_dimension(self.variable.group(), name) for name in self.variable.dimensions[1:]],
+            [find_dimension(contents.group(), name) for name in contents.dimensions[1:]],
+            [find_dimension(self.variable.group(), name) for name in self.variable.dimensions[1:]],
         )
 
         # Python compat: star expressions in subscriptions are not supported on older versions, so we just
@@ -523,8 +514,8 @@ class _ConstantVariable(_Variable):
 
         data_mapping = self.data_mapping(
             contents,
-            [_find_dimension(contents.group(), name) for name in source_dimensions],
-            [_find_dimension(self.variable.group(), name) for name in self.variable.dimensions],
+            [find_dimension(contents.group(), name) for name in source_dimensions],
+            [find_dimension(self.variable.group(), name) for name in self.variable.dimensions],
         )
 
         source_data = source_values[data_mapping.source_selection]
@@ -634,8 +625,8 @@ class _HistoryConstantVariable(_Variable):
 
         data_mapping = self.data_mapping(
             contents,
-            [_find_dimension(contents.group(), name) for name in source_dimensions],
-            [_find_dimension(self.variable.group(), name) for name in self.variable.dimensions],
+            [find_dimension(contents.group(), name) for name in source_dimensions],
+            [find_dimension(self.variable.group(), name) for name in self.variable.dimensions],
         )
 
         self._handle_existing_history(start, end, contents, data_mapping)

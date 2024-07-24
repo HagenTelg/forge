@@ -14,6 +14,7 @@ from forge.timeparse import parse_interval_argument
 from forge.data.flags import parse_flags
 from forge.data.state import is_in_state_group
 from forge.data.statistics import find_statistics_origin
+from forge.data.dimensions import find_dimension_values
 from forge.data.merge.timealign import peer_output_time, incoming_before
 from . import ParseCommand, ParseArguments
 from .netcdf import MergeInstrument
@@ -205,20 +206,6 @@ class Command(ParseCommand):
                          args: argparse.Namespace, extra_args: typing.List[str]) -> None:
         execute.install(MergeInstrument(execute))
         execute.install(_ExportStage(execute, parser, args))
-
-
-def _find_dimension(data: Dataset, name: str) -> typing.Tuple[Dimension, Variable]:
-    while True:
-        try:
-            dim = data.dimensions[name]
-            var = data.variables[name]
-            if len(var.dimensions) != 1 or var.dimensions[0] != name:
-                raise KeyError
-            return dim, var
-        except KeyError:
-            data = data.parent
-            if data is None:
-                raise KeyError(f"Dimension {name} not found")
 
 
 def _assign_wavelength_suffixes(wavelengths: np.ndarray) -> typing.List[str]:
@@ -455,7 +442,7 @@ class _ColumnTimeCutString(_Column):
     def time_sources(self) -> typing.List[typing.Tuple[Variable, bool]]:
         result: typing.List[typing.Tuple[Variable, bool]] = list()
         for var in self._cut_time_variables:
-            _, time_var = _find_dimension(var.group(), 'time')
+            _, time_var = find_dimension_values(var.group(), 'time')
             is_state = is_in_state_group(var)
             result.append((time_var, is_state))
         return result
@@ -585,7 +572,7 @@ class _ColumnVariable(_Column):
 
     @property
     def time_sources(self) -> typing.List[typing.Tuple[Variable, bool]]:
-        _, time_var = _find_dimension(self.source.variable.group(), 'time')
+        _, time_var = find_dimension_values(self.source.variable.group(), 'time')
         is_state = is_in_state_group(self.source.variable)
         return [(time_var, is_state)]
 
@@ -829,7 +816,7 @@ class _ColumnVariableStatisticsQuantile(_ColumnVariableFloat):
         def __init__(self, file: Dataset, variable: Variable):
             super().__init__(file, variable)
             self.quantile_index = variable.dimensions.index('quantile')
-            _, quantile_variable = _find_dimension(variable.group(), 'quantile')
+            _, quantile_variable = find_dimension_values(variable.group(), 'quantile')
             self.quantile_values = quantile_variable[:].data
 
         def __call__(self, time_idx: int, quantile_idx: int) -> float:
@@ -1385,7 +1372,7 @@ class _ExportStage(ExecuteStage):
             def fanout_cut_size(source: "_ColumnVariable.Source", start_dimension_idx: int) -> typing.List[_ColumnVariable]:
                 try:
                     cut_size_dimension_idx = variable.dimensions.index('cut_size')
-                    cut_size_dimension, cut_size_variable = _find_dimension(variable.group(), 'cut_size')
+                    cut_size_dimension, cut_size_variable = find_dimension_values(variable.group(), 'cut_size')
                 except (ValueError, KeyError):
                     return fanout_dimension(source, 0, start_dimension_idx)
                 cut_size_data = cut_size_variable[:].data
@@ -1416,7 +1403,7 @@ class _ExportStage(ExecuteStage):
             def fanout_wavelength(source: "_ColumnVariable.Source", start_dimension_idx: int) -> typing.List[_ColumnVariable]:
                 try:
                     wavelength_dimension_idx = variable.dimensions.index('wavelength')
-                    wavelength_dimension, wavelength_variable = _find_dimension(variable.group(), 'wavelength')
+                    wavelength_dimension, wavelength_variable = find_dimension_values(variable.group(), 'wavelength')
                 except (ValueError, KeyError):
                     return fanout_cut_size(source, start_dimension_idx)
                 wavelength_data = wavelength_variable[:].data

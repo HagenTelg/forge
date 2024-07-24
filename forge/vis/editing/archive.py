@@ -24,6 +24,7 @@ from forge.archive.client.archiveindex import ArchiveIndex
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
 from forge.data.enum import remap_enum
 from forge.data.state import is_state_group
+from forge.data.dimensions import find_dimension_values
 from forge.data.structure import edit_directives
 from forge.data.structure.editdirectives import edit_file_structure
 from forge.processing.clean.passing import apply_pass as archive_apply_pass
@@ -941,21 +942,10 @@ class _AvailableReadStream(ArchiveReadStream):
             self.wavelengths: typing.Set[float] = set()
             self.long_name: typing.Optional[str] = None
 
-        @staticmethod
-        def _find_dimension_values(data: Dataset, name: str) -> Variable:
-            while True:
-                if name in data.dimensions:
-                    var = data.variables.get(name)
-                    if var is not None:
-                        return var
-                data = data.parent
-                if data is None:
-                    raise KeyError(f"Dimension {name} not found")
-
         def _integrate_wavelengths(self, var: Variable) -> None:
             if 'wavelength' not in var.dimensions:
                 return
-            wavelengths = self._find_dimension_values(var.group(), 'wavelength')
+            _, wavelengths = find_dimension_values(var.group(), 'wavelength')
             for wl in wavelengths[:].data:
                 wl = float(wl)
                 if not isfinite(wl):

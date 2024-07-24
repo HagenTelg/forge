@@ -11,3 +11,4 @@ def set_debug_logger(format: str = None):
     root_logger.addHandler(handler)
 
     logging.getLogger('numba').setLevel(logging.WARNING)
+    logging.getLogger('NasaAmes1001').setLevel(logging.WARNING)

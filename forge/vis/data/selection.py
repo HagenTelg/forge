@@ -14,6 +14,7 @@ from forge.archive.client.archiveindex import ArchiveIndex
 from forge.archive.client.connection import Connection
 from forge.data.state import is_state_group
 from forge.data.flags import parse_flags
+from forge.data.dimensions import find_dimension_values
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -77,22 +78,11 @@ class VariableRootContext:
         self._time_coverage_resolution: typing.Union[bool, typing.Optional[float]] = False
         self._time_bounds_ms: typing.Optional[typing.Tuple[int, int]] = None
 
-    @staticmethod
-    def find_dimension_values(data: Dataset, name: str) -> Variable:
-        while True:
-            if name in data.dimensions:
-                var = data.variables.get(name)
-                if var is not None:
-                    return var
-            data = data.parent
-            if data is None:
-                raise KeyError(f"Dimension {name} not found")
-
     def group_wavelength(self, group: Dataset) -> np.ndarray:
         hit = self._group_wavelength.get(group)
         if hit is not None:
             return hit
-        wl_values = self.find_dimension_values(group, 'wavelength')
+        _, wl_values = find_dimension_values(group, 'wavelength')
         hit = wl_values[:].data
         self._group_wavelength[group] = hit
         return hit
@@ -101,7 +91,7 @@ class VariableRootContext:
         hit = self._group_cut_size_dimension.get(group)
         if hit:
             return hit
-        cut_values = self.find_dimension_values(group, 'cut_size')
+        _, cut_values = find_dimension_values(group, 'cut_size')
         hit = cut_values[:].data
         self._group_cut_size_dimension[group] = hit
         return hit
@@ -120,7 +110,7 @@ class VariableRootContext:
         hit = self._group_quantile.get(group)
         if hit is not None:
             return hit
-        wl_values = self.find_dimension_values(group, 'quantile')
+        _, wl_values = find_dimension_values(group, 'quantile')
         hit = list(wl_values[:].data)
         self._group_quantile[group] = hit
         return hit
@@ -130,7 +120,7 @@ class VariableRootContext:
         if hit is not False:
             return hit
         try:
-            time_values = self.find_dimension_values(group, 'time')
+            _, time_values = find_dimension_values(group, 'time')
             time_values = time_values[:].data
         except KeyError:
             time_values = None
@@ -305,7 +295,7 @@ class VariableContext:
         return self._root.time_bounds_ms
     
     def find_dimension_values(self, name: str) -> typing.Optional[Variable]:
-        return self._root.find_dimension_values(self.variable.group(), name)
+        return find_dimension_values(self.variable.group(), name)[1]
 
 
 class InstrumentSelection:

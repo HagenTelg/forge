@@ -12,6 +12,7 @@ from forge.timeparse import parse_iso8601_time, parse_iso8601_duration
 from forge.data.state import is_in_state_group
 from forge.data.flags import parse_flags
 from forge.data.attrs import cell_methods as parse_cell_methods
+from forge.data.dimensions import find_dimension_values
 from forge.data.merge.timeselect import selected_time_range
 from forge.cpd3.archive.selection import FileMatch
 from forge.cpd3.identity import Identity, Name
@@ -22,17 +23,6 @@ from ..lookup import instrument_data
 
 _LOGGER = logging.getLogger(__name__)
 _CODE_SUFFIX = re.compile(r"\D+(\d*)")
-
-
-def _find_dimension_values(data: Dataset, name: str) -> Variable:
-    while True:
-        if name in data.dimensions:
-            var = data.variables.get(name)
-            if var is not None:
-                return var
-        data = data.parent
-        if data is None:
-            raise KeyError(f"Dimension {name} not found")
 
 
 def _find_variable_values(data: Dataset, name: str) -> Variable:
@@ -335,7 +325,7 @@ class Converter:
             var.ignore_meta = True
         if statistics == FileMatch.Statistics.Quantiles and 'quantile' in variable.dimensions:
             var.output_hash = "Quantiles"
-            var.keyframe_map = _find_dimension_values(variable.group(), 'quantile')[:].data.tolist()
+            var.keyframe_map = find_dimension_values(variable.group(), 'quantile')[1][:].data.tolist()
         # elif statistics == FileMatch.Statistics.StdDev:
         #     var.output_hash = "StandardDeviation"
         return var
@@ -367,7 +357,7 @@ class Converter:
         if not cpd3_data:
             return
 
-        time_dim = _find_dimension_values(input_variable.group(), 'time')
+        _, time_dim = find_dimension_values(input_variable.group(), 'time')
         time_data = time_dim[:].data
         if not time_data.shape or time_data.shape[0] < 1:
             return
@@ -427,7 +417,7 @@ class Converter:
         except (ValueError, KeyError):
             cut_dim_idx: typing.Optional[int] = None
         if cut_dim_idx is not None:
-            cut_values: typing.Optional[np.ndarray] = _find_dimension_values(group, 'cut_size')[:].data
+            cut_values: typing.Optional[np.ndarray] = find_dimension_values(group, 'cut_size')[1][:].data
         elif 'cut_size' in ancillary_variables:
             cut_values: typing.Optional[np.ndarray] = _find_variable_values(group, 'cut_size')[:].data
         else:
@@ -527,7 +517,7 @@ class Converter:
                     start_time, end_time
                 )
         else:
-            wl_dim = _find_dimension_values(group, 'wavelength')
+            wl_dim = find_dimension_values(group, 'wavelength')[1]
             wl_values: typing.List[float] = wl_dim[:].data.tolist()
             wl_output: typing.Dict[
                 int, typing.Tuple[str, bool, bool, typing.Optional[float], typing.Optional[float], float]] = dict()
