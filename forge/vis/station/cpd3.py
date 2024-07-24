@@ -2341,7 +2341,7 @@ class RealtimeTranslator(NativeRealtimeTranslator):
         }, persistent={
             "Fn": "Fn",
         }),
-        "teledynet500": native_remapped_instrument({
+        "teledynen500": native_remapped_instrument({
             "XNO2": "X1",
             "XNO": "X2",
             "XNOx": "X3",

@@ -22,11 +22,11 @@ class Thermo49Status(TimeSeries):
         sample.data_field = 'Tsample'
         temperatures.traces.append(sample)
 
-        case_temperature = TimeSeries.Trace(degrees)
-        case_temperature.legend = "Lamp Temperature"
-        case_temperature.data_record = f'{mode}-status'
-        case_temperature.data_field = 'Tlamp'
-        temperatures.traces.append(case_temperature)
+        lamp_temperature = TimeSeries.Trace(degrees)
+        lamp_temperature.legend = "Lamp Temperature"
+        lamp_temperature.data_record = f'{mode}-status'
+        lamp_temperature.data_field = 'Tlamp'
+        temperatures.traces.append(lamp_temperature)
 
 
         pressure = TimeSeries.Graph()

@@ -27,13 +27,13 @@ class EditingNOxConcentration(TimeSeries):
         no2.legend = "NO₂"
         no2.data_record = f'{profile}-raw-nox'
         no2.data_field = 'no2'
-        raw.traces.append(no)
+        raw.traces.append(no2)
 
         nox = TimeSeries.Trace(ppb)
         nox.legend = "NOₓ"
         nox.data_record = f'{profile}-raw-nox'
         nox.data_field = 'nox'
-        raw.traces.append(no)
+        raw.traces.append(nox)
 
 
         edited = TimeSeries.Graph()
@@ -56,10 +56,10 @@ class EditingNOxConcentration(TimeSeries):
         no2.legend = "NO₂"
         no2.data_record = f'{profile}-editing-nox'
         no2.data_field = 'no2'
-        edited.traces.append(no)
+        edited.traces.append(no2)
 
         nox = TimeSeries.Trace(ppb)
         nox.legend = "NOₓ"
         nox.data_record = f'{profile}-editing-nox'
         nox.data_field = 'nox'
-        edited.traces.append(no)
+        edited.traces.append(nox)

@@ -32,6 +32,11 @@ station_profile_data['ozone']['raw']['nox'] = lambda station, start_epoch_ms, en
         Name(station, 'raw', 'X3_G82'): 'nox',
     }, send
 )
+station_profile_data['ozone']['realtime']['nox'] = {
+    RealtimeTranslator.Key('X1_G82'): 'no2',
+    RealtimeTranslator.Key('X2_G82'): 'no',
+    RealtimeTranslator.Key('X3_G82'): 'nox',
+}
 station_profile_data['ozone']['editing']['nox'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
     start_epoch_ms, end_epoch_ms, station, 'aerosol', {
         Name(station, 'clean', 'X1_G82'): 'no2',

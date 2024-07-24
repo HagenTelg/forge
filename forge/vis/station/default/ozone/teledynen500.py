@@ -26,13 +26,13 @@ class NOxConcentration(TimeSeries):
         no2.legend = "NO₂"
         no2.data_record = f'{mode}-nox'
         no2.data_field = 'no2'
-        concentration.traces.append(no)
+        concentration.traces.append(no2)
 
         nox = TimeSeries.Trace(ppb)
         nox.legend = "NOₓ"
         nox.data_record = f'{mode}-nox'
         nox.data_field = 'nox'
-        concentration.traces.append(no)
+        concentration.traces.append(nox)
 
 
 class TeledyneN500Status(TimeSeries):
