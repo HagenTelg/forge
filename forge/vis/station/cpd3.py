@@ -2341,6 +2341,15 @@ class RealtimeTranslator(NativeRealtimeTranslator):
         }, persistent={
             "Fn": "Fn",
         }),
+        "teledynet500": native_remapped_instrument({
+            "XNO2": "X1",
+            "XNO": "X2",
+            "XNOx": "X3",
+            "Psample": "P",
+            "Tmanifold": "T1",
+            "Toven": "T2",
+            "Tbox": "T3",
+        }),
         "teledynet640": _T640Instrument,
         "thermo49": native_remapped_instrument({
             "Psample": "P",
