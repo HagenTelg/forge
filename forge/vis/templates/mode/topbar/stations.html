@@ -3,7 +3,7 @@
 <button class="topbar-button dropdown-button" title="Select the station to display"><span>{{ station|upper }}</span><i class="mdi mdi-menu-down"></i></button>
 <ul class="dropdown-content station-list">
   {% for add in display_stations %}
-  <li><a class="station{% if station == add %} active{% endif %}" href="{% if request.user.allow_mode(add, mode.mode_name) %}{{ request.url_for('mode', station=add, mode_name=mode.mode_name) }}{% else %}{{ request.url_for('default_mode', station=add) }}{% endif %}">{{ add|upper }}</a></li>
+  <li><a class="station{% if station == add %} active{% endif %}" href="{% if request.user.allow_mode(add, mode.mode_name) and mode_exists(request, add, mode.mode_name) %}{{ request.url_for('mode', station=add, mode_name=mode.mode_name) }}{% else %}{{ request.url_for('default_mode', station=add) }}{% endif %}">{{ add|upper }}</a></li>
   {% endfor %}
 </ul>
 {% else %}

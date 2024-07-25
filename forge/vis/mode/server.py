@@ -8,7 +8,7 @@ from starlette.exceptions import HTTPException
 from forge.const import STATIONS
 from forge.vis.util import package_template
 from forge.vis.access.database import AccessLayer as DatabaseLayer
-from .assemble import lookup_mode, visible_modes, default_mode
+from .assemble import lookup_mode, visible_modes, mode_exists, default_mode
 from .permissions import is_available
 
 
@@ -38,7 +38,8 @@ async def _mode_request(request: Request) -> Response:
         request,
         station=station,
         available_modes=available_modes,
-        enable_user_actions=request.user.layer_type(DatabaseLayer) is not None
+        mode_exists=mode_exists,
+        enable_user_actions=request.user.layer_type(DatabaseLayer) is not None,
     )
 
 
@@ -60,7 +61,7 @@ async def _default_mode(request: Request) -> Response:
                 return RedirectResponse(request.url_for('login'))
             except NoMatchFound:
                 raise HTTPException(starlette.status.HTTP_403_FORBIDDEN, detail="Invalid authentication")
-        return RedirectResponse(request.url_for('request_access') + f"?station={station}")
+        return RedirectResponse(str(request.url_for('request_access')) + f"?station={station}")
     available_modes = visible_modes(request, station, mode_name=mode_name)
     return HTMLResponse(await package_template('mode', 'index.html').render_async(
         request=request,

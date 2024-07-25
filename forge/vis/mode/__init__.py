@@ -90,7 +90,7 @@ class VisibleModes:
         result: typing.Set[str] = set()
         for group in self.groups:
             for mode in group.modes:
-                if mode in result:
+                if mode.mode_name in result:
                     continue
                 if not request.user.allow_mode(station, mode.mode_name):
                     continue

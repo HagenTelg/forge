@@ -48,5 +48,9 @@ def visible_modes(request: Request, station: str, mode_name: typing.Optional[str
     return station_data(station, 'mode', 'visible')(station, mode_name)
 
 
+def mode_exists(request: Request, station: str, mode_name: str) -> bool:
+    return lookup_mode(request, station, mode_name) is not None
+
+
 def default_mode(request: Request, station: str, mode_name: typing.Optional[str] = None) -> typing.Optional[Mode]:
     return visible_modes(request, station, mode_name).default_mode(request, station)
