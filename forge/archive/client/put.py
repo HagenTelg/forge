@@ -529,13 +529,13 @@ def cli():
         if args.tcp_server and args.tcp_port:
             _LOGGER.debug(f"Connecting to archive TCP socket {args.tcp_server}:{args.tcp_port}")
             reader, writer = await asyncio.open_connection(args.tcp_server, int(args.tcp_port))
-            connection = Connection(reader, writer, "write archive data")
+            connection = Connection(reader, writer, "data write")
         elif args.unix_socket:
             _LOGGER.debug(f"Connecting to archive Unix socket {args.unix_socket}")
             reader, writer = await asyncio.open_unix_connection(args.unix_socket)
-            connection = Connection(reader, writer, "write archive data")
+            connection = Connection(reader, writer, "data write")
         else:
-            connection = await Connection.default_connection("write archive data")
+            connection = await Connection.default_connection("data write")
 
         await connection.startup()
 
