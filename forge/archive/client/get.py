@@ -23,7 +23,7 @@ async def read_file_or_nothing(connection: Connection, archive_path: str, destin
 
 
 async def get_all_daily_files(connection: Connection, station: str, archive: str, start: int, end: int,
-                              destination: Path) -> None:
+                              destination: Path, status_format: typing.Optional[str] = None) -> None:
     assert start % (24 * 60 * 60) == 0
     assert end % (24 * 60 * 60) == 0
     await connection.lock_read(index_lock_key(station, archive), start * 1000, end * 1000)
@@ -46,6 +46,13 @@ async def get_all_daily_files(connection: Connection, station: str, archive: str
 
         for code in instrument_ids:
             await read_file_or_nothing(connection, data_file_name(station, archive, code, fetch_start), destination)
+
+        if status_format:
+            await connection.set_transaction_status(status_format.format(
+                current_time=fetch_start,
+                start=start,
+                end=end,
+            ))
 
 
 async def get_all_yearly_files(connection: Connection, station: str, archive: str, start: int, end: int,

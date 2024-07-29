@@ -111,7 +111,8 @@ async def update_avgh_data(connection: Connection, station: str, start: float, e
         input_directory.mkdir(exist_ok=True)
         _LOGGER.debug(f"Fetching clean data for {station.upper()} {start},{end} into {input_directory}")
         await connection.set_transaction_status("Loading clean data for averaging")
-        await get_all_daily_files(connection, station, "clean", start, end, input_directory)
+        await get_all_daily_files(connection, station, "clean", start, end, input_directory,
+                                  status_format="Loading clean data for averaging, {((current_time-start)) / (end-start) * 100.0:.0f}% done")
 
         output_directory = working_directory / "output"
         output_directory.mkdir(exist_ok=True)
@@ -162,7 +163,8 @@ async def update_avgd_data(connection: Connection, station: str, start: float, e
         input_directory.mkdir(exist_ok=True)
         _LOGGER.debug(f"Fetching avgh data for {station.upper()} {start},{end} into {input_directory}")
         await connection.set_transaction_status("Loading hourly data for averaging")
-        await get_all_daily_files(connection, station, "avgh", start, end, input_directory)
+        await get_all_daily_files(connection, station, "avgh", start, end, input_directory,
+                                  status_format="Loading hourly data for averaging, {((current_time-start) / (end-start)) * 100.0:.0f}% done")
 
         output_directory = working_directory / "output"
         output_directory.mkdir(exist_ok=True)
