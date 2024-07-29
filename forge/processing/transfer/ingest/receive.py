@@ -111,7 +111,7 @@ def main():
                 stations.add(add.lower())
     ignore_stations: typing.Set[str] = set()
     if args.ignore_station:
-        for s in args.ignore_stations:
+        for s in args.ignore_station:
             for add in s.split(','):
                 ignore_stations.add(add.lower())
 
