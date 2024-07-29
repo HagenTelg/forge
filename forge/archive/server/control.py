@@ -79,9 +79,9 @@ class Controller:
             async with self as handle:
                 await asyncio.get_event_loop().run_in_executor(self._control._storage_worker_pool, handle.release)
 
-        async def commit(self) -> None:
+        async def commit(self, progress: typing.Optional[typing.Callable[[int, int], None]] = None) -> None:
             async with self as handle:
-                await asyncio.get_event_loop().run_in_executor(self._control._storage_worker_pool, handle.commit)
+                await asyncio.get_event_loop().run_in_executor(self._control._storage_worker_pool, handle.commit, progress)
 
         async def abort(self) -> None:
             async with self as handle:

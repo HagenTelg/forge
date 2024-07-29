@@ -356,9 +356,9 @@ class Storage:
                 exit(1)
             self._actions: typing.Dict[str, typing.Union[_ActionWriteFile, _ActionRemoveFile]] = dict()
 
-        def commit(self) -> None:
+        def commit(self, progress: typing.Optional[typing.Callable[[int, int], None]] = None) -> None:
             super().release()
-            self.storage._commit(self.generation + 1, self._transaction_root, self._actions)
+            self.storage._commit(self.generation + 1, self._transaction_root, self._actions, progress)
 
         def abort(self) -> None:
             super().release()
@@ -485,8 +485,9 @@ class Storage:
             exit(1)
 
     def _commit(self, generation: int, transaction_root: Path,
-                actions: typing.Dict[str, typing.Union[_ActionWriteFile, _ActionRemoveFile]]) -> None:
-        _LOGGER.debug("Committing changes at generation %d", generation)
+                actions: typing.Dict[str, typing.Union[_ActionWriteFile, _ActionRemoveFile]],
+                progress: typing.Optional[typing.Callable[[int, int], None]] = None) -> None:
+        _LOGGER.debug("Committing changes %d at generation %d", len(actions), generation)
 
         # First, make the journal
         journal_file = transaction_root / ".journal"
@@ -508,6 +509,7 @@ class Storage:
             redirection = None
 
         # Now apply changes
+        completed_actions = 0
         for name, act in actions.items():
             if redirection:
                 redirection.contents[name] = act.apply(self._root, name, redirection.root)
@@ -516,6 +518,10 @@ class Storage:
 
             # Release pending flag
             self._pending_changes.discard(name)
+
+            completed_actions += 1
+            if progress is not None:
+                progress(completed_actions, len(actions))
 
         # Changes applied, remove the journal
         journal_file.unlink()

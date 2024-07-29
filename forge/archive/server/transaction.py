@@ -151,7 +151,32 @@ class WriteTransaction(_BaseTransaction):
             await self.abort()
             raise
 
-        await self.storage_handle.commit()
+        progress_fraction: float = 0.0
+        progress_updated = asyncio.Event()
+        commit_loop = asyncio.get_event_loop()
+
+        def storage_progress(completed: int, total: int) -> None:
+            nonlocal progress_fraction
+            # Informational only, so just rely on the GIL for locking
+            progress_fraction = float(completed) / float(total)
+            commit_loop.call_soon_threadsafe(progress_updated.set)
+
+        async def set_status():
+            while True:
+                await progress_updated.wait()
+                self.status = f"Data updating, {progress_fraction * 100.0:.0f}% done"
+
+        status_task = commit_loop.create_task(set_status())
+        await self.storage_handle.commit(storage_progress)
+        try:
+            status_task.cancel()
+        except:
+            pass
+        try:
+            await status_task
+        except:
+            pass
+
         self.storage_handle = None
         for lock in self.locks:
             lock.release()
