@@ -118,7 +118,7 @@ class Controller:
         if peername:
             try:
                 if isinstance(peername, tuple):
-                    identifier = "[" + str(peername[0]) + "]:" + peername[1]
+                    identifier = "[" + str(peername[0]) + "]:" + str(peername[1])
                 else:
                     identifier = str(peername)
             except:
