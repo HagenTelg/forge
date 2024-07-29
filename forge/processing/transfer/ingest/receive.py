@@ -132,6 +132,9 @@ def main():
                 if self.file_type != FileType.DATA:
                     _LOGGER.debug(f"Rejected file type {self.station}/{self.filename}")
                     return None
+                if stations and self.station not in stations:
+                    _LOGGER.debug(f"Rejected station {self.station}/{self.filename}")
+                    return None
                 if ignore_stations and self.station in ignore_stations:
                     _LOGGER.debug(f"Rejected station {self.station}/{self.filename}")
                     return None
