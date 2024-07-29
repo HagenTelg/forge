@@ -77,7 +77,6 @@ class Instrument:
                 if check == self.current_port:
                     return
                 self.suggested_port = check
-                print(check)
                 return
 
     def set_port(self, device: Path, target: typing.Optional[Path] = None) -> None:
