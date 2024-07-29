@@ -268,6 +268,7 @@ class Connection:
             modified_after = struct.unpack('<d', await self.reader.readexactly(8))[0]
             self.writer.write(struct.pack('<B', ServerPacket.LIST_RESULT.value))
             contents = await self.control.storage.list_files(name, modified_after)
+            _LOGGER.debug("Sending %d file entries from %s", len(contents), name)
             self.writer.write(struct.pack('<I', len(contents)))
             for c in contents:
                 write_string(self.writer, c)

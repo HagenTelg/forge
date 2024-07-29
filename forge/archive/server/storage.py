@@ -524,6 +524,7 @@ class Storage:
         shutil.rmtree(transaction_root)
 
     def list_files(self, path: str, modified_after: float = 0) -> typing.List[str]:
+        _LOGGER.debug("Listing files at %s modified after time %.0f", path, modified_after)
         path = self._root / self.normalize_filename(path, allow_toplevel=True)
 
         result: typing.List[str] = list()
