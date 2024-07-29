@@ -487,7 +487,7 @@ class Storage:
     def _commit(self, generation: int, transaction_root: Path,
                 actions: typing.Dict[str, typing.Union[_ActionWriteFile, _ActionRemoveFile]],
                 progress: typing.Optional[typing.Callable[[int, int], None]] = None) -> None:
-        _LOGGER.debug("Committing changes %d at generation %d", len(actions), generation)
+        _LOGGER.debug("Committing %d changes at generation %d", len(actions), generation)
 
         # First, make the journal
         journal_file = transaction_root / ".journal"
@@ -528,6 +528,8 @@ class Storage:
 
         # Remove storage directory
         shutil.rmtree(transaction_root)
+
+        _LOGGER.debug("Transaction commit completed at generation %d", generation)
 
     def list_files(self, path: str, modified_after: float = 0) -> typing.List[str]:
         _LOGGER.debug("Listing files at %s modified after time %.0f", path, modified_after)
