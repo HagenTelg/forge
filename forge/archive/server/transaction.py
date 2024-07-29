@@ -27,9 +27,12 @@ class _BaseTransaction(ABC):
 
     def __del__(self):
         if self.storage_handle:
-            with self.storage_handle as handle:
-                _LOGGER.error("Leaked storage handle in transaction (%d)", handle.generation)
-                handle.release()
+            try:
+                with self.storage_handle as handle:
+                    _LOGGER.error("Leaked storage handle in transaction (%d)", handle.generation)
+                    handle.release()
+            except BlockingIOError:
+                _LOGGER.error("Unable to release leaked handle due to lock contention")
             self.storage_handle = None
         if self.locks:
             _LOGGER.error("Leaked %d locks in transaction", len(self.locks))
@@ -54,8 +57,7 @@ class _BaseTransaction(ABC):
 
     @property
     def generation(self) -> int:
-        with self.storage_handle as handle:
-            return handle.generation
+        return self.storage_handle.generation
 
     async def read_file(self, name: str) -> typing.BinaryIO:
         async with self.storage_handle as handle:

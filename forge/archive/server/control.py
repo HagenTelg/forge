@@ -1,7 +1,6 @@
 import typing
 import asyncio
 import logging
-import threading
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from forge.service import get_writer_fileno
@@ -23,19 +22,18 @@ class Controller:
 
         async def __aenter__(self) -> Storage:
             await self._control._storage_lock.acquire()
-            self._control._storage_inner_lock.acquire()
             return self._control._storage
 
         async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-            self._control._storage_inner_lock.release()
             self._control._storage_lock.release()
 
         def __enter__(self) -> Storage:
-            self._control._storage_inner_lock.acquire()
+            if self._control._storage_lock.locked():
+                raise BlockingIOError
             return self._control._storage
 
         def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-            self._control._storage_inner_lock.release()
+            pass
 
         async def begin_read(self) -> "Controller.StorageHandle":
             async with self as storage:
@@ -60,19 +58,22 @@ class Controller:
 
         async def __aenter__(self) -> typing.Union[Storage.ReadHandle, Storage.WriteHandle]:
             await self._control._storage_lock.acquire()
-            self._control._storage_inner_lock.acquire()
             return self._handle
 
         async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-            self._control._storage_inner_lock.release()
             self._control._storage_lock.release()
 
         def __enter__(self) -> typing.Union[Storage.ReadHandle, Storage.WriteHandle]:
-            self._control._storage_inner_lock.acquire()
+            if self._control._storage_lock.locked():
+                raise BlockingIOError
             return self._handle
 
         def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-            self._control._storage_inner_lock.release()
+            pass
+
+        @property
+        def generation(self) -> int:
+            return self._handle.generation
 
         async def release(self) -> None:
             async with self as handle:
@@ -94,7 +95,6 @@ class Controller:
         self._next_connection_uid: int = 1
         self.active_connections: typing.Dict[int, Connection] = dict()
         self._storage_lock: asyncio.Lock = None
-        self._storage_inner_lock = threading.Lock()
         self._storage_worker_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="StorageWorker")
 
     async def initialize(self) -> None:
