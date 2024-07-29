@@ -100,6 +100,7 @@ class DataController(StationsController):
 
         async def perform_update(self, start: int, end: int) -> None:
             await update_edited_data(self.connection, self.station, start / 1000.0, end / 1000.0)
+            await self.connection.set_transaction_status("Writing edited data")
 
     def __init__(self, connection: Connection, state_path: Path):
         super().__init__(connection)
