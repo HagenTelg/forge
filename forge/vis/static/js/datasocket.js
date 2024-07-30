@@ -227,20 +227,13 @@ let DataSocket = {};
                 activeRecordStalled = reply.reason;
                 if (!activeRecordStalled) {
                     activeRecordStalled = "Waiting for data";
+                } else {
+                    activeRecordStalled = "Archive busy: " + activeRecordStalled;
                 }
             }
             DataSocket.onActiveRecordUpdate(activeRecordStreams, activeRecordStalled);
         }
     });
-
-    DataSocket.unstall = function() {
-        if (serverSocket.readyState !== 1) {
-            return;
-        }
-        serverSocket.send(JSON.stringify({
-            action: 'unstall',
-        }));
-    }
 
     DataSocket.RecordDispatch = class extends DataSocket.RecordStream {
         constructor(dataName) {

@@ -29,13 +29,3 @@
   padding: 4px 0;
   display: none;
 }
-#data-loading-unstall {
-  border: none;
-  outline: none;
-  color: #08f;
-  padding: 2px;
-  background-color: inherit;
-  cursor: pointer;
-  font-size: 16px;
-  box-sizing: border-box;
-}

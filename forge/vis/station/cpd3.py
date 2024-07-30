@@ -1270,6 +1270,48 @@ class _FilteredReader(_ProcessReader):
         self._cancel_timeout()
 
 
+async def stall_passed(blocking_stations: typing.Set[str],
+                       stall: typing.Callable[[typing.Optional[str]], typing.Awaitable[None]]) -> None:
+    if len(blocking_stations) == 0:
+        return
+
+    readers: typing.List[asyncio.StreamReader] = list()
+    writers: typing.List[asyncio.StreamWriter] = list()
+
+    for station in blocking_stations:
+        try:
+            reader, writer = await asyncio.open_unix_connection(
+                CONFIGURATION.get('CPD3.PASS.SOCKET', '/run/forge-cpd3-pass.socket'))
+            enc = station.encode('utf-8')
+            writer.write(struct.pack('<BI', 1, len(enc)))
+            writer.write(enc)
+            await writer.drain()
+            response = await reader.read(1)
+            if not response:
+                writer.close()
+                continue
+        except (OSError, EOFError):
+            continue
+        readers.append(reader)
+        writers.append(writer)
+
+    if len(readers) == 0:
+        return None
+
+    await stall("passed data update")
+
+    for r in readers:
+        try:
+            await r.read(1)
+        except (OSError, EOFError):
+            pass
+    for w in writers:
+        try:
+            w.close()
+        except OSError:
+            pass
+
+
 class DataReader(RecordStream):
     PASS_STALL_ARCHIVES = frozenset({"clean", "avgh"})
 
@@ -1361,25 +1403,6 @@ class DataReader(RecordStream):
 
         return _ProcessReader(process)
 
-    class CleanReadyStall(RecordStream.Stall):
-        def __init__(self, readers: typing.List[asyncio.StreamReader], writers: typing.List[asyncio.StreamWriter]):
-            super().__init__("Passed data update in progress")
-            self.readers = readers
-            self.writers = writers
-
-        async def block(self) -> bool:
-            for r in self.readers:
-                try:
-                    await r.read(1)
-                except (OSError, EOFError):
-                    pass
-            for w in self.writers:
-                try:
-                    w.close()
-                except OSError:
-                    pass
-            return False
-
     def stall_stations(self) -> typing.Set[str]:
         blocking_stations: typing.Set[str] = set()
         for check in self.data.keys():
@@ -1387,35 +1410,8 @@ class DataReader(RecordStream):
                 blocking_stations.add(check.station)
         return blocking_stations
 
-    async def stall(self) -> typing.Optional["DataReader.CleanReadyStall"]:
-        blocking_stations = self.stall_stations()
-
-        if len(blocking_stations) == 0:
-            return None
-
-        readers: typing.List[asyncio.StreamReader] = list()
-        writers: typing.List[asyncio.StreamWriter] = list()
-
-        for station in blocking_stations:
-            try:
-                reader, writer = await asyncio.open_unix_connection(
-                    CONFIGURATION.get('CPD3.PASS.SOCKET', '/run/forge-cpd3-pass.socket'))
-                enc = station.encode('utf-8')
-                writer.write(struct.pack('<BI', 1, len(enc)))
-                writer.write(enc)
-                await writer.drain()
-                response = await reader.read(1)
-                if not response:
-                    writer.close()
-                    continue
-            except (OSError, EOFError):
-                continue
-            readers.append(reader)
-            writers.append(writer)
-
-        if len(readers) == 0:
-            return None
-        return self.CleanReadyStall(readers, writers)
+    async def begin(self, stall: typing.Callable[[typing.Optional[str]], typing.Awaitable[None]]) -> None:
+        await stall_passed(self.stall_stations(), stall)
 
     async def run(self) -> None:
         reader = await self.create_reader()
@@ -1479,8 +1475,8 @@ class EditedReader(DataReader):
 
         return _FilteredReader(reader, filter)
 
-    async def stall(self) -> typing.Optional["DataStream.Stall"]:
-        return None
+    async def begin(self, stall: typing.Callable[[typing.Optional[str]], typing.Awaitable[None]]) -> None:
+        return
 
 
 class RealtimeReader(DataReader):
@@ -1772,8 +1768,6 @@ class ContaminationReader(DataStream):
         return _ProcessReader(process)
 
     PASS_STALL_ARCHIVES = DataReader.PASS_STALL_ARCHIVES
-    CleanReadyStall = DataReader.CleanReadyStall
-    stall = DataReader.stall
 
     def stall_stations(self) -> typing.Set[str]:
         blocking_stations: typing.Set[str] = set()
@@ -1781,6 +1775,9 @@ class ContaminationReader(DataStream):
             if check.archive in self.PASS_STALL_ARCHIVES:
                 blocking_stations.add(check.station)
         return blocking_stations
+
+    async def begin(self, stall: typing.Callable[[typing.Optional[str]], typing.Awaitable[None]]) -> None:
+        await stall_passed(self.stall_stations(), stall)
 
     async def run(self) -> None:
         reader = await self.create_reader()
@@ -1850,7 +1847,7 @@ class EditedContaminationReader(ContaminationReader):
 
         return _FilteredReader(reader, filter)
 
-    async def stall(self) -> typing.Optional["DataStream.Stall"]:
+    async def begin(self, stall: typing.Callable[[typing.Optional[str]], typing.Awaitable[None]]) -> None:
         return None
 
 

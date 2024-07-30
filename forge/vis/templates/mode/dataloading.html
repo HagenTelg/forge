@@ -2,8 +2,7 @@
 
 <div id="data-loading-container" class="data-loading">
   <div id="data-loading-stall" class="data-loading-stall">
-    <label id="data-loading-stall-reason" for="data-loading-unstall">Waiting for data</label>
-    <button onclick="skipDataLoadingStall();" id="data-loading-unstall">(skip)</button>
+    <label id="data-loading-stall-reason">Waiting for data</label>
   </div>
 
   <span id="data-loading-count">Loading... (0 records(s) remaining)</span>
@@ -14,10 +13,6 @@
 <script>
 function hideLoading() {
     document.getElementById('data-loading-container').style.display = 'none';
-}
-
-function skipDataLoadingStall() {
-    DataSocket.unstall();
 }
 
 $(document).ready(function(event) {

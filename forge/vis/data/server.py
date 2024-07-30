@@ -26,8 +26,8 @@ class _DataSocket(WebSocketEndpoint):
             self.stream = stream
             self.stopped = False
             self.task: asyncio.Task = None
-            self.stall: typing.Optional[DataStream.Stall] = None
-            self.stall_task: typing.Optional[asyncio.Task] = None
+            self.stalled: bool = False
+            self.stall_reason: typing.Optional[str] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -63,11 +63,11 @@ class _DataSocket(WebSocketEndpoint):
         is_stalled = False
         stall_reason: typing.Optional[str] = None
         for stream in self.active_data_streams.values():
-            if not stream.stall:
+            if not stream.stalled:
                 continue
             is_stalled = True
             if not stall_reason:
-                stall_reason = stream.stall.reason
+                stall_reason = stream.stall_reason
         if is_stalled and (not self.was_data_stalled or self.prior_stall_reason != stall_reason):
             self.was_data_stalled = True
             self.prior_stall_reason = stall_reason
@@ -129,33 +129,18 @@ class _DataSocket(WebSocketEndpoint):
             self.active_data_streams[stream_id] = active_stream
 
             async def run_stream():
-                try:
-                    stall = await stream.stall()
-                    if stall:
+                async def stall(reason: typing.Optional[str] = None) -> None:
+                    if not active_stream.stalled:
                         _LOGGER.debug(f"Stalling stream {stream_id} to {websocket.client.host}")
-                        while True:
-                            active_stream.stall = stall
+                        active_stream.stalled = True
+                    active_stream.stall_reason = reason
+                    await self._update_stall_state(websocket)
 
-                            stall_task = asyncio.ensure_future(stall.block())
-                            active_stream.stall_task = stall_task
-                            await self._update_stall_state(websocket)
-
-                            try:
-                                again = await stall_task
-                            except asyncio.CancelledError:
-                                again = False
-
-                            active_stream.stall_task = None
-                            active_stream.stall = None
-                            if again:
-                                stall = await stream.stall()
-                            else:
-                                stall = None
-                            if not stall:
-                                await self._update_stall_state(websocket)
-                                _LOGGER.debug(f"Stall completed for {stream_id} to {websocket.client.host}")
-                                break
-
+                try:
+                    await stream.begin(stall)
+                    if active_stream.stalled:
+                        active_stream.stalled = False
+                        await self._update_stall_state(websocket)
                     if active_stream.stopped:
                         return
                     await stream.run()
@@ -173,20 +158,11 @@ class _DataSocket(WebSocketEndpoint):
                     del self.active_data_streams[stream_id]
                 except KeyError:
                     pass
+                await self._update_stall_state(websocket)
 
             _LOGGER.debug(f"Starting data stream {stream_id} for {data_name} to {websocket.client.host}")
 
             active_stream.task = asyncio.ensure_future(run_stream())
-
-        elif action == 'unstall':
-            for stream in self.active_data_streams.values():
-                if not stream.stall_task:
-                    continue
-                try:
-                    stream.stall_task.cancel()
-                except:
-                    pass
-            await self._update_stall_state(websocket)
 
         elif action == 'stop':
             stream_id = int(data['stream'])
@@ -195,12 +171,6 @@ class _DataSocket(WebSocketEndpoint):
                 return
             del self.active_data_streams[stream_id]
             stream.stopped = True
-
-            if stream.stall_task:
-                try:
-                    stream.stall_task.cancel()
-                except:
-                    pass
 
             stream.task.cancel()
             try:

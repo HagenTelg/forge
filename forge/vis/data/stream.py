@@ -1,5 +1,6 @@
 import typing
 import asyncio
+import logging
 import struct
 from abc import ABC, abstractmethod
 from math import isfinite, nan
@@ -8,21 +9,15 @@ from forge.tasks import wait_cancelable
 from forge.vis.util import sanitize_for_json
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class DataStream(ABC):
-    class Stall(ABC):
-        def __init__(self, reason: typing.Optional[str] = None):
-            self.reason = reason
-
-        @abstractmethod
-        async def block(self) -> bool:
-            pass
-
     def __init__(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
         self.send = send
 
-    async def stall(self) -> typing.Optional["DataStream.Stall"]:
-        return None
+    async def begin(self, stall: typing.Callable[[typing.Optional[str]], typing.Awaitable[None]]) -> None:
+        pass
 
     @abstractmethod
     async def run(self) -> None:
@@ -145,23 +140,11 @@ class RecordStream(DataStream):
         await self.flush()
 
 
-class _ArchiveStall(DataStream.Stall):
-    def __init__(self, backoff: LockBackoff, reason: typing.Optional[str] = None):
-        super().__init__(reason)
-        self._backoff = backoff
-
-    async def block(self) -> bool:
-        await self._backoff()
-        return True
-
-
 class _BaseArchiveReadStream(ABC):
     MAXIMUM_LOCK_HOLD_TIME: typing.Optional[float] = 30 * 60
 
     def __init__(self):
         self.connection: typing.Optional[Connection] = None
-        self._lock_backoff = LockBackoff()
-        self._lock_held: bool = False
 
     @property
     def connection_name(self) -> str:
@@ -175,48 +158,28 @@ class _BaseArchiveReadStream(ABC):
     async def with_locks_held(self) -> None:
         pass
 
-    async def _open_connection(self) -> None:
-        if self.connection is not None:
-            return
-        self._lock_backoff.clear()
-        self._lock_held = False
+    async def _begin(self, stall: typing.Callable[[typing.Optional[str]], typing.Awaitable[None]]) -> None:
+        assert self.connection is None
+
         self.connection = await Connection.default_connection(self.connection_name, use_environ=False)
         await self.connection.startup()
 
-    async def _begin(self) -> None:
-        if self._lock_held:
-            return
-
-        await self.connection.transaction_begin(False)
-        try:
-            await self.acquire_locks()
-        except LockDenied:
-            await self.connection.transaction_abort()
-            raise
-
-        self._lock_held = True
-
-    async def _stream_stall(self, stall: typing.Type[_ArchiveStall]) -> typing.Optional["DataStream.Stall"]:
-        if self._lock_held:
-            return None
-        await self._open_connection()
-        try:
-            await self._begin()
-        except LockDenied as ld:
-            return stall(self._lock_backoff, ld.status)
-        return None
+        backoff = LockBackoff()
+        while True:
+            await self.connection.transaction_begin(False)
+            try:
+                await self.acquire_locks()
+                break
+            except LockDenied as ld:
+                await self.connection.transaction_abort()
+                _LOGGER.debug("Archive busy: %s", ld.status)
+                await stall(ld.status)
+                await backoff()
+                continue
 
     async def _stream_run(self) -> None:
-        await self._open_connection()
+        assert self.connection is not None
         try:
-            while True:
-                try:
-                    await self._begin()
-                except LockDenied:
-                    await self._lock_backoff()
-                    continue
-                break
-
             if self.MAXIMUM_LOCK_HOLD_TIME:
                 await wait_cancelable(self.with_locks_held(), self.MAXIMUM_LOCK_HOLD_TIME)
             else:
@@ -230,28 +193,24 @@ class _BaseArchiveReadStream(ABC):
 
 
 class ArchiveReadStream(DataStream, _BaseArchiveReadStream):
-    Stall = _ArchiveStall
-
     def __init__(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
         DataStream.__init__(self, send)
         _BaseArchiveReadStream.__init__(self)
 
-    async def stall(self) -> typing.Optional["DataStream.Stall"]:
-        return await self._stream_stall(self.Stall)
+    async def begin(self, stall: typing.Callable[[typing.Optional[str]], typing.Awaitable[None]]) -> None:
+        await self._begin(stall)
 
     async def run(self) -> None:
         await self._stream_run()
 
 
 class ArchiveRecordStream(RecordStream, _BaseArchiveReadStream):
-    Stall = _ArchiveStall
-
     def __init__(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]], fields: typing.List[str]):
         RecordStream.__init__(self, send, fields)
         _BaseArchiveReadStream.__init__(self)
 
-    async def stall(self) -> typing.Optional["DataStream.Stall"]:
-        return await self._stream_stall(self.Stall)
+    async def begin(self, stall: typing.Callable[[typing.Optional[str]], typing.Awaitable[None]]) -> None:
+        await self._begin(stall)
 
     async def run(self) -> None:
         await self._stream_run()
