@@ -135,11 +135,11 @@ class DMPS(BaseSizeDistribution):
 
 C.run(STATION, {
     "N71": [ C('tsi3760cpc', start='2019-08-07'), ],
-    "N72": [ C('admagic250cpc', start='2020-09-02'), ],
-    "N74": [ C('tsi3760cpc', start='2020-09-23', end='2022-06-13'), ],
+    "N72": [ C('admagic250cpc+secondary', start='2020-09-02'), ],
+    "N74": [ C('tsi3760cpc+secondary', start='2020-09-23', end='2022-06-13'), ],
     "N21": [ C('csdpops', start='2021-05-04'), ],
     "S11": [ C('tsi3563nephelometer', start='2019-08-07'), ],
-    "S12": [ C('ecotechnephelometer', start='2023-01-26'), ],
+    "S12": [ C('ecotechnephelometer+secondary', start='2023-01-26'), ],
     "M11": [ C('teledynet640', start='2021-08-10'), ],
     "A11": [ C('clap', start='2019-08-07'), ],
     "A81": [ C('mageeae33', start='2019-10-18'), ],

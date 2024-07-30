@@ -24,10 +24,26 @@ class InstrumentTimeConversion:
                  start: typing.Optional[typing.Union[float, str]] = None,
                  end: typing.Optional[typing.Union[float, str]] = None):
         if isinstance(converter, str):
+            if '+' in converter:
+                (converter, *tags) = converter.split('+')
+            else:
+                tags = None
+
             if '.' not in converter:
                 converter = import_module('.' + converter, 'forge.cpd3.legacy.instrument').Converter
             else:
                 converter = import_module('.', converter).Converter
+
+            if tags:
+                class WithTags(converter):
+                    @property
+                    def tags(self) -> typing.Optional[typing.Set[str]]:
+                        result = set(super().tags)
+                        result.update(tags)
+                        return result
+
+                converter = WithTags
+
         self.converter: typing.Type[InstrumentConverter] = converter
 
         if isinstance(start, str):
