@@ -505,7 +505,7 @@ else:
     data_records.update(met_data)
     data_records.update(radiation_data)
 
-    for archive in ("raw", "edited", "clean", "avgh"):
+    for archive in ("raw", "editing", "clean", "avgh"):
         data_records[f"aerosol-{archive}-cnc"] = DataRecord({
             "cnc": [Selection(variable_name="number_concentration",
                               require_tags={"cpc"}, exclude_tags={"secondary"})],
