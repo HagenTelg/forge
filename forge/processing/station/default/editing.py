@@ -25,7 +25,7 @@ def standard_stp_corrections(data: AvailableData) -> None:
             {"instrument": "bmi1720cpc"},
             {"instrument": "tsi3783cpc"},
     )):
-        to_stp(instrument, temperature="optics_temperature")
+        to_stp(instrument, temperature={"variable_name": "optics_temperature"})
     for instrument in data.select_instrument((
             {"instrument": "teledynet640"},
             {"instrument": "tsi3563nephelometer"},
