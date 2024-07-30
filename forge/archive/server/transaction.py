@@ -164,6 +164,7 @@ class WriteTransaction(_BaseTransaction):
         async def set_status():
             while True:
                 await progress_updated.wait()
+                progress_updated.clear()
                 self.status = f"Data updating, {progress_fraction * 100.0:.0f}% done"
 
         status_task = commit_loop.create_task(set_status())

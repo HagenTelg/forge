@@ -46,7 +46,7 @@ class Controller:
         async def list_files(self, path: str, modified_after: float = 0) -> typing.List[str]:
             async with self as storage:
                 return await asyncio.get_event_loop().run_in_executor(
-                    self._control._storage_worker_pool,
+                    None,
                     storage.list_files, path, modified_after
                 )
 
@@ -77,15 +77,15 @@ class Controller:
 
         async def release(self) -> None:
             async with self as handle:
-                await asyncio.get_event_loop().run_in_executor(self._control._storage_worker_pool, handle.release)
+                await asyncio.get_event_loop().run_in_executor(None, handle.release)
 
         async def commit(self, progress: typing.Optional[typing.Callable[[int, int], None]] = None) -> None:
             async with self as handle:
-                await asyncio.get_event_loop().run_in_executor(self._control._storage_worker_pool, handle.commit, progress)
+                await asyncio.get_event_loop().run_in_executor(None, handle.commit, progress)
 
         async def abort(self) -> None:
             async with self as handle:
-                await asyncio.get_event_loop().run_in_executor(self._control._storage_worker_pool, handle.abort)
+                await asyncio.get_event_loop().run_in_executor(None, handle.abort)
 
     def __init__(self, storage_root: typing.Optional[Path] = None):
         self._storage = Storage(root_directory=storage_root)
@@ -95,7 +95,6 @@ class Controller:
         self._next_connection_uid: int = 1
         self.active_connections: typing.Dict[int, Connection] = dict()
         self._storage_lock: asyncio.Lock = None
-        self._storage_worker_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="StorageWorker")
 
     async def initialize(self) -> None:
         self._storage.initialize()

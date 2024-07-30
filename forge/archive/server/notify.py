@@ -122,9 +122,21 @@ class NotificationDispatch:
 
         for n in queued:
             n.send()
-        await asyncio.wait([
-            asyncio.create_task(n.wait_acknowledged()) for n in queued
-        ])
+
+        wait_tasks: typing.Dict[asyncio.Task, "NotificationDispatch.Queued"] = {
+            asyncio.create_task(n.wait_acknowledged()): n for n in queued
+        }
+        done, pending = await asyncio.wait(wait_tasks.keys(), timeout=10)
+        for d in done:
+            d.result()
+        if not pending:
+            return
+        for p in pending:
+            n = wait_tasks[p]
+            _LOGGER.warning("Notification to %s taking a long time to acknowledge", n.key)
+        done, _ = await asyncio.wait(pending)
+        for d in done:
+            d.result()
 
     def get_listening(self, connection: "Connection") -> typing.Set[str]:
         return self._connection_attached.get(connection, set())
