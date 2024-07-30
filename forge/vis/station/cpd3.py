@@ -2774,7 +2774,7 @@ class AcquisitionTranslator(NativeAcquisitionTranslator):
                 #         continue
                 #     parameters[name] = value.lower()
 
-                return {'SetParameters': parameters}
+                return {'SetParameters': {'Parameters': parameters}}
             return super().translate_command(command, data)
 
     class _LovePIDActive(ActiveInterface):
