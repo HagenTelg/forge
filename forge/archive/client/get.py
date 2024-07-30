@@ -49,9 +49,7 @@ async def get_all_daily_files(connection: Connection, station: str, archive: str
 
         if status_format:
             await connection.set_transaction_status(status_format.format(
-                current_time=fetch_start,
-                start=start,
-                end=end,
+                percent_done=(fetch_start-start) / (end-start) * 100.0
             ))
 
 

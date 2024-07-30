@@ -137,7 +137,7 @@ async def update_edited_data(connection: Connection, station: str, start: float,
         _LOGGER.debug(f"Fetching raw data for {station.upper()} {start},{end} into {data_directory}")
         await connection.set_transaction_status("Loading raw data for editing")
         await get_all_daily_files(connection, station, "raw", start, end, data_directory,
-                                  status_format="Loading raw data for editing, {((current_time-start)) / (end-start) * 100.0:.0f}% done")
+                                  status_format="Loading raw data for editing, {percent_done:.0f}% done")
 
         edits_directory = working_directory / "edits"
         edits_directory.mkdir(exist_ok=True)

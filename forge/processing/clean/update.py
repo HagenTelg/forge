@@ -156,7 +156,7 @@ async def update_clean_data(connection: Connection, station: str, start: float, 
         _LOGGER.debug(f"Fetching edited data for {station.upper()} {start},{end} into {data_directory}")
         await connection.set_transaction_status("Loading edited data for passing")
         await get_all_daily_files(connection, station, "edited", start, end, data_directory,
-                                  status_format="Loading edited data for passing, {((current_time-start) / (end-start) * 100.0:.0f}% done")
+                                  status_format="Loading edited data for passing, {percent_done:.0f}% done")
 
         passed_directory = working_directory / "passed"
         passed_directory.mkdir(exist_ok=True)
