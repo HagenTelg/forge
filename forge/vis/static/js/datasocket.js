@@ -227,8 +227,6 @@ let DataSocket = {};
                 activeRecordStalled = reply.reason;
                 if (!activeRecordStalled) {
                     activeRecordStalled = "Waiting for data";
-                } else {
-                    activeRecordStalled = "Archive busy: " + activeRecordStalled;
                 }
             }
             DataSocket.onActiveRecordUpdate(activeRecordStreams, activeRecordStalled);
