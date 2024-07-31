@@ -356,24 +356,27 @@ class _Variable:
             destination[idx].name: idx for idx in range(len(destination))
         }
         # Destination should have been declared with the maximal set of dimensions, so there is always a target
-        source_transpose: typing.List[int] = [
-            missing_destination_dimensions.pop(source[sidx].name) for sidx in range(len(source))
-        ]
-
-        if missing_destination_dimensions:
-            source_reshape = [
-                source[sidx].size for sidx in range(len(source))
-            ] + ([1] * len(missing_destination_dimensions))
-            # Add missing maps from the trailing 1-length dimensions that result from the reshape
-            for didx in sorted([idx for idx in missing_destination_dimensions.values()]):
-                source_transpose.append(didx)
-        else:
-            source_reshape = None
-
+        source_transpose: typing.List[int] = [-1] * len(destination)
         source_from_destination: typing.List[typing.Optional[int]] = [None] * len(destination)
         for sidx in range(len(source)):
-            didx = source_transpose[sidx]
+            didx = missing_destination_dimensions.pop(source[sidx].name)
             source_from_destination[didx] = sidx
+            source_transpose[didx] = sidx
+
+        # Assign missing dimensions in the transpose to the extra one size dimensions on the end
+        if len(destination) != len(source):
+            assert len(destination) >= len(source)
+            source_reshape: typing.Optional[typing.List[int]] = [
+                source[sidx].size for sidx in range(len(source))
+            ] + ([1] * (len(destination) - len(source)))
+        else:
+            source_reshape: typing.Optional[typing.List[int]] = None
+        sidx = len(source)
+        for didx in range(len(destination)):
+            if source_from_destination[didx] is not None:
+                continue
+            source_transpose[didx] = sidx
+            sidx += 1
 
         source_selection: typing.List[slice] = [
             slice(source[sidx].size) for sidx in range(len(source))
@@ -418,6 +421,7 @@ class _Variable:
             source_apply[didx] = slice(dsize)
             destination_apply[didx] = slice(dsize)
 
+        # Check for no-op transforms and remove them
         for i in range(len(source_transpose)):
             if source_transpose[i] != i:
                 break
