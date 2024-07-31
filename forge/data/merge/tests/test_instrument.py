@@ -1509,5 +1509,5 @@ def test_split_cutsize_absent_merge(tmp_path):
     assert var.shape == (4, 2, 3, 4)
     merged = np.full((4, 2, 3, 4), nan, dtype=np.float64)
     merged[:2, ...] = (np.arange(4*2*3*4).reshape(4, 2, 3, 4))[:2, ...]
-    merged[2:, 0, ...] =  ((np.arange(2*3*4) + 1000).reshape(2, 3, 4))[:2, ...]
+    merged[2:, 1, ...] =  ((np.arange(2*3*4) + 1000).reshape(2, 3, 4))[:2, ...]
     assert var[:].data.flatten().tolist() == pytest.approx(merged.flatten().tolist(), nan_ok=True)

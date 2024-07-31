@@ -414,6 +414,16 @@ class _Variable:
                     source_apply[didx] = slice(dsize)
                     destination_apply[didx] = assign_mapping
                     continue
+                elif cut_size_destination is not None:
+                    # Not cut size in the source, assume it's whole air and assign to the last dimension
+                    # NOTE: there is no current handing for the introduction of a whole air (nan) size
+                    # into the dimension if none was already present (e.x. going from size selected to not
+                    # at a file boundary).  This would require another analysis pass to figure out if there's
+                    # a mismatch between the variables attached to the cut size dimension between all files involved
+                    # in the merge.
+                    source_apply[didx] = slice(1)
+                    destination_apply[didx] = slice(destination_dimension.size-1, destination_dimension.size)
+                    continue
 
             dsize = source_dimension.size if source_dimension else 1
             assert dsize <= destination_dimension.size
