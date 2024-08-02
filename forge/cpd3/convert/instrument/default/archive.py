@@ -177,7 +177,7 @@ class Converter:
                 self._cpd3_flags = instrument_data(self.converter.instrument_type, 'flags', 'lookup')
 
             self._flag_map: typing.List[typing.Tuple[int, CPD3Flag]] = list()
-            for bits, flag_name in self._forge_flags:
+            for bits, flag_name in self._forge_flags.items():
                 dest_flag = self._cpd3_flags.get(flag_name)
                 if not dest_flag:
                     if flag_name == "abnormal_data_wild_fire" or flag_name == "abnormal_data_dust":

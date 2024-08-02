@@ -1554,7 +1554,7 @@ class _ExportStage(ExecuteStage):
                     return fanout_variable(file, variable, _ColumnVariableFlagsList)
                 elif flags == 'breakdown':
                     result: typing.List[_ColumnVariable] = list()
-                    for bit, flag in parse_flags(variable):
+                    for bit, flag in parse_flags(variable).items():
                         result.extend(fanout_variable(file, variable, _ColumnVariableFlagsBreakdown, flag, bit))
                     return result
                 else:
