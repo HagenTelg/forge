@@ -259,7 +259,7 @@ class FileMatch:
             if not suffix or suffix in unique_suffixes:
                 break
             wavelength_suffixes.append(suffix)
-        if len(wavelengths) != len(wavelengths):
+        if len(wavelength_suffixes) != len(wavelengths):
             wavelength_suffixes = [str(i+1) for i in range(len(wavelengths))]
 
         result: typing.List[typing.Tuple[str, int]] = list()
