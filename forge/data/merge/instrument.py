@@ -142,7 +142,10 @@ def _cut_size_mapping(cut_size_source: netCDF4.Variable, cut_size_destination: n
     output_apply: typing.List[int] = [0] * cut_size_source.shape[0]
     for sidx in range(cut_size_source.shape[0]):
         cut_size = to_wavelength(cut_size_source[sidx])
-        didx = int(np.where(cut_size_destination[:].data == cut_size)[0])
+        if not isfinite(cut_size):
+            didx = int(np.where(np.invert(np.isfinite(cut_size_destination[:].data)))[0])
+        else:
+            didx = int(np.where(cut_size_destination[:].data == cut_size)[0])
         output_apply[sidx] = didx
     return _reduce_to_slice(output_apply), len(output_apply)
 
@@ -832,6 +835,7 @@ class _CutSizeVariable(_Variable):
         self.time_variable: typing.Optional[bool] = None
         self.dimension_variable: typing.Optional[bool] = None
         self.constant_values: typing.Set[float] = set()
+        self.constant_infinite: bool = False
 
     def incorporate_structure(self, contents: netCDF4.Variable, is_state: typing.Optional[bool]) -> None:
         dimensions = contents.dimensions
@@ -845,7 +849,10 @@ class _CutSizeVariable(_Variable):
             except AttributeError:
                 cut_size = float(cut_size)
 
-            self.constant_values.add(cut_size)
+            if isfinite(cut_size):
+                self.constant_values.add(cut_size)
+            else:
+                self.constant_infinite = True
 
         if not dimensions:
             incorporate_constant(contents[:])
@@ -870,14 +877,14 @@ class _CutSizeVariable(_Variable):
         super().incorporate_structure(contents, is_state)
 
     def complete_structure(self) -> None:
-        if self.time_variable is None and len(self.constant_values) > 1:
+        if self.time_variable is None and (len(self.constant_values) + int(self.constant_infinite)) > 1:
             self.time_variable = False
             self.dimension_variable = True
         if self.time_variable:
             return
         if not self.dimension_variable:
             return
-        self.record.dimension_size['cut_size'] = len(self.constant_values)
+        self.record.dimension_size['cut_size'] = len(self.constant_values) + int(self.constant_infinite)
 
     @property
     def time_dependent(self) -> bool:
@@ -888,7 +895,7 @@ class _CutSizeVariable(_Variable):
         if self.time_variable:
             return ['time']
         if not self.dimension_variable:
-            assert len(self.constant_values) <= 1
+            assert (len(self.constant_values) + int(self.constant_infinite)) <= 1
             return []
         else:
             return ['cut_size']
@@ -900,11 +907,10 @@ class _CutSizeVariable(_Variable):
     def apply_constant(self, contents: netCDF4.Variable) -> None:
         if self.time_variable:
             return
-        try:
-            self.constant_values.remove(nan)
-            self.variable[:] = [nan] + sorted(self.constant_values)
-        except KeyError:
-            self.variable[:] = sorted(self.constant_values)
+        values = sorted(self.constant_values)
+        if self.constant_infinite:
+            values.append(nan)
+        self.variable[:] = values
 
     def apply_data(self, start: int, end: int, contents: netCDF4.Variable, time_mapping: _TimeMapping) -> None:
         if not self.time_variable:

@@ -37,6 +37,9 @@ async def _write_files(connection: Connection, put: ArchivePut, source: Path, st
                 await put.replace_exact(data, archive=archive, station=station)
             else:
                 await put.data(data, archive=archive, station=station)
+        except:
+            _LOGGER.error("Write error on file %s", write_files[idx].name)
+            raise
         finally:
             if not whole_file:
                 data.close()
