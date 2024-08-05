@@ -148,8 +148,17 @@ class Connection:
                 pass
             try:
                 await c
-            except:
+            except asyncio.CancelledError:
                 pass
+            except:
+                _LOGGER.debug("Error in request pending task", extra=self.log_extra, exc_info=True)
+                raise
+        for d in done:
+            try:
+                await d
+            except:
+                _LOGGER.debug("Error in request completed task", extra=self.log_extra, exc_info=True)
+                raise
 
         if completed not in done:
             raise EOFError
@@ -269,6 +278,11 @@ class Connection:
                     send_heartbeat = None
                     self.writer.write(struct.pack('<B', ClientPacket.HEARTBEAT.value))
                     await self.writer.drain()
+        except asyncio.CancelledError:
+            raise
+        except:
+            _LOGGER.debug("Error in connection processing", extra=self.log_extra, exc_info=True)
+            raise
         finally:
             for c in tasks:
                 try:
@@ -279,6 +293,7 @@ class Connection:
                     await c
                 except:
                     pass
+            _LOGGER.debug("Connection processing ended", extra=self.log_extra)
             self._closed.set()
 
     async def shutdown(self) -> None:
@@ -328,10 +343,10 @@ class Connection:
         async def response(connection: "Connection", packet_type: ServerPacket):
             if packet_type != ServerPacket.TRANSACTION_STARTED:
                 return None
-            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
-            return status == 1 or None
+            return struct.unpack('<B', await connection.reader.readexactly(1))[0]
 
-        await self._request_response(request, response)
+        if await self._request_response(request, response) != 1:
+            raise IOError
         self._transaction_intents = dict()
 
     async def transaction_commit(self) -> typing.List["Connection.IntentHandle"]:
@@ -343,10 +358,16 @@ class Connection:
         async def response(connection: "Connection", packet_type: ServerPacket):
             if packet_type != ServerPacket.TRANSACTION_COMPLETE:
                 return None
-            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
-            return status == 1 or None
+            return struct.unpack('<B', await connection.reader.readexactly(1))[0]
 
-        await self._request_response(request, response)
+        if await self._request_response(request, response) != 1:
+            intents = self._transaction_intents
+            self._transaction_intents = None
+            unreleased = list()
+            for intent, acquire in intents.items():
+                if not acquire and intent._realized:
+                    unreleased.append(intent)
+            raise IOError
         intents = self._transaction_intents
         self._transaction_intents = None
         acquired = list()
@@ -367,16 +388,17 @@ class Connection:
         async def response(connection: "Connection", packet_type: ServerPacket):
             if packet_type != ServerPacket.TRANSACTION_ABORTED:
                 return None
-            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
-            return status == 1 or None
+            return struct.unpack('<B', await connection.reader.readexactly(1))[0]
 
-        await self._request_response(request, response)
+        r = await self._request_response(request, response)
         intents = self._transaction_intents
         self._transaction_intents = None
         unreleased = list()
         for intent, acquire in intents.items():
             if not acquire and intent._realized:
                 unreleased.append(intent)
+        if r != 1:
+            raise IOError
         return unreleased
 
     class _TransactionContext:
@@ -465,10 +487,10 @@ class Connection:
         async def response(connection: "Connection", packet_type: ServerPacket):
             if packet_type != ServerPacket.WRITE_FILE_DATA:
                 return None
-            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
-            return status == 1 or None
+            return struct.unpack('<B', await connection.reader.readexactly(1))[0]
 
-        await self._request_response(request, response)
+        if await self._request_response(request, response) != 1:
+            raise IOError
 
     async def write_file(self, name: str, source: typing.BinaryIO) -> None:
         async def request(connection: "Connection"):
@@ -484,10 +506,10 @@ class Connection:
         async def response(connection: "Connection", packet_type: ServerPacket):
             if packet_type != ServerPacket.WRITE_FILE_DATA:
                 return None
-            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
-            return status == 1 or None
+            return struct.unpack('<B', await connection.reader.readexactly(1))[0]
 
-        await self._request_response(request, response)
+        if await self._request_response(request, response) != 1:
+            raise IOError
 
     async def write_bytes(self, name: str, source: typing.Union[bytes, bytearray]):
         async def request(connection: "Connection"):
@@ -499,10 +521,10 @@ class Connection:
         async def response(connection: "Connection", packet_type: ServerPacket):
             if packet_type != ServerPacket.WRITE_FILE_DATA:
                 return None
-            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
-            return status == 1 or None
+            return struct.unpack('<B', await connection.reader.readexactly(1))[0]
 
-        await self._request_response(request, response)
+        if await self._request_response(request, response) != 1:
+            raise IOError
 
     async def remove_file(self, name: str) -> None:
         async def request(connection: "Connection"):
@@ -512,10 +534,10 @@ class Connection:
         async def response(connection: "Connection", packet_type: ServerPacket):
             if packet_type != ServerPacket.REMOVE_FILE_OK:
                 return None
-            status = struct.unpack('<B', await connection.reader.readexactly(1))[0]
-            return status == 1 or None
+            return struct.unpack('<B', await connection.reader.readexactly(1))[0]
 
-        await self._request_response(request, response)
+        if await self._request_response(request, response) != 1:
+            raise IOError
 
     async def lock_read(self, key: str, start: int, end: int) -> None:
         async def request(connection: "Connection"):
