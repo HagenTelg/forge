@@ -38,6 +38,7 @@ class Simulator(StreamingSimulator):
         self.alarm = 0
 
         self.record_join: bytes = b"\r"
+        self.alarm_record: str = "H"
 
     @property
     def data_dN(self) -> typing.List[float]:
@@ -65,8 +66,8 @@ class Simulator(StreamingSimulator):
                 f"{self.data_Alaser:.2f},"
                 f"{self.data_Vmonitor:.2f},"
                 f"{self.data_DTsetpoint:.2f},"
-                f"{self.data_Vvalve:.2f},"
-                f"{self.alarm}"
+                f"{self.data_Vvalve:.2f}"
+                + (f",{self.alarm}" if self.alarm_record == "H" else "")
             ).encode('ascii'))
             self.writer.write(self.record_join)
             self.writer.write((
@@ -78,6 +79,8 @@ class Simulator(StreamingSimulator):
             self.writer.write((
                 ",".join([f"{c:.2f}" for c in self.data_Cb[:20]])
             ).encode('ascii'))
+            if self.alarm_record == "C":
+                self.writer.write(f",{self.alarm}".encode('ascii'))
             self.writer.write(b"\r")
 
             await asyncio.sleep(self.unpolled_interval)

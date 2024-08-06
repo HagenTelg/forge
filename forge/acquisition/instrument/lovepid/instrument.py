@@ -255,6 +255,7 @@ class Instrument(StreamingInstrument):
     def __init__(self, context: StreamingContext):
         super().__init__(context)
 
+        self._relaxed_framing = bool(context.config.get('RELAXED_FRAMING', default=False))
         self._report_interval: float = float(context.config.get('REPORT_INTERVAL', default=1.0))
         self._sleep_time: float = 0.0
 
@@ -348,7 +349,11 @@ class Instrument(StreamingInstrument):
         self._output_changed.set()
 
     async def _read_response(self, controller: "Instrument._Controller") -> bytes:
-        header = await self.reader.readexactly(4)
+        if self._relaxed_framing:
+            await self.reader.readuntil(b'\x02')
+            header = b"\x02" + await self.reader.readexactly(3)
+        else:
+            header = await self.reader.readexactly(4)
         if header[0] != 0x02:
             raise CommunicationsError(f"STX missing in header {header}")
         if header[1:2] != controller.packet_identifier:

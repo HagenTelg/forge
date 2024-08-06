@@ -183,7 +183,9 @@ class Instrument(StreamingInstrument):
                 'units': "mA",
                 'C_format': "%7.2f",
             }),
+        )
 
+        self.report_alarm = self.report(
             flags=[
                 self.flag_bit(self.bit_flags, 1, "laser_over_current", is_warning=True),
                 self.flag_bit(self.bit_flags, 2, "first_stage_monitor_over_voltage"),
@@ -230,19 +232,54 @@ class Instrument(StreamingInstrument):
         else:
             raise CommunicationsError(f"invalid record type in {line}")
 
+    @staticmethod
+    def _process_alarm_tail(tail: typing.List[bytes], allow_combined: bool,
+                            other_record: bytes) -> typing.Optional[bytes]:
+        alarm_bits = None
+        if not allow_combined:
+            if len(tail) > 0:
+                alarm_bits = tail[0]
+                del tail[0]
+        elif len(tail) > 0:
+            if tail[0] !=other_record:
+                alarm_bits = tail[0]
+                del tail[0]
+        return alarm_bits
+
+    def _process_alarm(self, alarm_bits: typing.Optional[bytes]) -> None:
+        if alarm_bits is None:
+            return
+
+        alarm_bits = alarm_bits.strip()
+        try:
+            alarm_bits = int(alarm_bits)
+        except ValueError:
+            try:
+                alarm_bits = int(parse_number(alarm_bits))
+            except ValueError:
+                raise CommunicationsError(f"invalid alarms in {fields}")
+        if alarm_bits < 0:
+            self.notify_safe_mode_active(True)
+            alarm_bits = -alarm_bits
+        else:
+            self.notify_safe_mode_active(False)
+        for bit, flag in self.bit_flags.items():
+            flag((alarm_bits & bit) != 0)
+        self.report_alarm()
+
     def _parse_H(self, fields: typing.List[bytes], allow_combined: bool = True) -> bool:
         try:
             (
                 record_id, raw_time, SSset, temp_stable,
                 Ttec1, Ttec2, Ttec3, Tsample, Tinlet, Topc, Tnafion,
                 Qsample, Qsheath, P, Alaser, Vmonitor, DTsetpoint, Vvalve,
-                alarm_bits,
                 *tail,
             ) = fields
         except ValueError:
             raise CommunicationsError(f"invalid number of fields in {fields}")
         if record_id.strip() != b"H":
             raise CommunicationsError(f"invalid record ID in {fields}")
+        alarm_bits = self._process_alarm_tail(tail, allow_combined, b"C")
         if not allow_combined and len(tail) > 0:
             raise CommunicationsError(f"invalid number of fields in {fields}")
         combined: bool = False
@@ -272,22 +309,7 @@ class Instrument(StreamingInstrument):
         Qinstrument = self.data_Qinstrument(flow_ccm_to_lpm(parse_number(Qsample)))
         self.data_Qsample(Qinstrument)
 
-        alarm_bits = alarm_bits.strip()
-        try:
-            alarm_bits = int(alarm_bits)
-        except ValueError:
-            try:
-                alarm_bits = int(parse_number(alarm_bits))
-            except ValueError:
-                raise CommunicationsError(f"invalid alarms in {fields}")
-        if alarm_bits < 0:
-            self.notify_safe_mode_active(True)
-            alarm_bits = -alarm_bits
-        else:
-            self.notify_safe_mode_active(False)
-        for bit, flag in self.bit_flags.items():
-            flag((alarm_bits & bit) != 0)
-
+        self._process_alarm(alarm_bits)
         self.report_H()
         return combined
 
@@ -306,6 +328,7 @@ class Instrument(StreamingInstrument):
             raise CommunicationsError(f"invalid number of fields in {fields}")
         if record_id.strip() != b"C":
             raise CommunicationsError(f"invalid record ID in {fields}")
+        alarm_bits = self._process_alarm_tail(tail, allow_combined, b"H")
         if not allow_combined and len(tail) > 0:
             raise CommunicationsError(f"invalid number of fields in {fields}")
         combined: bool = False
@@ -327,6 +350,7 @@ class Instrument(StreamingInstrument):
 
         self.data_minimum_bin_number(float(int(parse_number(bin_number))))
 
+        self._process_alarm(alarm_bits)
         self.report_C()
         return combined
 

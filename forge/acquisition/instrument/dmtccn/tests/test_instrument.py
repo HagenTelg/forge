@@ -100,3 +100,22 @@ async def test_flow_configuration():
 
     await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
+
+@pytest.mark.asyncio
+async def test_alternate_alarm():
+    simulator: Simulator = None
+    instrument: Instrument = None
+    simulator, instrument = await create_streaming_instrument(Instrument, Simulator)
+    simulator.alarm_record = "C"
+    bus: BusInterface = instrument.context.bus
+
+    simulator_run = asyncio.ensure_future(simulator.run())
+    instrument_run = asyncio.ensure_future(instrument.run())
+
+    await wait_cancelable(bus.wait_for_communicating(), 30)
+
+    assert await bus.value('N') == simulator.data_N
+
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
+
+

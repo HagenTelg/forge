@@ -25,6 +25,8 @@ class Simulator(StreamingSimulator):
         self.manual_mode: typing.List[bool] = [False] * len(self.addresses)
         self.decimals: typing.List[int] = [2] * len(self.addresses)
 
+        self.response_prefix: bytes = b""
+
     @staticmethod
     def _checksum(data: typing.Iterable[int]) -> bytes:
         s = 0
@@ -47,6 +49,7 @@ class Simulator(StreamingSimulator):
         packet += payload
         packet += self._checksum(packet[1:])
         packet.append(0x06)
+        self.writer.write(self.response_prefix)
         self.writer.write(bytes(packet))
 
     def _send_error(self, address: int, error_code: int) -> None:
