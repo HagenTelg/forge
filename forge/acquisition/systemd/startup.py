@@ -169,6 +169,9 @@ def start_instrument_serial(source: str, instrument_unit_name: str) -> typing.Op
         physical_port = CONFIGURATION.get(f"INSTRUMENT.{source}.SERIAL_PORT.PORT")
     if not physical_port:
         return None
+    physical_port = str(physical_port).strip()
+    if not physical_port:
+        return None
 
     _LOGGER.debug(f"Starting serial port interface for {source} on {physical_port}")
 
@@ -202,6 +205,8 @@ def start_instrument_serial(source: str, instrument_unit_name: str) -> typing.Op
 
 def start_instrument(source: str) -> None:
     instrument_type = CONFIGURATION.get(f"INSTRUMENT.{source}.TYPE")
+    if instrument_type is not None:
+        instrument_type = str(instrument_type).strip()
     if not instrument_type:
         _LOGGER.warning(f"Instrument {source} has no type, skipping")
         return
