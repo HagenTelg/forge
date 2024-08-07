@@ -218,7 +218,7 @@ class UplinkConnection:
         try:
             timeout = aiohttp.ClientTimeout(connect=30, sock_read=60)
             async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.ws_connect(str(self.url)) as websocket:
+                async with session.ws_connect(str(self.url), heartbeat=30) as websocket:
                     self.websocket = websocket
                     await AuthSocket.client_handshake(self.websocket, self.key, extra_data={
                         'station': await get_station(),

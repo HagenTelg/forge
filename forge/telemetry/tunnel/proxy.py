@@ -168,7 +168,7 @@ async def establish_uplink(parser, args) -> typing.Tuple[typing.Optional[asyncio
             _LOGGER.debug(f"Connecting to websocket uplink {url}")
             timeout = aiohttp.ClientTimeout(connect=30, sock_read=60)
             async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.ws_connect(str(url)) as websocket:
+                async with session.ws_connect(str(url), heartbeat=30) as websocket:
                     if connect_to_key:
                         await AuthSocket.client_handshake(websocket, key, extra_data=key_to_bytes(connect_to_key))
                     else:

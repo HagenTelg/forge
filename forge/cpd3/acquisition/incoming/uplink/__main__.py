@@ -509,7 +509,7 @@ class UplinkConnection:
             timeout = aiohttp.ClientTimeout(connect=30, sock_read=60)
             _LOGGER.debug(f"Starting connection to {self.url}")
             async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.ws_connect(str(self.url)) as websocket:
+                async with session.ws_connect(str(self.url), heartbeat=30) as websocket:
                     await AuthSocket.client_handshake(websocket, self.key,
                                                       extra_data=struct.pack('<BB', PROTOCOL_VERSION,
                                                                              self.include_instantaneous and 1 or 0))

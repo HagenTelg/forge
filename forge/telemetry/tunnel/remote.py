@@ -150,7 +150,7 @@ class UplinkConnection:
         dashboard_task: typing.Optional[asyncio.Task] = None
         try:
             async with aiohttp.ClientSession(timeout=timeout) as session:
-                async with session.ws_connect(str(self.url)) as websocket:
+                async with session.ws_connect(str(self.url), heartbeat=30) as websocket:
                     self.websocket = websocket
                     await AuthSocket.client_handshake(self.websocket, self.key)
                     _LOGGER.info(f"Tunnel connected to {self.url}")
