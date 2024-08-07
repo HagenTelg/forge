@@ -1,7 +1,10 @@
 import typing
 import asyncio
+import logging
 import struct
 from forge.acquisition.bus.protocol import PersistenceLevel, serialize_string, deserialize_string, serialize_value, deserialize_value
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class AcquisitionBusClient:
@@ -17,20 +20,26 @@ class AcquisitionBusClient:
         pass
 
     async def _run(self):
-        while True:
-            try:
-                source = await deserialize_string(self.reader)
-                record = await deserialize_string(self.reader)
-                value = await deserialize_value(self.reader)
-            except (OSError, UnicodeDecodeError, EOFError):
-                if self.writer:
-                    try:
-                        self.writer.close()
-                    except OSError:
-                        pass
-                    self.writer = None
-                return
-            await self.incoming_message(source, record, value)
+        try:
+            while True:
+                try:
+                    source = await deserialize_string(self.reader)
+                    record = await deserialize_string(self.reader)
+                    value = await deserialize_value(self.reader)
+                except (OSError, UnicodeDecodeError, EOFError):
+                    if self.writer:
+                        try:
+                            self.writer.close()
+                        except OSError:
+                            pass
+                        self.writer = None
+                    return
+                await self.incoming_message(source, record, value)
+        except asyncio.CancelledError:
+            raise
+        except:
+            _LOGGER.error("Error in acquisition bus client read loop", exc_info=True)
+            raise
 
     async def start(self) -> None:
         serialize_string(self.writer, self.source)

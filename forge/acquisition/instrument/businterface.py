@@ -6,6 +6,7 @@ from ..cutsize import CutSize
 
 
 _EMPTY_SOURCES = dict()
+_EMPTY_TARGETS = list()
 
 
 class BusInterface(BaseBusInterface):
@@ -42,9 +43,9 @@ class BusInterface(BaseBusInterface):
         if not source_filtered:
             source_filtered = _EMPTY_SOURCES
         for field, value in message.items():
-            for target in self._data_any_dispatch.get(field):
+            for target in self._data_any_dispatch.get(field, _EMPTY_TARGETS):
                 target(value)
-            for target in source_filtered.get(field):
+            for target in source_filtered.get(field, _EMPTY_TARGETS):
                 target(value)
 
     def _handle_bypass(self, source: str, state: bool) -> None:
