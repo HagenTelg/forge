@@ -610,7 +610,7 @@ $(document).ready(function() {
             if (restoreIndex < restoreData.length) {
                 this._restore = restoreData[restoreIndex];
 
-                function searchBackward() {
+                const searchBackward = () => {
                     for (let checkIndex=restoreIndex-1; checkIndex>=0; checkIndex--) {
                         const checkRestore = restoreData[checkIndex];
 
@@ -623,9 +623,9 @@ $(document).ready(function() {
                     }
 
                     return undefined;
-                }
+                };
 
-                function searchForward() {
+                const searchForward = () => {
                     for (let checkIndex=restoreIndex+1; checkIndex < restoreData.length; checkIndex++) {
                         const checkRestore = restoreData[checkIndex];
 
@@ -638,7 +638,7 @@ $(document).ready(function() {
                     }
 
                     return undefined;
-                }
+                };
 
                 insertBefore = searchBackward();
                 if (typeof insertBefore === 'undefined') {
