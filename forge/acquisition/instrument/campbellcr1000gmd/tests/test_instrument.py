@@ -30,8 +30,8 @@ async def test_communications():
     assert await bus.value('T') == simulator.data_T
     assert await bus.value('V') == simulator.data_V
     assert await bus.value('raw') == simulator.ain
-    assert await bus.value('T_V11') == 20.5
-    assert (await bus.value('value'))[2] == 20.5
+    assert await bus.value('T_V11') == 10.5
+    assert (await bus.value('value'))[1] == 10.5
 
     await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 

@@ -34,7 +34,12 @@ class Instrument(StreamingInstrument):
         def __init__(self, name: str, config: LayeredConfiguration, inp: StreamingInstrument.Input, channel: int):
             super().__init__(name, config, inp)
             self.channel: int = channel
-            self.attributes['channel'] = str(channel)
+            if channel >= 0:
+                self.attributes['channel'] = str(channel+1)
+            elif channel == Instrument.ANALOG_INPUT_TEMPERATURE:
+                self.attributes['channel'] = "temperature"
+            elif channel == Instrument.ANALOG_INPUT_VOLTAGE:
+                self.attributes['channel'] = "voltage"
 
         @classmethod
         def construct(cls, instrument: "Instrument", name: str,
@@ -43,17 +48,16 @@ class Instrument(StreamingInstrument):
             if isinstance(channel, str):
                 channel = channel.lower()
                 if channel == 't' or channel == 'temperature':
-                    channel = Instrument.ANALOG_INPUT_TEMPERATURE
+                    return cls(name, config, instrument.input(name), Instrument.ANALOG_INPUT_TEMPERATURE)
                 elif channel == 'v' or channel == 'voltage':
-                    channel = Instrument.ANALOG_INPUT_VOLTAGE
-            else:
-                try:
-                    channel = int(channel)
-                    if channel < 1 or channel > Instrument.ANALOG_INPUT_COUNT:
-                        raise ValueError
-                except (ValueError, TypeError):
-                    _LOGGER.warning(f"Invalid analog input channel for {name}", exc_info=True)
-                    return None
+                    return cls(name, config, instrument.input(name), Instrument.ANALOG_INPUT_VOLTAGE)
+            try:
+                channel = int(channel) - 1
+                if channel < 0 or channel >= Instrument.ANALOG_INPUT_COUNT:
+                    raise ValueError
+            except (ValueError, TypeError):
+                _LOGGER.warning(f"Invalid analog input channel for {name}", exc_info=True)
+                return None
             return cls(name, config, instrument.input(name), channel)
 
     class _AnalogOutput(AnalogOutput):

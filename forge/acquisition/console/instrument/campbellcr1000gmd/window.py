@@ -51,7 +51,7 @@ class InstrumentWindow(BaseWindow):
             if i < len(channel_raw):
                 raw = channel_raw[i]
 
-            result.append((f"{i:2d} {name}", DataDisplay.apply_default_format(value) +
+            result.append((f"{i+1:2d} {name}", DataDisplay.apply_default_format(value) +
                            " " + DataDisplay.apply_default_format(raw) + "V"))
 
         return result
