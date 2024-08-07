@@ -144,13 +144,28 @@ class ExportCSV(ArchiveExportEntry):
 
                     if int(times[0]) < int(self._times[-1]):
                         self._unsorted = True
-                    self._times = np.concatenate((self._times, times), dtype=np.int64, casting='unsafe')
+
+                    # Can't use np.concatenate built in casting, since that's Numpy >= 1.20, which can't run on
+                    # Python 3.6 (web)
+                    self._times = np.concatenate((
+                        self._times.astype(np.int64, casting='unsafe', copy=False),
+                        times.astype(np.int64, casting='unsafe', copy=False),
+                    ))
                     if not np.issubdtype(self._values.dtype, np.floating):
-                        self._values = np.concatenate((self._values, values), casting='unsafe')
+                        self._values = np.concatenate((
+                            self._values,
+                            values.astype(self._values.dtype, casting='unsafe', copy=False),
+                        ))
                     else:
-                        self._values = np.concatenate((self._values, values), dtype=np.float32, casting='unsafe')
+                        self._values = np.concatenate((
+                            self._values.astype(np.float32, casting='unsafe', copy=False),
+                            values.astype(np.float32, casting='unsafe', copy=False),
+                        ))
                     if cut_size_times is not None:
-                        self._cut_sizes = np.concatenate((self._cut_sizes, cut_size_times), dtype=np.float32, casting='unsafe')
+                        self._cut_sizes = np.concatenate((
+                            self._cut_sizes.astype(np.float32, casting='unsafe', copy=False),
+                            cut_size_times.astype(np.float32, casting='unsafe', copy=False)
+                        ))
 
                 if not self._is_state and var.is_state:
                     self._is_state = True

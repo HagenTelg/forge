@@ -145,20 +145,23 @@ class MergeEventLog:
 
         events_record = np.rec.fromarrays((
             np.concatenate([
-                s[1].time for s in streams
-            ], dtype=np.int64, casting='unsafe'),
+                s[1].time.astype(np.int64, casting='unsafe', copy=False) for s in streams
+            ]),
             np.concatenate([
-                event_t.apply(s[0].root.groups["log"].variables["type"], s[1].event_type, copy=False) for s in streams
-            ], dtype=event_t.storage_dtype, casting='unsafe'),
+                event_t
+                    .apply(s[0].root.groups["log"].variables["type"], s[1].event_type, copy=False)
+                    .astype(event_t.storage_dtype, casting='unsafe', copy=False)
+                for s in streams
+            ]),
             np.concatenate([
-                s[1].source for s in streams
-            ], casting='unsafe').astype(str, copy=False),
+                s[1].source.astype(str, casting='unsafe', copy=False) for s in streams
+            ]),
             np.concatenate([
-                s[1].message for s in streams
-            ], casting='unsafe').astype(str, copy=False),
+                s[1].message.astype(str, casting='unsafe', copy=False) for s in streams
+            ]),
             np.concatenate([
-                s[1].auxiliary for s in streams
-            ], casting='unsafe').astype(str, copy=False),
+                s[1].auxiliary.astype(str, casting='unsafe', copy=False) for s in streams
+            ]),
         ), names=("time", "type", "source", "message", "auxiliary"))
 
         # De-duplicate and sort
