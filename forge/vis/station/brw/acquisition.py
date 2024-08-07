@@ -33,6 +33,9 @@ _type_display: typing.Dict[str, Display] = {
     'realtimewind': GenericDisplay('NOAA Windbird', [
         GenericDisplay.Row('Wind speed (m/s)', 'WS', decimals=1),
         GenericDisplay.Row('Wind direction (degrees)', 'WD', decimals=1),
+        GenericDisplay.Row('Temperature (°C)', 'T', decimals=1),
+        GenericDisplay.Row('Dewpoint (°C)', 'TD', decimals=1),
+        GenericDisplay.Row('Pressure (hPa)', 'P', decimals=0),
     ]),
 }
 

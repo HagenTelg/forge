@@ -100,6 +100,9 @@ station_profile_data['aerosol']['raw']['temperature'] = lambda station, start_ep
 )
 station_profile_data['aerosol']['realtime']['temperature'] = {
     RealtimeTranslator.Key('T_V51'): 'Tinlet', RealtimeTranslator.Key('U_V51'): 'Uinlet',
+    RealtimeTranslator.Key('T_XM2'): 'Tambient',
+    RealtimeTranslator.Key('U_XM2'): 'Uambient',
+    RealtimeTranslator.Key('TD_XM2'): 'TDambient',
 
     RealtimeTranslator.Key('T_V11'): 'Tsample', RealtimeTranslator.Key('U_V11'): 'Usample',
     RealtimeTranslator.Key('T_V11', {'pm10'}): 'Tsample', RealtimeTranslator.Key('U_V11', {'pm10'}): 'Usample',

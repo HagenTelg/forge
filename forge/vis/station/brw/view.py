@@ -46,6 +46,7 @@ station_views['aerosol-realtime-temperature'] = Temperature('aerosol-realtime', 
     ('{code}neph', '{code}_S11 (neph sample)'),
     ('{code}filter', 'Filter {type}'),
     ('{code}filterrack', 'Filter rack {type}'),
+    ('{code}ambient', 'Ambient {type}'),
 ]), omit_traces={'TDnephinlet', 'TDfilterrack', 'Ufilterrack'}, realtime=True)
 
 station_views['aerosol-raw-pressure'] = Pressure('aerosol-raw')
