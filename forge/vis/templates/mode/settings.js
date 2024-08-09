@@ -23,6 +23,11 @@ if (localStorage.getItem('forge-view-switch-retain-zoom')) {
     viewSwitchRetainZoom.checked = true;
 }
 
+const enterWritesMessageLog = document.getElementById('enter_writes_message_log');
+if (localStorage.getItem('forge-enter-writes-message-log')) {
+    enterWritesMessageLog.checked = true;
+}
+
 $('#apply_settings').click(function(event) {
     event.preventDefault();
 
@@ -50,6 +55,11 @@ $('#apply_settings').click(function(event) {
         localStorage.setItem('forge-view-switch-retain-zoom', '1');
     } else {
         localStorage.removeItem('forge-view-switch-retain-zoom');
+    }
+    if (enterWritesMessageLog.checked) {
+        localStorage.setItem('forge-enter-writes-message-log', '1');
+    } else {
+        localStorage.removeItem('forge-enter-writes-message-log');
     }
 
     this.blur();

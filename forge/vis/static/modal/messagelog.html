@@ -106,6 +106,10 @@
 
     messageAuthor.value = sessionStorage.getItem('forge-acquisition-user-name');
 
+    if (!!localStorage.getItem('forge-enter-writes-message-log')) {
+      messageText.placeholder = "Enter the message to be logged.  Use SHIFT+ENTER for multiple lines.";
+    }
+
     function updateValid() {
         if (waitingForAck) {
             return;
@@ -145,6 +149,56 @@
     $(messageAuthor).on('input', updateValid);
     updateValid();
 
+    function writeMessageLog(author, text) {
+        sessionStorage.setItem('forge-acquisition-user-name', author);
+
+        waitingForAck = true;
+        writeButton.disabled = true;
+        messageText.disabled = true;
+        messageAuthor.disabled = true;
+        AcquisitionSocket.writeMessageLog(author, text, (result) => {
+            if (!waitingForAck) {
+                return;
+            }
+            if (result !== 'ok') {
+                window.alert("Error writing message log");
+            }
+            hideModal();
+        });
+    }
+
+    $(messageText).keydown(function(event) {
+        if (event.target !== messageText) {
+            return;
+        }
+
+        if (event.code !== 'Enter') {
+            return;
+        }
+        if (event.shiftKey) {
+            return;
+        }
+        if (!localStorage.getItem('forge-enter-writes-message-log')) {
+            return;
+        }
+
+        event.preventDefault();
+
+        let text = messageText.value;
+        if (text) {
+            text = text.trim();
+        }
+
+        let author = messageAuthor.value;
+        if (author) {
+            author = author.trim();
+        }
+
+        if (!text || !author || text === '' || author === '') {
+            return;
+        }
+        writeMessageLog(author, text);
+    });
     $(writeButton).click(function(event) {
         event.preventDefault();
 
@@ -162,22 +216,7 @@
             hideModal();
             return;
         }
-
-        sessionStorage.setItem('forge-acquisition-user-name', author);
-
-        waitingForAck = true;
-        writeButton.disabled = true;
-        messageText.disabled = true;
-        messageAuthor.disabled = true;
-        AcquisitionSocket.writeMessageLog(author, text, (result) => {
-            if (!waitingForAck) {
-                return;
-            }
-            if (result !== 'ok') {
-                window.alert("Error writing message log");
-            }
-            hideModal();
-        });
+        writeMessageLog(author, text);
     });
     $('#messagelog-cancel').click(function(event) {
         event.preventDefault();
