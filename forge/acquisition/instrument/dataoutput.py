@@ -898,6 +898,14 @@ class DataOutput(BaseDataOutput):
         self._data_updated = None
         self._flush_file()
 
+        target_file = self._completed_directory / self._active_output_file.name
+        try:
+            await asyncio.get_event_loop().run_in_executor(None, shutil.move,
+                                                           str(self._active_output_file), str(target_file))
+            _LOGGER.debug(f"Moved final data file {self._active_output_file} to {target_file}")
+        except OSError:
+            _LOGGER.warning(f"Failed to relocate final data file {self._active_output_file} to {target_file}", exc_info=True)
+
 
 if __name__ == '__main__':
     import sys
