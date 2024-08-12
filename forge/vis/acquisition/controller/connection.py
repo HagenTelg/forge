@@ -218,7 +218,8 @@ class Station:
                     text = await self._read_string()
 
                     for c in self.station.connections:
-                        # Send it to this connection too, for echo
+                        if c == self:
+                            continue
                         try:
                             c.send_chat(epoch_ms, name, text)
                         except OSError:

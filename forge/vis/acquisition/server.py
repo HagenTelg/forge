@@ -224,6 +224,9 @@ class _AcquisitionSocket(WebSocketEndpoint):
 
             self._client.send_chat(epoch_ms, author, text)
             await self._client.writer.drain()
+
+            # Echo it back to the sender for display
+            await self._client.incoming_chat(epoch_ms, author, text)
         elif message_type == 'command':
             target = str(data.get('target', ''))
             command = str(data.get('command', ''))
