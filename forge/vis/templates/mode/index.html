@@ -19,6 +19,7 @@
     ];
     const queryParameters = new URLSearchParams(window.location.search);
 
+    availableModes.sort();
     for (const pattern of queryParameters.getAll("match-mode")) {
         const match = new RegExp(pattern, "i");
         for (const mode of availableModes) {
