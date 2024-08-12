@@ -233,7 +233,8 @@ class Variable(BaseInstrument.Variable):
         return self.value
 
     def assemble_average(self, record: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
-        record[self.source.name] = self.value
+        if self.source.send_to_bus:
+            record[self.source.name] = self.value
         self.source.average_consumed()
 
     def __call__(self) -> None:

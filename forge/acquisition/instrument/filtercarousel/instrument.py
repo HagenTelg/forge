@@ -12,6 +12,7 @@ from ..standard import StandardInstrument
 from ..base import BaseContext, BaseBusInterface
 from ..businterface import BusInterface
 from ..state import Persistent
+from ..variable import Input
 
 _LOGGER = logging.getLogger(__name__)
 _INSTRUMENT_TYPE = __name__.split('.')[-2]
@@ -215,15 +216,21 @@ class Instrument(StandardInstrument):
         self.data_PD_input: typing.List[Instrument.Input] = list()
         self.data_Qt_input: typing.List[Persistent] = list()
         self.data_St_input: typing.List[Persistent] = list()
+        # Separate from the state, so that the state doesn't spam the bus constantly as
+        # it accumulates.
+        self.data_Qt_display: typing.List[Input] = list()
+        self.data_St_display: typing.List[Input] = list()
         for i in range(0, self._carousel_size+1):
             if i > 0:
                 self.data_PD_input.append(self.input(f"PD{i}"))
-            Qt = self.persistent(f"Qt{i}")
+            Qt = self.persistent(f"Qt{i}", send_to_bus=False)
             Qt.autosave = False
             self.data_Qt_input.append(Qt)
-            St = self.persistent(f"St{i}")
+            self.data_Qt_display.append(self.input(f"Qt{i}"))
+            St = self.persistent(f"St{i}", send_to_bus=False)
             St.autosave = False
             self.data_St_input.append(St)
+            self.data_St_display.append(self.input(f"St{i}"))
 
         self.data_display_aux: typing.List[Instrument.Input] = list()
         for var in ("Usample", "Tsample", "Track"):
@@ -424,6 +431,10 @@ class Instrument(StandardInstrument):
                 self.data_St_input[pos](v + elapsed)
         self.data_Qt([float(v.value) if v.value is not None else nan for v in self.data_Qt_input])
         self.data_St([float(v.value) if v.value is not None else nan for v in self.data_St_input])
+        for i in range(len(self.data_Qt_input)):
+            self.data_Qt_display[i](self.data_Qt_input[i].value)
+        for i in range(len(self.data_St_input)):
+            self.data_St_display[i](self.data_St_input[i].value)
 
         self._cnc_spike_data(float(self.data_N))
 
