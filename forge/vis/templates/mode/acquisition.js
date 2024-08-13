@@ -692,6 +692,16 @@ $(document).ready(function() {
             });
         }
 
+        hideLetter() {
+            if (!this.root) {
+                return;
+            }
+            $('.display-container.collapsable', this.root).each(function() {
+                this.classList.add('collapsed');
+                expanded = false;
+            });
+        }
+
         alterPosition(shift) {
             if (!this.root) {
                 return;
@@ -1209,7 +1219,11 @@ $(document).ready(function() {
             const hotkey = context.instrument_info.display_letter;
             if (hotkey && event.code === 'Key' + hotkey.toUpperCase()) {
                 event.preventDefault();
-                context.activateLetter();
+                if (event.shiftKey) {
+                    context.hideLetter();
+                } else {
+                    context.activateLetter();
+                }
             }
         }
 
