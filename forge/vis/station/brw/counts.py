@@ -25,11 +25,11 @@ class ParticleConcentration(TimeSeries):
         n_cnc.data_field = 'cnc'
         cnc.traces.append(n_cnc)
 
-        n_cnc = TimeSeries.Trace(cm_3)
-        n_cnc.legend = "CNC2 (MAGIC)"
-        n_cnc.data_record = f'{mode}-cnc'
-        n_cnc.data_field = 'cnc2'
-        cnc.traces.append(n_cnc)
+        # n_cnc = TimeSeries.Trace(cm_3)
+        # n_cnc.legend = "CNC2 (MAGIC)"
+        # n_cnc.data_record = f'{mode}-cnc'
+        # n_cnc.data_field = 'cnc2'
+        # cnc.traces.append(n_cnc)
 
         n_cnc = TimeSeries.Trace(cm_3)
         n_cnc.legend = "CCN"
@@ -103,11 +103,11 @@ class EditingParticleConcentration(TimeSeries):
         edited.traces.append(n_cnc)
 
 
-class ADMagicCPC250StatusSecondary(ADMagicCPC250Status):
-    def __init__(self, mode: str, **kwargs):
-        super().__init__(mode, **kwargs)
-        self.title = "MAGIC CPC Status"
-
-        for g in self.graphs:
-            for t in g.traces:
-                t.data_record += '2'
+# class ADMagicCPC250StatusSecondary(ADMagicCPC250Status):
+#     def __init__(self, mode: str, **kwargs):
+#         super().__init__(mode, **kwargs)
+#         self.title = "MAGIC CPC Status"
+#
+#         for g in self.graphs:
+#             for t in g.traces:
+#                 t.data_record += '2'

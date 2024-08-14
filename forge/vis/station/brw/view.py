@@ -4,6 +4,7 @@ from ..default.view import detach, View, aerosol_views, ozone_views, met_views, 
 from ..default.aerosol.wind import Wind
 from ..default.aerosol.temperature import Temperature
 from ..default.aerosol.ccn import CCNStatus
+from ..default.aerosol.admagiccpc import ADMagicCPC250Status
 from ..default.met.temperature import Temperature as MetTemperature
 from ..default.met.wind import Wind as MetWind
 from ..default.met.editing.temperature import EditingTemperature as MetEditingTemperature
@@ -15,7 +16,7 @@ from ..default.radiation.ambient import Ambient as RadiationAmbient
 from .flow import Flow
 from .filter import FilterStatus, SecondFilterStatus
 from .umac import UMACStatus
-from .counts import ParticleConcentration, EditingParticleConcentration, ADMagicCPC250StatusSecondary
+from .counts import ParticleConcentration, EditingParticleConcentration
 from .pressure import Pressure
 
 
@@ -63,8 +64,8 @@ station_views['aerosol-raw-umacstatus'] = UMACStatus('aerosol-raw')
 station_views['aerosol-realtime-filterstatus'] = FilterStatus('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-filterstatus2'] = SecondFilterStatus('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-umacstatus'] = UMACStatus('aerosol-realtime', realtime=True)
-station_views['aerosol-raw-cpcstatus2'] = ADMagicCPC250StatusSecondary('aerosol-raw')
-station_views['aerosol-realtime-cpcstatus2'] = ADMagicCPC250StatusSecondary('aerosol-raw', realtime=True)
+station_views['aerosol-raw-cpcstatus'] = ADMagicCPC250Status('aerosol-raw')
+station_views['aerosol-realtime-cpcstatus'] = ADMagicCPC250Status('aerosol-raw', realtime=True)
 station_views['aerosol-raw-ccnstatus'] = CCNStatus('aerosol-raw')
 station_views['aerosol-realtime-ccnstatus'] = CCNStatus('aerosol-raw', realtime=True)
 
