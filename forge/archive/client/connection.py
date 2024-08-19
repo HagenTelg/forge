@@ -305,16 +305,41 @@ class Connection:
             connection.writer.close()
             raise EOFError
 
-        try:
-            await self._request_response(request, None)
-        except:
-            pass
+        completed = asyncio.Future()
+        await self._request_queue.put((
+            request,
+            None,
+            [], {},
+            completed
+        ))
+        wait_closed = asyncio.ensure_future(self._closed.wait())
+        done, pending = await asyncio.wait([completed, wait_closed], return_when=asyncio.FIRST_COMPLETED)
+        for c in pending:
+            try:
+                c.cancel()
+            except:
+                pass
+            try:
+                await c
+            except (asyncio.CancelledError, IOError, EOFError, ConnectionResetError):
+                pass
+            except:
+                _LOGGER.debug("Error in shutdown pending task", extra=self.log_extra, exc_info=True)
+        for d in done:
+            try:
+                await d
+            except (IOError, EOFError, ConnectionResetError):
+                pass
+            except:
+                _LOGGER.debug("Error in shutdown task", extra=self.log_extra, exc_info=True)
 
         if self._internal_run:
             try:
                 await self._internal_run
-            except:
+            except (asyncio.CancelledError, IOError, EOFError, ConnectionResetError):
                 pass
+            except:
+                _LOGGER.debug("Exception in run shutdown", extra=self.log_extra, exc_info=True)
             self._internal_run = None
 
     async def list_files(self, path: str, modified_after: float = 0) -> typing.List[str]:
