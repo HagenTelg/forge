@@ -389,7 +389,7 @@ def parse_time_bounds_arguments(args: typing.List[str]) -> typing.Tuple[datetime
             elif end_offset is not None:
                 start = _parse_any_single_time(_fragment_remaining())
                 remaining.clear()
-                end = _apply_offset(start, start_offset * 1)
+                end = _apply_offset(start, end_offset * 1)
             else:
                 parts = _fragment_remaining()
                 start = _parse_any_single_time(parts)
