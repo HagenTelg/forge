@@ -226,7 +226,6 @@ class Converter(WavelengthConverter):
         self.apply_data(times, var_Pd2, data_Pd2)
 
         var_Ld = g.createVariable("path_length_change", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_air_temperature(var_Ld)
         netcdf_timeseries.variable_coordinates(g, var_Ld)
         var_Ld.variable_id = "Ld"
         var_Ld.coverage_content_type = "physicalMeasurement"

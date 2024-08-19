@@ -136,7 +136,7 @@ class Converter(WavelengthConverter):
         self.apply_data(times, var_T1, data_T1)
 
         var_T2 = g.createVariable("case_temperature", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_air_temperature(var_T2)
+        netcdf_var.variable_temperature(var_T2)
         netcdf_timeseries.variable_coordinates(g, var_T2)
         var_T2.variable_id = "T2"
         var_T2.coverage_content_type = "physicalMeasurement"
@@ -145,7 +145,6 @@ class Converter(WavelengthConverter):
         self.apply_data(times, var_T2, data_T2)
 
         var_Ld = g.createVariable("path_length_change", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_air_temperature(var_Ld)
         netcdf_timeseries.variable_coordinates(g, var_Ld)
         var_Ld.variable_id = "Ld"
         var_Ld.coverage_content_type = "physicalMeasurement"
