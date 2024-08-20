@@ -503,7 +503,7 @@ class Converter:
             for flavors, selector in cpd3_flavors.items():
                 output_name = Name(self.station, self.archive, cpd3_variable, flavors)
                 if cut_dim_idx is not None:
-                    data_selector = ([True] * (cut_dim_idx - 1)) + [selector]
+                    data_selector = ([slice(None)] * cut_dim_idx) + [selector]
                 else:
                     data_selector = [selector]
 
@@ -556,11 +556,11 @@ class Converter:
                 for flavors, selector in cpd3_flavors.items():
                     output_name = Name(self.station, self.archive, cpd3_variable, flavors)
                     if cut_dim_idx is not None:
-                        data_selector = ([True] * (cut_dim_idx - 1)) + [selector]
+                        data_selector = ([slice(None)] * cut_dim_idx) + [selector]
                     else:
                         data_selector = [selector]
                     if wl_dim_idx >= len(data_selector):
-                        data_selector += [True] * (wl_dim_idx - len(data_selector) + 1)
+                        data_selector += [slice(None)] * (wl_dim_idx - len(data_selector) + 1)
                     data_selector[wl_dim_idx] = wl_selector
 
                     unselected_dimensions: int = 0
