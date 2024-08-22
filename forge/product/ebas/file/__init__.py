@@ -439,6 +439,7 @@ class EBASFile(ABC):
             'instr_model': self.instrument_model,
             'instr_type': self.instrument_type,
             'instr_serialno': self.instrument_serial_number,
+            'license': station_data(self.station, 'dataset', 'license')(self.station, self.tags),
             'acknowledgements': 'Request acknowledgement details from data originator',
         }
         # EBAS DOI is per-file, so but we're setting the DOI for the whole dataset, so set the 'Contains data from DOI'
@@ -449,6 +450,24 @@ class EBASFile(ABC):
         if doi:
             result['doi_list'] = [doi]
         return result
+
+    @property
+    def level0_metadata(self) -> typing.Dict[str, str]:
+        return {
+            'datalevel': '0',
+            'duration': '1mn',
+            'resolution': '1mn',
+            'type': 'TI',
+        }
+
+    @property
+    def level1_metadata(self) -> typing.Dict[str, str]:
+        return {
+            'datalevel': '1',
+            'duration': '1mn',
+            'resolution': '1mn',
+            'type': 'TI',
+        }
 
     @property
     def level2_metadata(self) -> typing.Dict[str, str]:
@@ -790,7 +809,7 @@ class EBASFile(ABC):
                     [fixed_start_epoch_ms[-1] + (fixed_start_epoch_ms[-1] - fixed_start_epoch_ms[-2])]
                 ))
         else:
-            start_time_epoch_ms = peer_output_time([t for var in variables for t in var.all_time_data])
+            start_time_epoch_ms = peer_output_time(*[t for var in variables for t in var.all_time_data])
             start_time_epoch_ms = start_time_epoch_ms[np.all((
                 start_time_epoch_ms >= self.start_epoch_ms,
                 start_time_epoch_ms < self.end_epoch_ms
@@ -806,9 +825,13 @@ class EBASFile(ABC):
             end_time_epoch_ms = start_time_epoch_ms + time_step
             valid_times = end_time_epoch_ms <= self.end_epoch_ms
             start_time_epoch_ms = start_time_epoch_ms[valid_times]
-            end_time_epoch_ms = start_time_epoch_ms[valid_times]
+            end_time_epoch_ms = end_time_epoch_ms[valid_times]
             if start_time_epoch_ms.shape[0] == 0:
                 return False
+            check_overlap_end = end_time_epoch_ms[:-1]
+            check_overlap_next = end_time_epoch_ms[:-1]
+            overlapping = check_overlap_end > check_overlap_next
+            check_overlap_end[overlapping] = check_overlap_next[overlapping]
 
         file_values, valid_at_time = self.assemble_values(start_time_epoch_ms, variables, optional)
         if not np.any(valid_at_time):
@@ -848,6 +871,7 @@ class EBASFile(ABC):
         else:
             fixed_start_epoch_ms = None
             fixed_end_epoch_ms = None
+        _LOGGER.debug(f"Processing matrix {getattr(nas.metadata, 'matrix', 'UNKNOWN')}")
         if not self.declare_variables(nas, variables, optional, flags, fixed_start_epoch_ms, fixed_end_epoch_ms):
             _LOGGER.debug(f"Skipping output of matrix {getattr(nas.metadata, 'matrix', 'UNKNOWN')}")
             return
@@ -855,6 +879,7 @@ class EBASFile(ABC):
             if not value:
                 continue
             setattr(nas.metadata, key, value)
+        _LOGGER.debug(f"Writing file for matrix {getattr(nas.metadata, 'matrix', 'UNKNOWN')}")
         await self.write_file(nas, output_directory)
 
     @staticmethod

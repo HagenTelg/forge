@@ -84,6 +84,10 @@ def doi(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.O
     return None
 
 
+def license(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
+    return None
+
+
 def summary(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     if tags and 'eventlog' in tags:
         return "This dataset represents a log of events that occurred on the acquisition system."
@@ -145,7 +149,7 @@ def creator_name(station: str, tags: typing.Optional[typing.Set[str]] = None) ->
         return "Ozone and Water Vapor (OZWV)"
     if tags and ('met' in tags and 'aerosol' not in tags and 'radiation' not in tags):
         return "GML Observatory Operations (OBOP)"
-    return "Global Radiation and Aerosols (GRAD)"
+    return "Global Radiation and Aerosols Division (GRAD)"
 
 
 def creator_email(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:

@@ -102,7 +102,7 @@ def peer_output_time(
     if len(peer_times) == 0:
         return np.empty((0,), dtype=np.int64)
     if len(peer_times) == 1:
-        return peer_times[0]
+        return np.array(peer_times[0], copy=False)
 
     combined_time = np.unique(np.concatenate(peer_times))
     if not apply_rounding or combined_time.shape[0] <= 2:
@@ -115,5 +115,6 @@ def peer_output_time(
         return np.empty((0,), dtype=peer_times[0].dtype)
 
     combined_time = np.round(combined_time / time_step) * time_step
+    combined_time = combined_time.astype(time_difference.dtype, casting='unsafe', copy=False)
     combined_time = np.unique(combined_time)
     return combined_time

@@ -14,3 +14,7 @@ def doi(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.O
     if tags and 'met' in tags:
         return default_doi(station, tags)
     return "10.7289/V55T3HJF"
+
+
+def license(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
+    return "https://creativecommons.org/publicdomain/zero/1.0/"

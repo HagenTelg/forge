@@ -28,6 +28,10 @@ def doi(root: Dataset, value: str, change_value: bool = True) -> None:
     apply_attribute(root, "doi", value, change_value=change_value)
 
 
+def license(root: Dataset, value: str, change_value: bool = True) -> None:
+    apply_attribute(root, "license", value, change_value=change_value)
+
+
 def acknowledgement(root: Dataset, value: str, change_value: bool = True) -> None:
     apply_attribute(root, "acknowledgement", value, change_value=change_value)
 
@@ -58,8 +62,8 @@ def creator_url(root: Dataset, value: str, change_value: bool = True) -> None:
 
 def set_dataset(root: Dataset, station: str, tags: typing.Optional[typing.Set[str]] = None,
                 override: typing.Optional[typing.Callable[[str], typing.Any]] = None) -> None:
-    for code in ('feature_type', 'source', 'title', 'summary', 'keywords', 'doi', 'acknowledgement', 'address',
-                 'creator_type', 'creator_name', 'creator_email', 'creator_institution', 'creator_url'):
+    for code in ('feature_type', 'source', 'title', 'summary', 'keywords', 'doi', 'license', 'acknowledgement',
+                 'address', 'creator_type', 'creator_name', 'creator_email', 'creator_institution', 'creator_url'):
         if override:
             value = override(code)
         else:

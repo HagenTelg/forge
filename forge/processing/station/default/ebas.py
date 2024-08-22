@@ -188,6 +188,6 @@ def set_metadata(nas: "nasa_ames.EbasNasaAmes", gaw_station: str,
 
 def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: int) -> typing.Type["EBASFile"]:
     from forge.product.ebas.file import EBASFile
-    if type_code == "absorption_lev2":
-        type_code = "clap_lev2"
+    if type_code.startswith("absorption_"):
+        type_code = "clap_" + type_code[11:]
     return EBASFile.from_type_code(type_code)
