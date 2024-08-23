@@ -1,9 +1,13 @@
 import typing
+import logging
 import netCDF4
 import numpy as np
 from math import inf, isfinite
 from forge.data.dimensions import find_dimension_values
-from . import EBASFile, DataObject
+from ebas.domain.masterdata.dc import DCError
+from . import EBASFile, DatasetCharacteristicList
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class SpectralFile(EBASFile):
@@ -26,8 +30,18 @@ class SpectralFile(EBASFile):
 
             def set_wavelength(self, wavelength: typing.Union[int, float],
                                instrument_type: str, component: str) -> None:
-                self.add_characteristic('Wavelength', f'{int(round(wavelength))} nm',
-                                        instrument_type, component)
+                try:
+                    self.add_characteristic('Wavelength', f'{int(round(wavelength))} nm',
+                                            instrument_type, component)
+                except DCError:
+                    # Notably happens on neph zero components
+                    _LOGGER.warning("Error in wavelength parse (EBAS-IO database possibly incorrect), overriding", exc_info=True)
+                    if getattr(self.metadata, 'characteristics', None) is None:
+                        self.metadata.characteristics = DatasetCharacteristicList()
+                    charac = self.metadata.characteristics.__class__.CLIENT_CLASS_ELEMENTS(
+                        self.metadata.characteristics.__class__.CLIENT_CLASS_ELEMENTS.setup_dict(
+                            'Wavelength', round(wavelength), instrument_type, component))
+                    self.metadata.characteristics.append(charac)
 
             def apply_metadata(
                     self,
@@ -78,7 +92,9 @@ class SpectralFile(EBASFile):
                 var: netCDF4.Variable,
                 selector: typing.Optional[typing.Dict[str, typing.Union[slice, int, np.ndarray]]] = None,
                 converter: typing.Callable[[np.ndarray], np.ndarray] = None,
+                wavelength_converter: typing.Callable[[float], typing.Optional[typing.Callable[[np.ndarray], np.ndarray]]] = None,
                 allow_constant: bool = False,
+                extra_vars: typing.List[typing.Union[netCDF4.Variable, np.ndarray]] = None,
         ) -> None:
             if 'wavelength' not in var.dimensions:
                 if 'wavelength' not in getattr(var, 'ancillary_variables', "").split():
@@ -95,12 +111,16 @@ class SpectralFile(EBASFile):
                 if band_idx is None:
                     return
 
+                if wavelength_converter is not None:
+                    converter = wavelength_converter(wavelength)
+
                 band_var = self._to_band_variable(band_idx)
                 band_var.integrate_variable(
                     var,
                     selector=selector,
                     converter=converter,
                     allow_constant=allow_constant,
+                    extra_vars=extra_vars,
                 )
                 band_var.wavelength = wavelength
                 return
@@ -126,12 +146,16 @@ class SpectralFile(EBASFile):
                     wl_selector.update(selector)
                 wl_selector['wavelength'] = wlidx
 
+                if wavelength_converter is not None:
+                    converter = wavelength_converter(wavelength)
+
                 band_var = self._to_band_variable(band_idx)
                 band_var.integrate_variable(
                     var,
                     selector=wl_selector,
                     converter=converter,
                     allow_constant=allow_constant,
+                    extra_vars=extra_vars,
                 )
                 band_var.wavelength = wavelength
 

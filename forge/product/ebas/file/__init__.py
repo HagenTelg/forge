@@ -65,7 +65,15 @@ class EBASFile(ABC):
                 selector: typing.Optional[typing.Dict[str, typing.Union[slice, int, np.ndarray]]] = None,
                 converter: typing.Callable[[np.ndarray], np.ndarray] = None,
                 allow_constant: bool = False,
+                extra_vars: typing.List[typing.Union[netCDF4.Variable, np.ndarray]] = None,
         ) -> None:
+            def broadcast_extra_var(evar: netCDF4.Variable) -> np.ndarray:
+                # Broadcast to extra dimension on the end
+                assert len(evar.shape) <= len(var.shape)
+                evar_values = evar[:].data
+                evar_values = np.reshape(evar_values, [*evar_values.shape] + ([1] * (len(var.shape) - len(evar.shape))))
+                return np.broadcast_to(evar_values, var.shape)
+
             check = getattr(var, 'C_format', None)
             if check is not None:
                 self._variable_format = str(check)
@@ -89,11 +97,31 @@ class EBASFile(ABC):
                 time_values = np.array([start_time], dtype=np.int64)
                 var_values = np.reshape(var[:].data, [1, *var.shape])
                 var_dimensions = ['time', *var.dimensions]
+                if extra_vars:
+                    var_values = np.reshape(var_values, [*var_values.shape, 1])
+                    var_dimensions.append('')
+                    for evar in extra_vars:
+                        evar_values = evar
+                        if isinstance(evar_values, netCDF4.Variable):
+                            evar_values = broadcast_extra_var(evar_values)
+                        assert evar_values.shape == var_values.shape[1:-1]
+                        evar_values = np.reshape(evar_values, [1, *var_values.shape[1:-1], 1])
+                        var_values = np.vstack((var_values.T, evar_values.T)).T
             else:
                 _, time_values = find_dimension_values(var.group(), 'time')
                 time_values = time_values[:].data
                 var_values = var[:].data
                 var_dimensions = list(var.dimensions)
+                if extra_vars:
+                    var_values = np.reshape(var_values, [*var_values.shape, 1])
+                    var_dimensions.append('')
+                    for evar in extra_vars:
+                        evar_values = evar
+                        if isinstance(evar_values, netCDF4.Variable):
+                            evar_values = broadcast_extra_var(evar_values)
+                        assert evar_values.shape == var_values.shape[:-1]
+                        evar_values = np.reshape(evar_values, [*var_values.shape[:-1], 1])
+                        var_values = np.vstack((var_values.T, evar_values.T)).T
             assert len(time_values.shape) == 1
             if time_values.shape[0] == 0:
                 return
@@ -722,6 +750,10 @@ class EBASFile(ABC):
     def begin_file(self) -> nasa_ames.EbasNasaAmes:
         nas = nasa_ames.EbasNasaAmes()
         station_data(self.station, 'ebas', 'set_metadata')(nas, self.station, self.tags)
+        for key, value in self.file_metadata.items():
+            if not value:
+                continue
+            setattr(nas.metadata, key, value)
         return nas
 
     def apply_times(
@@ -875,10 +907,6 @@ class EBASFile(ABC):
         if not self.declare_variables(nas, variables, optional, flags, fixed_start_epoch_ms, fixed_end_epoch_ms):
             _LOGGER.debug(f"Skipping output of matrix {getattr(nas.metadata, 'matrix', 'UNKNOWN')}")
             return
-        for key, value in self.file_metadata.items():
-            if not value:
-                continue
-            setattr(nas.metadata, key, value)
         _LOGGER.debug(f"Writing file for matrix {getattr(nas.metadata, 'matrix', 'UNKNOWN')}")
         await self.write_file(nas, output_directory)
 
