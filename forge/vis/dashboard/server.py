@@ -240,8 +240,11 @@ async def _set_email(request: Request) -> Response:
 
         if not is_available(request.user, station, entry_code):
             raise HTTPException(starlette.status.HTTP_403_FORBIDDEN, detail="Entry not available")
-        if not await db.entry_exists(station, entry_code):
-            raise HTTPException(starlette.status.HTTP_403_FORBIDDEN, detail="Entry not available")
+        # Telemetry is generated on the fly, rather than a pre-existing entry, so it doesn't have a database
+        # link
+        if entry_code != 'acquisition-telemetry':
+            if not await db.entry_exists(station, entry_code):
+                raise HTTPException(starlette.status.HTTP_403_FORBIDDEN, detail="Entry not available")
 
         apply_entries.add((station, entry_code))
 
