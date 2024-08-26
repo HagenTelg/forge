@@ -1,7 +1,7 @@
 import typing
 from math import nan
 from forge.vis.export import Export, ExportList
-from forge.vis.export.archive import ArchiveExportEntry, ExportCSV, ExportNetCDF, InstrumentSelection, Selection
+from forge.vis.export.archive import ArchiveExportEntry, ExportCSV, ExportNetCDF, ExportEBAS, InstrumentSelection, Selection
 from .data import STANDARD_THREE_WAVELENGTHS
 
 
@@ -270,6 +270,10 @@ for archive in ("avgh",):
         for record, cut_size in STANDARD_CUT_SIZE_SPLIT
         for wl in range(7)
     ]))
+
+aerosol_exports["raw"].append(ExportEBAS(ebas=["absorption_lev0", "scattering_lev0", "cpc_lev0"]))
+aerosol_exports["clean"].append(ExportEBAS(ebas=["absorption_lev1", "scattering_lev1", "cpc_lev1"]))
+aerosol_exports["avgh"].append(ExportEBAS(ebas=["absorption_lev2", "scattering_lev2", "cpc_lev2"]))
 for archive in ("raw", "clean", "avgh"):
     aerosol_exports[archive].append(ExportNetCDF())
 

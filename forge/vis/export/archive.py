@@ -662,3 +662,54 @@ class ExportNetCDF(ArchiveExportEntry):
             if archive == "editing":
                 archive = "edited"
         return self._RunExport(station, archive, start_epoch_ms, end_epoch_ms, Path(directory), self.selections)
+
+
+class ExportEBAS(ArchiveExportEntry):
+    class _RunExport(Export):
+        def __init__(
+                self,
+                station: str, start_epoch_ms: int, end_epoch_ms: int,
+                destination: Path, ebas: typing.Set[str],
+        ):
+            self.station = station
+            self.start_epoch_ms = start_epoch_ms
+            self.end_epoch_ms = end_epoch_ms
+            self.destination = destination
+            self.ebas = ebas
+
+            self.end_epoch_ms = min(self.end_epoch_ms, self.start_epoch_ms + 366 * 24 * 60 * 60 * 1000)
+
+        @staticmethod
+        async def _archive_connection():
+            return await Connection.default_connection("export EBAS data", use_environ=False)
+
+        async def __call__(self) -> typing.Optional[Export.Result]:
+            from forge.processing.station.lookup import station_data
+
+            for ebas_type in self.ebas:
+                try:
+                    converter = station_data(self.station, 'ebas', 'file')(
+                        self.station, ebas_type, self.start_epoch_ms, self.end_epoch_ms
+                    )
+                except FileNotFoundError:
+                    _LOGGER.debug(f"EBAS type {ebas_type} not found for {self.station}")
+                    continue
+                converter = converter(self.station, self.start_epoch_ms, self.end_epoch_ms)
+                converter.get_archive_connection = self._archive_connection
+                await converter(self.destination)
+
+            return Export.Result()
+
+    def __init__(self, key: str = None, display: str = None,
+                 ebas: typing.Iterable[str] = None):
+        super().__init__(key or "ebas", display or "EBAS")
+        self.ebas = set(ebas) or set()
+
+    def __deepcopy__(self, memo):
+        y = type(self)(self.key, self.display, self.ebas)
+        memo[id(self)] = y
+        return y
+
+    def __call__(self, station: str, mode_name: str, export_key: str,
+                 start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
+        return self._RunExport(station, start_epoch_ms, end_epoch_ms, Path(directory), self.ebas)
