@@ -4,36 +4,33 @@ from tempfile import TemporaryDirectory
 from pathlib import Path
 from forge.units import ZERO_C_IN_K
 from forge.product.selection import InstrumentSelection
-from .spectral import SpectralFile
+from . import EBASFile
 from .aerosol_instrument import AerosolInstrument
 
 
-class Level0File(SpectralFile, AerosolInstrument):
+class Level0File(EBASFile, AerosolInstrument):
     @property
     def instrument_selection(self) -> typing.Iterable[InstrumentSelection]:
         return [InstrumentSelection(
-            require_tags=["absorption"],
-            exclude_tags=["secondary", "aethalometer", "thermomaap"],
+            require_tags=["cpc"],
+            exclude_tags=["secondary"],
         )]
 
     @property
     def instrument_type(self) -> str:
-        return 'filter_absorption_photometer'
+        return 'cpc'
 
     @property
     def file_metadata(self) -> typing.Dict[str, str]:
         r = super().file_metadata
         r.update(self.level0_metadata)
         r.update({
-            'unit': '1/Mm',
-            'comp_name': 'aerosol_absorption_coefficient',
-            'hum_temp_ctrl': 'Heating to 40% RH, limit 40 deg. C',
+            'unit': '1/cm3',
+            'comp_name': 'particle_number_concentration',
             'std_method': 'None',
-            'method': f'{self.lab_code}_abs_coef',
-            'vol_std_temp': '273.15K',
-            'vol_std_pressure': '1013.25hPa',
-            'zero_negative': 'Zero/negative possible',
-            'zero_negative_desc': 'Zero and neg. values may appear due to statistical variations at very low concentrations',
+            'method': f'{self.lab_code}_cpc_ref',
+            'zero_negative': 'Zero possible',
+            'zero_negative_desc': 'Zero values may appear due to statistical variations at very low concentrations',
         })
         return r
 
@@ -59,6 +56,20 @@ class Level0File(SpectralFile, AerosolInstrument):
                 matrix="instrument",
                 title="T_int",
             )
+            temperature_condensor = matrix.variable(
+                comp_name="temperature",
+                unit="K",
+                location="CPC condensor",
+                matrix="instrument",
+                title="T_con",
+            )
+            temperature_saturator = matrix.variable(
+                comp_name="temperature",
+                unit="K",
+                location="CPC saturator",
+                matrix="instrument",
+                title="T_con",
+            )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
@@ -71,12 +82,14 @@ class Level0File(SpectralFile, AerosolInstrument):
                 unit="l/min",
                 location="sample line",
                 matrix="instrument",
-                title="flow",
+                title="act_flow",
             )
-            absorption = matrix.spectral_variable()
-            transmittance = matrix.spectral_variable()
-            sample_intensity = matrix.spectral_variable()
-            reference_intensity = matrix.spectral_variable()
+            cnc = matrix.variable(
+                comp_name="particle_number_concentration",
+                unit="1/cm3",
+                statistics='arithmetic mean',
+                title="conc",
+            )
             async for nas, selector, root in matrix.iter_data_files(data_directory):
                 flags[nas].integrate_file(root, selector)
                 instrument[nas].integrate_file(root)
@@ -103,102 +116,69 @@ class Level0File(SpectralFile, AerosolInstrument):
                         {"variable_name": "sample_flow"},
                 ):
                     flow_rate[nas].integrate_variable(var, selector(var, require_cut_size_match=False))
-
                 for var in self.select_variable(
                         root,
-                        {"variable_name": "light_absorption"},
-                        {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
-                        {"standard_name": "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles"},
+                        {"variable_name": "condenser_temperature"},
                 ):
-                    absorption[nas].integrate_variable(
-                        var, selector(var),
+                    temperature_condensor[nas].integrate_variable(
+                        var, selector(var, require_cut_size_match=False),
+                        converter=lambda x: x + ZERO_C_IN_K
                     )
                 for var in self.select_variable(
                         root,
-                        {"variable_name": "transmittance"},
+                        {"variable_name": "saturator_temperature"},
                 ):
-                    transmittance[nas].integrate_variable(
-                        var, selector(var),
-                    )
-                for var in self.select_variable(
-                        root,
-                        {"variable_name": "sample_intensity"},
-                ):
-                    sample_intensity[nas].integrate_variable(
-                        var, selector(var),
-                    )
-                for var in self.select_variable(
-                        root,
-                        {"variable_name": "reference_intensity"},
-                ):
-                    reference_intensity[nas].integrate_variable(
-                        var, selector(var),
+                    temperature_saturator[nas].integrate_variable(
+                        var, selector(var, require_cut_size_match=False),
+                        converter=lambda x: x + ZERO_C_IN_K
                     )
 
-        for var in absorption:
-            var.apply_metadata(
-                title='abs{wavelength}',
-                comp_name='aerosol_absorption_coefficient',
-                unit='1/Mm',
-            )
-        for var in transmittance:
-            var.apply_metadata(
-                title='Trans{wavelength}',
-                comp_name='transmittance',
-                unit='no unit',
-            )
-        for var in sample_intensity:
-            var.apply_metadata(
-                title='SampInt{wavelength}',
-                comp_name='sample_intensity',
-                unit='no unit',
-            )
-        for var in reference_intensity:
-            var.apply_metadata(
-                title='RefInt{wavelength}',
-                comp_name='reference_intensity',
-                unit='no unit',
-            )
+                for var in self.select_variable(
+                        root,
+                        {"variable_name": "number_concentration"},
+                        {"standard_name": "number_concentration_of_ambient_aerosol_particles_in_air"},
+                ):
+                    cnc[nas].integrate_variable(var, selector(var))
+
+        for var in flow_rate:
+            setattr(var.metadata, 'Nominal/measured', 'measured')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)
             self.apply_inlet(nas)
             await self.assemble_file(
                 nas, output_directory,
-                absorption[nas],
-                optional=[pressure[nas], temperature[nas], humidity[nas], flow_rate[nas]] +
-                    list(transmittance[nas]) + list(sample_intensity[nas]) + list(reference_intensity[nas]),
+                [cnc[nas]],
+                optional=[pressure[nas], temperature[nas], humidity[nas], flow_rate[nas]],
                 flags=flags[nas],
             )
 
 
-class Level1File(SpectralFile, AerosolInstrument):
+class Level1File(EBASFile, AerosolInstrument):
     @property
     def instrument_selection(self) -> typing.Iterable[InstrumentSelection]:
         return [InstrumentSelection(
-            require_tags=["absorption"],
-            exclude_tags=["secondary", "aethalometer", "thermomaap"],
+            require_tags=["cpc"],
+            exclude_tags=["secondary"],
         )]
 
     @property
     def instrument_type(self) -> str:
-        return 'filter_absorption_photometer'
+        return 'cpc'
 
     @property
     def file_metadata(self) -> typing.Dict[str, str]:
         r = super().file_metadata
         r.update(self.level1_metadata)
         r.update({
-            'unit': '1/Mm',
-            'comp_name': 'aerosol_absorption_coefficient',
-            'hum_temp_ctrl': 'Heating to 40% RH, limit 40 deg. C',
-            'std_method': 'Single-angle_Correction=Bond1999_Ogren2010',
-            'method': f'{self.lab_code}_abs_coef',
+            'unit': '1/cm3',
+            'comp_name': 'particle_number_concentration',
+            'std_method': 'None',
+            'method': f'{self.lab_code}_cpc_ref',
             'vol_std_temp': '273.15K',
             'vol_std_pressure': '1013.25hPa',
-            'zero_negative': 'Zero/negative possible',
-            'zero_negative_desc': 'Zero and neg. values may appear due to statistical variations at very low concentrations',
-            'comment': 'Standard Bond et al. 1999 values for K1 and K2 used at all wavelengths',
+            'zero_negative': 'Zero possible',
+            'zero_negative_desc': 'Zero values may appear due to statistical variations at very low concentrations',
         })
         return r
 
@@ -231,7 +211,12 @@ class Level1File(SpectralFile, AerosolInstrument):
                 matrix="instrument",
                 title="RH_int",
             )
-            absorption = matrix.spectral_variable()
+            cnc = matrix.variable(
+                comp_name="particle_number_concentration",
+                unit="1/cm3",
+                statistics='arithmetic mean',
+                title="conc",
+            )
             async for nas, selector, root in matrix.iter_data_files(data_directory):
                 flags[nas].integrate_file(root, selector)
                 instrument[nas].integrate_file(root)
@@ -256,101 +241,49 @@ class Level1File(SpectralFile, AerosolInstrument):
 
                 for var in self.select_variable(
                         root,
-                        {"variable_name": "light_absorption"},
-                        {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
-                        {"standard_name": "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles"},
+                        {"variable_name": "number_concentration"},
+                        {"standard_name": "number_concentration_of_ambient_aerosol_particles_in_air"},
                 ):
-                    absorption[nas].integrate_variable(
-                        var, selector(var),
-                    )
-
-        for var in absorption:
-            var.apply_metadata(
-                title='abs{wavelength}',
-                comp_name='aerosol_absorption_coefficient',
-                unit='1/Mm',
-            )
+                    cnc[nas].integrate_variable(var, selector(var))
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)
             self.apply_inlet(nas)
             await self.assemble_file(
                 nas, output_directory,
-                absorption[nas],
+                [cnc[nas]],
                 optional=[pressure[nas], temperature[nas], humidity[nas]],
                 flags=flags[nas],
             )
 
 
-class Level2File(SpectralFile, AerosolInstrument):
+class Level2File(EBASFile, AerosolInstrument):
     @property
     def instrument_selection(self) -> typing.Iterable[InstrumentSelection]:
         return [InstrumentSelection(
-            require_tags=["absorption"],
-            exclude_tags=["secondary", "aethalometer", "thermomaap"],
+            require_tags=["cpc"],
+            exclude_tags=["secondary"],
         )]
 
     @property
     def instrument_type(self) -> str:
-        return 'filter_absorption_photometer'
+        return 'cpc'
 
     @property
     def file_metadata(self) -> typing.Dict[str, str]:
         r = super().file_metadata
         r.update(self.level2_metadata)
         r.update({
-            'unit': '1/Mm',
-            'comp_name': 'aerosol_absorption_coefficient',
-            'hum_temp_ctrl': 'Heating to 40% RH, limit 40 deg. C',
-            'std_method': 'Single-angle_Correction=Bond1999_Ogren2010',
-            'method': f'{self.lab_code}_abs_coef',
+            'unit': '1/cm3',
+            'comp_name': 'particle_number_concentration',
+            'std_method': 'None',
+            'method': f'{self.lab_code}_cpc_ref',
             'vol_std_temp': '273.15K',
             'vol_std_pressure': '1013.25hPa',
-            'zero_negative': 'Zero/negative possible',
-            'zero_negative_desc': 'Zero and neg. values may appear due to statistical variations at very low concentrations',
-            'comment': 'Standard Bond et al. 1999 values for K1 and K2 used at all wavelengths',
+            'zero_negative': 'Zero possible',
+            'zero_negative_desc': 'Zero values may appear due to statistical variations at very low concentrations',
         })
         return r
-
-    @property
-    def limit_absorption(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
-        return -0.5, None
-
-    @property
-    def limit_absorption_q16(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
-        return -5.0, None
-
-    @property
-    def limit_absorption_q84(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
-        return -0.5, None
-    
-    @classmethod
-    def with_limits(
-            cls, 
-            absorption: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
-            absorption_q16: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
-            absorption_q84: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
-    ) -> typing.Type["Level2File"]:
-        class Result(cls):
-            @property
-            def limit_absorption(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
-                if absorption is not None:
-                    return absorption
-                return super().limit_absorption
-            
-            @property
-            def limit_absorption_q16(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
-                if absorption_q16 is not None:
-                    return absorption_q16
-                return super().limit_absorption_q16
-            
-            @property
-            def limit_absorption_q84(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
-                if absorption_q84 is not None:
-                    return absorption_q84
-                return super().limit_absorption_q84
-
-        return Result
 
     async def __call__(self, output_directory: Path) -> None:
         with TemporaryDirectory() as data_directory:
@@ -381,9 +314,24 @@ class Level2File(SpectralFile, AerosolInstrument):
                 matrix="instrument",
                 title="RH_int",
             )
-            absorption = matrix.spectral_variable()
-            absorption_q16 = matrix.spectral_variable()
-            absorption_q84 = matrix.spectral_variable()
+            cnc = matrix.variable(
+                comp_name="particle_number_concentration",
+                unit="1/cm3",
+                statistics='arithmetic mean',
+                title="conc",
+            )
+            cnc_q16 = matrix.variable(
+                comp_name="particle_number_concentration",
+                unit="1/cm3",
+                statistics='percentile:15.87',
+                title="conc_16pc",
+            )
+            cnc_q84 = matrix.variable(
+                comp_name="particle_number_concentration",
+                unit="1/cm3",
+                statistics='percentile:84.13',
+                title="conc_84pc",
+            )
             async for nas, selector, root in matrix.iter_data_files(data_directory):
                 flags[nas].integrate_file(root, selector)
                 instrument[nas].integrate_file(root)
@@ -408,66 +356,32 @@ class Level2File(SpectralFile, AerosolInstrument):
 
                 for var in self.select_variable(
                         root,
-                        {"variable_name": "light_absorption"},
-                        {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
-                        {"standard_name": "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles"},
+                        {"variable_name": "number_concentration"},
+                        {"standard_name": "number_concentration_of_ambient_aerosol_particles_in_air"},
                 ):
-                    absorption[nas].integrate_variable(
-                        var, selector(var),
-                        converter=self.limit_converter(self.limit_absorption),
-                    )
+                    cnc[nas].integrate_variable(var, selector(var))
                 for var in self.select_variable(
                         root,
-                        {"variable_name": "light_absorption"},
-                        {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
-                        {"standard_name": "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles"},
+                        {"variable_name": "number_concentration"},
+                        {"standard_name": "number_concentration_of_ambient_aerosol_particles_in_air"},
                         statistics="quantiles",
                 ):
-                    absorption_q16[nas].integrate_variable(
+                    cnc_q16[nas].integrate_variable(
                         var, selector(var),
-                        converter=self.limit_converter(
-                            self.limit_absorption_q16,
-                            self.quantile_converter(var, 0.1587)
-                        )
+                        converter=self.quantile_converter(var, 0.1587),
                     )
-                    absorption_q84[nas].integrate_variable(
+                    cnc_q84[nas].integrate_variable(
                         var, selector(var),
-                        converter=self.limit_converter(
-                            self.limit_absorption_q84,
-                            self.quantile_converter(var, 0.8413)
-                        )
+                        converter=self.quantile_converter(var, 0.8413),
                     )
-
-        for var in absorption:
-            var.apply_metadata(
-                title='abs{wavelength}',
-                comp_name='aerosol_absorption_coefficient',
-                unit='1/Mm',
-                statistics='arithmetic mean',
-            )
-        for var in absorption_q16:
-            var.apply_metadata(
-                title='abs{wavelength}pc16',
-                comp_name='aerosol_absorption_coefficient',
-                unit='1/Mm',
-                statistics='percentile:15.87',
-            )
-        for var in absorption_q84:
-            var.apply_metadata(
-                title='abs{wavelength}pc84',
-                comp_name='aerosol_absorption_coefficient',
-                unit='1/Mm',
-                statistics='percentile:84.13',
-            )
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)
             self.apply_inlet(nas)
             await self.assemble_file(
                 nas, output_directory,
-                absorption[nas],
-                optional=[pressure[nas], temperature[nas], humidity[nas]] +
-                    list(absorption_q16[nas]) + list(absorption_q84[nas]),
+                [cnc[nas]],
+                optional=[pressure[nas], temperature[nas], humidity[nas], cnc_q16[nas], cnc_q84[nas]],
                 flags=flags[nas],
                 fixed_interval_ms=60 * 60 * 1000,
             )

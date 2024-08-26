@@ -735,6 +735,7 @@ class EBASFile(ABC):
         async def iter_data_files(self, data_directory: Path) -> typing.AsyncIterable[typing.Tuple[nasa_ames.EbasNasaAmes, "EBASFile.MatrixData.Selector", netCDF4.Dataset]]:
             async for root in self.files.iter_data_files(data_directory):
                 cut_sizes = self._find_available_cut_sizes(root)
+                _LOGGER.debug(f"Processing {len(cut_sizes)} candidate cut sizes in {Path(root.filepath()).name}")
                 for cs in cut_sizes:
                     if cs == 1.0:
                         yield self["pm1"], self.Selector(cs), root
@@ -745,7 +746,7 @@ class EBASFile(ABC):
                     elif not isfinite(cs):
                         yield self["aerosol"], self.Selector(cs), root
                     else:
-                        _LOGGER.debug(f"Skipping cut size {cs} for file {root.filepath()} due to no EBAS matrix assignment")
+                        _LOGGER.debug(f"Skipping cut size {cs} for file {Path(root.filepath()).name} due to no EBAS matrix assignment")
 
     def begin_file(self) -> nasa_ames.EbasNasaAmes:
         nas = nasa_ames.EbasNasaAmes()

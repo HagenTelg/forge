@@ -34,7 +34,6 @@ class Level0File(SpectralFile, AerosolInstrument):
             'method': f'{self.lab_code}_scat_coef',
             'zero_negative': 'Zero/negative possible',
             'zero_negative_desc': 'Zero and neg. values may appear due to statistical variations at very low concentrations',
-            'comment': 'Standard Anderson & Ogren 1998 values used for truncation correction',
         })
         return r
 
@@ -84,42 +83,49 @@ class Level0File(SpectralFile, AerosolInstrument):
                 unit="hPa",
                 location="instrument internal",
                 matrix="instrument",
+                title="p_int",
             )
             temperature_outlet = matrix.variable(
                 comp_name="temperature",
                 unit="K",
                 location="instrument outlet",
                 matrix="instrument",
+                title="T_out",
             )
             temperature_inlet = matrix.variable(
                 comp_name="temperature",
                 unit="K",
                 location="instrument inlet",
                 matrix="instrument",
+                title="T_int",
             )
             humidity_outlet = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
                 location="instrument outlet",
                 matrix="instrument",
+                title="RH_out",
             )
             humidity_inlet = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
                 location="instrument inlet",
                 matrix="instrument",
+                title="RH_int",
             )
             lamp_current = matrix.variable(
                 comp_name="electric_current",
                 unit="A",
                 location="lamp supply",
                 matrix="instrument",
+                title="lamp_c",
             )
             lamp_voltage = matrix.variable(
                 comp_name="electric_tension",
                 unit="V",
                 location="lamp supply",
                 matrix="instrument",
+                title="lamp_v",
             )
             scattering = matrix.spectral_variable()
             backscattering = matrix.spectral_variable()
@@ -300,18 +306,21 @@ class Level1File(SpectralFile, AerosolInstrument):
                 unit="hPa",
                 location="instrument internal",
                 matrix="instrument",
+                title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
                 location="instrument internal",
                 matrix="instrument",
+                title="T_int",
             )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
                 location="instrument internal",
                 matrix="instrument",
+                title="RH_int",
             )
             scattering = matrix.spectral_variable()
             backscattering = matrix.spectral_variable()
@@ -419,7 +428,7 @@ class Level2File(SpectralFile, AerosolInstrument):
         # return -1.0, 500
 
     @property
-    def limit_scattering_q85(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
+    def limit_scattering_q84(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
         return -0.1, None
         # return -0.1, 500
 
@@ -434,7 +443,7 @@ class Level2File(SpectralFile, AerosolInstrument):
         # return -1.5, 30
 
     @property
-    def limit_backscattering_q85(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
+    def limit_backscattering_q84(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
         return -0.1, None
         # return -1.0, 40
     
@@ -443,10 +452,10 @@ class Level2File(SpectralFile, AerosolInstrument):
             cls, 
             scattering: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
             scattering_q16: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
-            scattering_q85: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+            scattering_q84: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
             backscattering: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
             backscattering_q16: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
-            backscattering_q85: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+            backscattering_q84: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
     ) -> typing.Type["Level2File"]:
         class Result(cls):
             @property
@@ -462,10 +471,10 @@ class Level2File(SpectralFile, AerosolInstrument):
                 return super().limit_scattering_q16
             
             @property
-            def limit_scattering_q85(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
-                if scattering_q85 is not None:
-                    return scattering_q85
-                return super().limit_scattering_q85
+            def limit_scattering_q84(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
+                if scattering_q84 is not None:
+                    return scattering_q84
+                return super().limit_scattering_q84
             
             @property
             def limit_backscattering(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
@@ -480,10 +489,10 @@ class Level2File(SpectralFile, AerosolInstrument):
                 return super().limit_backscattering_q16
             
             @property
-            def limit_backscattering_q85(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
-                if backscattering_q85 is not None:
-                    return backscattering_q85
-                return super().limit_backscattering_q85
+            def limit_backscattering_q84(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
+                if backscattering_q84 is not None:
+                    return backscattering_q84
+                return super().limit_backscattering_q84
 
         return Result
 
@@ -500,25 +509,28 @@ class Level2File(SpectralFile, AerosolInstrument):
                 unit="hPa",
                 location="instrument internal",
                 matrix="instrument",
+                title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
                 location="instrument internal",
                 matrix="instrument",
+                title="T_int",
             )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
                 location="instrument internal",
                 matrix="instrument",
+                title="RH_int",
             )
             scattering = matrix.spectral_variable()
             scattering_q16 = matrix.spectral_variable()
-            scattering_q85 = matrix.spectral_variable()
+            scattering_q84 = matrix.spectral_variable()
             backscattering = matrix.spectral_variable()
             backscattering_q16 = matrix.spectral_variable()
-            backscattering_q85 = matrix.spectral_variable()
+            backscattering_q84 = matrix.spectral_variable()
             async for nas, selector, root in matrix.iter_data_files(data_directory):
                 flags[nas].integrate_file(root, selector)
                 instrument[nas].integrate_file(root)
@@ -563,10 +575,10 @@ class Level2File(SpectralFile, AerosolInstrument):
                             self.quantile_converter(var, 0.1587)
                         )
                     )
-                    scattering_q85[nas].integrate_variable(
+                    scattering_q84[nas].integrate_variable(
                         var, selector(var),
                         converter=self.limit_converter(
-                            self.limit_scattering_q85,
+                            self.limit_scattering_q84,
                             self.quantile_converter(var, 0.8413)
                         )
                     )
@@ -592,10 +604,10 @@ class Level2File(SpectralFile, AerosolInstrument):
                             self.quantile_converter(var, 0.1587)
                         )
                     )
-                    backscattering_q85[nas].integrate_variable(
+                    backscattering_q84[nas].integrate_variable(
                         var, selector(var),
                         converter=self.limit_converter(
-                            self.limit_backscattering_q85,
+                            self.limit_backscattering_q84,
                             self.quantile_converter(var, 0.8413)
                         )
                     )
@@ -614,7 +626,7 @@ class Level2File(SpectralFile, AerosolInstrument):
                 unit='1/Mm',
                 statistics='percentile:15.87',
             )
-        for var in scattering_q85:
+        for var in scattering_q84:
             var.apply_metadata(
                 title='sc{wavelength}pc84',
                 comp_name='aerosol_light_scattering_coefficient',
@@ -635,7 +647,7 @@ class Level2File(SpectralFile, AerosolInstrument):
                 unit='1/Mm',
                 statistics='percentile:15.87',
             )
-        for var in backscattering_q85:
+        for var in backscattering_q84:
             var.apply_metadata(
                 title='bsc{wavelength}pc84',
                 comp_name='aerosol_light_backscattering_coefficient',
@@ -650,8 +662,8 @@ class Level2File(SpectralFile, AerosolInstrument):
                 nas, output_directory,
                 list(scattering[nas]) + list(backscattering[nas]),
                 optional=[pressure[nas], temperature[nas], humidity[nas]] +
-                    list(scattering_q16[nas]) + list(scattering_q85[nas]) +
-                    list(backscattering_q16[nas]) + list(backscattering_q85[nas]),
+                    list(scattering_q16[nas]) + list(scattering_q84[nas]) +
+                    list(backscattering_q16[nas]) + list(backscattering_q84[nas]),
                 flags=flags[nas],
                 fixed_interval_ms=60 * 60 * 1000,
             )
