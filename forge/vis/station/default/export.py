@@ -271,9 +271,18 @@ for archive in ("avgh",):
         for wl in range(7)
     ]))
 
-aerosol_exports["raw"].append(ExportEBAS(ebas=["absorption_lev0", "scattering_lev0", "cpc_lev0"]))
-aerosol_exports["clean"].append(ExportEBAS(ebas=["absorption_lev1", "scattering_lev1", "cpc_lev1"]))
-aerosol_exports["avgh"].append(ExportEBAS(ebas=["absorption_lev2", "scattering_lev2", "cpc_lev2"]))
+aerosol_exports["raw"].append(ExportEBAS(
+    display="EBAS Level 0",
+    ebas=["absorption_lev0", "scattering_lev0", "cpc_lev0"],
+))
+aerosol_exports["clean"].append(ExportEBAS(
+    display="EBAS Level 1",
+    ebas=["absorption_lev1", "scattering_lev1", "cpc_lev1"],
+))
+aerosol_exports["avgh"].append(ExportEBAS(
+    display="EBAS Level 2",
+    ebas=["absorption_lev2", "scattering_lev2", "cpc_lev2"],
+))
 for archive in ("raw", "clean", "avgh"):
     aerosol_exports[archive].append(ExportNetCDF())
 
