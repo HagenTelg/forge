@@ -90,6 +90,10 @@ setup(
         "forge-data-command = forge.cli.__main__:main",
 
         "forge-ebas-file = forge.product.ebas.cli:main",
+        "forge-ebas-submit-updater = forge.product.update.ebas_submit:updater",
+        "forge-ebas-submit-control = forge.product.update.ebas_submit:control",
+        "forge-ebas-nrt-updater = forge.product.update.ebas_nrt:updater",
+        "forge-ebas-nrt-control = forge.product.update.ebas_nrt:control",
 
         "forge-cpd3-cache-client = forge.cpd3.cache.client:main",
         "forge-cpd3-cache-server = forge.cpd3.cache.server:main",

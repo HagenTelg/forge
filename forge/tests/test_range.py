@@ -1,6 +1,6 @@
 import typing
 import pytest
-from forge.range import intersects, contains, subtract_tuple, intersecting_tuple, insertion_tuple
+from forge.range import intersects, contains, subtract_tuple, intersecting_tuple, insertion_tuple, merge_tuple
 
 
 def test_intersects():
@@ -135,3 +135,40 @@ def test_insertion():
     assert insertion_tuple([(100, 200), (200, 300), (300, 400)], 350) == 3
     assert insertion_tuple([(100, 200), (200, 300), (300, 400)], 400) == 3
     assert insertion_tuple([(100, 200), (200, 300), (300, 400)], 450) == 3
+
+
+def test_merge():
+    def merge(existing, start, end):
+        first = list(existing)
+        merge_tuple(first, start, end)
+        second = list(existing)
+        merge_tuple(second, start, end, canonical=False)
+        assert sorted(first) == sorted(second)
+        return first
+
+    assert merge([], 100, 200) == [(100, 200)]
+    assert merge([(100, 200)], 110, 190) == [(100, 200)]
+    assert merge([(100, 200)], 100, 190) == [(100, 200)]
+    assert merge([(100, 200)], 110, 200) == [(100, 200)]
+    assert merge([(200, 300)], 100, 200) == [(100, 300)]
+    assert merge([(100, 200)], 200, 300) == [(100, 300)]
+    assert merge([(100, 200), (300, 400)], 200, 300) == [(100, 400)]
+    assert merge([(100, 200), (300, 400)], 210, 290) == [(100, 200), (210, 290), (300, 400)]
+    assert merge([(100, 200), (300, 400)], 210, 300) == [(100, 200), (210, 400)]
+    assert merge([(100, 200), (300, 400)], 200, 290) == [(100, 290), (300, 400)]
+    assert merge([(100, 200), (300, 400)], 190, 310) == [(100, 400)]
+    assert merge([(100, 200), (300, 400)], 50, 90) == [(50, 90), (100, 200), (300, 400)]
+    assert merge([(100, 200), (300, 400)], 50, 100) == [(50, 200), (300, 400)]
+    assert merge([(100, 200), (300, 400)], 50, 110) == [(50, 200), (300, 400)]
+    assert merge([(100, 200), (300, 400)], 50, 210) == [(50, 210), (300, 400)]
+    assert merge([(100, 200), (300, 400)], 50, 410) == [(50, 410)]
+    assert merge([(100, 200), (300, 400)], 500, 600) == [(100, 200), (300, 400), (500, 600)]
+    assert merge([(100, 200), (300, 400)], 400, 600) == [(100, 200), (300, 600)]
+    assert merge([(100, 200), (300, 400)], 390, 600) == [(100, 200), (300, 600)]
+    assert merge([(100, 200), (300, 400)], 290, 600) == [(100, 200), (290, 600)]
+    assert merge([(100, 200), (300, 400)], 200, 600) == [(100, 600)]
+    assert merge([(100, 200), (300, 400)], 190, 600) == [(100, 600)]
+    assert merge([(100, 200), (300, 400), (500, 600)], 410, 490) == [(100, 200), (300, 400), (410, 490), (500, 600)]
+    assert merge([(100, 200), (300, 400), (500, 600)], 400, 490) == [(100, 200), (300, 490), (500, 600)]
+    assert merge([(100, 200), (300, 400), (500, 600)], 410, 500) == [(100, 200), (300, 400), (410, 600)]
+    assert merge([(100, 200), (300, 400), (500, 600)], 400, 500) == [(100, 200), (300, 600)]

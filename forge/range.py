@@ -177,7 +177,7 @@ def subtract_tuple(existing: typing.List[typing.Union[typing.Tuple[int, int], ty
 
 
 class FindIntersecting(_Search):
-    def __call__(self, find_start: int, find_end: int) -> typing.Union[typing.List[int], range]:
+    def intersecting(self, find_start: int, find_end: int) -> typing.Union[typing.List[int], range]:
         if self.canonical:
             begin_index = self._find_before_start(find_start)
             intersection_begin: typing.Optional[int] = None
@@ -205,6 +205,8 @@ class FindIntersecting(_Search):
             result.append(inspect_index)
         return result
 
+    __call__ = intersecting
+
 
 def intersecting_tuple(existing: typing.List[typing.Union[typing.Tuple[int, int], typing.Tuple[float, float]]],
                        find_start: typing.Union[int, float], find_end: typing.Union[int, float],
@@ -224,3 +226,105 @@ def intersecting_tuple(existing: typing.List[typing.Union[typing.Tuple[int, int]
             return existing[index][1]
 
     return TupleIntersecting()(find_start, find_end)
+
+
+class Merge(Insertion, FindIntersecting):
+    @abstractmethod
+    def __delitem__(self, key: typing.Union[slice, int]) -> None:
+        pass
+
+    @abstractmethod
+    def insert(self, index: int, start: int, end: int) -> typing.Any:
+        pass
+
+    def merge_contained(self, index: int) -> typing.Any:
+        pass
+
+    def combine_contiguous(self, index: int) -> bool:
+        return True
+
+    def merge(self, start: int, end: int) -> typing.Any:
+        extend_targets = self.intersecting(start, end)
+
+        if not self.canonical:
+            if extend_targets:
+                # Check for fully contained
+                for check in extend_targets:
+                    if contains(
+                            self.get_start(check), self.get_end(check),
+                            start, end,
+                    ):
+                        return self.merge_contained(check)
+
+                # Remove replaced overlapping
+                for idx in reversed(sorted(extend_targets)):
+                    end = max(end, self.get_end(idx))
+                    start = min(start, self.get_start(idx))
+                    del self[idx]
+
+            # Merge non-overlapping but no gap on the ends
+            for idx in reversed(range(len(self))):
+                check_start = self.get_start(idx)
+                check_end = self.get_end(idx)
+                if (check_start == end or check_end == start) and self.combine_contiguous(idx):
+                    start = min(start, check_start)
+                    end = max(end, check_end)
+                    del self[idx]
+
+            insert_idx = self.before(start)
+            return self.insert(insert_idx, start, end)
+
+        # Fully contained
+        if len(extend_targets) == 1 and contains(
+                self.get_start(extend_targets[0]), self.get_end(extend_targets[0]),
+                start, end,
+        ):
+            return self.merge_contained(extend_targets[0])
+
+        # Remove replaced overlapping
+        if extend_targets:
+            start = min(start, self.get_start(extend_targets[0]))
+            end = max(end, self.get_end(extend_targets[-1]))
+            del self[extend_targets[0]:extend_targets[-1] + 1]
+
+        insert_idx = self.before(start)
+
+        # Merge non-overlapping but no gap on the ends
+        if insert_idx < len(self) and self.get_start(insert_idx) == end and self.combine_contiguous(insert_idx):
+            end = self.get_end(insert_idx)
+            del self[insert_idx]
+        before_idx = insert_idx - 1
+        if before_idx >= 0 and self.get_end(before_idx) == start and self.combine_contiguous(before_idx):
+            start = self.get_start(before_idx)
+            del self[before_idx]
+            insert_idx = before_idx
+
+        return self.insert(insert_idx, start, end)
+
+    __call__ = merge
+
+
+def merge_tuple(existing: typing.List[typing.Union[typing.Tuple[int, int], typing.Tuple[float, float]]],
+                merge_start: typing.Union[int, float], merge_end: typing.Union[int, float],
+                canonical: bool = True) -> typing.Union[typing.List[int], range]:
+    class TupleMerge(Merge):
+        @property
+        def canonical(self) -> bool:
+            return canonical
+
+        def __len__(self) -> int:
+            return len(existing)
+
+        def get_start(self, index: int) -> typing.Union[int, float]:
+            return existing[index][0]
+
+        def get_end(self, index: int) -> typing.Union[int, float]:
+            return existing[index][1]
+
+        def __delitem__(self, key: typing.Union[slice, int]) -> None:
+            del existing[key]
+
+        def insert(self, index: int, start: int, end: int) -> typing.Any:
+            existing.insert(index, (start, end))
+
+    return TupleMerge()(merge_start, merge_end)

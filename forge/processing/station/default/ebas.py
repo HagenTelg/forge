@@ -6,6 +6,7 @@ if typing.TYPE_CHECKING:
     from ebas.io.file import nasa_ames
     from nilutility.datatypes import DataObject
     from forge.product.ebas.file import EBASFile
+    from forge.product.selection import InstrumentSelection
 
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
@@ -195,3 +196,77 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
     elif type_code.startswith("cpc_"):
         type_code = "tsi3760cpc_" + type_code[4:]
     return EBASFile.from_type_code(type_code)
+
+
+def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
+    return dict()
+
+def standard_submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
+    from forge.product.selection import InstrumentSelection
+
+    return {
+        "absorption_lev0": ("clean", [InstrumentSelection(
+            require_tags=["absorption"],
+            exclude_tags=["secondary", "aethalometer", "thermomaap"],
+        )]),
+        "absorption_lev1": ("clean", [InstrumentSelection(
+            require_tags=["absorption"],
+            exclude_tags=["secondary", "aethalometer", "thermomaap"],
+        )]),
+        "absorption_lev2": ("avgh", [InstrumentSelection(
+            require_tags=["absorption"],
+            exclude_tags=["secondary", "aethalometer", "thermomaap"],
+        )]),
+        "scattering_lev0": ("clean", [InstrumentSelection(
+            require_tags=["scattering"],
+            exclude_tags=["secondary"],
+        )]),
+        "scattering_lev1": ("clean", [InstrumentSelection(
+            require_tags=["scattering"],
+            exclude_tags=["secondary"],
+        )]),
+        "scattering_lev2": ("avgh", [InstrumentSelection(
+            require_tags=["scattering"],
+            exclude_tags=["secondary"],
+        )]),
+        "cpc_lev0": ("clean", [InstrumentSelection(
+            require_tags=["cpc"],
+            exclude_tags=["secondary"],
+        )]),
+        "cpc_lev1": ("clean", [InstrumentSelection(
+            require_tags=["cpc"],
+            exclude_tags=["secondary"],
+        )]),
+        "cpc_lev2": ("avgh", [InstrumentSelection(
+            require_tags=["cpc"],
+            exclude_tags=["secondary"],
+        )]),
+    }
+
+
+def nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, str, str, typing.List["InstrumentSelection"]]]:
+    return dict()
+
+
+def standard_nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"], str, str]]:
+    from forge.processing.station.lookup import station_data
+    from forge.product.selection import InstrumentSelection
+
+    user = station_data(gaw_station, 'ebas', 'platform')(gaw_station)
+    if user.endswith('S'):
+        user = user[:-1]
+
+    return {
+        "absorption_lev0": ("raw", [InstrumentSelection(
+            require_tags=["absorption"],
+            exclude_tags=["secondary", "aethalometer", "thermomaap"],
+        )], user, "PSAP"),
+        "scattering_lev0": ("raw", [InstrumentSelection(
+            require_tags=["scattering"],
+            exclude_tags=["secondary"],
+        )], user, "neph"),
+        "cpc_lev0": ("raw", [InstrumentSelection(
+            require_tags=["cpc"],
+            exclude_tags=["secondary"],
+        )], user, "CPC"),
+    }

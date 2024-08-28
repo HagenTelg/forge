@@ -42,6 +42,16 @@ code_records: typing.Dict[str, Record] = {
     'forge-archive-flush-avgm': BasicRecord.simple_override(
         name="Forge archive monthly averaged data flush",
     ),
+    'forge-ebas-submit-update': BasicRecord.simple_override(
+        name="Forge EBAS submission update",
+    ),
+    'forge-ebas-submit-run': BasicRecord.simple_override(
+        name="Forge EBAS submission run",
+        offline=8 * 24 * 60 * 60,
+    ),
+    'forge-ebas-nrt': BasicRecord.simple_override(
+        name="Forge EBAS NRT submission",
+    ),
     'forge-update': BasicRecord.simple_override(
         name="Automatic Forge software update",
     ),

@@ -9,7 +9,7 @@ from collections import OrderedDict
 from pathlib import Path
 from json import load as from_json, dump as to_json
 from math import floor, ceil
-from forge.range import FindIntersecting, Insertion, contains as range_contains
+from forge.range import FindIntersecting, Merge as RangeMerge
 from forge.const import STATIONS, MAX_I64
 from forge.logicaltime import year_bounds_ms
 from forge.tasks import wait_cancelable
@@ -50,23 +50,6 @@ class UpdateManager:
         def get_end(self, index: int) -> typing.Union[int, float]:
             return self.manager._pending[index].end
 
-    class _Insertion(Insertion):
-        def __init__(self, manager: "UpdateManager"):
-            self.manager = manager
-
-        @property
-        def canonical(self) -> bool:
-            return True
-
-        def __len__(self) -> int:
-            return len(self.manager._pending)
-
-        def get_start(self, index: int) -> typing.Union[int, float]:
-            return self.manager._pending[index].start
-
-        def get_end(self, index: int) -> typing.Union[int, float]:
-            return self.manager._pending[index].end
-
     def __init__(self, connection: Connection):
         self.connection = connection
         self._pending: typing.List[UpdateManager._Pending] = list()
@@ -74,7 +57,6 @@ class UpdateManager:
         self._lock: asyncio.Lock = None
 
         self._intersecting = self._Intersecting(self)
-        self._insertion = self._Insertion(self)
         self._shutdown_in_progress: bool = False
 
     @property
@@ -238,55 +220,62 @@ class UpdateManager:
                     os.fsync(f.fileno())
 
     async def _install_pending(self, start: int, end: int, save_state: bool = True, force_update: bool = False) -> None:
-        extend_targets = self._intersecting(start, end)
+        class Merge(RangeMerge):
+            def __init__(self, manager: "UpdateManager"):
+                self.manager = manager
+                self.to_release: typing.List["UpdateManager._Pending"] = list()
+                self.inserted_index: int = None
 
-        # Fully contained, so no new intents or updates required
-        if len(extend_targets) == 1 and range_contains(
-                self._pending[extend_targets[0]].start, self._pending[extend_targets[0]].end,
-                start, end,
-        ):
+            @property
+            def canonical(self) -> bool:
+                return True
+
+            def __len__(self) -> int:
+                return len(self.manager._pending)
+
+            def __delitem__(self, key: typing.Union[slice, int]) -> None:
+                if isinstance(key, slice):
+                    self.to_release.extend(self.manager._pending[key])
+                else:
+                    self.to_release.append(self.manager._pending[key])
+                del self.manager._pending[key]
+
+            def get_start(self, index: int) -> typing.Union[int, float]:
+                return self.manager._pending[index].start
+
+            def get_end(self, index: int) -> typing.Union[int, float]:
+                return self.manager._pending[index].end
+
+            def insert(self, index: int, start: int, end: int) -> typing.Any:
+                new_pending = self.manager._Pending(self.manager, start, end)
+                self.manager._pending.insert(index, new_pending)
+                self.inserted_index = index
+                return new_pending
+
+            def merge_contained(self, index: int) -> typing.Any:
+                return None
+
+        merge = Merge(self)
+        new_pending = merge(start, end)
+        if not new_pending:
             _LOGGER.debug("Already have pending containing %d,%d", start, end)
             return
-
-        to_release = list()
-        if extend_targets:
-            start = min(start, self._pending[extend_targets[0]].start)
-            end = max(end, self._pending[extend_targets[-1]].end)
-            to_release = [self._pending[i] for i in extend_targets]
-            del self._pending[extend_targets[0]:extend_targets[-1] + 1]
-
-        insert_idx = self._insertion(start)
-
-        # Merge non-overlapping but no gap on the ends
-        if insert_idx < len(self._pending) and self._pending[insert_idx].start == end:
-            end = self._pending[insert_idx].end
-            to_release.append(self._pending[insert_idx])
-            del self._pending[insert_idx]
-        before_idx = insert_idx - 1
-        if before_idx >= 0 and self._pending[before_idx].end == start:
-            start = self._pending[before_idx].start
-            to_release.append(self._pending[before_idx])
-            del self._pending[before_idx]
-            insert_idx = before_idx
-
-        new_pending = self._Pending(self, start, end)
-        self._pending.insert(insert_idx, new_pending)
         if save_state:
             self._save_state(sync=True)
 
-        _LOGGER.debug("Acquiring pending %d,%d that replaces %d existing", start, end, len(to_release))
+        _LOGGER.debug("Acquiring pending %d,%d that replaces %d existing", start, end, len(merge.to_release))
 
         # Acquire new intents, then release the replaced ones
         await new_pending.acquire()
-        for p in to_release:
+        for p in merge.to_release:
             for i in p.intents:
                 await i.release(True)
             p.intents.clear()
             was_updated = self._do_update.pop(p, None)
             if was_updated:
-                self._do_update[new_pending] = insert_idx
+                self._do_update[new_pending] = merge.inserted_index
         if force_update:
-            self._do_update[new_pending] = insert_idx
+            self._do_update[new_pending] = merge.inserted_index
 
     async def _notification_received(self, key: str, start: int, end: int) -> None:
         async with self._lock:
