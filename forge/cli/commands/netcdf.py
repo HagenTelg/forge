@@ -190,6 +190,9 @@ class MergeInstrument(ExecuteStage):
                 process_tasks.append(asyncio.ensure_future(asyncio.get_event_loop().run_in_executor(
                     self.netcdf_executor, process_file, input_file
                 )))
+            if not process_tasks:
+                _LOGGER.debug("No input files found")
+                return
             done, _ = await asyncio.wait(process_tasks)
             for v in done:
                 v.result()
@@ -270,6 +273,9 @@ class MergeFlatten(ExecuteStage):
                 tasks.append(asyncio.ensure_future(asyncio.get_event_loop().run_in_executor(
                     self.netcdf_executor, prepare_file, file
                 )))
+            if not tasks:
+                _LOGGER.debug("No input files found")
+                return
             await asyncio.wait(tasks)
 
             def run_merge():
