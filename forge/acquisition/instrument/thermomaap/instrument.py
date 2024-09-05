@@ -107,7 +107,7 @@ class Instrument(StreamingInstrument):
         self.data_PCT = self.input("PCT")
 
         self._wavelength_arrays: typing.Dict[Instrument.Input, ArrayInput] = {
-            i: self.input_array(i.name + "_") for i in [
+            i: self.input_array(i.name + "_", send_to_bus=False) for i in [
                 self.data_Bac,
                 self.data_Ba,
                 self.data_X,
