@@ -459,7 +459,7 @@ class Instrument(StreamingInstrument):
 
         self._prior_volume_time = now
 
-    def _process_pf12_start(self, line: bytes, last_field_space: bool = True) -> None:
+    def _process_pf12_start(self, line: bytes, last_field_space: bool = True) -> typing.Optional[bytes]:
         fields = line.split()
         try:
             (
@@ -484,14 +484,17 @@ class Instrument(StreamingInstrument):
         If0 = parse_number(If0)
         self._process_intensities(Ip0, If0)
 
-        if last_field_space:
+        last_field_extra = None
+        if not last_field_space:
             # When we don't have a space separator, we can get things like "0.0060000"
             try:
                 decimal = volume.index(b".")
             except ValueError:
-                return
+                return None
+            last_field_extra = volume[decimal+4:]
             volume = volume[:decimal+4]
         self._sample_volume_to_flow(parse_number(volume))
+        return last_field_extra
 
     def _process_concentrations(self, X: bytes, X_uncorrected: bytes) -> None:
         X_digits = X
@@ -605,7 +608,7 @@ class Instrument(StreamingInstrument):
         self._process_concentrations(X, X_uncorrected)
 
     async def _interactive_poll(self) -> None:
-        async def command_response(command: bytes) -> bytes:
+        async def command_response(command: bytes, embedded_spaces: bool = False) -> bytes:
             self._send_command(command)
             response: bytes = await wait_cancelable(self.read_line(), 2.0)
 
@@ -632,18 +635,26 @@ class Instrument(StreamingInstrument):
 
             actual_response = response[pf12.end(0):]
             pf12_response = response[:pf12.end(0)]
-            pf12_space = actual_response[:1].isspace()
-            self._process_pf12_start(pf12_response.strip(), pf12_space)
+            if not embedded_spaces:
+                pf12_space = actual_response[:1].isspace()
+                self._process_pf12_start(pf12_response.strip(), pf12_space)
+                resend_command = not pf12_space
+            else:
+                extra = self._process_pf12_start(pf12_response.strip(), False)
+                if extra:
+                    # Anything not part of the PF12 component means stuff got concatenated, so try again
+                    resend_command = True
+                else:
+                    resend_command = False
 
-            actual_response = actual_response.strip()
-
-            # No space separator, so send again
-            if not pf12_space:
+            # Can't distinguish response, so resend
+            if resend_command:
                 self._send_command(command)
                 actual_response = await wait_cancelable(self.read_line(), 2.0)
                 # Make sure it's not the PF12 tail
                 actual_response = await process_pf12_end(actual_response)
 
+            actual_response = actual_response.strip()
             return actual_response
 
         # Note that the manual is wrong for what these actually are, so
@@ -657,7 +668,7 @@ class Instrument(StreamingInstrument):
         Q = parse_number(await command_response(b"JK")) / 60.0
         # Qt = parse_number(await command_response(b"JN"))
         self.data_PCT(parse_number(await command_response(b"JM")) * (100.0 / 4096.0))
-        status = await command_response(b"#")
+        status = await command_response(b"#", True)
 
         self._have_high_precision_flow = True
         Qinstrument = self.data_Qinstrument(Q)
