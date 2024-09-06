@@ -76,7 +76,7 @@ class Converter(InstrumentConverter):
 
         var_X = g.createVariable("mass_concentration", "f8", ("time", "diameter"), fill_value=nan)
         netcdf_timeseries.variable_coordinates(g, var_X)
-        var_X.variable_id = "N"
+        var_X.variable_id = "X"
         var_X.coverage_content_type = "physicalMeasurement"
         var_X.cell_methods = "time: mean"
         var_X.long_name = "mass concentration of particles derived from Lorenz-Mie calculation of OPC scattering"
