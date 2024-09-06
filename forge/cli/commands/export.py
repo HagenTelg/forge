@@ -946,7 +946,7 @@ class _ColumnVariableFlagsList(_ColumnVariableFlags):
             return self.mvc
         bits = int(self.source(time_indices[0]))
         set_flags: typing.Set[str] = set()
-        for flag_bit, flag_name in self.flag_lookup:
+        for flag_bit, flag_name in self.flag_lookup.items():
             if (bits & flag_bit) == 0:
                 continue
             set_flags.add(flag_name)
@@ -1360,7 +1360,7 @@ class _ExportStage(ExecuteStage):
                     return fanout_dimension(source, index_number + 1, dimension_idx + 1)
 
                 result: typing.List[_ColumnVariable] = list()
-                for idx in variable.shape[dimension_idx]:
+                for idx in range(variable.shape[dimension_idx]):
                     sub_source = deepcopy(source)
                     sub_idx = list(sub_source.index_suffix)
                     sub_idx[index_number] = idx
