@@ -176,7 +176,10 @@ class UpdateController(ABC):
         async with self._lock:
             to_commit = list(self._commit_request)
             self._commit_request.clear()
+        if not to_commit:
+            return
 
+        _LOGGER.debug(f"Processing {len(to_commit)} pending commits")
         for tracker in to_commit:
             await tracker.commit()
 

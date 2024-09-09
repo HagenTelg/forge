@@ -86,40 +86,48 @@ class Tracker(YearModifiedTracker):
 
         def execute_upload():
             ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(
-                hostname=CONFIGURATION.get('EBAS.UPDATE.ARCHIVE.SERVER', "ebas-submissions.nilu.no"),
-                username=CONFIGURATION.get('EBAS.UPDATE.ARCHIVE.USER', "ebasftp"),
-                timeout=120.0,
-            )
-            sftp = ssh.open_sftp()
-            remote_dir = CONFIGURATION.get('EBAS.UPDATE.ARCHIVE.DIRECTORY')
-            if remote_dir:
-                sftp.chdir(remote_dir)
-            for input_file in Path(source).iterdir():
-                if not input_file.is_file():
-                    continue
 
-                _LOGGER.info(f"Uploading {input_file.name}")
-                sftp.put(str(input_file), input_file.name)
+            try:
+                class IgnoreHostKey(paramiko.MissingHostKeyPolicy):
+                    def missing_host_key(self, client, hostname, key):
+                        pass
+                ssh.set_missing_host_key_policy(IgnoreHostKey())
 
-                completed_directory = CONFIGURATION.get('EBAS.UPDATE.ARCHIVE.COMPLETED')
-                if completed_directory:
-                    completed_directory = completed_directory.replace('{station}', self.station.lower())
-                    file_match = self._FILE_MATCH.match(input_file.name)
-                    if file_match:
-                        completed_directory = completed_directory.replace('{year}', file_match.group(1))
-                        completed_directory = completed_directory.replace('{level}', file_match.group(2))
-                    else:
-                        completed_directory = completed_directory.replace('{year}', "UNKNOWN")
-                        completed_directory = completed_directory.replace('{level}', "UNKNOWN")
-                    completed_directory = Path(completed_directory)
-                    try:
-                        completed_directory.mkdir(parents=True, exist_ok=True)
-                        shutil.move(str(input_file), completed_directory / input_file.name)
-                        _LOGGER.debug(f"Retained {input_file.name} to {completed_directory}")
-                    except:
-                        _LOGGER.warning(f"Error retaining {input_file.name} to {completed_directory}", exc_info=True)
+                ssh.connect(
+                    hostname=CONFIGURATION.get('EBAS.UPDATE.ARCHIVE.SERVER', "ebas-submissions.nilu.no"),
+                    username=CONFIGURATION.get('EBAS.UPDATE.ARCHIVE.USER', "ebasftp"),
+                    timeout=120.0,
+                )
+                sftp = ssh.open_sftp()
+                remote_dir = CONFIGURATION.get('EBAS.UPDATE.ARCHIVE.DIRECTORY')
+                if remote_dir:
+                    sftp.chdir(remote_dir)
+                for input_file in Path(source).iterdir():
+                    if not input_file.is_file():
+                        continue
+
+                    _LOGGER.info(f"Uploading {input_file.name}")
+                    sftp.put(str(input_file), input_file.name)
+
+                    completed_directory = CONFIGURATION.get('EBAS.UPDATE.ARCHIVE.COMPLETED')
+                    if completed_directory:
+                        completed_directory = completed_directory.replace('{station}', self.station.lower())
+                        file_match = self._FILE_MATCH.match(input_file.name)
+                        if file_match:
+                            completed_directory = completed_directory.replace('{year}', file_match.group(1))
+                            completed_directory = completed_directory.replace('{level}', file_match.group(2))
+                        else:
+                            completed_directory = completed_directory.replace('{year}', "UNKNOWN")
+                            completed_directory = completed_directory.replace('{level}', "UNKNOWN")
+                        completed_directory = Path(completed_directory)
+                        try:
+                            completed_directory.mkdir(parents=True, exist_ok=True)
+                            shutil.move(str(input_file), completed_directory / input_file.name)
+                            _LOGGER.debug(f"Retained {input_file.name} to {completed_directory}")
+                        except:
+                            _LOGGER.warning(f"Error retaining {input_file.name} to {completed_directory}", exc_info=True)
+            finally:
+                ssh.close()
 
         try:
             await asyncio.get_event_loop().run_in_executor(None, execute_upload)

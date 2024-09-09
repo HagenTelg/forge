@@ -15,6 +15,7 @@ from forge.archive.client.connection import Connection
 from forge.data.state import is_state_group
 from forge.data.flags import parse_flags
 from forge.data.dimensions import find_dimension_values
+from forge.data.history import parse_history
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,7 +52,7 @@ class FileContext:
         self.instrument_id = instrument_id
         self._root = root
         self._tags: typing.Optional[typing.Set[str]] = None
-        self._instrument_code: typing.Optional[str] = None
+        self._instrument_codes: typing.Optional[typing.Set[str]] = None
 
     @property
     def tags(self) -> typing.Set[str]:
@@ -60,10 +61,14 @@ class FileContext:
         return self._tags
 
     @property
-    def instrument_code(self) -> str:
-        if self._instrument_code is None:
-            self._instrument_code = str(getattr(self._root, 'instrument', ""))
-        return self._instrument_code
+    def instrument_codes(self) -> typing.Set[str]:
+        if self._instrument_codes is None:
+            self._instrument_codes = set()
+            first = str(getattr(self._root, 'instrument', ""))
+            if first:
+                self._instrument_codes.add(first)
+            self._instrument_codes.update(parse_history(getattr(self._root, 'instrument_history', None)).values())
+        return self._instrument_codes
 
 
 class VariableRootContext:
@@ -397,7 +402,7 @@ class InstrumentSelection:
             if self.instrument_id != file.instrument_id:
                 return False
         if self.instrument_code:
-            if self.instrument_code != file.instrument_code:
+            if self.instrument_code not in file.instrument_codes:
                 return False
         if self.require_tags:
             if not self.require_tags.issubset(file.tags):

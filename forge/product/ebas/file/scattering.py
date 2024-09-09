@@ -178,8 +178,7 @@ class Level0File(SpectralFile, AerosolInstrument):
                 for var in self.select_variable(
                         root,
                         {"variable_name": "backscattering_coefficient"},
-                        {
-                            "standard_name": "volume_backwards_scattering_coefficient_in_air_due_to_dried_aerosol_particles"},
+                        {"standard_name": "volume_backwards_scattering_coefficient_in_air_due_to_dried_aerosol_particles"},
                 ):
                     backscattering[nas].integrate_variable(
                         var, selector(var),

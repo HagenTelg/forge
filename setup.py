@@ -95,6 +95,10 @@ setup(
         "forge-ebas-nrt-updater = forge.product.update.ebas_nrt:updater",
         "forge-ebas-nrt-control = forge.product.update.ebas_nrt:control",
 
+        "forge-ncei-file = forge.product.ncei.cli:main",
+        "forge-ncei-updater = forge.product.update.ncei:updater",
+        "forge-ncei-control = forge.product.update.ncei:control",
+
         "forge-cpd3-cache-client = forge.cpd3.cache.client:main",
         "forge-cpd3-cache-server = forge.cpd3.cache.server:main",
         "forge-cpd3-pass-server = forge.cpd3.pass.server:main",

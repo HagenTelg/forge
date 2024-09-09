@@ -1,6 +1,7 @@
 import typing
 from json import loads as from_json, dumps as to_json
 from netCDF4 import Dataset, Variable
+from forge.data.history import parse_history
 
 
 class ArchiveIndex:
@@ -62,6 +63,9 @@ class ArchiveIndex:
                 instrument_codes = set()
                 self.instrument_codes[instrument_id] = instrument_codes
             instrument_codes.add(add)
+            history = getattr(file, 'instrument_history', None)
+            if history is not None:
+                instrument_codes.update(parse_history(history).values())
 
         instrument_tags = self.tags.get(instrument_id)
         if not instrument_tags:

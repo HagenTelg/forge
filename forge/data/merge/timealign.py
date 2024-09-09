@@ -88,14 +88,14 @@ def align_latest(
 
 def peer_output_time(
         *peer_times: typing.Union[np.ndarray, typing.Sequence],
-        apply_rounding: bool = True,
+        apply_rounding: typing.Union[bool, int, float] = True,
 ) -> np.ndarray:
     """
     Generate an output time series for a number of peer input times.  This tries to create a series of times that
     are well suited to match all the input times.
 
     :param peer_times: the input time values
-    :param apply_rounding: apply best guess interval rounding
+    :param apply_rounding: apply best guess interval rounding or set the interval to round at
     :returns: the combined time points
     """
 
@@ -108,13 +108,17 @@ def peer_output_time(
     if not apply_rounding or combined_time.shape[0] <= 2:
         return combined_time
 
-    time_difference = combined_time[1:] - combined_time[:-1]
-    time_step_values, time_step_count = np.unique(time_difference, return_counts=True)
-    time_step = time_step_values[np.argmax(time_step_count)]
-    if time_step == 0:
-        return np.empty((0,), dtype=peer_times[0].dtype)
+    if np.issubdtype(type(apply_rounding), np.floating) or np.issubdtype(type(apply_rounding), np.integer):
+        time_step = float(apply_rounding)
+    else:
+        time_difference = combined_time[1:] - combined_time[:-1]
+        time_step_values, time_step_count = np.unique(time_difference, return_counts=True)
+        time_step = time_step_values[np.argmax(time_step_count)]
+        if time_step == 0:
+            return np.empty((0,), dtype=peer_times[0].dtype)
 
+    original_type = combined_time.dtype
     combined_time = np.round(combined_time / time_step) * time_step
-    combined_time = combined_time.astype(time_difference.dtype, casting='unsafe', copy=False)
+    combined_time = combined_time.astype(original_type, casting='unsafe', copy=False)
     combined_time = np.unique(combined_time)
     return combined_time

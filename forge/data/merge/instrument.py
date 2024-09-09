@@ -13,33 +13,12 @@ from .timeselect import selected_time_range
 from ..state import is_state_group
 from ..flags import parse_flags
 from ..dimensions import find_dimension
+from ..history import parse_history
 
 if typing.TYPE_CHECKING:
     from pathlib import Path
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _parse_history(value: typing.Optional[str],
-                   limit_start: typing.Optional[int] = None,
-                   limit_end: typing.Optional[int] = None) -> typing.Dict[int, str]:
-    result: typing.Dict[int, str] = dict()
-    if not value:
-        return result
-
-    for line in str(value).strip().split('\n'):
-        try:
-            end_time, contents = line.split(',', 1)
-        except ValueError:
-            _LOGGER.warning(f"Malformed history line {line}")
-            continue
-        end_time = int(ceil(parse_iso8601_time(str(end_time)).timestamp() * 1000.0))
-        if limit_start and end_time < limit_start:
-            continue
-        if limit_end and end_time >= limit_end:
-            continue
-        result[end_time] = contents
-    return result
 
 
 def _reduce_to_slice(indices) -> typing.Union[slice, np.ndarray]:
@@ -213,7 +192,7 @@ class _HistoryAttribute:
             return
         self.latest = value
 
-        self.history.update(_parse_history(
+        self.history.update(parse_history(
             getattr(contents, self.name + '_history', None),
             start, end
         ))
@@ -540,7 +519,7 @@ class _HistoryConstantVariable(_Variable):
 
     def _handle_existing_history(self, start: typing.Optional[int], end: typing.Optional[int],
                                  contents: netCDF4.Variable, data_mapping: _DataMapping) -> None:
-        insert_history = _parse_history(
+        insert_history = parse_history(
             getattr(contents, 'change_history', None),
             start, end,
         )

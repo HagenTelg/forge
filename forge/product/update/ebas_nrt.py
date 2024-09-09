@@ -73,21 +73,28 @@ class Tracker(NRTTracker):
 
         def execute_upload():
             ssh = paramiko.SSHClient()
-            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(
-                hostname=CONFIGURATION.get('EBAS.UPDATE.NRT.SERVER', "upload.nilu.no"),
-                username=CONFIGURATION.get('EBAS.UPDATE.NRT.USER', self.upload_user),
-                timeout=120.0,
-            )
-            sftp = ssh.open_sftp()
-            remote_dir = CONFIGURATION.get('EBAS.UPDATE.NRT.DIRECTORY', self.upload_directory)
-            if remote_dir:
-                sftp.chdir(remote_dir)
-            for input_file in Path(source).iterdir():
-                if not input_file.is_file():
-                    continue
-                _LOGGER.info(f"Uploading {input_file.name}")
-                sftp.put(str(input_file), input_file.name)
+            try:
+                class IgnoreHostKey(paramiko.MissingHostKeyPolicy):
+                    def missing_host_key(self, client, hostname, key):
+                        pass
+                ssh.set_missing_host_key_policy(IgnoreHostKey())
+
+                ssh.connect(
+                    hostname=CONFIGURATION.get('EBAS.UPDATE.NRT.SERVER', "upload.nilu.no"),
+                    username=CONFIGURATION.get('EBAS.UPDATE.NRT.USER', self.upload_user),
+                    timeout=120.0,
+                )
+                sftp = ssh.open_sftp()
+                remote_dir = CONFIGURATION.get('EBAS.UPDATE.NRT.DIRECTORY', self.upload_directory)
+                if remote_dir:
+                    sftp.chdir(remote_dir)
+                for input_file in Path(source).iterdir():
+                    if not input_file.is_file():
+                        continue
+                    _LOGGER.info(f"Uploading {input_file.name}")
+                    sftp.put(str(input_file), input_file.name)
+            finally:
+                ssh.close()
 
         try:
             await asyncio.get_event_loop().run_in_executor(None, execute_upload)

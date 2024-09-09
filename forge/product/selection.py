@@ -5,6 +5,7 @@ from pathlib import Path
 from math import floor, ceil
 from netCDF4 import Dataset, Variable
 from forge.logicaltime import containing_year_range, year_bounds
+from forge.data.history import parse_history
 from forge.archive.client import index_file_name, data_file_name
 from forge.archive.client.connection import Connection
 from forge.archive.client.archiveindex import ArchiveIndex
@@ -79,8 +80,12 @@ class InstrumentSelection:
                 if self.instrument_type:
                     instrument = str(getattr(root, 'instrument', ""))
                     if not instrument or instrument not in self.instrument_type:
-                        accepted = False
-                        return
+                        for check in parse_history(getattr(root, 'instrument_history', None)).values():
+                            if check in self.instrument_type:
+                                break
+                        else:
+                            accepted = False
+                            return
             finally:
                 root.close()
                 if not accepted:

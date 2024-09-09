@@ -78,6 +78,8 @@ class InstrumentSelection:
         if self.instrument is not None:
             check = getattr(root, 'instrument', None)
             if check is None or check != self.instrument:
+                # Don't consider history, since we generally want a specific instrument type,
+                # and we'd end up duplicating corrections if we accepted multiple
                 return False
 
         if self.require_tags or self.exclude_tags:
