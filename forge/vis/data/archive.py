@@ -94,7 +94,7 @@ class FieldStream:
                 self._begin_time = stream._latest
 
         def advance(self, completed: int) -> bool:
-            return completed <= self._begin_time
+            return completed < self._begin_time
 
         @property
         def next(self) -> typing.Optional[typing.Tuple[int, typing.Any]]:
@@ -524,7 +524,7 @@ class DataRecord(Record):
                                     continue
                                 times, values = hit
                                 if times is None:
-                                    times = np.ndarray(chunk_begin)
+                                    times = np.array(chunk_begin, dtype=np.int64)
                                 self._attach_to_fields(src, sel, var, times, values)
             await self._drain_ready(MAX_I64)
 

@@ -274,6 +274,8 @@ class VariableContext:
 
     @property
     def times(self) -> typing.Optional[np.ndarray]:
+        if 'time' not in self.variable.dimensions:
+            return None
         return self._root.group_time(self.variable.group())
 
     @property
@@ -354,13 +356,13 @@ class InstrumentSelection:
         if self.instrument_code:
             selected_instruments: typing.Set[str] = set()
             if possible_instruments is None:
-                for instrument_id, codes in index.tags.items():
+                for instrument_id, codes in index.instrument_codes.items():
                     if self.instrument_code not in codes:
                         continue
                     selected_instruments.add(instrument_id)
             else:
                 for instrument_id in possible_instruments:
-                    codes = index.tags.get(instrument_id)
+                    codes = index.instrument_codes.get(instrument_id)
                     if not codes:
                         continue
                     if self.instrument_code not in codes:
