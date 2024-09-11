@@ -71,6 +71,7 @@ measurements = OrderedDict([
     ('{code}nephinlet2', '{code}u_S12 (wet inlet)'),
     ('{code}neph2', '{code}_S12 (wet sample)'),
     ('{code}outlet', '{code}_V12 (outlet)'),
+    ('{code}nephupstream', '{code}_V13 (upstream)'),
     ('{code}neph3', '{code}_S13 (sample)'),
     ('{code}neph4', '{code}_S14 (sample)'),
 ])

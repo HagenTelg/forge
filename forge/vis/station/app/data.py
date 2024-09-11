@@ -551,6 +551,11 @@ station_profile_data['aerosol']['raw']['temperature'] = lambda station, start_ep
         Name(station, 'raw', 'T_V12', {'pm1'}): 'Toutlet', Name(station, 'raw', 'U_V12', {'pm1'}): 'Uoutlet',
         Name(station, 'raw', 'T_V12', {'pm25'}): 'Toutlet', Name(station, 'raw', 'U_V12', {'pm25'}): 'Uoutlet',
 
+        Name(station, 'raw', 'T_V13'): 'Tnephupstream', Name(station, 'raw', 'U_V13'): 'Unephupstream',
+        Name(station, 'raw', 'T_V13', {'pm10'}): 'Tnephupstream', Name(station, 'raw', 'U_V13', {'pm10'}): 'Unephupstream',
+        Name(station, 'raw', 'T_V13', {'pm1'}): 'Tnephupstream', Name(station, 'raw', 'U_V13', {'pm1'}): 'Unephupstream',
+        Name(station, 'raw', 'T_V13', {'pm25'}): 'Tnephupstream', Name(station, 'raw', 'U_V13', {'pm25'}): 'Unephupstream',
+
         Name(station, 'raw', 'Tu_S11'): 'Tnephinlet', Name(station, 'raw', 'Uu_S11'): 'Unephinlet',
         Name(station, 'raw', 'Tu_S11', {'pm10'}): 'Tnephinlet', Name(station, 'raw', 'Uu_S11', {'pm10'}): 'Unephinlet',
         Name(station, 'raw', 'Tu_S11', {'pm1'}): 'Tnephinlet', Name(station, 'raw', 'Uu_S11', {'pm1'}): 'Unephinlet',
@@ -598,6 +603,11 @@ station_profile_data['aerosol']['realtime']['temperature'] = {
     RealtimeTranslator.Key('T_V12', {'pm10'}): 'Toutlet', RealtimeTranslator.Key('U_V12', {'pm10'}): 'Uoutlet',
     RealtimeTranslator.Key('T_V12', {'pm1'}): 'Toutlet', RealtimeTranslator.Key('U_V12', {'pm1'}): 'Uoutlet',
     RealtimeTranslator.Key('T_V12', {'pm25'}): 'Toutlet', RealtimeTranslator.Key('U_V12', {'pm25'}): 'Uoutlet',
+
+    RealtimeTranslator.Key('T_V13'): 'Tnephupstream', RealtimeTranslator.Key('U_V13'): 'Unephupstream',
+    RealtimeTranslator.Key('T_V13', {'pm10'}): 'Tnephupstream', RealtimeTranslator.Key('U_V13', {'pm10'}): 'Unephupstream',
+    RealtimeTranslator.Key('T_V13', {'pm1'}): 'Tnephupstream', RealtimeTranslator.Key('U_V13', {'pm1'}): 'Unephupstream',
+    RealtimeTranslator.Key('T_V13', {'pm25'}): 'Tnephupstream', RealtimeTranslator.Key('U_V13', {'pm25'}): 'Unephupstream',
 
     RealtimeTranslator.Key('Tu_S11'): 'Tnephinlet', RealtimeTranslator.Key('Uu_S11'): 'Unephinlet',
     RealtimeTranslator.Key('Tu_S11', {'pm10'}): 'Tnephinlet', RealtimeTranslator.Key('Uu_S11', {'pm10'}): 'Unephinlet',
