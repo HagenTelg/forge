@@ -174,7 +174,7 @@ class Tracker(ABC):
         state_version = state.get('version')
         if state.get('version') != self.STATE_VERSION:
             raise RuntimeError(f"Unsupported state version {state_version} vs {self.STATE_VERSION}")
-        self._candidate_scan_epoch_ms = float(state['candidate_scan'])
+        self._candidate_scan_epoch_ms = int(state['candidate_scan'])
         for c in state['candidates']:
             self.notify_candidate(int(c[0]), int(c[1]), save_state=False)
         for o in state['outputs']:
@@ -225,7 +225,7 @@ class Tracker(ABC):
         remaining_candidates: typing.List[Tracker._Candidate] = list()
         any_updates = False
         try:
-            scan_begin = int(floor(time.time()))
+            scan_begin = int(floor(time.time() * 1000))
             remaining_candidates = list(self._candidates)
             self._candidates.clear()
 
