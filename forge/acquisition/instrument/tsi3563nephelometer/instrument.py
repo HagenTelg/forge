@@ -240,7 +240,7 @@ class Instrument(StreamingInstrument):
                 data['sensitivity_factor'] = self.sensitivity_factor.output_data()
                 data['calibration'] = {
                     'K2': self.K2.output_data(),
-                    'K4': self.K2.output_data(),
+                    'K4': self.K4.output_data(),
                 }
                 data['counts'] = {
                     'air': {
