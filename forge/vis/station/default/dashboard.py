@@ -42,6 +42,13 @@ code_records: typing.Dict[str, Record] = {
     'forge-archive-flush-avgm': BasicRecord.simple_override(
         name="Forge archive monthly averaged data flush",
     ),
+    'forge-aerosolftp-update': BasicRecord.simple_override(
+        name="Aerosol FTP file update",
+    ),
+    'forge-aerosolftp-run': BasicRecord.simple_override(
+        name="Aerosol FTP file generation",
+        offline=8 * 24 * 60 * 60,
+    ),
     'forge-ncei-update': BasicRecord.simple_override(
         name="Forge NCEI submission update",
     ),
