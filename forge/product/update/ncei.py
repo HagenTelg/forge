@@ -97,7 +97,6 @@ class Local(Destination):
 class Tracker(YearModifiedTracker):
     class Output(YearModifiedTracker.Output):
         async def commit(self) -> bool:
-            print("AAAA")
             with TemporaryDirectory() as working_directory:
                 working_directory = Path(working_directory)
                 await self.tracker.make_output_files(self.start_epoch_ms, self.end_epoch_ms, working_directory)
