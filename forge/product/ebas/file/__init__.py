@@ -850,6 +850,8 @@ class EBASFile(ABC):
             if start_time_epoch_ms.shape[0] == 0:
                 return False
         if end_time_epoch_ms is None:
+            if start_time_epoch_ms.shape[0] < 2:
+                return False
             time_difference = start_time_epoch_ms[1:] - start_time_epoch_ms[:-1]
             time_step_values, time_step_count = np.unique(time_difference, return_counts=True)
             time_step = time_step_values[np.argmax(time_step_count)]
