@@ -247,9 +247,10 @@ class Tracker(ABC):
         self.save_state(sync=True)
         return any_updates
 
-    async def notify_update(self, start_epoch_ms: int, end_epoch_ms: int) -> None:
+    async def notify_update(self, start_epoch_ms: int, end_epoch_ms: int, save_state: bool = True) -> None:
         self._apply_update(start_epoch_ms, end_epoch_ms)
-        self.save_state(sync=True)
+        if save_state:
+            self.save_state(sync=True)
 
     def _apply_update(self, update_start: int, update_end: int) -> None:
         class Merge(RangeMerge):

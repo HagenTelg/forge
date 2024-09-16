@@ -211,7 +211,7 @@ class EBASFile(ABC):
         return self.Variable(self, metadata, **kwargs)
 
     class Flags:
-        FLAG_BIT_ABNORMAL_DATA = 1<<0
+        FLAG_BIT_ABNORMAL_DATA = 1 << 0
         _EMPTY_FLAGS: typing.List[int] = []
         _MISSING_FLAGS: typing.List[int] = [999]
 
@@ -282,7 +282,7 @@ class EBASFile(ABC):
             flag_bits = self._contents.get_values(times, dtype=np.uint64)
             flag_bits[np.invert(valid_at_time)] = 0xFFFF_FFFF_FFFF_FFFF
             return [
-                (self.to_ebas_flags(bits) if bits != 0xFFFF_FFFF_FFFF_FFFF else self._MISSING_FLAGS) for bits in flag_bits
+                (self.to_ebas_flags(int(bits)) if int(bits) != 0xFFFF_FFFF_FFFF_FFFF else self._MISSING_FLAGS) for bits in flag_bits
             ]
 
     def flags(self) -> "EBASFile.Flags":

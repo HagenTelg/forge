@@ -31,6 +31,7 @@ class UpdateController(ABC):
         self._notification_queue: typing.List[typing.Tuple[FileModifiedTracker, int, int]] = list()
         self._next_candidate_process: typing.Optional[float] = time.monotonic() + self.CANDIDATE_PROCESS_DELAY
 
+        self._external_update_queue: typing.List[typing.Tuple[FileModifiedTracker, int, int]] = list()
         self._external_commit_queue: typing.List[typing.Tuple[FileModifiedTracker, int, int]] = list()
 
         self._commit_request: typing.Set[FileModifiedTracker] = set()
@@ -59,13 +60,12 @@ class UpdateController(ABC):
                 self._tracker_notified, tracker
             )
 
-    async def notify_update(
+    async def _matched_trackers(
             self,
-            start_epoch_ms: int, end_epoch_ms: int,
             station: typing.Optional[str] = None,
             archive: typing.Optional[str] = None,
             key: typing.Optional[str] = None,
-    ) -> None:
+    ) -> typing.AsyncIterable[FileModifiedTracker]:
         if key:
             try:
                 key = re.compile(key, flags=re.IGNORECASE)
@@ -82,9 +82,31 @@ class UpdateController(ABC):
                     continue
                 if key and not key.fullmatch(tracker.update_key or ""):
                     continue
-                self._notification_queue.append((tracker, start_epoch_ms, end_epoch_ms))
-                self._updated.set()
-                _LOGGER.debug(f"Explicit notification {start_epoch_ms},{end_epoch_ms} sent to {str(tracker)}")
+                yield tracker
+
+    async def notify_rescan(
+            self,
+            start_epoch_ms: int, end_epoch_ms: int,
+            station: typing.Optional[str] = None,
+            archive: typing.Optional[str] = None,
+            key: typing.Optional[str] = None,
+    ) -> None:
+        async for tracker in self._matched_trackers(station, archive, key):
+            self._notification_queue.append((tracker, start_epoch_ms, end_epoch_ms))
+            self._updated.set()
+            _LOGGER.debug(f"Rescan on {start_epoch_ms},{end_epoch_ms} sent to {str(tracker)}")
+
+    async def notify_update(
+            self,
+            start_epoch_ms: int, end_epoch_ms: int,
+            station: typing.Optional[str] = None,
+            archive: typing.Optional[str] = None,
+            key: typing.Optional[str] = None,
+    ) -> None:
+        async for tracker in self._matched_trackers(station, archive, key):
+            self._external_update_queue.append((tracker, start_epoch_ms, end_epoch_ms))
+            self._updated.set()
+            _LOGGER.debug(f"Explicit update {start_epoch_ms},{end_epoch_ms} sent to {str(tracker)}")
 
     async def notify_external_commit(
             self,
@@ -93,25 +115,10 @@ class UpdateController(ABC):
             archive: typing.Optional[str] = None,
             key: typing.Optional[str] = None,
     ) -> None:
-        if key:
-            try:
-                key = re.compile(key, flags=re.IGNORECASE)
-            except re.error:
-                _LOGGER.error("Invalid commit key selection", exc_info=True)
-                return
-        else:
-            key = None
-        async with self._lock:
-            for tracker in self._trackers:
-                if station and tracker.station != station:
-                    continue
-                if archive and tracker.archive != archive:
-                    continue
-                if key and not key.fullmatch(tracker.update_key or ""):
-                    continue
-                self._external_commit_queue.append((tracker, start_epoch_ms, end_epoch_ms))
-                self._updated.set()
-                _LOGGER.debug(f"External commit {start_epoch_ms},{end_epoch_ms} sent to {str(tracker)}")
+        async for tracker in self._matched_trackers(station, archive, key):
+            self._external_commit_queue.append((tracker, start_epoch_ms, end_epoch_ms))
+            self._updated.set()
+            _LOGGER.debug(f"External commit {start_epoch_ms},{end_epoch_ms} sent to {str(tracker)}")
 
     async def commit(
             self,
@@ -119,27 +126,12 @@ class UpdateController(ABC):
             archive: typing.Optional[str] = None,
             key: typing.Optional[str] = None,
     ) -> None:
-        if key:
-            try:
-                key = re.compile(key, flags=re.IGNORECASE)
-            except re.error:
-                _LOGGER.error("Invalid commit key selection", exc_info=True)
-                return
-        else:
-            key = None
-        async with self._lock:
-            for tracker in self._trackers:
-                if station and tracker.station != station:
-                    continue
-                if archive and tracker.archive != archive:
-                    continue
-                if key and not key.fullmatch(tracker.update_key or ""):
-                    continue
-                self._commit_request.add(tracker)
-                if self._next_candidate_process is not None:
-                    self._next_candidate_process = time.monotonic()
-                self._updated.set()
-                _LOGGER.debug(f"Commit requested for {str(tracker)}")
+        async for tracker in self._matched_trackers(station, archive, key):
+            self._commit_request.add(tracker)
+            if self._next_candidate_process is not None:
+                self._next_candidate_process = time.monotonic()
+            self._updated.set()
+            _LOGGER.debug(f"Commit requested for {str(tracker)}")
 
     async def _flush_notifications(self, save_state: bool = True) -> None:
         async with self._lock:
@@ -150,6 +142,17 @@ class UpdateController(ABC):
             tracker.notify_candidate(start_epoch_ms, end_epoch_ms, save_state=save_state)
         if to_notify and self._next_candidate_process is None:
             self._next_candidate_process = time.monotonic() + self.CANDIDATE_PROCESS_DELAY
+
+    async def _flush_external_update(self, save_state: bool = True) -> bool:
+        async with self._lock:
+            to_notify = list(self._external_update_queue)
+            self._external_update_queue.clear()
+        if not to_notify:
+            return False
+        for tracker, start_epoch_ms, end_epoch_ms in to_notify:
+            _LOGGER.debug(f"Notifying external update {start_epoch_ms},{end_epoch_ms} to {str(tracker)}")
+            await tracker.notify_update(start_epoch_ms, end_epoch_ms, save_state=save_state)
+        return True
 
     async def _flush_external_commit(self, save_state: bool = True) -> None:
         async with self._lock:
@@ -188,8 +191,12 @@ class UpdateController(ABC):
             self._updated.clear()
 
             await self._flush_notifications()
+            any_updated = await self._flush_external_update()
             await self._flush_external_commit()
-            if await self._process_candidates() and self.AUTOMATIC_COMMIT:
+            any_updated = await self._process_candidates() or any_updated
+            if any_updated and self.AUTOMATIC_COMMIT:
+                async with self._lock:
+                    self._commit_request.clear()
                 for tracker in self._trackers:
                     await tracker.commit()
             else:
@@ -218,6 +225,7 @@ class UpdateController(ABC):
 
     async def shutdown(self) -> None:
         await self._flush_notifications(save_state=False)
+        await self._flush_external_update(save_state=False)
         await self._flush_external_commit(save_state=False)
         for tracker in self._trackers:
             tracker.save_state(sync=True)
@@ -320,6 +328,17 @@ class UpdateController(ABC):
                     key = await read_string()
                     if controller:
                         await controller.notify_external_commit(start, end, station, archive, key)
+                        writer.write(struct.pack('<B', 0))
+                    else:
+                        writer.write(struct.pack('<B', 1))
+                    await writer.drain()
+                elif command == 3:
+                    start, end = struct.unpack('<qq', await reader.readexactly(16))
+                    station = await read_string()
+                    archive = await read_string()
+                    key = await read_string()
+                    if controller:
+                        await controller.notify_rescan(start, end, station, archive, key)
                         writer.write(struct.pack('<B', 0))
                     else:
                         writer.write(struct.pack('<B', 1))
@@ -523,6 +542,23 @@ class UpdateController(ABC):
                                     help="limit updates to a key matching a regular expression")
         command_parser.add_argument('time', help="time bounds to notify", nargs='+')
 
+        command_parser = subparsers.add_parser('rescan',
+                                               help="rescan input files for modifications")
+        command_parser.add_argument('--multiple',
+                                    dest='multiple', action='store_true',
+                                    help="required if a station is not selected")
+        command_parser.add_argument('--station',
+                                    dest='station',
+                                    help="limit rescan to a station")
+        command_parser.add_argument('--archive',
+                                    dest='archive',
+                                    choices=["raw", "edited", "clean", "avgh", "avgd", "avgm"],
+                                    help="limit rescan to an archive")
+        command_parser.add_argument('--key',
+                                    dest='key',
+                                    help="limit rescan to a key matching a regular expression")
+        command_parser.add_argument('time', help="time bounds to rescan", nargs='+')
+
         args = parser.parse_args()
         if not args.control_socket:
             parser.error("No control socket available")
@@ -579,6 +615,15 @@ class UpdateController(ABC):
                 end = end.timestamp()
 
                 writer.write(struct.pack('<Bqq', 2, int(floor(start * 1000)), int(ceil(end * 1000))))
+                write_string(station or "")
+                write_string(archive or "")
+                write_string(key or "")
+            elif args.command == 'rescan':
+                start, end = parse_time_bounds_arguments(args.time)
+                start = start.timestamp()
+                end = end.timestamp()
+
+                writer.write(struct.pack('<Bqq', 3, int(floor(start * 1000)), int(ceil(end * 1000))))
                 write_string(station or "")
                 write_string(archive or "")
                 write_string(key or "")
