@@ -66,6 +66,9 @@ code_records: typing.Dict[str, Record] = {
     'forge-ebas-nrt': BasicRecord.simple_override(
         name="Forge EBAS NRT submission",
     ),
+    'forge-sqldb-update': BasicRecord.simple_override(
+        name="Forge SQL database update",
+    ),
     'forge-update': BasicRecord.simple_override(
         name="Automatic Forge software update",
     ),

@@ -115,7 +115,7 @@ class Tracker(ABC):
             self.have_committed = self.have_committed or replaced.have_committed
 
         @abstractmethod
-        async def commit(self) -> bool:
+        async def commit(self) -> None:
             pass
 
     def __init__(self):
@@ -526,7 +526,7 @@ class FileModifiedTracker(Tracker):
 
 
 class YearModifiedTracker(FileModifiedTracker):
-    class Output(Tracker.Output):
+    class Output(FileModifiedTracker.Output):
         @property
         def retain_after_commit(self) -> bool:
             return True
@@ -559,7 +559,7 @@ class YearModifiedTracker(FileModifiedTracker):
 class NRTTracker(FileModifiedTracker):
     MAXIMUM_AGE: typing.Optional[int] = 48 * 60 * 60 * 1000
 
-    class Output(Tracker.Output):
+    class Output(FileModifiedTracker.Output):
         @property
         def retain_after_commit(self) -> bool:
             return False

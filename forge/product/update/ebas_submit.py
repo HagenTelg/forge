@@ -18,12 +18,11 @@ class Tracker(YearModifiedTracker):
     _FILE_MATCH = re.compile(r"^[^.]+\.(\d{4})\d{10}\.\d{14}\..+\.(lev[0-9][a-i]?)\.")
 
     class Output(YearModifiedTracker.Output):
-        async def commit(self) -> bool:
+        async def commit(self) -> None:
             with TemporaryDirectory() as working_directory:
                 working_directory = Path(working_directory)
                 await self.tracker.make_output_files(self.start_epoch_ms, self.end_epoch_ms, working_directory)
                 await self.tracker.perform_upload(working_directory)
-            return True
 
     def __init__(self, connection: Connection, state_path: Path, station: str, archive: str, ebas_file: str,
                  selections: typing.List[InstrumentSelection]):
@@ -43,7 +42,7 @@ class Tracker(YearModifiedTracker):
                 self.station, self.ebas_file, start_epoch_ms, end_epoch_ms
             )
         except FileNotFoundError:
-            _LOGGER.warning(f"EBAS file type code '{self.ebas_file}' no found for station and/or time")
+            _LOGGER.warning(f"EBAS file type code '{self.ebas_file}' not found for station and/or time")
             return
         converter = converter(self.station, start_epoch_ms, end_epoch_ms)
 

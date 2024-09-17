@@ -32,15 +32,17 @@ def _mariadb_text(type_, compiler, **kw):
     return "LONGTEXT"
 
 
-class ORMDatabase:
-    def __init__(self, uri: str, orm_base: DeclarativeMeta):
+class Database:
+    def __init__(self, uri: str, orm_base: typing.Optional[DeclarativeMeta] = None):
         self._engine = create_engine(uri)
         self.foreground_only = False
         if isinstance(self._engine.pool, SingletonThreadPool):
             self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="Database")
-            self.sync(orm_base.metadata.create_all)
+            if orm_base is not None:
+                self.sync(orm_base.metadata.create_all)
         else:
-            orm_base.metadata.create_all(self._engine)
+            if orm_base is not None:
+                orm_base.metadata.create_all(self._engine)
             self._engine.dispose()
             self._pool = ThreadPoolExecutor(thread_name_prefix="Database")
 

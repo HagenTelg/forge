@@ -94,10 +94,11 @@ setup(
         "forge-ebas-submit-control = forge.product.update.ebas_submit:control",
         "forge-ebas-nrt-updater = forge.product.update.ebas_nrt:updater",
         "forge-ebas-nrt-control = forge.product.update.ebas_nrt:control",
-
         "forge-ncei-file = forge.product.ncei.cli:main",
         "forge-ncei-updater = forge.product.update.ncei:updater",
         "forge-ncei-control = forge.product.update.ncei:control",
+        "forge-sqldb-updater = forge.product.update.sqldb:updater",
+        "forge-sqldb-control = forge.product.update.sqldb:control",
 
         "forge-cpd3-cache-client = forge.cpd3.cache.client:main",
         "forge-cpd3-cache-server = forge.cpd3.cache.server:main",

@@ -4,7 +4,7 @@ from base64 import b64encode, b64decode
 import sqlalchemy as db
 import sqlalchemy.orm as orm
 from forge.crypto import PublicKey, key_to_bytes
-from forge.database import ORMDatabase
+from forge.database import Database
 
 
 _Base = orm.declarative_base()
@@ -83,4 +83,4 @@ class Interface:
         return PublicKey.from_public_bytes(b64decode(key))
 
     def __init__(self, uri: str):
-        self.db = ORMDatabase(uri, _Base)
+        self.db = Database(uri, _Base)

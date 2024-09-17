@@ -26,6 +26,23 @@ class InstrumentSelection:
         self.instrument_id = set(instrument_id) if instrument_id is not None else set()
         self.instrument_type = set(instrument_type) if instrument_type is not None else set()
 
+    def matches_file(self, root: Dataset) -> bool:
+        if self.require_tags or self.exclude_tags:
+            tags = set(str(getattr(root, 'forge_tags', "")).split())
+            if self.require_tags and not self.require_tags.issubset(tags):
+                return False
+            if self.exclude_tags and not self.exclude_tags.isdisjoint(tags):
+                return False
+        if self.instrument_type:
+            instrument = str(getattr(root, 'instrument', ""))
+            if not instrument or instrument not in self.instrument_type:
+                for check in parse_history(getattr(root, 'instrument_history', None)).values():
+                    if check in self.instrument_type:
+                        break
+                else:
+                    return False
+        return True
+
     async def fetch_files(self, connection: Connection, station: str, archive: str,
                           start_epoch_ms: int, end_epoch_ms: int,
                           output_directory: Path) -> None:
@@ -67,35 +84,17 @@ class InstrumentSelection:
 
         def filter_file(check: Path) -> None:
             root = Dataset(str(check), 'r')
-            accepted = True
             try:
-                if self.require_tags or self.exclude_tags:
-                    tags = set(str(getattr(root, 'forge_tags', "")).split())
-                    if self.require_tags and not self.require_tags.issubset(tags):
-                        accepted = False
-                        return
-                    if self.exclude_tags and not self.exclude_tags.isdisjoint(tags):
-                        accepted = False
-                        return
-                if self.instrument_type:
-                    instrument = str(getattr(root, 'instrument', ""))
-                    if not instrument or instrument not in self.instrument_type:
-                        for check in parse_history(getattr(root, 'instrument_history', None)).values():
-                            if check in self.instrument_type:
-                                break
-                        else:
-                            accepted = False
-                            return
+                if self.matches_file(root):
+                    _LOGGER.debug(f"Accepted instrument file {check.name}")
+                    return
             finally:
                 root.close()
-                if not accepted:
-                    _LOGGER.debug(f"Rejected instrument file {check.name}")
-                    try:
-                        check.unlink()
-                    except (OSError, FileNotFoundError):
-                        pass
-                else:
-                    _LOGGER.debug(f"Accepted instrument file {check.name}")
+            _LOGGER.debug(f"Rejected instrument file {check.name}")
+            try:
+                check.unlink()
+            except (OSError, FileNotFoundError):
+                pass
 
         for year in range(*containing_year_range(start_epoch_ms / 1000.0, end_epoch_ms / 1000.0)):
             year_start, year_end = year_bounds(year)

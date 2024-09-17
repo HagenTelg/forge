@@ -96,12 +96,11 @@ class Local(Destination):
 
 class Tracker(YearModifiedTracker):
     class Output(YearModifiedTracker.Output):
-        async def commit(self) -> bool:
+        async def commit(self) -> None:
             with TemporaryDirectory() as working_directory:
                 working_directory = Path(working_directory)
                 await self.tracker.make_output_files(self.start_epoch_ms, self.end_epoch_ms, working_directory)
                 await self.tracker.perform_upload(working_directory)
-            return True
 
     def __init__(self, connection: Connection, state_path: Path, station: str, archive: str, ncei_file: str,
                  selections: typing.List[InstrumentSelection], destinations: typing.List[Destination]):
@@ -122,7 +121,7 @@ class Tracker(YearModifiedTracker):
                 self.station, self.ncei_file, start_epoch_ms, end_epoch_ms
             )
         except FileNotFoundError:
-            _LOGGER.warning(f"NCEI file type code '{self.ncei_file}' no found for station and/or time")
+            _LOGGER.warning(f"NCEI file type code '{self.ncei_file}' not found for station and/or time")
             return
         converter = converter(self.station, start_epoch_ms, end_epoch_ms)
 

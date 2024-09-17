@@ -51,6 +51,7 @@ class UpdateController(ABC):
         self._lock = asyncio.Lock()
         self._updated = asyncio.Event()
         self._trackers = await self.create_trackers()
+        _LOGGER.debug(f"Update controller starting with {len(self._trackers)} trackers")
 
         for tracker in self._trackers:
             tracker.load_state()

@@ -12,7 +12,7 @@ from json import dumps as to_json
 from json import loads as from_json
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
-from forge.database import ORMDatabase
+from forge.database import Database
 from forge.crypto import PublicKey, key_to_bytes
 
 
@@ -164,7 +164,7 @@ def _is_valid_station(station: str) -> bool:
 
 class Interface:
     def __init__(self, uri: str):
-        self.db = ORMDatabase(uri, _Base)
+        self.db = Database(uri, _Base)
 
     @staticmethod
     def _update_host_telemetry(orm_session: Session, current_time: datetime.datetime, host,
@@ -484,7 +484,7 @@ class Interface:
 
 class ControlInterface:
     def __init__(self, uri: str):
-        self.db = ORMDatabase(uri, _Base)
+        self.db = Database(uri, _Base)
 
     @staticmethod
     def _select_hosts(orm_session: Session, **kwargs):
@@ -707,7 +707,7 @@ class ControlInterface:
 
 class DisplayInterface:
     def __init__(self, uri: str):
-        self.db = ORMDatabase(uri, _Base)
+        self.db = Database(uri, _Base)
 
     async def list_stations(self) -> typing.Set[str]:
         def execute(engine: Engine) -> typing.Set[str]:

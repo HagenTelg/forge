@@ -22,7 +22,7 @@ from forge.tasks import background_task
 from forge.vis.util import package_template, name_to_initials
 from forge.vis import CONFIGURATION
 from forge.const import DISPLAY_STATIONS
-from forge.database import ORMDatabase
+from forge.database import Database
 from . import BaseAccessLayer, BaseAccessController, Request, wildcard_match_level
 
 
@@ -201,7 +201,7 @@ def _dashboard_email_subscription(orm_session: Session, user: _User, station: st
 
 class AccessController(BaseAccessController):
     def __init__(self, uri: str):
-        self.db = ORMDatabase(uri, _Base)
+        self.db = Database(uri, _Base)
         self._session_purge_started = False
 
         self.routes: typing.List[Route] = [
@@ -915,7 +915,7 @@ class AccessController(BaseAccessController):
 
 class ControlInterface:
     def __init__(self, uri: str):
-        self.db = ORMDatabase(uri, _Base)
+        self.db = Database(uri, _Base)
 
     @staticmethod
     def _mode_filter(query, mode: str):
@@ -1238,7 +1238,7 @@ class ControlInterface:
 
 class EmailInterface:
     def __init__(self, uri: str):
-        self.db = ORMDatabase(uri, _Base)
+        self.db = Database(uri, _Base)
 
     async def get_recipients(self, station: typing.Optional[str], entry_code: str,
                              severity: typing.Optional["DashboardSeverity"]) -> typing.Set[str]:

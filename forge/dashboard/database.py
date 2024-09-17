@@ -3,7 +3,7 @@ import logging
 import sqlalchemy as db
 import sqlalchemy.orm as orm
 from base64 import b64encode, b64decode
-from forge.database import ORMDatabase
+from forge.database import Database
 from forge.crypto import PublicKey, key_to_bytes
 from forge.dashboard import Severity
 
@@ -178,7 +178,7 @@ db.Index('dashboard_access_bearer_index_full',
 
 class Interface:
     def __init__(self, uri: str):
-        self.db = ORMDatabase(uri, _Base)
+        self.db = Database(uri, _Base)
 
     @staticmethod
     def key_to_column(key: PublicKey) -> str:
