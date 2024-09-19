@@ -342,10 +342,6 @@ class TableUpdate(ABC):
                 end_prefix += f" AND {key.name} = :{edge_end}"
 
         assert len(selectors) > 0
-        from sqlalchemy.dialects.sqlite import pysqlite
-        print(text(f"DELETE FROM {self.table_name} WHERE {' OR '.join(['('+s+')' for s in selectors])}")
-              .bindparams(**parameters)
-              .compile(dialect=pysqlite.dialect(),compile_kwargs={"literal_binds": True}))
         conn.execute(text(f"DELETE FROM {self.table_name} WHERE {' OR '.join(['('+s+')' for s in selectors])}"),
                      parameters)
 
