@@ -422,10 +422,10 @@ class Selection(InstrumentSelection):
 
     def __init__(
             self,
-            instrument_id: typing.Optional[str] = None,
             variable_name: typing.Optional[str] = None,
             variable_id: typing.Optional[str] = None,
             standard_name: typing.Optional[str] = None,
+            instrument_id: typing.Optional[str] = None,
             instrument_code: typing.Optional[str] = None,
             require_tags: typing.Iterable[str] = None,
             exclude_tags: typing.Iterable[str] = None,

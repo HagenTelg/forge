@@ -1,0 +1,39 @@
+<style>
+#view_timeseries {
+  flex-grow: 1;
+{% if view.height %}
+  height: {{ view.height }}px;
+{% endif %}
+}
+</style>
+
+<div id="view_timeseries"></div>
+
+<script>
+(function() {
+//{% if realtime %}
+TimeSelect.interval_ms = '{{ view.interval_ms }}' * 1;
+//{% else %}
+TimeSelect.start_ms = '{{ view.start_ms }}' * 1;
+TimeSelect.end_ms = '{{ view.end_ms }}' * 1;
+//{% endif %}
+
+const NOMINAL_PRESSURE = '{{ nominal_pressure|default(1013.25) }}' * 1.0;
+
+// {% for component in view.required_components %}
+{% include 'view/components/' + component + '.js' %}
+// {% endfor %}
+
+{% include 'view/common/replot.js' %}
+{% include 'view/common/timeseries.js' %}
+{% include 'view/common/shapes.js' %}
+
+const RecordProcessing = new Map();
+// {% for record, processing in view.processing.items() %}
+RecordProcessing.set('{{ record }}', {{ processing.script | safe }});
+// {% endfor %}
+
+{% include 'view/layout/timeseries.js' %}
+{% include 'view/publictimeseries.js' %}
+})();
+</script>

@@ -1,7 +1,6 @@
 import typing
 from forge.vis.view import View
 from forge.vis.view.solar import SolarPosition, BSRNQC
-from forge.processing.station.lookup import station_data
 
 from .aerosol.counts import ParticleConcentration
 from .aerosol.optical import Optical
@@ -20,6 +19,15 @@ from .aerosol.umac import UMACStatus
 from .aerosol.editing.counts import EditingParticleConcentration
 from .aerosol.editing.optical import EditingScattering, EditingBackScattering, EditingAbsorption
 from .aerosol.editing.aethalometer import EditingAethalometer
+
+from .aerosol.public.overview import PublicOverviewShort, PublicOverviewLong
+from .aerosol.public.counts import PublicCountsShort, PublicCountsLong
+from .aerosol.public.clap import PublicCLAPShort, PublicCLAPLong
+from .aerosol.public.nephelometer import PublicTSI3563Short, PublicTSI3563Long
+from .aerosol.public.housekeeping import PublicHousekeepingShort, PublicHousekeepingLong
+from .aerosol.statistics.counts import StatisticsParticleConcentration
+from .aerosol.statistics.extensive import StatisticsScattering, StatisticsAbsorption
+from .aerosol.statistics.intensive import StatisticsBackscatterFraction, StatisticsAngstromExponent, StatisticsSingleScatteringAlbedo, StatisticsSubumFraction
 
 from .met.wind import Wind as MetWind
 from .met.temperature import Temperature as MetTemperature
@@ -172,6 +180,53 @@ radiation_views: typing.Dict[str, View] = {
     'radiation-clean-ambient': RadiationAmbient('radiation-editing'),
     'radiation-clean-solarposition': SolarPosition(),
 }
+
+aerosol_public: typing.Dict[str, View] = {
+    'public-aerosolshort-overview': PublicOverviewShort(),
+    'public-aerosolshort-counts': PublicCountsShort(),
+    'public-aerosolshort-nephelometer': PublicTSI3563Short(),
+    'public-aerosolshort-clap': PublicCLAPShort(),
+    'public-aerosolshort-housekeeping': PublicHousekeepingShort(),
+
+    'public-aerosollong-overview': PublicOverviewLong(),
+    'public-aerosollong-counts': PublicCountsLong(),
+    'public-aerosollong-nephelometer': PublicTSI3563Long(),
+    'public-aerosollong-clap': PublicCLAPLong(),
+    'public-aerosollong-housekeeping': PublicHousekeepingLong(),
+
+    'public-aerosolstats-counts': StatisticsParticleConcentration('cnc'),
+    'public-aerosolstats-scattering-blue-total': StatisticsScattering.with_title('bs-b0', "Total Scattering at 450nm"),
+    'public-aerosolstats-scattering-blue-subum': StatisticsScattering.with_title('bs-b1', "Sub-μm Scattering at 450nm"),
+    'public-aerosolstats-scattering-green-total': StatisticsScattering.with_title('bs-g0', "Total Scattering at 550nm"),
+    'public-aerosolstats-scattering-green-subum': StatisticsScattering.with_title('bs-g1', "Sub-μm Scattering at 550nm"),
+    'public-aerosolstats-scattering-red-total': StatisticsScattering.with_title('bs-r0', "Total Scattering at 700nm"),
+    'public-aerosolstats-scattering-red-subum': StatisticsScattering.with_title('bs-r1', "Sub-μm Scattering at 700nm"),
+    'public-aerosolstats-absorption-blue-total': StatisticsAbsorption.with_title('ba-b0', "Total Absorption at 450nm"),
+    'public-aerosolstats-absorption-blue-subum': StatisticsAbsorption.with_title('ba-b1', "Sub-μm Absorption at 450nm"),
+    'public-aerosolstats-absorption-green-total': StatisticsAbsorption.with_title('ba-g0', "Total Absorption at 550nm"),
+    'public-aerosolstats-absorption-green-subum': StatisticsAbsorption.with_title('ba-g1', "Sub-μm Absorption at 550nm"),
+    'public-aerosolstats-absorption-red-total': StatisticsAbsorption.with_title('ba-r0', "Total Absorption at 700nm"),
+    'public-aerosolstats-absorption-red-subum': StatisticsAbsorption.with_title('ba-r1', "Sub-μm Absorption at 700nm"),
+    'public-aerosolstats-bfr-blue-total': StatisticsBackscatterFraction.with_title('bfr-b0', "Total Backscatter Fraction at 450nm (σbsp/σsp)"),
+    'public-aerosolstats-bfr-blue-subum': StatisticsBackscatterFraction.with_title('bfr-b1', "Sub-μm Backscatter Fraction at 450nm (σbsp/σsp)"),
+    'public-aerosolstats-bfr-green-total': StatisticsBackscatterFraction.with_title('bfr-g0', "Total Backscatter Fraction at 550nm (σbsp/σsp)"),
+    'public-aerosolstats-bfr-green-subum': StatisticsBackscatterFraction.with_title('bfr-g1', "Sub-μm Backscatter Fraction at 550nm (σbsp/σsp)"),
+    'public-aerosolstats-bfr-red-total': StatisticsBackscatterFraction.with_title('bfr-r0', "Total Backscatter Fraction at 700nm (σbsp/σsp)"),
+    'public-aerosolstats-bfr-red-subum': StatisticsBackscatterFraction.with_title('bfr-r1', "Sub-μm Backscatter Fraction at 700nm (σbsp/σsp)"),
+    'public-aerosolstats-sae-green-total': StatisticsAngstromExponent.with_title('sae-g0', "Total Scattering Ångström Exponent at 450nm/700nm"),
+    'public-aerosolstats-sae-green-subum': StatisticsAngstromExponent.with_title('sae-g1', "Sub-μm Scattering Ångström Exponent at 450nm/700nm"),
+    'public-aerosolstats-aae-green-total': StatisticsAngstromExponent.with_title('aae-g0', "Total Absorption Ångström Exponent at 450nm/700nm"),
+    'public-aerosolstats-aae-green-subum': StatisticsAngstromExponent.with_title('aae-g1', "Sub-μm Absorption Ångström Exponent at 450nm/700nm"),
+    'public-aerosolstats-ssa-green-total': StatisticsSingleScatteringAlbedo.with_title('ssa-g0', "Total Single Scattering Albedo (ω 550nm)"),
+    'public-aerosolstats-ssa-green-subum': StatisticsSingleScatteringAlbedo.with_title('ssa-g1', "Sub-μm Single Scattering Albedo (ω 550nm)"),
+    'public-aerosolstats-bsf-blue': StatisticsSubumFraction.with_title('bsf-b', "Scattering Sub-μm Fraction 450nm"),
+    'public-aerosolstats-bsf-green': StatisticsSubumFraction.with_title('bsf-g', "Scattering Sub-μm Fraction 550nm"),
+    'public-aerosolstats-bsf-red': StatisticsSubumFraction.with_title('bsf-r', "Scattering Sub-μm Fraction 700nm"),
+    'public-aerosolstats-baf-blue': StatisticsSubumFraction.with_title('baf-b', "Absorption Sub-μm Fraction 450nm"),
+    'public-aerosolstats-baf-green': StatisticsSubumFraction.with_title('baf-g', "Absorption Sub-μm Fraction 550nm"),
+    'public-aerosolstats-baf-red': StatisticsSubumFraction.with_title('baf-r', "Absorption Sub-μm Fraction 700nm"),
+}
+
 
 
 def detach(*views: typing.Dict[str, View]) -> typing.Dict[str, View]:

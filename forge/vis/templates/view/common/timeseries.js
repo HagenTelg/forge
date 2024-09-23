@@ -138,6 +138,21 @@ var TimeSeriesCommon = {};
     if (sessionStorage.getItem('forge-plot-hide-contamination') !== null) {
         hideContaminatedData = sessionStorage.getItem('forge-plot-hide-contamination') === "1";
     }
+    TimeSeriesCommon.overrideAveraging = function(mode) {
+        if (mode === 'hour') {
+            averagingMode = AVERAGE_HOUR;
+            hideContaminatedData = true;
+        } else if (mode === 'day') {
+            averagingMode = AVERAGE_DAY;
+            hideContaminatedData = true;
+        } else if (mode === 'month') {
+            averagingMode = AVERAGE_MONTH;
+            hideContaminatedData = true;
+        } else {
+            averagingMode = AVERAGE_NONE;
+            hideContaminatedData = false;
+        }
+    }
 
     TimeSeriesCommon.addContaminationToggleButton = function(traces) {
         const button = document.createElement('button');
@@ -298,7 +313,7 @@ var TimeSeriesCommon = {};
                 button.classList.add('mdi-format-list-text');
                 button.title = 'Cycle data hover mode (current: separate labels)';
                 traces.layout.hovermode = 'x';
-                traces.layout.xaxis.showspikes  = false
+                traces.layout.xaxis.showspikes = false
                 setYSpikes(false);
                 break;
             case HOVER_SINGLE_POINT:
@@ -372,7 +387,6 @@ var TimeSeriesCommon = {};
                     return;
                 }
             }
-
             TimeSelect.zoom(start_ms, end_ms);
         });
         TimeSelect.applyZoom = function(start_ms, end_ms) {

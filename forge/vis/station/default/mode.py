@@ -1,7 +1,7 @@
 import typing
 from copy import deepcopy
 from forge.vis.mode import Mode, ModeGroup, VisibleModes
-from forge.vis.mode.viewlist import ViewList, Editing, Realtime
+from forge.vis.mode.viewlist import ViewList, Editing, Realtime, Public
 from forge.vis.mode.acquisition import Acquisition
 from forge.vis.station.lookup import station_data
 from .acquisition import Acquisition as DefaultAcquisition
@@ -78,6 +78,55 @@ aerosol_modes: typing.Dict[str, Mode] = _construct_modes([
         ViewList.Entry('aerosol-realtime-umacstatus', "μMAC Status"),
     ]),
     DefaultAcquisition(),
+])
+aerosol_public: typing.Dict[str, Mode] = _construct_modes([
+    Public('public-aerosolshort', "Short-Term Status (last 5 days)", [
+        Public.Entry('public-aerosolshort-overview', "Overview"),
+        Public.Entry('public-aerosolshort-counts', "Number Concentration"),
+        Public.Entry('public-aerosolshort-nephelometer', "Nephelometer"),
+        Public.Entry('public-aerosolshort-clap', "Filter Absorption Photometer"),
+        Public.Entry('public-aerosolshort-housekeeping', "Housekeeping"),
+    ]),
+    Public('public-aerosollong', "Long-Term Averaged Plots (last 30 days)", [
+        Public.Entry('public-aerosollong-overview', "Overview"),
+        Public.Entry('public-aerosollong-counts', "Number Concentration"),
+        Public.Entry('public-aerosollong-nephelometer', "Nephelometer"),
+        Public.Entry('public-aerosollong-clap', "Filter Absorption Photometer"),
+        Public.Entry('public-aerosollong-housekeeping', "Housekeeping"),
+    ]),
+    Public('public-aerosolstats', "Statistical Summary", [
+        Public.Entry('public-aerosolstats-counts', "Counts"),
+        Public.Entry('public-aerosolstats-scattering-blue-total', "Blue Total Scattering"),
+        Public.Entry('public-aerosolstats-scattering-blue-subum', "Blue Sub-μm Scattering"),
+        Public.Entry('public-aerosolstats-scattering-green-total', "Green Total Scattering"),
+        Public.Entry('public-aerosolstats-scattering-green-subum', "Green Sub-μm Scattering"),
+        Public.Entry('public-aerosolstats-scattering-red-total', "Red Total Scattering"),
+        Public.Entry('public-aerosolstats-scattering-red-subum', "Red Sub-μm Scattering"),
+        Public.Entry('public-aerosolstats-absorption-blue-total', "Blue Total Absorption"),
+        Public.Entry('public-aerosolstats-absorption-blue-subum', "Blue Sub-μm Absorption"),
+        Public.Entry('public-aerosolstats-absorption-green-total', "Green Total Absorption"),
+        Public.Entry('public-aerosolstats-absorption-green-subum', "Green Sub-μm Absorption"),
+        Public.Entry('public-aerosolstats-absorption-red-total', "Red Total Absorption"),
+        Public.Entry('public-aerosolstats-absorption-red-subum', "Red Sub-μm Absorption"),
+        Public.Entry('public-aerosolstats-bfr-blue-total', "Blue Total Backscatter Fraction"),
+        Public.Entry('public-aerosolstats-bfr-blue-subum', "Blue Sub-μm Backscatter Fraction"),
+        Public.Entry('public-aerosolstats-bfr-green-total', "Green Total Backscatter Fraction"),
+        Public.Entry('public-aerosolstats-bfr-green-subum', "Green Sub-μm Backscatter Fraction"),
+        Public.Entry('public-aerosolstats-bfr-red-total', "Red Total Backscatter Fraction"),
+        Public.Entry('public-aerosolstats-bfr-red-subum', "Red Sub-μm Backscatter Fraction"),
+        Public.Entry('public-aerosolstats-sae-green-total', "Total Scattering Ångström Exponent"),
+        Public.Entry('public-aerosolstats-sae-green-subum', "Sub-μm Scattering Ångström Exponent"),
+        Public.Entry('public-aerosolstats-aae-green-total', "Total Absorption Ångström Exponent"),
+        Public.Entry('public-aerosolstats-aae-green-subum', "Sub-μm Absorption Ångström Exponent"),
+        Public.Entry('public-aerosolstats-ssa-green-total', "Total Single Scattering Albedo"),
+        Public.Entry('public-aerosolstats-ssa-green-subum', "Sub-μm Single Scattering Albedo"),
+        Public.Entry('public-aerosolstats-bsf-blue', "Blue Scattering Sub-μm Fraction"),
+        Public.Entry('public-aerosolstats-bsf-green', "Green Scattering Sub-μm Fraction"),
+        Public.Entry('public-aerosolstats-bsf-red', "Red Scattering Sub-μm Fraction"),
+        Public.Entry('public-aerosolstats-baf-blue', "Blue Absorption Sub-μm Fraction"),
+        Public.Entry('public-aerosolstats-baf-green', "Green Absorption Sub-μm Fraction"),
+        Public.Entry('public-aerosolstats-baf-red', "Red Absorption Sub-μm Fraction"),
+    ]),
 ])
 ozone_modes: typing.Dict[str, Mode] = _construct_modes([
     ViewList('ozone-raw', "Raw", [

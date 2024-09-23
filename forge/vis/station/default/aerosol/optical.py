@@ -7,7 +7,7 @@ class Optical(TimeSeries):
         def __init__(self, record: str, field: str, name: typing.Optional[str] = None):
             super().__init__()
             
-            if not name:
+            if name is None:
                 name = field + '{code} ({size})'
 
             Mm_1 = TimeSeries.Axis()

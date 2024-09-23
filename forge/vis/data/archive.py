@@ -30,10 +30,33 @@ _NEVER_MATCH_ROOT_VARIABLES = frozenset({
 
 
 class Record(ABC):
+    def __init__(self, archive: typing.Optional[str] = None,
+                 past_limit_ms: typing.Optional[int] = None):
+        self.archive = archive
+        self.past_limit_ms = past_limit_ms
+
     @abstractmethod
     def __call__(self, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
                  send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
         pass
+
+    def to_archive(self, data_name: str) -> str:
+        if self.archive:
+            return self.archive
+        components = data_name.split('-', 2)
+        archive = "raw"
+        if len(components) >= 2:
+            archive = components[1]
+            if archive == "editing":
+                archive = "edited"
+        return archive
+
+    def apply_time_limit(self, start_epoch_ms: int, end_epoch_ms: int) -> typing.Tuple[int, int]:
+        if self.past_limit_ms:
+            start_epoch_ms = max(round(time.time() * 1000) - self.past_limit_ms, start_epoch_ms)
+            if start_epoch_ms >= end_epoch_ms:
+                end_epoch_ms = start_epoch_ms + 1
+        return start_epoch_ms, end_epoch_ms
 
 
 def walk_selectable(root: Dataset) -> typing.Iterator[VariableContext]:
@@ -420,19 +443,16 @@ class ContaminationRecord(Record):
                                 self._attach(sel, var, var.times, var.values)
             await self._drain_ready(MAX_I64)
 
-    def __init__(self, sources: typing.List[InstrumentSelection]):
+    def __init__(self, sources: typing.List[InstrumentSelection],
+                 archive: typing.Optional[str] = None,
+                 past_limit_ms: typing.Optional[int] = None):
+        super().__init__(archive=archive, past_limit_ms=past_limit_ms)
         self.sources = sources
 
     def __call__(self, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
                  send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
-        components = data_name.split('-', 2)
-        archive = "raw"
-        if len(components) >= 2:
-            archive = components[1]
-            if archive == "editing":
-                archive = "edited"
-
-        files = self._ContaminationFiles(self.sources, station, archive, start_epoch_ms, end_epoch_ms)
+        start_epoch_ms, end_epoch_ms = self.apply_time_limit(start_epoch_ms, end_epoch_ms)
+        files = self._ContaminationFiles(self.sources, station, self.to_archive(data_name), start_epoch_ms, end_epoch_ms)
         return self._Stream(send, self, files)
 
 
@@ -528,23 +548,22 @@ class DataRecord(Record):
                                 self._attach_to_fields(src, sel, var, times, values)
             await self._drain_ready(MAX_I64)
 
-    def __init__(self, fields: typing.Dict[str, typing.List[Selection]], hold_fields: typing.Set[str] = None):
+    def __init__(self, fields: typing.Dict[str, typing.List[Selection]],
+                 hold_fields: typing.Set[str] = None,
+                 archive: typing.Optional[str] = None,
+                 past_limit_ms: typing.Optional[int] = None):
+        super().__init__(archive=archive, past_limit_ms=past_limit_ms)
         self.fields = fields
         self.hold_fields = hold_fields if hold_fields else set()
+        self.past_limit_ms = past_limit_ms
         self._all_selections: typing.List[Selection] = list()
         for add in fields.values():
             self._all_selections.extend(add)
 
     def __call__(self, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
                  send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
-        components = data_name.split('-', 2)
-        archive = "raw"
-        if len(components) >= 2:
-            archive = components[1]
-            if archive == "editing":
-                archive = "edited"
-
-        files = FileSequence(self._all_selections, station, archive, start_epoch_ms, end_epoch_ms)
+        start_epoch_ms, end_epoch_ms = self.apply_time_limit(start_epoch_ms, end_epoch_ms)
+        files = FileSequence(self._all_selections, station, self.to_archive(data_name), start_epoch_ms, end_epoch_ms)
         return self._Stream(send, self, files)
 
 
@@ -635,16 +654,19 @@ class RealtimeRecord(DataRecord):
 
     def __init__(self, fields: typing.Dict[str, typing.List[RealtimeSelection]],
                  hold_fields: typing.Set[str] = None,
-                 expected_interval: typing.Optional[float] = None):
-        super().__init__(fields, hold_fields=hold_fields)
+                 expected_interval: typing.Optional[float] = None,
+                 archive: typing.Optional[str] = "raw",
+                 past_limit_ms: typing.Optional[int] = None):
+        super().__init__(fields, archive=archive, hold_fields=hold_fields, past_limit_ms=past_limit_ms)
         self.expected_interval = expected_interval
 
     def __call__(self, station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
                  send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
+        start_epoch_ms, end_epoch_ms = self.apply_time_limit(start_epoch_ms, end_epoch_ms)
         now_ms = round(time.time() * 1000)
         if end_epoch_ms < now_ms - 60 * 60 * 1000:
             end_epoch_ms = now_ms - 60 * 60 * 1000
         if end_epoch_ms <= start_epoch_ms:
             start_epoch_ms = end_epoch_ms - 1
-        files = FileSequence(self._all_selections, station, "raw", start_epoch_ms, end_epoch_ms)
+        files = FileSequence(self._all_selections, station, self.archive, start_epoch_ms, end_epoch_ms)
         return self._Stream(send, self, files, station, data_name)

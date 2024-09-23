@@ -4,6 +4,15 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class Wind(TimeSeries):
+    DIRECTION_BREAK_SCRIPT = r"""(function() {
+const plotIncomingData = incomingData;
+const wrapper = new Winds.DirectionWrapper();
+incomingData = (plotTime, values, epoch) => {
+    const r = wrapper.apply(values, plotTime, epoch);
+    plotIncomingData(r.times, r.direction, r.epoch);
+};
+})();"""
+
     def __init__(self, record: str, measurements: typing.Optional[typing.Dict[str, str]] = None, **kwargs):
         super().__init__(**kwargs)
         self.title = "Winds"
@@ -41,14 +50,7 @@ class Wind(TimeSeries):
             wd.legend = legend.format(type='Direction')
             wd.data_record = record
             wd.data_field = field.format(code='WD')
-            wd.script_incoming_data = r"""(function() {
-const plotIncomingData = incomingData;
-const wrapper = new Winds.DirectionWrapper();
-incomingData = (plotTime, values, epoch) => {
-    const r = wrapper.apply(values, plotTime, epoch);
-    plotIncomingData(r.times, r.direction, r.epoch);
-};
-})();"""
+            wd.script_incoming_data = self.DIRECTION_BREAK_SCRIPT
             direction.traces.append(wd)
 
     @property

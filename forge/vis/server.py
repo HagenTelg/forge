@@ -4,10 +4,11 @@ from secrets import token_urlsafe
 from starlette.applications import Starlette
 from starlette.routing import Route, Mount, NoMatchFound
 from starlette.requests import Request
-from starlette.responses import Response, HTMLResponse
+from starlette.responses import Response, HTMLResponse, JSONResponse
 from starlette.exceptions import HTTPException
 from starlette.staticfiles import StaticFiles, FileResponse, RedirectResponse
 from starlette.datastructures import Secret
+from starlette.authentication import requires
 from starlette.middleware import Middleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.middleware.authentication import AuthenticationMiddleware
@@ -30,6 +31,16 @@ import forge.vis.dashboard.server
 
 async def _favicon(request: Request) -> Response:
     return FileResponse(package_data('static/favicon.png'))
+
+
+@requires('authenticated')
+async def _stations_list(request: Request) -> Response:
+    from forge.processing.station.lookup import station_data
+
+    result: typing.Dict[str, str] = dict()
+    for station in request.user.visible_stations:
+        result[station] = station_data(station, "site", "name")(station) or ""
+    return JSONResponse(result)
 
 
 async def _root(request: Request) -> Response:
@@ -93,6 +104,10 @@ routes = [
     Mount('/socket/data', routes=forge.vis.data.server.sockets),
     Mount('/socket/export', routes=forge.vis.export.server.sockets),
     Mount('/socket/acquisition', routes=forge.vis.acquisition.server.sockets),
+
+    Route('/list/stations.json', endpoint=_stations_list),
+    Route('/list/{station}/modes.json', endpoint=forge.vis.mode.server.list_modes),
+    Route('/list/{station}/views.json', endpoint=forge.vis.mode.server.list_views),
 
     Route('/index.html', endpoint=_root),
     Route('/index.htm', endpoint=_root),

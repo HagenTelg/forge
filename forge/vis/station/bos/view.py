@@ -1,18 +1,20 @@
 import typing
-from ..default.view import detach, View, aerosol_views, ozone_views
+from ..default.view import detach, View, aerosol_views, aerosol_public, ozone_views
 from ..default.aerosol.pops import POPSStatus, POPSDistribution
 from ..default.aerosol.t640 import T640MassAethalometer, T640Status
 from ..default.aerosol.editing.t640 import EditingT640
+from ..default.aerosol.public.clap import PublicCLAPAethalometerShort, PublicCLAPAethalometerLong
+from ..default.aerosol.public.aethalometer import PublicAE33Short, PublicAE33Long
 from .dmps import DMPSStatus, DMPSDistribution
 from .pops import POPSCounts
-from .counts import RealtimeParticleConcentration, EditingParticleConcentration, ADMagicCPC250StatusStatusSecondary
+from .counts import RealtimeParticleConcentration, EditingParticleConcentration, ADMagicCPC250StatusStatusSecondary, PublicCountsShort, PublicCountsLong
 from .ecotechnephelometer import NephelometerStatusSecondary, NephelometerZeroSecondary
 from .optical import OpticalScatteringSecondary, EditingScatteringSecondary, EditingBackScatteringSecondary
 from .green import Green
 from .pressure import Pressure
 
 
-station_views = detach(aerosol_views, ozone_views)
+station_views = detach(aerosol_views, ozone_views, aerosol_public)
 
 station_views['aerosol-raw-counts'] = POPSCounts('aerosol-raw')
 station_views['aerosol-editing-counts'] = EditingParticleConcentration()
@@ -65,6 +67,13 @@ station_views['aerosol-avgh-green'] = Green('aerosol-avgh')
 
 station_views['aerosol-raw-pressure'] = Pressure('aerosol-raw')
 station_views['aerosol-realtime-pressure'] = Pressure('aerosol-realtime', realtime=True)
+
+station_views['public-aerosolshort-counts'] = PublicCountsShort()
+station_views['public-aerosolshort-absorption'] = PublicCLAPAethalometerShort()
+station_views['public-aerosolshort-aethalometer'] = PublicAE33Short()
+station_views['public-aerosollong-counts'] = PublicCountsLong()
+station_views['public-aerosollong-absorption'] = PublicCLAPAethalometerLong()
+station_views['public-aerosollong-aethalometer'] = PublicAE33Long()
 
 
 

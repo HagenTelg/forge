@@ -1,0 +1,26 @@
+<style>
+#view_statistics {
+  flex-grow: 1;
+}
+</style>
+
+<div id="view_statistics"></div>
+
+<script>
+(function() {
+{% include 'view/common/replot.js' %}
+{% include 'view/common/shapes.js' %}
+
+// {% if view.sub_um_fraction %}
+{% include 'view/components/generic_operations.js' %}
+function dataRecordLoader(dataName) {
+    return new GenericOperations.SingleOutput(dataName, GenericOperations.divide, 'value', 'value1', 'value0');
+}
+// {% else %}
+const dataRecordLoader = undefined;
+// {% endif %}
+
+{% include 'view/layout/statistics.js' %}
+{% include 'view/statistics.js' %}
+})();
+</script>

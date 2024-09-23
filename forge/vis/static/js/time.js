@@ -523,14 +523,16 @@ let TimeParse = {};
     TimeSelect.onChanged = function(key, cb) {
         runWhenChanged.set(key, cb);
     }
-    TimeSelect.change = function(start_ms, end_ms) {
+    TimeSelect.change = function(start_ms, end_ms, no_persist) {
         TimeSelect.start_ms = start_ms;
         TimeSelect.end_ms = end_ms;
         TimeSelect.zoom_start_ms = undefined;
         TimeSelect.zoom_end_ms = undefined;
-    
-        localStorage.setItem('forge-last-start', TimeSelect.start_ms.toString());
-        localStorage.setItem('forge-last-end', TimeSelect.end_ms.toString());
+
+        if (!no_persist) {
+            localStorage.setItem('forge-last-start', TimeSelect.start_ms.toString());
+            localStorage.setItem('forge-last-end', TimeSelect.end_ms.toString());
+        }
     
         runWhenChanged.forEach((cb) => {
             cb();

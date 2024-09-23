@@ -2,7 +2,7 @@ import typing
 import starlette.status
 from starlette.routing import Route, NoMatchFound
 from starlette.authentication import requires
-from starlette.responses import Response, HTMLResponse, RedirectResponse
+from starlette.responses import Response, HTMLResponse, RedirectResponse, JSONResponse
 from starlette.requests import Request
 from starlette.exceptions import HTTPException
 from forge.const import STATIONS
@@ -10,6 +10,7 @@ from forge.vis.util import package_template
 from forge.vis.access.database import AccessLayer as DatabaseLayer
 from .assemble import lookup_mode, visible_modes, mode_exists, default_mode
 from .permissions import is_available
+from .viewlist import ViewList
 
 
 @requires('authenticated')
@@ -75,6 +76,58 @@ async def local_settings(request: Request) -> Response:
     return HTMLResponse(await package_template('mode', 'settings.html').render_async(
         request=request,
     ))
+
+
+@requires('authenticated')
+async def list_modes(request: Request) -> Response:
+    station = request.path_params['station'].lower()
+    if station not in STATIONS:
+        raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail="Invalid station")
+    mode_name = request.query_params.get("mode")
+    available_modes = visible_modes(request, station, mode_name=mode_name)
+
+    result: typing.Dict[str, str] = dict()
+    for group in available_modes.groups:
+        for mode in group.modes:
+            if mode.mode_name in result:
+                continue
+            if not is_available(request, station, mode.mode_name):
+                continue
+            result[mode.mode_name] = mode.display_name
+
+    return JSONResponse(result)
+
+
+@requires('authenticated')
+async def list_views(request: Request) -> Response:
+    station = request.path_params['station'].lower()
+    if station not in STATIONS:
+        raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail="Invalid station")
+
+    result: typing.Dict[str, str] = dict()
+
+    mode_name = request.query_params.get("mode")
+    if not mode_name:
+        available_modes = visible_modes(request, station)
+        for group in available_modes.groups:
+            for mode in group.modes:
+                if not isinstance(mode, ViewList):
+                    continue
+                if not is_available(request, station, mode.mode_name):
+                    continue
+                for view in mode.views:
+                    result[view.view_name] = view.display_name
+    else:
+        if not is_available(request, station, mode_name):
+            raise HTTPException(starlette.status.HTTP_403_FORBIDDEN, detail="Invalid mode")
+        mode = lookup_mode(request, station, mode_name)
+        if mode is None:
+            raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail="Mode not found")
+        if isinstance(mode, ViewList):
+            for view in mode.views:
+                result[view.view_name] = view.display_name
+
+    return JSONResponse(result)
 
 
 routes: typing.List[Route] = [

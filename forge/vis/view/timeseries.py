@@ -1,8 +1,12 @@
 import typing
+import time
 from collections import OrderedDict
-from types import MethodType
+from enum import Enum
+from math import floor
 from starlette.responses import HTMLResponse
+from forge.logicaltime import months_since_epoch, start_of_epoch_month_ms
 from forge.vis.util import package_template
+from forge.processing.station.lookup import station_data
 from . import View, Request, Response
 
 
@@ -128,3 +132,70 @@ class TimeSeries(View):
             realtime=self.realtime,
             **kwargs
         ))
+
+
+class PublicTimeSeries(TimeSeries):
+    class Averaging(Enum):
+        NONE = "none"
+        HOUR = "hour"
+        DAY = "day"
+        MONTH = "month"
+
+    def __init__(self, realtime: bool = True, **kwargs):
+        super().__init__(realtime, **kwargs)
+        self.average: "PublicTimeSeries.Averaging" = PublicTimeSeries.Averaging.NONE
+        self.nominal_pressure: typing.Optional[float] = None
+
+    async def __call__(self, request: Request, **kwargs) -> Response:
+        nominal_pressure = self.nominal_pressure
+        if nominal_pressure is None:
+            station = kwargs.get('station')
+            if station is not None:
+                nominal_pressure = station_data(station, 'climatology', 'surface_pressure')(station)
+
+        return HTMLResponse(await package_template('view', 'publictimeseries.html').render_async(
+            request=request,
+            view=self.RequestContext(self, request),
+            realtime=self.realtime,
+            nominal_pressure=nominal_pressure,
+            **kwargs
+        ))
+
+    @property
+    def height(self) -> typing.Optional[int]:
+        return 400 * len(self.graphs)
+
+    @property
+    def interval_ms(self) -> int:
+        if self.average == PublicTimeSeries.Averaging.HOUR:
+            return 30 * 24 * 60 * 60 * 1000
+        elif self.average == PublicTimeSeries.Averaging.DAY:
+            return 365 * 24 * 60 * 60 * 1000
+        elif self.average == PublicTimeSeries.Averaging.MONTH:
+            return 365 * 24 * 60 * 60 * 1000
+        else:
+            return 5 * 24 * 60 * 60 * 1000
+
+    @property
+    def end_ms(self) -> int:
+        if self.realtime:
+            most_recent_possible = floor(time.time() / 60) * 60
+        else:
+            most_recent_possible = floor(time.time() / (60 * 60)) * 60 * 60
+        if self.average == PublicTimeSeries.Averaging.HOUR:
+            return int(floor(most_recent_possible / (60 * 60)) * 60 * 60 * 1000)
+        elif self.average == PublicTimeSeries.Averaging.DAY:
+            return int(floor(most_recent_possible / (24 * 60 * 60)) * 24 * 60 * 60 * 1000)
+        elif self.average == PublicTimeSeries.Averaging.MONTH:
+            month = months_since_epoch(most_recent_possible)
+            return int(start_of_epoch_month_ms(month))
+        else:
+            return int(floor(most_recent_possible * 1000))
+
+    @property
+    def start_ms(self):
+        if self.average == PublicTimeSeries.Averaging.MONTH:
+            month = months_since_epoch((self.end_ms - self.interval_ms) / 1000)
+            return int(start_of_epoch_month_ms(month))
+        else:
+            return self.end_ms - self.interval_ms

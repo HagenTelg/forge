@@ -1,8 +1,8 @@
 import typing
-from ..default.mode import Mode, ViewList, detach, aerosol_modes, ozone_modes
+from ..default.mode import Mode, ViewList, Public, detach, aerosol_modes, aerosol_public, ozone_modes
 
 
-station_modes = detach(aerosol_modes, ozone_modes)
+station_modes = detach(aerosol_modes, ozone_modes, aerosol_public)
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-mass', "Mass"),
                                     'aerosol-raw-aethalometer')
@@ -69,6 +69,16 @@ station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-backscat
 #                                      'aerosol-avgh-aethalometer')
 # station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-dmpsstatus', "DMPS Status"),
 #                                     'aerosol-raw-t640status')
+
+
+station_modes['public-aerosolshort'].insert(Public.Entry('public-aerosolshort-absorption', "Absorption Overview"),
+                                            'public-aerosolshort-counts')
+station_modes['public-aerosollong'].insert(Public.Entry('public-aerosollong-absorption', "Absorption Overview"),
+                                            'public-aerosollong-counts')
+station_modes['public-aerosolshort'].insert(Public.Entry('public-aerosolshort-aethalometer', "Aethalometer"),
+                                            'public-aerosolshort-clap')
+station_modes['public-aerosollong'].insert(Public.Entry('public-aerosollong-aethalometer', "Aethalometer"),
+                                           'public-aerosollong-clap')
 
 
 

@@ -95,3 +95,12 @@ class Realtime(ViewList):
             request=request,
             **kwargs
         ))
+
+
+class Public(ViewList):
+    async def __call__(self, request: Request, **kwargs) -> Response:
+        return HTMLResponse(await package_template('mode', 'public.html').render_async(
+            mode=self,
+            request=request,
+            **kwargs
+        ))

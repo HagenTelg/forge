@@ -4,13 +4,13 @@ from forge.vis.data.stream import DataStream
 from forge.vis.data.archive import Selection, RealtimeSelection, InstrumentSelection, Record, DataRecord, RealtimeRecord, ContaminationRecord
 
 
-STANDARD_CUT_SIZE_SPLIT: typing.Iterable[typing.Tuple[str, typing.Union[float, typing.Tuple[float, float]]]] = (
+STANDARD_CUT_SIZE_SPLIT = (
     ("whole", nan),
     ("pm10", (10, nan)),
     ("pm25", (2.5, 10)),
     ("pm1", (nan, 2.5)),
 )
-STANDARD_THREE_WAVELENGTHS: typing.Iterable[typing.Tuple[str, typing.Tuple[float, float]]] = (
+STANDARD_THREE_WAVELENGTHS = (
     ("B", (400, 500)),
     ("G", (500, 600)),
     ("R", (600, 750)),
@@ -342,6 +342,256 @@ aerosol_data["aerosol-realtime-umacstatus"] = RealtimeRecord({
     "V": [RealtimeSelection("V", variable_name="supply_voltage", instrument_code="campbellcr1000gmd", exclude_tags={"secondary"}),
           RealtimeSelection("V", variable_name="board_voltage", instrument_code="azonixumac1050", exclude_tags={"secondary"})],
 })
+
+
+aerosol_public: typing.Dict[str, Record] = dict()
+aerosol_public["public-aerosolweb-cnc"] = RealtimeRecord({
+    "N": [RealtimeSelection("N", variable_name="number_concentration",
+                            require_tags={"cpc"}, exclude_tags={"secondary"})],
+    "T": [RealtimeSelection("Toptics", variable_name="optics_temperature",
+                            require_tags={"cpc"}, exclude_tags={"secondary"})],
+    "P": [RealtimeSelection("P", standard_name="air_pressure",
+                            require_tags={"cpc"}, exclude_tags={"secondary"})],
+}, past_limit_ms=31 * 24 * 60 * 60 * 1000)
+for record, cut_size in STANDARD_CUT_SIZE_SPLIT:
+    aerosol_public[f"public-aerosolweb-scattering-{record}"] = RealtimeRecord(dict([
+        (f"Bs{code}", [RealtimeSelection(f"Bs{code}", variable_name="scattering_coefficient",
+                                         wavelength=wavelength, cut_size=cut_size,
+                                         require_tags={"scattering"}, exclude_tags={"secondary"})])
+        for code, wavelength in STANDARD_THREE_WAVELENGTHS
+    ] + [
+        (f"Bbs{code}", [RealtimeSelection(f"Bbs{code}", variable_name="backscattering_coefficient",
+                                          wavelength=wavelength, cut_size=cut_size,
+                                          require_tags={"scattering"}, exclude_tags={"secondary"})])
+        for code, wavelength in STANDARD_THREE_WAVELENGTHS
+    ] + [
+        ("T", [RealtimeSelection("Tsample", variable_name="sample_temperature", cut_size=cut_size,
+                                 require_tags={"scattering"}, exclude_tags={"secondary"})]),
+        ("P", [RealtimeSelection("Psample", variable_name="sample_pressure", cut_size=cut_size,
+                                 require_tags={"scattering"}, exclude_tags={"secondary"})])
+    ]), past_limit_ms=31 * 24 * 60 * 60 * 1000)
+for record, cut_size in STANDARD_CUT_SIZE_SPLIT:
+    aerosol_public[f"public-aerosolweb-absorption-{record}"] = RealtimeRecord(dict([
+        (f"Ba{code}", [RealtimeSelection(f"Ba{code}", variable_name="light_absorption",
+                                         wavelength=wavelength, cut_size=cut_size,
+                                         require_tags={"absorption"}, exclude_tags={"secondary", "aethalometer", "thermomaap"})])
+        for code, wavelength in STANDARD_THREE_WAVELENGTHS
+    ] + [
+        (f"Ir{code}", [RealtimeSelection(f"Ir{code}", variable_name="transmittance",
+                                         wavelength=wavelength, cut_size=cut_size,
+                                         require_tags={"absorption"}, exclude_tags={"secondary", "aethalometer", "thermomaap"})])
+        for code, wavelength in STANDARD_THREE_WAVELENGTHS
+    ] + [
+        (f"Bs{code}", [RealtimeSelection(f"Bs{code}", variable_name="scattering_coefficient",
+                                         wavelength=wavelength, cut_size=cut_size,
+                                         require_tags={"scattering"}, exclude_tags={"secondary"})])
+        for code, wavelength in STANDARD_THREE_WAVELENGTHS
+    ] + [
+        ("Tneph", [RealtimeSelection("Tsample", variable_name="sample_temperature", cut_size=cut_size,
+                                     require_tags={"scattering"}, exclude_tags={"secondary"})]),
+        ("Pneph", [RealtimeSelection("Psample", variable_name="sample_pressure", cut_size=cut_size,
+                                     require_tags={"scattering"}, exclude_tags={"secondary"})])
+    ]), past_limit_ms=31 * 24 * 60 * 60 * 1000)
+for record, cut_size in STANDARD_CUT_SIZE_SPLIT:
+    aerosol_public[f"public-aerosolweb-intensive-{record}"] = RealtimeRecord(dict([
+        (f"Ba{code}", [RealtimeSelection(f"Ba{code}", variable_name="light_absorption",
+                                         wavelength=wavelength, cut_size=cut_size,
+                                         require_tags={"absorption"}, exclude_tags={"secondary", "aethalometer", "thermomaap"})])
+        for code, wavelength in STANDARD_THREE_WAVELENGTHS
+    ] + [
+        (f"Ir{code}", [RealtimeSelection(f"Ir{code}", variable_name="transmittance",
+                                         wavelength=wavelength, cut_size=cut_size,
+                                         require_tags={"absorption"}, exclude_tags={"secondary", "aethalometer", "thermomaap"})])
+        for code, wavelength in STANDARD_THREE_WAVELENGTHS
+    ] + [
+        (f"Bs{code}", [RealtimeSelection(f"Bs{code}", variable_name="scattering_coefficient",
+                                         wavelength=wavelength, cut_size=cut_size,
+                                         require_tags={"scattering"}, exclude_tags={"secondary"})])
+        for code, wavelength in STANDARD_THREE_WAVELENGTHS
+    ] + [
+        (f"Bbs{code}", [RealtimeSelection(f"Bbs{code}", variable_name="backscattering_coefficient",
+                                          wavelength=wavelength, cut_size=cut_size,
+                                          require_tags={"scattering"}, exclude_tags={"secondary"})])
+        for code, wavelength in STANDARD_THREE_WAVELENGTHS
+    ] + [
+        ("Tneph", [RealtimeSelection("Tsample", variable_name="sample_temperature", cut_size=cut_size,
+                                     require_tags={"scattering"}, exclude_tags={"secondary"})]),
+        ("Pneph", [RealtimeSelection("Psample", variable_name="sample_pressure", cut_size=cut_size,
+                                     require_tags={"scattering"}, exclude_tags={"secondary"})])
+    ]), past_limit_ms=31 * 24 * 60 * 60 * 1000)
+aerosol_public["public-aerosolweb-cpcstatus"] = RealtimeRecord({
+    "Qsample": [RealtimeSelection("Q", variable_name="sample_flow",
+                                  require_tags={"cpc"}, exclude_tags={"secondary"}),
+                RealtimeSelection("Q_Q71", variable_id="Q_Q71"), RealtimeSelection("Q_Q61", variable_id="Q_Q61")],
+    "Qdrier": [RealtimeSelection("Q_Q72", variable_id="Q_Q72"), RealtimeSelection("Q_Q62", variable_id="Q_Q62")],
+}, past_limit_ms=31 * 24 * 60 * 60 * 1000)
+aerosol_public[f"public-aerosolweb-aethalometeroverview"] = RealtimeRecord(dict(
+    [(f"Ba{wl+1}", [RealtimeSelection(f"Ba{wl+1}", variable_name="light_absorption", wavelength_number=wl,
+                                      require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+     for wl in range(7)]
+), past_limit_ms=31 * 24 * 60 * 60 * 1000)
+aerosol_public[f"public-aerosolweb-aethalometer"] = RealtimeRecord(dict(
+    [(f"Ba{wl+1}", [RealtimeSelection(f"Ba{wl+1}", variable_name="light_absorption", wavelength_number=wl,
+                                      require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+     for wl in range(7)] +
+    [(f"X{wl+1}", [RealtimeSelection(f"X{wl+1}", variable_name="equivalent_black_carbon", wavelength_number=wl,
+                                     require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+     for wl in range(7)] +
+    [(f"Ir{wl+1}", [RealtimeSelection(f"Ir{wl+1}", variable_id="Ir", wavelength_number=wl,
+                                      require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+     for wl in range(7)] +
+    [(f"CF{wl+1}", [RealtimeSelection(f"k{wl+1}",variable_name="correction_factor", wavelength_number=wl,
+                                      require_tags={"aethalometer", "mageeae33"}, exclude_tags={"secondary"})])
+     for wl in range(7)] +
+    list({
+        "Tcontroller": [RealtimeSelection("Tcontroller", variable_name="controller_temperature",
+                                      instrument_code="mageeae33", exclude_tags={"secondary"})],
+        "Tsupply": [RealtimeSelection("Tsupply", variable_name="supply_temperature",
+                                  instrument_code="mageeae33", exclude_tags={"secondary"})],
+        "Tled": [RealtimeSelection("Tled", variable_name="led_temperature",
+                               instrument_code="mageeae33", exclude_tags={"secondary"})],
+        "Q1": [RealtimeSelection("Q1", variable_name="spot_one_flow",
+                             instrument_code="mageeae33", exclude_tags={"secondary"})],
+        "Q2": [RealtimeSelection("Q2", variable_name="spot_two_flow",
+                             instrument_code="mageeae33", exclude_tags={"secondary"})],
+        "Q": [RealtimeSelection("Q", variable_name="sample_flow",
+                            require_tags={"aethalometer"}, exclude_tags={"secondary"})],
+    }.items())
+), past_limit_ms=31 * 24 * 60 * 60 * 1000)
+aerosol_public["public-aerosolweb-nephzero"] = RealtimeRecord(dict([
+    (f"Bsw{code}", [RealtimeSelection(f"Bsw{code}", variable_name="wall_scattering_coefficient", wavelength=wavelength,
+                                      variable_type=Selection.VariableType.State,
+                                      require_tags={"scattering"}, exclude_tags={"secondary"})])
+    for code, wavelength in STANDARD_THREE_WAVELENGTHS
+] + [
+    (f"Bbsw{code}", [RealtimeSelection(f"Bbsw{code}", variable_name="wall_backscattering_coefficient", wavelength=wavelength,
+                                       variable_type=Selection.VariableType.State,
+                                       require_tags={"scattering"}, exclude_tags={"secondary"})])
+    for code, wavelength in STANDARD_THREE_WAVELENGTHS
+]), past_limit_ms=31 * 24 * 60 * 60 * 1000)
+aerosol_public["public-aerosolweb-nephstatus"] = RealtimeRecord({
+    "CfG": [RealtimeSelection("CfG", variable_name="reference_counts", wavelength=(500, 600),
+                              require_tags={"scattering"}, exclude_tags={"secondary"})],
+    "Vl": [RealtimeSelection("Vl", variable_name="lamp_voltage",
+                             require_tags={"scattering"}, exclude_tags={"secondary"})],
+    "Al": [RealtimeSelection("Al", variable_name="lamp_current",
+                             require_tags={"scattering"}, exclude_tags={"secondary"})],
+}, past_limit_ms=31 * 24 * 60 * 60 * 1000)
+aerosol_public["public-aerosolweb-clapstatus"] = RealtimeRecord({
+    "IrG": [RealtimeSelection("IrG", variable_name="transmittance", wavelength=(500, 600),
+                              instrument_code="clap", exclude_tags={"secondary"}),
+            RealtimeSelection("IrG", variable_name="transmittance", wavelength=(500, 600),
+                              instrument_code="bmitap", exclude_tags={"secondary"})],
+    "IfG": [RealtimeSelection("IfG", variable_name="reference_intensity", wavelength=(500, 600),
+                              instrument_code="clap", exclude_tags={"secondary"}),
+            RealtimeSelection("IfG", variable_name="reference_intensity", wavelength=(500, 600),
+                              instrument_code="bmitap", exclude_tags={"secondary"})],
+    "IpG": [RealtimeSelection("IpG", variable_name="sample_intensity", wavelength=(500, 600),
+                              instrument_code="clap", exclude_tags={"secondary"}),
+            RealtimeSelection("IpG", variable_name="sample_intensity", wavelength=(500, 600),
+                              instrument_code="bmitap", exclude_tags={"secondary"})],
+    "Q": [RealtimeSelection("Q", variable_name="sample_flow",
+                            instrument_code="clap", exclude_tags={"secondary"}),
+          RealtimeSelection("Q", variable_name="sample_flow",
+                            instrument_code="bmitap", exclude_tags={"secondary"})],
+    "spot": [RealtimeSelection("Fn", variable_name="spot_number",
+                               instrument_code="clap", exclude_tags={"secondary"},
+                               variable_type=Selection.VariableType.State),
+             RealtimeSelection("Fn", variable_name="spot_number",
+                               instrument_code="bmitap", exclude_tags={"secondary"},
+                               variable_type=Selection.VariableType.State)],
+}, hold_fields={"spot"}, past_limit_ms=31 * 24 * 60 * 60 * 1000)
+aerosol_public["public-aerosolweb-wind"] = RealtimeRecord({
+    "WS": [RealtimeSelection("WS", variable_name="wind_speed", exclude_tags={"secondary"})],
+    "WD": [RealtimeSelection("WD", variable_name="wind_direction", exclude_tags={"secondary"})],
+}, past_limit_ms=31 * 24 * 60 * 60 * 1000)
+aerosol_public["public-aerosolweb-flow"] = RealtimeRecord({
+    "sample": [RealtimeSelection("Q_Q11", variable_id="Q_Q11")],
+    "pitot": [RealtimeSelection("Pd_P01", variable_id="Pd_P01")],
+}, past_limit_ms=31 * 24 * 60 * 60 * 1000)
+aerosol_public["public-aerosolweb-pressure"] = RealtimeRecord({
+    "ambient": [RealtimeSelection("P", variable_id="P", instrument_id="XM1")],
+    "pitot": [RealtimeSelection("Pd_P01", variable_id="Pd_P01")],
+}, past_limit_ms=31 * 24 * 60 * 60 * 1000)
+for record, cut_size in STANDARD_CUT_SIZE_SPLIT:
+    aerosol_public[f"public-aerosolweb-samplepressure-{record}"] = RealtimeRecord({
+        "neph": [RealtimeSelection("Psample", variable_name="sample_pressure", cut_size=cut_size,
+                                   require_tags={"scattering"}, exclude_tags={"secondary"})],
+        "impactor": [RealtimeSelection("Pd_P11", variable_id="Pd_P11", cut_size=cut_size)],
+    }, past_limit_ms=31 * 24 * 60 * 60 * 1000)
+aerosol_public["public-aerosolweb-temperature"] = RealtimeRecord({
+    "Tambient": [RealtimeSelection("Tambient", variable_id="T1", instrument_id="XM1")],
+    "Uambient": [RealtimeSelection("Uambient", variable_id="U1", instrument_id="XM1")],
+    "TDambient": [RealtimeSelection("TDambient", variable_id="TD1", instrument_id="XM1")],
+
+    "Tsample": [RealtimeSelection("T_V11", variable_id="T_V11")], "Usample": [RealtimeSelection("U_V11", variable_id="U_V11")],
+
+    "Tnephinlet": [RealtimeSelection("Tinlet", variable_name="inlet_temperature", require_tags={"scattering"}, exclude_tags={"secondary"})],
+    "Unephinlet": [RealtimeSelection("Uinlet", variable_name="inlet_humidity", require_tags={"scattering"}, exclude_tags={"secondary"})],
+    "Tneph": [RealtimeSelection("Tsample", variable_name="sample_temperature", require_tags={"scattering"}, exclude_tags={"secondary"})],
+    "Uneph": [RealtimeSelection("Usample", variable_name="sample_humidity", require_tags={"scattering"}, exclude_tags={"secondary"})],
+}, past_limit_ms=31 * 24 * 60 * 60 * 1000)
+aerosol_public["public-aerosolweb-umacstatus"] = RealtimeRecord({
+    "T": [RealtimeSelection("T", variable_name="board_temperature", instrument_code="campbellcr1000gmd", exclude_tags={"secondary"}),
+          RealtimeSelection("T", variable_name="board_temperature", instrument_code="azonixumac1050", exclude_tags={"secondary"})],
+    "V": [RealtimeSelection("V", variable_name="supply_voltage", instrument_code="campbellcr1000gmd", exclude_tags={"secondary"}),
+          RealtimeSelection("V", variable_name="board_voltage", instrument_code="azonixumac1050", exclude_tags={"secondary"})],
+}, past_limit_ms=31 * 24 * 60 * 60 * 1000)
+
+
+def _aerosol_statistical_summary(record: str, **selection) -> None:
+    aerosol_public[f"public-aerosolstats-{record}-bins"] = DataRecord({
+        "value": [Selection(**selection)],
+    }, archive="avgd")
+    aerosol_public[f"public-aerosolstats-{record}-series"] = DataRecord({
+        "value": [Selection(**selection)],
+    }, archive="avgm")
+
+
+_aerosol_statistical_summary("cnc", variable_name="number_concentration", instrument_id="XI")
+
+for size_record, cut_size in (("0", (2.51, nan)), ("1", (nan, 2.51))):
+    for wl_record, wavelength in (("b", 450), ("g", 550), ("r", 700)):
+        _aerosol_statistical_summary(f"bs-{wl_record}{size_record}",
+                                     variable_name="scattering_coefficient", instrument_id="XI",
+                                     wavelength=wavelength, cut_size=cut_size)
+        _aerosol_statistical_summary(f"ba-{wl_record}{size_record}",
+                                     variable_name="light_absorption", instrument_id="XI",
+                                     wavelength=wavelength, cut_size=cut_size)
+        _aerosol_statistical_summary(f"bfr-{wl_record}{size_record}",
+                                     variable_name="backscatter_fraction", instrument_id="XI",
+                                     wavelength=wavelength, cut_size=cut_size)
+    _aerosol_statistical_summary(f"sae-g{size_record}",
+                                 variable_name="scattering_angstrom_exponent", instrument_id="XI",
+                                 wavelength=550, cut_size=cut_size)
+    _aerosol_statistical_summary(f"aae-g{size_record}",
+                                 variable_name="absorption_angstrom_exponent", instrument_id="XI",
+                                 wavelength=550, cut_size=cut_size)
+    _aerosol_statistical_summary(f"ssa-g{size_record}",
+                                 variable_name="single_scattering_albedo", instrument_id="XI",
+                                 wavelength=550, cut_size=cut_size)
+
+
+def _aerosol_statistical_summary_subum(record: str, **selection) -> None:
+    aerosol_public[f"public-aerosolstats-{record}-bins"] = DataRecord({
+        f"value{size_record}": [Selection(cut_size=cut_size, **selection)]
+        for size_record, cut_size in (("0", (2.51, nan)), ("1", (nan, 2.51)))
+    }, archive="avgd")
+    aerosol_public[f"public-aerosolstats-{record}-series"] = DataRecord({
+        f"value{size_record}": [Selection(cut_size=cut_size, **selection)]
+        for size_record, cut_size in (("0", (2.51, nan)), ("1", (nan, 2.51)))
+    }, archive="avgm")
+
+
+for wl_record, wavelength in (("b", 450), ("g", 550), ("r", 700)):
+    _aerosol_statistical_summary_subum(f"bsf-{wl_record}",
+                                       variable_name="scattering_coefficient", instrument_id="XI",
+                                       wavelength=wavelength)
+    _aerosol_statistical_summary_subum(f"baf-{wl_record}",
+                                       variable_name="light_absorption", instrument_id="XI",
+                                       wavelength=wavelength)
+
+
 
 
 ozone_data: typing.Dict[str, Record] = dict()

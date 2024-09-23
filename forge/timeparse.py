@@ -4,14 +4,18 @@ import datetime
 import forge.logicaltime as lt
 
 
-MATCH_ISO8601_DURATION = re.compile(
+_MATCH_ISO8601_DURATION = re.compile(
     r'P?(?:(?:(\d+)D)?T?)?'
     r'(?:(\d+)H)?'
     r'(?:(\d+)M)?'
     r'(?:(\d+(?:\.\d*)?)S?)?',
     flags=re.IGNORECASE
 )
-MATCH_ISO8601_TIME = re.compile(
+_AMBIGUOUS_ISO8601_DURATION = re.compile(
+    r'P(?:\d+)M',
+    flags=re.IGNORECASE
+)
+_MATCH_ISO8601_TIME = re.compile(
     r'(\d{4})-?(\d{2})-?(\d{2})'
     r'T?'
     r'(?:(\d{2}):?(\d{2}):?(\d{2}(\.\d*)?))?'
@@ -45,8 +49,12 @@ _TIME_PART_SPLIT = re.compile(
 
 
 def parse_iso8601_duration(s: str) -> float:
-    m = MATCH_ISO8601_DURATION.fullmatch(s)
+    m = _MATCH_ISO8601_DURATION.fullmatch(s)
     if m:
+        # "P1M" should be one month, but we're only parsing fixed intervals here, and we want to
+        # accept things like P1H for ease of use.  One minute should be specified as either "1M" or "PT1M".
+        if _AMBIGUOUS_ISO8601_DURATION.fullmatch(s):
+            raise ValueError("ambiguous interval format")
         return (
                 float(m.group(1) or 0) * 24 * 60 * 60 +
                 float(m.group(2) or 0) * 60 * 60 +
@@ -58,7 +66,7 @@ def parse_iso8601_duration(s: str) -> float:
 
 
 def parse_iso8601_time(s: str) -> datetime.datetime:
-    m = MATCH_ISO8601_TIME.fullmatch(s)
+    m = _MATCH_ISO8601_TIME.fullmatch(s)
     if m:
         microseconds = 0
         if m.group(7):
@@ -114,7 +122,7 @@ def _parse_unambiguous_absolute(
             start = datetime.datetime.fromtimestamp(t, tz=datetime.timezone.utc)
             return start, start
 
-    m = MATCH_ISO8601_TIME.fullmatch(s)
+    m = _MATCH_ISO8601_TIME.fullmatch(s)
     if m:
         microseconds = 0
         if m.group(7):

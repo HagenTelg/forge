@@ -1,10 +1,8 @@
 var Intensive = {};
 (function() {
-    Intensive.CalculateDispatch = class extends DataSocket.RecordDispatch {
-        constructor(dataName, outputNames, inputScattering, inputBackscattering, inputAbsorption, inputExtinction,
+    Intensive.CalculateRecord = class {
+        constructor(outputNames, inputScattering, inputBackscattering, inputAbsorption, inputExtinction,
                     assumedAngstromExponent) {
-            super(dataName);
-
             const outputScattering = new Map();
             const outputBackscattering = new Map();
             const outputAbsoprtion = new Map();
@@ -38,7 +36,7 @@ var Intensive = {};
                 assumedAngstromExponent);
         }
 
-        processRecord(record, epoch) {
+        calculateRecord(record, numberOfValues) {
             function calculateAngstrom(timeIndex, wavelengths) {
                 let firstValue = undefined;
                 let firstWavelength = undefined;
@@ -76,28 +74,28 @@ var Intensive = {};
             record.set('AngBs', angstromScatteringOutput);
             const angstromAbsorptionOutput = [];
             record.set('AngBa', angstromAbsorptionOutput);
-            for (let timeIndex=0; timeIndex<epoch.length; timeIndex++) {
+            for (let timeIndex=0; timeIndex<numberOfValues; timeIndex++) {
                 angstromScatteringOutput.push(calculateAngstrom(timeIndex, this._scatteringWavelengths));
                 angstromAbsorptionOutput.push(calculateAngstrom(timeIndex, this._absorptionWavelengths));
             }
 
-            this.scatteringAdjuster.adjustRecord(record, epoch.length);
-            this.backscatteringAdjuster.adjustRecord(record, epoch.length);
-            this.absorptionAdjuster.adjustRecord(record, epoch.length);
-            this.extinctionAdjuster.adjustRecord(record, epoch.length);
+            this.scatteringAdjuster.adjustRecord(record, numberOfValues);
+            this.backscatteringAdjuster.adjustRecord(record, numberOfValues);
+            this.absorptionAdjuster.adjustRecord(record, numberOfValues);
+            this.extinctionAdjuster.adjustRecord(record, numberOfValues);
 
             function processField(fieldName, calculate, ...inputs) {
                 let fieldData = record.get(fieldName);
                 if (!fieldData) {
                     fieldData = [];
                     record.set(fieldName, fieldData);
-                    for (let i=0; i<epoch.length; i++) {
+                    for (let i=0; i<numberOfValues; i++) {
                         fieldData.push(undefined);
                     }
                 }
 
                 let args = [];
-                for (let timeIndex=0; timeIndex<epoch.length; timeIndex++) {
+                for (let timeIndex=0; timeIndex<numberOfValues; timeIndex++) {
                     if (isFinite(fieldData[timeIndex])) {
                         continue;
                     }
@@ -138,6 +136,20 @@ var Intensive = {};
                     return Math.max(Math.min(Bbs / Bs, 1.0), -0.5);
                 }, Bbs, Bs);
             });
+        }
+    }
+
+    Intensive.CalculateDispatch = class extends DataSocket.RecordDispatch {
+        constructor(dataName, outputNames, inputScattering, inputBackscattering, inputAbsorption, inputExtinction,
+                    assumedAngstromExponent) {
+            super(dataName);
+
+            this.calculate = new Intensive.CalculateRecord(outputNames, inputScattering, inputBackscattering,
+                inputAbsorption, inputExtinction, assumedAngstromExponent);
+        }
+
+        processRecord(record, epoch) {
+            this.calculate.calculateRecord(record, epoch.length);
         }
     }
 })();

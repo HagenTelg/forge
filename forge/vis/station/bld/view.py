@@ -1,13 +1,13 @@
 import typing
 from ..default.view import detach, View, aerosol_views, ozone_views, met_views, radiation_views
-from ..default.ozone.concentration import OzoneConcentration
 from ..default.ozone.teledynen500 import NOxConcentration, TeledyneN500Status
 from ..default.ozone.editing.teledynen500 import EditingNOxConcentration
+from .ozonepublic import PublicOzoneConcentration
 
 
 station_views = detach(aerosol_views, ozone_views, met_views, radiation_views)
 
-station_views['public-realtime-ozone-concentration'] = OzoneConcentration('public-realtime', realtime=True)
+station_views['public-realtime-ozone-concentration'] = PublicOzoneConcentration()
 
 station_views['ozone-raw-nox'] = NOxConcentration('ozone-raw')
 station_views['ozone-realtime-nox'] = NOxConcentration('ozone-realtime', realtime=True)

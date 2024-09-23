@@ -61,7 +61,7 @@ station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-grimm'
 station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-grimm', "Grimm OPC"),
                                         'aerosol-editing-counts')
 station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-grimmdistribution', "Grimm Size Distribution"),
-                                        'aerosol-editing-tap')
+                                        'aerosol-editing-clap')
 station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-grimm', "Grimm OPC"),
                                       'aerosol-clean-green')
 station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-grimm', "Grimm OPC"),
