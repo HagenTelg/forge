@@ -272,4 +272,6 @@ def launch(create_instrument: typing.Callable[[BaseContext], BaseInstrument]) ->
     ctx.average_config = average_config(args)
     ctx.cutsize_config = cutsize_config(args)
 
-    run(create_instrument(ctx), args.systemd)
+    instrument = create_instrument(ctx)
+    ctx.persistent.version = instrument.PERSISTENT_VERSION
+    run(instrument, args.systemd)

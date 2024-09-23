@@ -262,4 +262,7 @@ def launch(instrument: typing.Type[StreamingInstrument]) -> None:
     ctx = context()
     ctx.average_config = average_config(args)
     ctx.cutsize_config = cutsize_config(args)
-    run(instrument(ctx), args.systemd)
+
+    instrument = instrument(ctx)
+    ctx.persistent.version = instrument.PERSISTENT_VERSION
+    run(instrument, args.systemd)

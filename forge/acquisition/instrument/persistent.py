@@ -4,13 +4,13 @@ import logging
 from pathlib import Path
 from json import load as load_json, dump as save_json, JSONDecodeError
 from .base import BasePersistentInterface
-from forge.const import __version__ as forge_version
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class PersistentInterface(BasePersistentInterface):
     def __init__(self, storage_file: Path):
+        super().__init__()
         self.storage_file = storage_file
 
         self._instrument_data: typing.Dict[str, typing.Dict[str, typing.Any]] = dict()
@@ -32,7 +32,16 @@ class PersistentInterface(BasePersistentInterface):
             return
 
         file_version = contents.get('version')
-        if file_version != forge_version:
+        if file_version == "0.5.0":
+            file_version = 1
+        else:
+            try:
+                file_version = int(file_version)
+            except:
+                _LOGGER.debug(f"Invalid state file version {file_version}", exc_info=True)
+                file_version = None
+
+        if file_version != self.version:
             _LOGGER.info(f"Version mismatch in state file {self.storage_file} ({file_version} vs {forge_version})")
             return
 
@@ -68,7 +77,7 @@ class PersistentInterface(BasePersistentInterface):
 
         with self.storage_file.open('wt') as f:
             save_json({
-                'version': forge_version,
+                'version': self.version,
                 'state': self._instrument_data,
             }, f)
 

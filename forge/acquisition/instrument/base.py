@@ -334,6 +334,9 @@ class BaseBusInterface:
 
 
 class BasePersistentInterface:
+    def __init__(self):
+        self.version: int = 1
+
     def load(self, name: str) -> typing.Tuple[typing.Any, typing.Optional[float]]:
         return None, None
 
@@ -358,6 +361,7 @@ class BaseInstrument:
     MODEL: typing.Optional[str] = None
     DISPLAY_LETTER: typing.Optional[str] = None
     TAGS: typing.Set[str] = frozenset()
+    PERSISTENT_VERSION: int = 1
 
     def __init__(self, context: BaseContext):
         self.context = context
