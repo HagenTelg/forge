@@ -84,7 +84,7 @@ class ExportCSV(ArchiveExportEntry):
                 pass
 
         class _DataColumn(_OutputColumn):
-            _FORMAT_CODE = re.compile(r'%([- #0+]*)(\d*)(?:\.(\d+))?([diouxXeEfFgG])')
+            _FORMAT_CODE = re.compile(r'%([- #0+]*)(\d*)(?:\.(\d+))?(?:hh|h|l|ll|q|L|j|z|Z|t)?([diouxXeEfFgG])')
 
             def __init__(self, input_column: "ExportCSV.Column"):
                 super().__init__()
@@ -199,13 +199,15 @@ class ExportCSV(ArchiveExportEntry):
                     try:
                         format_code = var.variable.C_format
                         parsed_format = self._FORMAT_CODE.search(format_code)
-                        if parsed_format and '0' not in parsed_format.group(1):
-                            format_code = '%0' + parsed_format.group(1) + parsed_format.group(2)
+                        if parsed_format:
+                            if '0' not in parsed_format.group(1):
+                                format_code = '%0' + parsed_format.group(1) + parsed_format.group(2)
+                            else:
+                                format_code = '%' + parsed_format.group(1) + parsed_format.group(2)
                             fractional_digits = parsed_format.group(3)
                             if fractional_digits:
                                 format_code += '.' + fractional_digits
                             format_code += parsed_format.group(4)
-                        self._number_format = format_code
                     except (AttributeError, TypeError, ValueError):
                         pass
 

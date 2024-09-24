@@ -580,45 +580,48 @@ class _ColumnVariable(_Column):
 class _ColumnVariableNumeric(_ColumnVariable):
     class Formatter:
         _DIGIT_FORMAT = re.compile(r'(\d+)(\.(\d*))?')
-        _FORMAT_CODE = re.compile(r'%([- #0+]*)(\d*)(?:\.(\d+))?([diouxXeEfFgG])')
+        _FORMAT_CODE = re.compile(r'%([- #0+]*)(\d*)(?:\.(\d+))?(?:hh|h|l|ll|q|L|j|z|Z|t)?([diouxXeEfFgG])')
 
         @staticmethod
-        def _to_mvc(f: str) -> str:
-            parsed = _ColumnVariableNumeric.Formatter._FORMAT_CODE.search(f)
+        def _to_mvc(format_code: str) -> str:
+            parsed = _ColumnVariableNumeric.Formatter._FORMAT_CODE.search(format_code)
             if not parsed:
                 return ""
 
             flags = parsed.group(1)
             total_width = parsed.group(2)
             fractional_digits = parsed.group(3)
-            format_code = parsed.group(4)
+            type_code = parsed.group(4)
+            format_code = '%' + flags + total_width
 
             if total_width:
                 total_width = int(total_width)
             else:
                 total_width = None
             if fractional_digits:
+                format_code += '.' + fractional_digits
                 fractional_digits = int(fractional_digits)
             else:
                 fractional_digits = 0
+            format_code += type_code
 
             if ' ' in flags and total_width:
                 total_width -= 1
             elif '+' in flags and total_width:
                 total_width -= 1
 
-            if format_code in ('e', 'E', 'g', 'G'):
-                return f % float('9.' + ('9' * fractional_digits) + 'E99')
-            elif format_code in ('x', 'X'):
+            if type_code in ('e', 'E', 'g', 'G'):
+                return format_code % float('9.' + ('9' * fractional_digits) + 'E99')
+            elif type_code in ('x', 'X'):
                 if '#' in flags:
                     total_width = (total_width or 1) - 2
-                return f % int('F' * max(1, total_width or 0), 16)
-            elif format_code == 'o':
+                return format_code % int('F' * max(1, total_width or 0), 16)
+            elif type_code == 'o':
                 if '#' in flags:
                     total_width = (total_width or 1) - 2
-                return f % int('7' * max(1, total_width or 0), 8)
-            elif format_code not in ('f', 'F'):
-                return f % int('9' * (total_width or 4))
+                return format_code % int('7' * max(1, total_width or 0), 8)
+            elif type_code not in ('f', 'F'):
+                return format_code % int('9' * (total_width or 4))
 
             base = total_width
             if not base and fractional_digits:
@@ -627,7 +630,7 @@ class _ColumnVariableNumeric(_ColumnVariable):
                 base = 4
             base = int('9' * base)
             base /= 10 ** fractional_digits
-            return f % base
+            return format_code % base
 
         def __init__(self, parser: argparse.ArgumentParser,
                      format_string: typing.Optional[str], mvc: typing.Optional[str]):
@@ -676,10 +679,13 @@ class _ColumnVariableNumeric(_ColumnVariable):
                 format_code = variable.C_format
             except AttributeError:
                 return None
-            # Force zero padding
+            # Force zero padding and strip size specifier
             parsed_format = _ColumnVariableNumeric.Formatter._FORMAT_CODE.search(format_code)
-            if parsed_format and '0' not in parsed_format.group(1):
-                format_code = '%0' + parsed_format.group(1) + parsed_format.group(2)
+            if parsed_format:
+                if '0' not in parsed_format.group(1):
+                    format_code = '%0' + parsed_format.group(1) + parsed_format.group(2)
+                else:
+                    format_code = '%' + parsed_format.group(1) + parsed_format.group(2)
                 fractional_digits = parsed_format.group(3)
                 if fractional_digits:
                     format_code += '.' + fractional_digits
