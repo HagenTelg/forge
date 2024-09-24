@@ -138,6 +138,7 @@ def _month_bins(times_epoch_ms: np.ndarray):
             continue
         bin_numbers.append(month_number)
         bin_start.append(begin_index)
+        begin_index = end_index
 
     return np.array(bin_numbers), np.array(bin_start)
 

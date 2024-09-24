@@ -1310,6 +1310,7 @@ class ArchiveRead(ExecuteStage):
 
     @classmethod
     def nominal_record_spacing(cls, execute: Execute) -> typing.Optional[np.ndarray]:
+        from .average import AverageStage
         if not execute.stages:
             return None
         read = execute.stages[0]
@@ -1317,6 +1318,9 @@ class ArchiveRead(ExecuteStage):
             return None
         if len(read.archives) != 1:
             return None
+        for check in reversed(execute.stages):
+            if isinstance(check, AverageStage):
+                return None
         selected_archive = next(iter(read.archives))
         if selected_archive == 'avgh':
             start = int(floor(read.start_ms / (60 * 60 * 1000))) * 60 * 60 * 1000

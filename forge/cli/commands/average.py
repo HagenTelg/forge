@@ -82,7 +82,7 @@ class Command(ParseCommand):
             execute.install(RemoveContaminationStage(execute))
 
         execute.install(MergeInstrument(execute))
-        execute.install(_AverageStage(execute, averager, file_interval))
+        execute.install(AverageStage(execute, averager, file_interval))
 
         if cmd.is_last:
             FilterStage.instantiate_if_available(
@@ -93,7 +93,7 @@ class Command(ParseCommand):
             ExportCommand.instantiate_pure(cmd, execute, parser, args, extra_args)
 
 
-class _AverageStage(ExecuteStage):
+class AverageStage(ExecuteStage):
     def __init__(
             self,
             execute: Execute,
