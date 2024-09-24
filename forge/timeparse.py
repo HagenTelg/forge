@@ -440,7 +440,9 @@ def parse_time_bounds_arguments(args: typing.List[str]) -> typing.Tuple[datetime
                 pass
 
             try:
-                _, end = _parse_unambiguous_absolute(remaining[-1], start.year)
+                # We want to parse through the non-inclusive end here, so that things like "2023-01-01 2024-01-01"
+                # yield a single year, instead of a year and a day
+                end, _ = _parse_unambiguous_absolute(remaining[-1], start.year)
                 remaining = remaining[:-1]
                 return
             except ValueError:
