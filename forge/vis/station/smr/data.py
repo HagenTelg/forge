@@ -163,6 +163,14 @@ station_profile_data['aerosol']['raw']['maapstatus'] = lambda station, start_epo
         Name(station, 'raw', 'Is2_A21', {'pm10'}): 'Is2',
         Name(station, 'raw', 'Is2_A21', {'pm1'}): 'Is2',
         Name(station, 'raw', 'Is2_A21', {'pm25'}): 'Is2',
+        Name(station, 'raw', 'Is1R_A21'): 'Is1',
+        Name(station, 'raw', 'Is1R_A21', {'pm10'}): 'Is1',
+        Name(station, 'raw', 'Is1R_A21', {'pm1'}): 'Is1',
+        Name(station, 'raw', 'Is1R_A21', {'pm25'}): 'Is1',
+        Name(station, 'raw', 'Is2R_A21'): 'Is2',
+        Name(station, 'raw', 'Is2R_A21', {'pm10'}): 'Is2',
+        Name(station, 'raw', 'Is2R_A21', {'pm1'}): 'Is2',
+        Name(station, 'raw', 'Is2R_A21', {'pm25'}): 'Is2',
     }, send
 )
 station_profile_data['aerosol']['realtime']['maapstatus'] = {
@@ -209,6 +217,14 @@ station_profile_data['aerosol']['realtime']['maapstatus'] = {
     RealtimeTranslator.Key('Is2_A21', {'pm10'}): 'Is2',
     RealtimeTranslator.Key('Is2_A21', {'pm1'}): 'Is2',
     RealtimeTranslator.Key('Is2_A21', {'pm25'}): 'Is2',
+    RealtimeTranslator.Key('Is1R_A21'): 'Is1',
+    RealtimeTranslator.Key('Is1R_A21', {'pm10'}): 'Is1',
+    RealtimeTranslator.Key('Is1R_A21', {'pm1'}): 'Is1',
+    RealtimeTranslator.Key('Is1R_A21', {'pm25'}): 'Is1',
+    RealtimeTranslator.Key('Is2R_A21'): 'Is2',
+    RealtimeTranslator.Key('Is2R_A21', {'pm10'}): 'Is2',
+    RealtimeTranslator.Key('Is2R_A21', {'pm1'}): 'Is2',
+    RealtimeTranslator.Key('Is2R_A21', {'pm25'}): 'Is2',
 }
 
 

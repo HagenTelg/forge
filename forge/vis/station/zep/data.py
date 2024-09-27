@@ -516,6 +516,8 @@ station_profile_data['aerosol']['raw']['maapstatus'] = lambda station, start_epo
         Name(station, 'raw', 'IpR_A31'): 'Ip',
         Name(station, 'raw', 'Is1_A31'): 'Is1',
         Name(station, 'raw', 'Is2_A31'): 'Is2',
+        Name(station, 'raw', 'Is1R_A31'): 'Is1',
+        Name(station, 'raw', 'Is2R_A31'): 'Is2',
     }, send
 )
 station_profile_data['aerosol']['realtime']['maapstatus'] = {
@@ -529,6 +531,8 @@ station_profile_data['aerosol']['realtime']['maapstatus'] = {
     RealtimeTranslator.Key('IpR_A31'): 'Ip',
     RealtimeTranslator.Key('Is1_A31'): 'Is1',
     RealtimeTranslator.Key('Is2_A31'): 'Is2',
+    RealtimeTranslator.Key('Is1R_A31'): 'Is1',
+    RealtimeTranslator.Key('Is2R_A31'): 'Is2',
 }
 
 
