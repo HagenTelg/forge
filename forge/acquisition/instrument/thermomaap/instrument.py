@@ -6,6 +6,7 @@ import re
 import enum
 import serial
 from math import nan, isfinite, exp, log
+from collections import deque
 from forge.tasks import wait_cancelable
 from forge.units import flow_m3s_to_lpm, mass_ng_to_ug, flow_lpm_to_m3s
 from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError
@@ -49,6 +50,12 @@ class Instrument(StreamingInstrument):
                     return Instrument._EBCUnits.ng
             return Instrument._EBCUnits.Unknown
 
+    class _IntensityFilteringPoint:
+        def __init__(self, time: float, If0: float, Ip0: float):
+            self.time = time
+            self.If0 = If0
+            self.Ip0 = Ip0
+
     def __init__(self, context: StreamingContext):
         super().__init__(context)
 
@@ -82,8 +89,11 @@ class Instrument(StreamingInstrument):
         self._prior_absorption_time: typing.Optional[float] = None
         self._prior_In: typing.Optional[float] = None
         self._have_high_precision_flow: bool = False
-        self._have_intensity_transmittance: bool = False
+        self._have_intensity_transmittance: typing.Optional[float] = None
         self._have_calculated_absorption: bool = False
+
+        self._intensity_filtering_interval: float = float(context.config.get('INTENSITY_FILTER_INTERVAL', default=10 * 60))
+        self._intensity_filter_points: typing.Deque["Instrument._IntensityFilteringPoint"] = deque()
 
         self.data_Bac = self.input("Bac")
         self.data_Ba = self.input("Ba")
@@ -138,6 +148,7 @@ class Instrument(StreamingInstrument):
         self.data_wavelength([self.wavelength])
         dimension_wavelength = self.dimension_wavelength(self.data_wavelength)
         self.bit_flags: typing.Dict[int, Instrument.Notification] = dict()
+        self.flag_spot_advancing = self.flag_bit(self.bit_flags, 0x000001, "spot_advancing")
         self.instrument_report = self.report(
             at_stp(self.variable_ebc(self._wavelength_arrays[self.data_X], dimension_wavelength, code="X")),
             at_stp(self.variable_absorption(self._wavelength_arrays[self.data_Bac], dimension_wavelength, code="Bac")),
@@ -203,7 +214,7 @@ class Instrument(StreamingInstrument):
             }),
 
             flags=[
-                self.flag_bit(self.bit_flags, 0x000001, "spot_advancing"),
+                self.flag_spot_advancing,
                 self.flag_bit(self.bit_flags, 0x000002, "zero"),
                 self.flag_bit(self.bit_flags, 0x000008, "pump_off"),
                 self.flag_bit(self.bit_flags, 0x000010, "manual_operation"),
@@ -442,10 +453,22 @@ class Instrument(StreamingInstrument):
             return
         self.data_In(Ip / If)
 
-        if Ip0 == 0 or If0 == 0.0:
+        # Normally filter start intensities shouldn't change, but (some?) MAAPs appear to report random drops.
+        # So the filter here just takes the X minute max, reset if a filter change is detected.  This can
+        # result in a Tr>1 near the start of the filter if the actual filter change is missed, but that's
+        # better than the constant up/down the anomalous behavior produces.
+        now = time.monotonic()
+        cutoff = now - self._intensity_filtering_interval
+        while len(self._intensity_filter_points) > 0 and self._intensity_filter_points[0].time <= cutoff:
+            self._intensity_filter_points.popleft()
+        self._intensity_filter_points.append(self._IntensityFilteringPoint(now, If0, Ip0))
+        If0 = max([p.If0 for p in self._intensity_filter_points])
+        Ip0 = max([p.Ip0 for p in self._intensity_filter_points])
+
+        if Ip0 == 0.0 or If0 == 0.0:
             return
 
-        self._have_intensity_transmittance = True
+        self._have_intensity_transmittance = now
         self.data_Ir(float(self.data_In) / (Ip0 / If0))
 
     def _sample_volume_to_flow(self, volume: float) -> None:
@@ -563,7 +586,7 @@ class Instrument(StreamingInstrument):
         self.data_SSA(parse_number(SSA))
 
         LOD = parse_number(LOD)
-        if not self._have_intensity_transmittance:
+        if not self._have_intensity_transmittance or self._have_intensity_transmittance < (time.monotonic() - self._intensity_filtering_interval):
             self.data_Ir(exp(LOD / 100.0))
 
         self._process_concentrations(X, X_uncorrected)
@@ -602,7 +625,7 @@ class Instrument(StreamingInstrument):
         self.data_SSA(parse_number(SSA))
 
         LOD = parse_number(LOD)
-        if not self._have_intensity_transmittance:
+        if not self._have_intensity_transmittance or self._have_intensity_transmittance < (time.monotonic() - self._intensity_filtering_interval):
             self.data_Ir(exp(LOD / 100.0))
 
         self._process_concentrations(X, X_uncorrected)
@@ -687,6 +710,9 @@ class Instrument(StreamingInstrument):
             raise CommunicationsError(f"invalid number of fields in {status}")
 
         parse_flags_bits(device_status, self.bit_flags)
+        if bool(self.flag_spot_advancing.source):
+            self._intensity_filter_points.clear()
+            self._have_intensity_transmittance = None
 
         try:
             error_status1 = int(error_status1, 16)
@@ -737,7 +763,6 @@ class Instrument(StreamingInstrument):
 
     async def communicate(self) -> None:
         self._have_high_precision_flow = False
-        self._have_intensity_transmittance = False
 
         line: bytes = await wait_cancelable(self.read_line(), 122.0)
         if _PF12_START.match(line):
