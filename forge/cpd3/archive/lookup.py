@@ -53,7 +53,10 @@ class IndexLookup:
                         self._year = [dict() for _ in range(add_years)] + self._year
                         self._year_start = year
 
-                    dest_year = self._year[year - self._year_start]
+                    year_index = year - self._year_start
+                    while year_index >= len(self._year):
+                        self._year.append(dict())
+                    dest_year = self._year[year_index]
                     station_to_archive = dest_year.get(station)
                     if not station_to_archive:
                         station_to_archive = dict()
