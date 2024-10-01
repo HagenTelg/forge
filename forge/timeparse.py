@@ -347,6 +347,7 @@ def parse_time_bounds_arguments(args: typing.List[str]) -> typing.Tuple[datetime
             result = result[:-1]
         return result
 
+    absolute_offset_origin = None
     if not start and not end:
         if not remaining:
             raise ValueError("start and end time invalid")
@@ -364,7 +365,7 @@ def parse_time_bounds_arguments(args: typing.List[str]) -> typing.Tuple[datetime
             pass
         if not start:
             try:
-                _, end = _parse_unambiguous_absolute(remaining[-1])
+                absolute_offset_origin, end = _parse_unambiguous_absolute(remaining[-1])
                 remaining = remaining[:-1]
             except ValueError:
                 pass
@@ -405,9 +406,16 @@ def parse_time_bounds_arguments(args: typing.List[str]) -> typing.Tuple[datetime
         def _parse_start_only():
             nonlocal remaining
             nonlocal start
+            nonlocal end
 
             try:
-                start = _apply_offset(end, _parse_any_offset(remaining[0]))
+                # Use the absolute origin, if available, so specifying "1d 2023-05-01" gets the day ending on
+                # 2023-05-01, not the day of 2023-05-01.
+                if absolute_offset_origin:
+                    start = _apply_offset(absolute_offset_origin, _parse_any_offset(remaining[0]) * -1)
+                    end = absolute_offset_origin
+                else:
+                    start = _apply_offset(end, _parse_any_offset(remaining[0]) * -1)
                 remaining = remaining[1:]
                 return
             except ValueError:
