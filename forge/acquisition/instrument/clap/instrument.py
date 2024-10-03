@@ -18,6 +18,7 @@ _LOGGER = logging.getLogger(__name__)
 _INSTRUMENT_TYPE = __name__.split('.')[-2]
 _VALUE_EQUAL = re.compile(rb"[^=]*=\s*(.+)")
 _TEN_DOT = re.compile(rb"10\.(\d+)")
+_ALL_ZERO = re.compile(rb"0+")
 _CALIBRATION_SPLIT = re.compile(rb"[:;,]")
 
 
@@ -309,11 +310,14 @@ class Instrument(StreamingInstrument):
         return self.InstrumentState(is_changing, elapsed_seconds, Ff, Fn)
 
     @staticmethod
-    def _parse_ten_dot(data: bytes) -> bytes:
+    def _parse_ten_dot(data: bytes) -> typing.Optional[bytes]:
         matched = _VALUE_EQUAL.fullmatch(data.strip())
         if matched is None:
             raise CommunicationsError(f"invalid response {data}")
         sn = matched.group(1)
+        matched = _ALL_ZERO.fullmatch(sn)
+        if matched:
+            return None
         matched = _TEN_DOT.fullmatch(sn)
         if matched:
             return matched.group(1)
@@ -368,15 +372,18 @@ class Instrument(StreamingInstrument):
             self.writer.write(b"sn\r")
             data: bytes = await wait_cancelable(self.read_line(), 3.0)
             sn = self._parse_ten_dot(data)
-            sn = sn.decode('ascii')
-            self.set_serial_number(sn)
-            self.control.apply_serial_number(sn)
+            if sn:
+                sn = sn.decode('ascii')
+                self.set_serial_number(sn)
+                self.control.apply_serial_number(sn)
             await self.drain_reader(0.5)
 
             # Read firmware version
             self.writer.write(b"fw\r")
             data: bytes = await wait_cancelable(self.read_line(), 3.0)
-            self.set_firmware_version(self._parse_ten_dot(data))
+            fw = self._parse_ten_dot(data)
+            if fw:
+                self.set_firmware_version(fw)
             await self.drain_reader(1.0)
 
             # Change menu
