@@ -27,8 +27,12 @@ class AccessController(BaseAccessController):
         self.visible = config.get("visible", True)
 
     async def authenticate(self, request: Request) -> typing.Optional[BaseAccessLayer]:
+        client = request.client
+        if client is None:
+            _LOGGER.warning("Request has no client, proxy headers are likely misconfigured or not accepted")
+            return None
         try:
-            origin = ipaddress.ip_address(request.client.host)
+            origin = ipaddress.ip_address(client.host)
         except ValueError:
             return None
         for net in self.networks:
