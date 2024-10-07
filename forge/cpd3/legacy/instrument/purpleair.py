@@ -92,7 +92,7 @@ class Converter(InstrumentConverter):
         netcdf_var.variable_air_rh(var_U)
         netcdf_timeseries.variable_coordinates(g, var_U)
         var_U.variable_id = "U"
-        var_U.coverage_content_Uype = "physicalMeasurement"
+        var_U.coverage_content_type = "physicalMeasurement"
         var_U.cell_methods = "time: mean"
         self.apply_data(times, var_U, data_U)
 

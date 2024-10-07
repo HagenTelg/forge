@@ -148,9 +148,9 @@ class EditDirective:
         self.comment = str(info.get("Comment"))
         self._history = list(info.get("History", []))
         self.modified_time: int = int(round((modified if modified else float((self.history[-1] if self.history else dict()).get("At", self.end_epoch))) * 1000))
-        parameters = dict(info.get("Parameters", dict()))
-        self._action = parameters.get("Action", dict())
-        self._trigger = parameters.get("Trigger", dict())
+        parameters = dict(info.get("Parameters") or dict())
+        self._action = parameters.get("Action") or dict()
+        self._trigger = parameters.get("Trigger") or dict()
         self.disabled = bool(info.get("Disabled"))
 
         self.skip_conversion = bool(info.get("SkipForgeConversion"))
@@ -249,10 +249,10 @@ class EditDirective:
                 t = entry['OriginalBounds'].get('End')
                 item['changed_end_time'] = round(t * 1000) if t and isfinite(t) else MAX_I64
             elif operation == 'ParametersChanged':
-                op = entry.get("OriginalParameters", dict())
+                op = entry.get("OriginalParameters") or dict()
 
                 try:
-                    updated_action_type, updated_action_parameters = self._convert_action(op.get("Action", dict()), index)
+                    updated_action_type, updated_action_parameters = self._convert_action(op.get("Action") or dict(), index)
                     if updated_action_type != current_action_type:
                         item['changed_action_type'] = updated_action_type
                         current_action_type = updated_action_type
@@ -263,7 +263,7 @@ class EditDirective:
                     pass
 
                 try:
-                    updated_condition_type, updated_condition_parameters = self._convert_condition(op.get("Trigger", dict()), index, silent=True)
+                    updated_condition_type, updated_condition_parameters = self._convert_condition(op.get("Trigger") or dict(), index, silent=True)
                     if updated_condition_type != current_condition_type:
                         item['changed_condition_type'] = updated_condition_type
                         current_condition_type = updated_condition_type

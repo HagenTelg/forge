@@ -86,11 +86,14 @@ class InstrumentTimeConversion:
         assert start < end
 
         for defined_segments in converters.values():
-            for segment in defined_segments:
+            for idx in reversed(range(len(defined_segments))):
+                segment = defined_segments[idx]
                 if not segment.start:
                     segment.start = start
                 if not segment.end:
                     segment.end = end
+                if segment.start >= segment.end:
+                    del defined_segments[idx]
             defined_segments.sort(key=lambda x: x.start)
             while defined_segments and defined_segments[0].start < start:
                 defined_segments[0].start = start

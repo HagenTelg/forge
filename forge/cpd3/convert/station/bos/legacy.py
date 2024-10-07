@@ -4,4 +4,4 @@ from forge.timeparse import parse_iso8601_time
 
 
 DATA_START_TIME: float = parse_iso8601_time("2016-07-25").timestamp()  # Ozone data
-DATA_END_TIME: float = time.time()
+DATA_END_TIME: float = parse_iso8601_time("2024-07-30").timestamp()

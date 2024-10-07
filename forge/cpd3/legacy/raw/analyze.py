@@ -55,7 +55,8 @@ class Instrument:
         return f"Instrument({format_iso8601_time(self.start)}, {format_iso8601_time(self.end)}, {str(self.source)})"
 
     @classmethod
-    def scan_station(cls, station: str, start: float, end: float) -> typing.Dict[str, typing.List["Instrument"]]:
+    def scan_station(cls, station: str, start: float, end: float,
+                     instrument_limit: typing.Optional[str] = None) -> typing.Dict[str, typing.List["Instrument"]]:
         def get_path(root: variant.Metadata, *path) -> typing.Optional[typing.Any]:
             for p in path:
                 root = root.get(p)
@@ -71,6 +72,7 @@ class Instrument:
                 archives=["raw_meta"],
                 include_meta_archive=False,
                 include_default_station=False,
+                **({'variables': [".*_" + instrument_limit]} if instrument_limit else {})
         )]):
             if identity.variable == "alias":
                 continue
@@ -154,6 +156,9 @@ def main():
     parser.add_argument('--variables',
                         dest='variables', action='store_true',
                         help="show constituent variables")
+    parser.add_argument('--instrument',
+                        dest='instrument',
+                        help="limit to a single instrument")
     parser.add_argument('station',
                         help="station to analyze")
     args = parser.parse_args()
@@ -168,7 +173,7 @@ def main():
 
     _LOGGER.debug(f"Starting raw data analysis for {station.upper()} in {format_iso8601_time(start_time)} to {format_iso8601_time(end_time)}")
     begin_time = time.monotonic()
-    available = Instrument.scan_station(station, start_time, end_time)
+    available = Instrument.scan_station(station, start_time, end_time, args.instrument)
     end_time = time.monotonic()
     _LOGGER.debug(f"Analysis of {len(available)} instruments completed in {(end_time - begin_time):.2f} seconds")
 

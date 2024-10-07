@@ -97,7 +97,7 @@ class Converter(InstrumentConverter):
         if data_X:
             mass_diameters = sorted(data_X.keys())
             g.createDimension("mass_diameter", len(mass_diameters))
-            var_mass_diameter = g.createVariable("diameter", "f8", ("mass_diameter",), fill_value=nan)
+            var_mass_diameter = g.createVariable("mass_diameter", "f8", ("mass_diameter",), fill_value=nan)
             var_mass_diameter.coverage_content_type = "coordinate"
             var_mass_diameter.long_name = "particle mass upper particle diameter threshold"
             var_mass_diameter.units = "um"
@@ -106,7 +106,7 @@ class Converter(InstrumentConverter):
 
             var_X = g.createVariable("mass_concentration", "f8", ("time", "mass_diameter"), fill_value=nan)
             netcdf_timeseries.variable_coordinates(g, var_X)
-            var_X.variable_id = "N"
+            var_X.variable_id = "X"
             var_X.coverage_content_type = "physicalMeasurement"
             var_X.cell_methods = "time: mean"
             var_X.long_name = "calculated mass concentration of particles"

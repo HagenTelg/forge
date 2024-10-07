@@ -3,16 +3,6 @@ from forge.vis.view.timeseries import TimeSeries
 
 
 class Gasses(TimeSeries):
-    class ScaleCO2(TimeSeries.Processing):
-        def __init__(self):
-            super().__init__()
-            self.components.append('generic_operations')
-            self.script = r"""(function(dataName) {
-    const op = new GenericOperations.SingleOutput(dataName, GenericOperations.divide, 'CO2', 'CO2');
-    op.after.push(1000.0);
-    return op;
-})"""
-
     def __init__(self, mode: str, **kwargs):
         super().__init__(**kwargs)
         self.title = "Gas Concentrations"
@@ -66,7 +56,6 @@ class Gasses(TimeSeries):
         CO2.data_record = f'{mode}-gasses'
         CO2.data_field = 'CO2'
         cox.traces.append(CO2)
-        self.processing[CO2.data_record] = self.ScaleCO2()
 
 
         no_noy = TimeSeries.Graph()

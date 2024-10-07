@@ -161,12 +161,12 @@ C.run(STATION, {
         },
     }, {
         "Pd_P01": {
-            "units": "degC",
+            "units": "hPa",
             "C_format": "%5.1f",
             "long_name": "stack pitot tube",
         },
         "Pd_P12": {
-            "units": "degC",
+            "units": "hPa",
             "C_format": "%5.1f",
             "long_name": "system vac",
         },

@@ -135,6 +135,26 @@ def variable_nox(var: Variable) -> None:
     var.C_format = "%9.2f"
 
 
+def variable_co(var: Variable, is_dried: bool = True) -> None:
+    var.long_name = "fractional concentration of carbon dioxide"
+    if is_dried:
+        var.standard_name = "mole_fraction_of_carbon_monoxide_in_dry_air"
+    else:
+        var.standard_name = "mole_fraction_of_carbon_monoxide_in_air"
+    var.units = "1e-9"  # canonical ppb
+    var.C_format = "%9.2f"
+
+
+def variable_co2(var: Variable, is_dried: bool = True) -> None:
+    var.long_name = "fractional concentration of carbon dioxide"
+    if is_dried:
+        var.standard_name = "mole_fraction_of_carbon_dioxide_in_dry_air"
+    else:
+        var.standard_name = "mole_fraction_of_carbon_dioxide_in_air"
+    var.units = "1e-6"  # canonical ppm
+    var.C_format = "%9.2f"
+
+
 def variable_wind_speed(var: Variable) -> None:
     var.long_name = "wind speed"
     var.standard_name = "wind_speed"

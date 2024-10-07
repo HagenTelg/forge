@@ -3,6 +3,7 @@ venv
 .idea
 __pycache__
 config/
+build/
 .secrets.*
 settings.*
 .env
