@@ -21,6 +21,8 @@ STATIONS = frozenset({
     'bnd',
     'bos',
     'brw',
+    'clamps1',
+    'clamps2',
     'cpr',
     'csu',
     'egb',
@@ -75,6 +77,8 @@ STATIONS = frozenset({
 })
 DISPLAY_STATIONS = frozenset(STATIONS - {
     'air',
+    'clamps1',
+    'clamps2',
     'lab',
     'mrad',
     'nil',
