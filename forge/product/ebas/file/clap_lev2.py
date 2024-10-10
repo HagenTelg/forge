@@ -9,11 +9,11 @@ class File(Level2File):
 
     @property
     def instrument_manufacturer(self) -> str:
-        return "NOAA/ESRL/GMD"
+        return "NOAA/GML"
 
     @property
     def instrument_model(self) -> str:
-        return "CLAP-10"
+        return "CLAP-3W"
 
     @property
     def instrument_name(self) -> str:
