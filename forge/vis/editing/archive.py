@@ -928,7 +928,7 @@ class _AvailableReadStream(ArchiveReadStream):
     class _Index(ArchiveIndex):
         def apply_filter(self, profile: str, file_filter: StationFileFilter) -> typing.Set[str]:
             check_instruments: typing.Set[str] = set()
-            for instrument_id, tags in self.instrument_codes.items():
+            for instrument_id, tags in self.tags.items():
                 accept = file_filter.profile_filter_tags(profile, tags)
                 if accept is not None and not accept:
                     # If it's ambiguous, then we have to load the files anyway
