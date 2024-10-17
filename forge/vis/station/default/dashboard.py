@@ -42,6 +42,9 @@ code_records: typing.Dict[str, Record] = {
     'forge-archive-flush-avgm': BasicRecord.simple_override(
         name="Forge archive monthly averaged data flush",
     ),
+    'forge-archive-backup': BasicRecord.simple_override(
+        name="Forge archive server backup",
+    ),
     'forge-aerosolftp-update': BasicRecord.simple_override(
         name="Aerosol FTP file update",
     ),
