@@ -174,7 +174,7 @@ class _AcquisitionSocket(WebSocketEndpoint):
 
         self.station = websocket.path_params['station'].lower()
         if self.station not in STATIONS:
-            raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail="Invalid station")
+            raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail=f"Invalid station {self.station.upper()}")
         if not websocket.user.allow_mode(self.station, 'acquisition'):
             raise HTTPException(starlette.status.HTTP_403_FORBIDDEN, detail="Station not available")
 
