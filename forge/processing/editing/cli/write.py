@@ -163,14 +163,16 @@ def main():
                     existing_root.variables["profile"].datatype.enum_dict
                 )
 
-                for var in ("start_time", "end_time", "modified_time", "unique_id", "deleted",
-                            "profile", "action_type", "condition_type"):
+                for var in ("start_time", "end_time", "modified_time", "unique_id"):
                     input_var = input_root.variables[var]
                     output_var = output_root.variables[var]
                     if remove_index != 0:
                         output_var[:remove_index] = input_var[:remove_index]
                     if remove_index != input_var.shape[0] - 1:
                         output_var[remove_index:] = input_var[remove_index+1:]
+
+                for var in ("profile", "action_type", "condition_type", "deleted"):
+                    remap_enum(input_root.variables[var], output_root.variables[var])
 
                 for var in ("action_parameters", "condition_parameters", "author", "comment", "history"):
                     input_var = input_root.variables[var]
@@ -234,7 +236,7 @@ def main():
 
                         output_root = edit_file_structure(output_file, sorted(all_profiles))
 
-                        for var in ("start_time", "end_time", "modified_time", "unique_id", "deleted"):
+                        for var in ("start_time", "end_time", "modified_time", "unique_id"):
                             input_var = copy_root.variables[var]
                             output_var = output_root.variables[var]
                             input_var[:] = output_var[:]
@@ -243,7 +245,7 @@ def main():
                             output_var = output_root.variables[var]
                             for input_idx in range(input_var.shape[0]):
                                 output_var[input_idx] = input_var[input_idx]
-                        for var in ("profile", "action_type", "condition_type"):
+                        for var in ("profile", "action_type", "condition_type", "deleted"):
                             remap_enum(copy_root.variables[var], output_root.variables[var])
                     else:
                         output_root = edit_file_structure(output_file, input_profile_values)

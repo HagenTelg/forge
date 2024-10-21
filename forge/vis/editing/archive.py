@@ -713,17 +713,22 @@ async def _apply_edit_save(
             output_file = construct_modified(start_ms, all_profiles)
             output_root = output_file.groups["edits"]
 
-            for var in ("start_time", "end_time", "modified_time", "unique_id", "deleted"):
+            for var in ("start_time", "end_time", "modified_time", "unique_id"):
                 input_var = existing_root.variables[var]
                 output_var = output_root.variables[var]
-                input_var[:] = output_var[:]
+                if remove_index != 0:
+                    output_var[:remove_index] = input_var[:remove_index]
+                if remove_index != input_var.shape[0] - 1:
+                    output_var[remove_index:] = input_var[remove_index + 1:]
             for var in ("action_parameters", "condition_parameters", "author", "comment", "history"):
                 input_var = existing_root.variables[var]
                 output_var = output_root.variables[var]
                 for input_idx in range(input_var.shape[0]):
+                    if input_idx == remove_index:
+                        continue
                     output_var[input_idx] = input_var[input_idx]
-            for var in ("profile", "action_type", "condition_type"):
-                remap_enum(existing_root.variables[var], output_root.variables[var])
+            for var in ("profile", "action_type", "condition_type", "deleted"):
+                remap_enum(existing_root.variables[var], output_root.variables[var], remove_index=remove_index)
 
             filename = source.filepath()
             source.close()

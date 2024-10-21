@@ -941,14 +941,14 @@ def write_all(
             output_root = output_file.groups["edits"]
 
             if input_root is not None:
-                for var in ("start_time", "end_time", "modified_time", "unique_id", "deleted", ):
+                for var in ("start_time", "end_time", "modified_time", "unique_id",):
                     output_root.variables[var][:] = input_root.variables[var][:]
                 for var in ("action_parameters", "condition_parameters", "author", "comment", "history",):
                     input_var = input_root.variables[var]
                     output_var = output_root.variables[var]
                     for idx in range(input_var.shape[0]):
                         output_var[idx] = input_var[idx]
-                for var in ("profile", "action_type", "condition_type"):
+                for var in ("profile", "action_type", "condition_type", "deleted",):
                     remap_enum(input_root.variables[var], output_root.variables[var])
 
             modified_ranges: typing.Set[typing.Tuple[int, int]] = set()
