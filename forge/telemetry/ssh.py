@@ -213,7 +213,7 @@ class StationConnectionSocket(ConnectionSocket):
     async def on_connect(self, websocket: WebSocket):
         self.station = websocket.path_params['station'].lower()
         if self.station not in STATIONS:
-            raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail=f"Invalid station {self.station.upper()}")
+            raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail="Invalid station")
         await super().on_connect(websocket)
 
     async def handshake(self, websocket: WebSocket, data: bytes) -> bool:
