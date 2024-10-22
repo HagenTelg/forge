@@ -6,11 +6,14 @@ nav.controls {
   opacity: 0.0;
   transition: 0.2s;
   margin: 2px 0 0 2px;
+  display: flex;
+  flex-direction: row;
 }
 nav.controls:hover {
   opacity: 1;
 }
-nav.controls > button {
+
+nav.controls button.control-button {
   border: none;
   text-align: center;
   font-size: 16px;
@@ -18,14 +21,53 @@ nav.controls > button {
   padding: 2px;
   background: rgba(0, 0, 0, 0);
 }
-nav.controls > button.character-icon {
+nav.controls button.character-icon {
   font-weight: bold;
   font-family: monospace;
   width: 16px;
   text-align: center;
 }
-nav.controls > button.hidden {
+nav.controls button.text-content {
+  border: none;
+  text-align: left;
+  font-size: 16px;
+  margin: 0;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0);
+  color: black;
+  text-decoration: none;
+}
+nav.controls button.hidden {
   display: none;
+}
+
+nav.controls .control-dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #eee;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.1);
+  z-index: 1;
+  list-style: none inside;
+  margin: 0;
+  padding: 0;
+  top: 22px;
+  left: 0;
+}
+nav.controls .control-dropdown:hover > .control-dropdown-content {
+  display: block;
+}
+nav.controls .control-dropdown > .control-dropdown-content .text-content {
+  text-wrap: nowrap;
+  width: 100%;
+}
+nav.controls .control-dropdown-content .active {
+  background-color: #08f;
+  color: white;
+}
+nav.controls .control-dropdown-content :hover:not(.active) {
+  background-color: #555;
+  color: white;
+  cursor: pointer;
 }
 </style>
 

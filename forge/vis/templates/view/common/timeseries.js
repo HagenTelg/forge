@@ -154,30 +154,84 @@ var TimeSeriesCommon = {};
         }
     }
 
-    TimeSeriesCommon.addContaminationToggleButton = function(traces) {
-        const button = document.createElement('button');
-        document.getElementById('control_bar').appendChild(button);
-        button.classList.add('mdi', 'contamination-toggle', 'hidden');
-        button.title = 'Toggle displaying contaminated data';
+    function addControlButton(options) {
+        const controlBar = document.getElementById('control_bar');
+        const controlButton = document.createElement('button');
+        controlButton.classList.add('control-button');
 
+        if (options) {
+            const hoverRoot = document.createElement('div');
+            hoverRoot.classList.add('control-dropdown')
+            controlBar.appendChild(hoverRoot);
+
+            controlButton.classList.add('control-dropdown-button');
+            hoverRoot.appendChild(controlButton);
+
+            const menu = document.createElement('ul');
+            hoverRoot.appendChild(menu);
+            menu.classList.add('control-dropdown-content');
+
+            for (const o of options) {
+                const item = document.createElement('li');
+                menu.appendChild(item);
+
+                const optionButton = document.createElement('button');
+                optionButton.classList.add('text-content');
+                item.appendChild(optionButton);
+
+                optionButton.textContent = o.text;
+                $(optionButton).click(o.click);
+                o.button = optionButton;
+            }
+        } else {
+            controlBar.appendChild(controlButton);
+        }
+
+        return controlButton;
+    }
+
+    TimeSeriesCommon.addContaminationToggleButton = function(traces) {
         function apply() {
             if (hideContaminatedData) {
                 button.classList.remove('mdi-filter');
                 button.classList.add('mdi-filter-off');
+                button.text = 'Control display of contaminated data (currently hidden)';
+                options[0].button.classList.remove('active');
+                options[1].button.classList.add('active');
             } else {
                 button.classList.remove('mdi-filter-off');
                 button.classList.add('mdi-filter');
+                button.text = 'Control display of contaminated data (currently shown)';
+                options[1].button.classList.remove('active');
+                options[0].button.classList.add('active');
             }
         }
-        apply();
 
-        $(button).click(function(event) {
+        function update(event, hide) {
             event.preventDefault();
-            hideContaminatedData = !hideContaminatedData;
+            hideContaminatedData = hide;
             sessionStorage.setItem('forge-plot-hide-contamination', hideContaminatedData && "1" || "0");
             apply();
             traces.updateDisplay(true);
-        });
+        }
+
+        const options = [
+            {
+                text: "Show contamination",
+                click: function(event) { update(event, false); },
+            },
+            {
+                text: "Hide contamination",
+                click: function(event) { update(event, true); },
+            },
+        ];
+        const button = addControlButton(options);
+        button.classList.add('mdi', 'hidden');
+        button.title = 'Control display of contaminated data';
+        options[0].button.classList.add("show-contamination");
+        options[1].button.classList.add("hide-contamination");
+
+        apply();
     }
 
     let showSymbols = false;
@@ -185,104 +239,138 @@ var TimeSeriesCommon = {};
         showSymbols = sessionStorage.getItem('forge-plot-show-symbols') === "1";
     }
     TimeSeriesCommon.addSymbolToggleButton = function(traces) {
-        const button = document.createElement('button');
-        document.getElementById('control_bar').appendChild(button);
-        button.classList.add('mdi', 'mdi-chart-line-variant');
-        button.title = 'Toggle data point symbol display';
-
         function apply() {
             if (showSymbols) {
                 button.classList.remove('mdi-chart-line-variant');
                 button.classList.add('mdi-chart-bubble');
+                button.title = 'Control display of symbols a data points (symbols shown)';
                 traces.data.forEach((trace) => {
                     if (trace.mode === 'lines') {
                         trace.mode = 'lines+markers';
                     }
                 });
+                options[0].button.classList.remove('active');
+                options[1].button.classList.add('active');
             } else {
                 button.classList.remove('mdi-chart-bubble');
                 button.classList.add('mdi-chart-line-variant');
+                button.title = 'Control display of symbols a data points (symbols hidden)';
                 traces.data.forEach((trace) => {
                     if (trace.mode === 'lines+markers') {
                         trace.mode = 'lines';
                     }
                 });
+                options[1].button.classList.remove('active');
+                options[0].button.classList.add('active');
             }
         }
-        apply();
 
-        $(button).click(function(event) {
+        function update(event, show) {
             event.preventDefault();
-            showSymbols = !showSymbols;
+            showSymbols = show;
             sessionStorage.setItem('forge-plot-show-symbols', showSymbols && "1" || "0");
             apply();
             traces.updateDisplay(true);
-        });
+        }
+
+        const options = [
+            {
+                text: "Hide data point symbols",
+                click: function(event) { update(event, false); },
+            },
+            {
+                text: "Show data point symbols",
+                click: function(event) { update(event, true); },
+            },
+        ];
+        const button = addControlButton(options);
+        button.classList.add('mdi', 'mdi-chart-line-variant');
+        button.title = 'Control display of symbols a data points';
+
+        apply();
     }
 
     TimeSeriesCommon.addAveragingButton = function(traces) {
-        const button = document.createElement('button');
-        document.getElementById('control_bar').appendChild(button);
-        button.classList.add('mdi');
-
         function apply() {
             switch (averagingMode) {
             default:
                 button.classList.add('mdi', 'mdi-sine-wave');
                 button.classList.remove('character-icon');
                 button.textContent = "";
-                button.title = 'Cycle data averaging modes (current: no averaging)';
+                button.title = 'Set plot averaging (current: no averaging)';
                 break;
             case AVERAGE_HOUR:
                 button.classList.remove('mdi', 'mdi-sine-wave');
                 button.classList.add('character-icon');
                 button.textContent = "H";
-                button.title = 'Cycle data averaging modes (current: one hour average)';
+                button.title = 'Set plot averaging (current: one hour average)';
                 break;
             case AVERAGE_DAY:
-                 button.classList.remove('mdi', 'mdi-sine-wave');
+                button.classList.remove('mdi', 'mdi-sine-wave');
                 button.classList.add('character-icon');
                 button.textContent = "D";
-                button.title = 'Cycle data averaging modes (current: one day average)';
+                button.title = 'Set plot averaging (current: one day average)';
                 break;
             case AVERAGE_MONTH:
                 button.classList.remove('mdi', 'mdi-sine-wave');
                 button.classList.add('character-icon');
                 button.textContent = "M";
-                button.title = 'Cycle data averaging modes (current: monthly average)';
+                button.title = 'Set plot averaging (current: monthly average)';
                 break;
+            }
+            for (let i=0; i<options.length; i++) {
+                if (averagingMode === i) {
+                    options[i].button.classList.add('active');
+                } else {
+                    options[i].button.classList.remove('active');
+                }
             }
         }
-        apply();
 
-        $(button).click(function(event) {
+        function update(event, averaging) {
             event.preventDefault();
-            switch (averagingMode) {
-            case AVERAGE_NONE:
-                if (!hideContaminatedData && sessionStorage.getItem('forge-plot-hide-contamination') === null) {
-                    $('button.contamination-toggle').click();
-                    sessionStorage.removeItem('forge-plot-hide-contamination');
-                }
-                averagingMode = AVERAGE_HOUR;
-                break;
-            case AVERAGE_HOUR:
-                averagingMode = AVERAGE_DAY;
-                break;
-            case AVERAGE_DAY:
-                averagingMode = AVERAGE_MONTH;
-                break;
-            default:
+            averagingMode = averaging;
+            sessionStorage.setItem('forge-plot-average-mode', averagingMode.toString());
+
+            if (averaging === AVERAGE_NONE) {
                 if (hideContaminatedData && sessionStorage.getItem('forge-plot-hide-contamination') === null) {
-                    $('button.contamination-toggle').click();
+                    $('button.show-contamination').click();
                     sessionStorage.removeItem('forge-plot-hide-contamination');
                 }
-                averagingMode = AVERAGE_NONE;
-                break;
+            } else {
+                if (!hideContaminatedData && sessionStorage.getItem('forge-plot-hide-contamination') === null) {
+                    $('button.hide-contamination').click();
+                    sessionStorage.removeItem('forge-plot-hide-contamination');
+                }
             }
-            sessionStorage.setItem('forge-plot-average-mode', averagingMode.toString())
+
             apply();
             traces.updateDisplay(true);
-        });
+        }
+
+        const options = [
+            {
+                text: "No averaging",
+                click: function(event) { update(event, AVERAGE_NONE); },
+            },
+            {
+                text: "One hour average",
+                click: function(event) { update(event, AVERAGE_HOUR); },
+            },
+            {
+                text: "One day average",
+                click: function(event) { update(event, AVERAGE_DAY); },
+            },
+            {
+                text: "One month average",
+                click: function(event) { update(event, AVERAGE_MONTH); },
+            },
+        ];
+        const button = addControlButton(options);
+        button.classList.add('mdi', 'mdi-sine-wave');
+        button.title = 'Set plot averaging';
+
+        apply();
     }
 
     const HOVER_SEPARATE = 0;
@@ -292,10 +380,6 @@ var TimeSeriesCommon = {};
     let hoverMode = sessionStorage.getItem('forge-plot-hover-mode') || HOVER_SEPARATE;
     hoverMode = hoverMode * 1;
     TimeSeriesCommon.addHoverControlButton = function(traces) {
-        const button = document.createElement('button');
-        document.getElementById('control_bar').appendChild(button);
-        button.classList.add('mdi');
-
         function setYSpikes(enable) {
             for (const parameter of Object.keys(traces.layout)) {
                 if (!parameter.startsWith('yaxis')) {
@@ -311,7 +395,7 @@ var TimeSeriesCommon = {};
             default:
                 button.classList.remove('mdi-format-list-text', 'mdi-near-me', 'mdi-tooltip-text-outline', 'mdi-tooltip-outline');
                 button.classList.add('mdi-format-list-text');
-                button.title = 'Cycle data hover mode (current: separate labels)';
+                button.title = 'Set data hover mode (current: separate labels)';
                 traces.layout.hovermode = 'x';
                 traces.layout.xaxis.showspikes = false
                 setYSpikes(false);
@@ -319,7 +403,7 @@ var TimeSeriesCommon = {};
             case HOVER_SINGLE_POINT:
                 button.classList.remove('mdi-format-list-text', 'mdi-near-me', 'mdi-tooltip-text-outline', 'mdi-tooltip-outline');
                 button.classList.add('mdi-near-me');
-                button.title = 'Cycle data hover mode (current: single point)';
+                button.title = 'Set data hover mode (current: single point)';
                 traces.layout.hovermode = 'closest';
                 traces.layout.xaxis.showspikes  = true;
                 setYSpikes(true);
@@ -327,7 +411,7 @@ var TimeSeriesCommon = {};
             case HOVER_COMBINED:
                 button.classList.remove('mdi-format-list-text', 'mdi-near-me', 'mdi-tooltip-text-outline', 'mdi-tooltip-outline');
                 button.classList.add('mdi-tooltip-text-outline');
-                button.title = 'Cycle data hover mode (current: combined information)';
+                button.title = 'Set data hover mode (current: combined information)';
                 traces.layout.hovermode = 'x unified';
                 traces.layout.xaxis.showspikes  = true;
                 setYSpikes(false);
@@ -335,35 +419,52 @@ var TimeSeriesCommon = {};
             case HOVER_OFF:
                 button.classList.remove('mdi-format-list-text', 'mdi-near-me', 'mdi-tooltip-text-outline', 'mdi-sine-wave');
                 button.classList.add('mdi-tooltip-outline');
-                button.title = 'Cycle data hover mode (current: disabled)';
+                button.title = 'Set data hover mode (current: disabled)';
                 traces.layout.hovermode = false;
                 traces.layout.xaxis.showspikes  = false;
                 setYSpikes(false);
                 break;
             }
-        }
-        apply();
-
-        $(button).click(function(event) {
-            event.preventDefault();
-            switch (hoverMode) {
-            case HOVER_SEPARATE:
-                hoverMode = HOVER_SINGLE_POINT;
-                break;
-            case HOVER_SINGLE_POINT:
-                hoverMode = HOVER_COMBINED;
-                break;
-            case HOVER_COMBINED:
-                hoverMode = HOVER_OFF;
-                break;
-            default:
-                hoverMode = HOVER_SEPARATE;
-                break;
+            for (let i=0; i<options.length; i++) {
+                if (hoverMode === i) {
+                    options[i].button.classList.add('active');
+                } else {
+                    options[i].button.classList.remove('active');
+                }
             }
+        }
+
+        function update(event, hover) {
+            event.preventDefault();
+            hoverMode = hover;
             sessionStorage.setItem('forge-plot-hover-mode', hoverMode.toString())
             apply();
             traces.updateDisplay(true);
-        });
+        }
+
+        const options = [
+            {
+                text: "Separate point labels",
+                click: function(event) { update(event, HOVER_SEPARATE); },
+            },
+            {
+                text: "Show nearest point only",
+                click: function(event) { update(event, HOVER_SINGLE_POINT); },
+            },
+            {
+                text: "Single label for all traces",
+                click: function(event) { update(event, HOVER_COMBINED); },
+            },
+            {
+                text: "No hover information",
+                click: function(event) { update(event, HOVER_OFF); },
+            },
+        ];
+        const button = addControlButton(options);
+        button.classList.add('mdi');
+        button.title = 'Set data hover mode';
+
+        apply();
     }
 
     TimeSeriesCommon.installZoomHandler = function(div, realtime) {
