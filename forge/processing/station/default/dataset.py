@@ -85,6 +85,7 @@ def doi(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.O
 
 
 def license(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
+    # EBAS standard: https://creativecommons.org/licenses/by/4.0/
     return None
 
 
