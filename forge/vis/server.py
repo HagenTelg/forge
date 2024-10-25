@@ -1,6 +1,7 @@
 import typing
 import starlette.status
 from secrets import token_urlsafe
+from collections import OrderedDict
 from starlette.applications import Starlette
 from starlette.routing import Route, Mount, NoMatchFound
 from starlette.requests import Request
@@ -36,9 +37,28 @@ async def _favicon(request: Request) -> Response:
 @requires('authenticated')
 async def _stations_list(request: Request) -> Response:
     from forge.processing.station.lookup import station_data
+    from forge.vis.mode.permissions import is_available
+    from forge.vis.mode.assemble import lookup_mode
 
-    result: typing.Dict[str, str] = dict()
+    try:
+        data = await request.json()
+        check_modes = data.get('modes')
+    except:
+        check_modes = None
+
+    result: typing.Dict[str, str] = OrderedDict()
     for station in request.user.visible_stations:
+        if check_modes:
+            for mode_name in check_modes:
+                mode_name = mode_name.lower()
+                if not is_available(request, station, mode_name):
+                    continue
+                mode = lookup_mode(request, station, mode_name)
+                if mode is None:
+                    continue
+                break
+            else:
+                continue
         result[station] = station_data(station, "site", "name")(station) or ""
     return JSONResponse(result)
 
@@ -105,8 +125,8 @@ routes = [
     Mount('/socket/export', routes=forge.vis.export.server.sockets),
     Mount('/socket/acquisition', routes=forge.vis.acquisition.server.sockets),
 
-    Route('/list/stations.json', endpoint=_stations_list),
-    Route('/list/{station}/modes.json', endpoint=forge.vis.mode.server.list_modes),
+    Route('/list/stations.json', endpoint=_stations_list, methods=['GET', 'POST']),
+    Route('/list/{station}/modes.json', endpoint=forge.vis.mode.server.query_modes, methods=['POST']),
     Route('/list/{station}/views.json', endpoint=forge.vis.mode.server.list_views),
 
     Route('/index.html', endpoint=_root),

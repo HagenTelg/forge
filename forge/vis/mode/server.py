@@ -1,5 +1,6 @@
 import typing
 import starlette.status
+from collections import OrderedDict
 from starlette.routing import Route, NoMatchFound
 from starlette.authentication import requires
 from starlette.responses import Response, HTMLResponse, RedirectResponse, JSONResponse
@@ -79,21 +80,29 @@ async def local_settings(request: Request) -> Response:
 
 
 @requires('authenticated')
-async def list_modes(request: Request) -> Response:
+async def query_modes(request: Request) -> Response:
     station = request.path_params['station'].lower()
     if station not in STATIONS:
         raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail="Invalid station")
-    mode_name = request.query_params.get("mode")
-    available_modes = visible_modes(request, station, mode_name=mode_name)
+    contents = await request.json()
+    if not isinstance(contents, dict):
+        raise HTTPException(starlette.status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Invalid mode query")
+    modes = contents.get('modes')
+    if not modes:
+        mode_name = request.query_params.get("mode")
+        if not mode_name:
+            raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail="No mode specified")
+        modes = [mode_name]
 
-    result: typing.Dict[str, str] = dict()
-    for group in available_modes.groups:
-        for mode in group.modes:
-            if mode.mode_name in result:
-                continue
-            if not is_available(request, station, mode.mode_name):
-                continue
-            result[mode.mode_name] = mode.display_name
+    result: typing.Dict[str, str] = OrderedDict()
+    for mode in modes:
+        mode = mode.lower()
+        if not is_available(request, station, mode):
+            continue
+        mode = lookup_mode(request, station, mode)
+        if mode is None:
+            continue
+        result[mode.mode_name] = mode.display_name
 
     return JSONResponse(result)
 
@@ -104,7 +113,7 @@ async def list_views(request: Request) -> Response:
     if station not in STATIONS:
         raise HTTPException(starlette.status.HTTP_404_NOT_FOUND, detail="Invalid station")
 
-    result: typing.Dict[str, str] = dict()
+    result: typing.Dict[str, str] = OrderedDict()
 
     mode_name = request.query_params.get("mode")
     if not mode_name:

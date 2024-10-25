@@ -1,6 +1,6 @@
 let DataSocket = {};
 (function() {
-    const serverSocket = new WebSocket(DATASOCKET_URL);
+    let serverSocket = new WebSocket(DATASOCKET_URL);
     let streamSequenceNumber = 0;
     const waitingForConnected = new Map();
     const activeStreams = new Map();
@@ -196,15 +196,14 @@ let DataSocket = {};
     
         incomingData(fieldName, plotTime, values, epoch) {}
     };
-    
-    serverSocket.addEventListener('open', (event) => {
+
+    function socketOpen(event) {
         waitingForConnected.forEach((cb) => {
-            cb();
-        });
+                cb();
+            });
         waitingForConnected.clear();
-    });
-    
-    serverSocket.addEventListener('message', (event) => {
+    }
+    function socketMessage(event) {
         const reply = JSON.parse(event.data);
         if (reply.type === "end") {
             const index = reply.stream;
@@ -231,7 +230,15 @@ let DataSocket = {};
             }
             DataSocket.onActiveRecordUpdate(activeRecordStreams, activeRecordStalled);
         }
-    });
+    }
+    function attachServerSocket() {
+        serverSocket.addEventListener('open', socketOpen);
+        serverSocket.addEventListener('message', socketMessage);
+        streamSequenceNumber = 0;
+        waitingForConnected.clear();
+        activeStreams.clear();
+    }
+    attachServerSocket();
 
     DataSocket.RecordDispatch = class extends DataSocket.RecordStream {
         constructor(dataName) {
@@ -314,5 +321,20 @@ let DataSocket = {};
         });
     };
     TimeSelect.onChanged(DataSocket, DataSocket.reloadData);
+
+    DataSocket.reconnect = function(url) {
+        loadingRecords.forEach((dispatch) => {
+            dispatch.stopStream();
+        });
+
+        serverSocket.removeEventListener('open', socketOpen);
+        serverSocket.removeEventListener('message', socketMessage);
+        try {
+            serverSocket.close();
+        } catch (e) {}
+
+        serverSocket = new WebSocket(url || DATASOCKET_URL);
+        attachServerSocket();
+    }
 })();
 
