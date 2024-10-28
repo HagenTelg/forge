@@ -12,6 +12,7 @@ from forge.processing.average.calculate import FixedIntervalFileAverager, MonthF
 from ..execute import Execute, ExecuteStage
 from . import ParseCommand, ParseArguments
 from .netcdf import MergeInstrument
+from .get import ArchiveRead, FilterStage
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,6 +50,9 @@ class Command(ParseCommand):
         parser.add_argument('--include-contamination',
                             dest='keep_contam', action='store_true',
                             help="do not remove contaminated data before averaging")
+        parser.add_argument('--per-file',
+                            dest='average_per_file', action='store_true',
+                            help="do not merge instrument files before averaging")
 
     @classmethod
     def instantiate(cls, cmd: ParseArguments.SubCommand, execute: Execute,
@@ -64,6 +68,9 @@ class Command(ParseCommand):
         if interval.lower() == 'month' or interval == 'P1M' or interval == '1mo':
             averager = MonthFileAverager
             file_interval = "P1M"
+
+            def require_merge():
+                return True
         else:
             try:
                 interval = parse_interval_argument(interval) * 1000
@@ -77,11 +84,34 @@ class Command(ParseCommand):
             averager = make_averager
             file_interval = format_iso8601_duration(interval)
 
+            def require_merge():
+                if interval < 1000 or interval > 24 * 60 * 60 * 1000:
+                    return True
+                if 24 * 60 * 60 * 1000 % interval != 0:
+                    return True
+                for stage in reversed(execute.stages):
+                    if isinstance(stage, FilterStage):
+                        if stage.start_ms > 1000 and stage.start_ms % interval != 0:
+                            return True
+                    if not isinstance(stage, ArchiveRead):
+                        continue
+                    if stage.start_ms > 1000 and stage.start_ms % interval != 0:
+                        return True
+                    if "avgd" in stage.archives:
+                        return True
+                    if "avgm" in stage.archives:
+                        return True
+                    return False
+                return True
+
         if not args.keep_contam:
             from .contamination import RemoveContaminationStage
             execute.install(RemoveContaminationStage(execute))
 
-        execute.install(MergeInstrument(execute))
+        if not args.average_per_file and require_merge():
+            execute.install(MergeInstrument(execute))
+        else:
+            _LOGGER.debug("Using unmerged per-file averaging")
         execute.install(AverageStage(execute, averager, file_interval))
 
         if cmd.is_last:
