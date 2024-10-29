@@ -77,3 +77,11 @@ def apply(station: str,
     if tags and 'radiation' in tags:
         return RadiationContamination()
     return AerosolContamination()
+
+
+def keep_contaminated(station: str, instrument_id: str,
+                      tags: typing.Optional[typing.Set[str]] = None,
+                      tart: typing.Optional[int] = None, end: typing.Optional[int] = None) -> typing.Optional[str]:
+    if instrument_id == "XI":
+        return "XIC"
+    return None

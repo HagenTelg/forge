@@ -32,7 +32,7 @@ _PLAIN_SPLIT = re.compile(r'[\s;,:]+')
 _ALIAS_MATCH = re.compile(
     r'(?:(?P<instrument_id>[ASGMNQ][1-9]{2})(?P<instrument_record>[am]))'
     r'|(?P<auxiliary_code>(X[A-Z1-9])+a)'
-    r'|(?:XI(?P<intensives_record>[sl]))'
+    r'|(?:XI(?P<intensives_contam>C)?(?P<intensives_record>[sl]))'
 )
 
 
@@ -86,6 +86,7 @@ Aliases are also available to select data like old style records.
 These aliases are of the form '<INSTRUMENT>a' or '<INSTRUMENT>m'.
 So a specification like 'S11a' selects average/analysis variables from the S11 instrument.
 There are also 'XIs' and 'XIl' aliases available for intensives variables in edited, clean, or averaged data.
+For contaminated averaged data, there are 'XICs' and 'XICl' aliases.
 Keys are not case sensitive. 
 The key 'TAG' or 'TAGS' means that subsequent variables selected are required to have the specified tags (separated
   by semicolons, colons, or spaces) present.
@@ -702,7 +703,10 @@ class DataSelection:
 
                     intensives_code = alias.group('intensives_record')
                     if intensives_code:
-                        file_match.instrument_id = re.compile(r'XI')
+                        if alias.group('intensives_contam'):
+                            file_match.instrument_id = re.compile(r'XIC')
+                        else:
+                            file_match.instrument_id = re.compile(r'XI')
                         if intensives_code == 's':
                             self._variables.append(self._VariableID(
                                 file_match,

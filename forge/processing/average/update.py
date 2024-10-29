@@ -81,13 +81,13 @@ async def _concurrent_run(connection: Connection, executor: ProcessPoolExecutor,
 async def _run_avgh(connection: Connection, input_directory: Path, output_directory: Path,
                     station: str, start: int, end: int) -> None:
     with ProcessPoolExecutor() as executor:
-        run_args: typing.List[typing.Tuple[str, str]] = list()
+        run_args: typing.List[typing.Tuple[str, str, typing.Optional[str]]] = list()
         for input_file in input_directory.iterdir():
             if not input_file.name.endswith('.nc'):
                 continue
             if not input_file.is_file():
                 continue
-            run_args.append((str(input_file), str(output_directory / input_file.name)))
+            run_args.append((str(input_file), str(output_directory / input_file.name), str(output_directory)))
 
         await _concurrent_run(
             connection, executor, station, process_avgh, run_args,
