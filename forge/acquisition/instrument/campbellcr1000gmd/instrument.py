@@ -314,7 +314,7 @@ class Instrument(StreamingInstrument):
         return analog_value
 
     async def _update_all_digital_out(self, force: bool = False) -> None:
-        if self._apply_digital_state:
+        if self._apply_digital_state is not None:
             update_state = self._apply_digital_state
         else:
             update_state = self._digital_state or 0
