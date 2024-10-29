@@ -31,7 +31,7 @@ station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-opticalcosmos', 
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-opticalcosmos', "COSMOS CLAP Optical"),
                                          'aerosol-realtime-opticalclap')
 station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-cosmosclap', "COSMOS CLAP"),
-                                        'aerosol-editing-clap')
+                                        'aerosol-editing-absorption')
 station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-opticalcosmos', "COSMOS CLAP Optical"),
                                       'aerosol-clean-opticalclap')
 station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-opticalcosmos', "COSMOS CLAP Optical"),

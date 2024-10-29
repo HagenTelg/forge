@@ -19,7 +19,7 @@ station_views['aerosol-realtime-psapstatus'] = PSAPStatus('aerosol-realtime', re
 
 station_views['aerosol-raw-opticalclap'] = OpticalCLAP('aerosol-raw')
 station_views['aerosol-realtime-opticalclap'] = OpticalCLAP('aerosol-realtime', realtime=True)
-station_views['aerosol-editing-clap'] = EditingCLAP()
+station_views['aerosol-editing-absorption'] = EditingCLAP()
 station_views['aerosol-clean-opticalclap'] = OpticalCLAP('aerosol-clean')
 station_views['aerosol-avgh-opticalclap'] = OpticalCLAP('aerosol-avgh')
 station_views['aerosol-raw-clapstatus'] = CLAPStatus('aerosol-raw')
