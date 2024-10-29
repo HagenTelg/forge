@@ -1,5 +1,5 @@
 import typing
-from ..default.mode import Mode, ViewList, Public, detach, aerosol_modes, aerosol_public, ozone_modes
+from ..default.mode import Mode, ViewList, DefaultAcquisition
 
 
 station_modes = {
@@ -7,6 +7,7 @@ station_modes = {
         ViewList.Entry('aerosol-raw-mass', "Mass Concentration"),
         ViewList.Entry('aerosol-realtime-t640status', "T640 Status"),
     ]),
+    'acquisition': DefaultAcquisition(),
 }
 
 
