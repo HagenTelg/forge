@@ -226,7 +226,7 @@ var TimeSeriesCommon = {};
             },
         ];
         const button = addControlButton(options);
-        button.classList.add('mdi', 'hidden');
+        button.classList.add('mdi', 'contamination-toggle', 'hidden');
         button.title = 'Control display of contaminated data';
         options[0].button.classList.add("show-contamination");
         options[1].button.classList.add("hide-contamination");
