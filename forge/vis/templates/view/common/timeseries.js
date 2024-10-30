@@ -911,10 +911,5 @@ var TimeSeriesCommon = {};
 
             this.updateDisplay();
         }
-
-        applyUpdate() {
-            super.applyUpdate();
-            TimeSeriesCommon.updateShapes();
-        }
     }
 })();
