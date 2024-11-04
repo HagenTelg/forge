@@ -64,7 +64,6 @@ station_views['aerosol-raw-temperature'] = Temperature('aerosol-raw')
 station_views['aerosol-realtime-temperature'] = Temperature('aerosol-realtime', realtime=True)
 station_views['aerosol-raw-ambient'] = Ambient('aerosol-raw')
 
-
 station_views['aerosol-raw-summary'] = Summary()
 
 

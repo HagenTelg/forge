@@ -6,7 +6,7 @@ from .data import STANDARD_THREE_WAVELENGTHS
 
 
 STANDARD_CUT_SIZE_SPLIT: typing.Iterable[typing.Tuple[str, typing.Union[float, typing.Tuple[float, float]]]] = (
-    ("", nan),
+    ("", ()),
     ("0", (10, nan)),
     ("2", (2.5, 10)),
     ("1", (nan, 2.5)),

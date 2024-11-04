@@ -713,19 +713,23 @@ class Selection(InstrumentSelection):
             cut_size_min, cut_size_max = self.cut_size
             if cut_size_dimension_number is None:
                 if time_values is None:
-                    if cut_size_max is not None and isfinite(cut_size_max):
+                    # Only accept whole air for constant values
+                    if cut_size_max is not None:
                         return None
                     if return_cut_size_times:
                         cut_size_times = var.cut_size_time
                 else:
                     cut_size_times = var.cut_size_time
                     if cut_size_times is None:
-                        if cut_size_max is not None and isfinite(cut_size_max):
+                        # No time dependence implies whole air, which needs an unlimited upper bound
+                        if cut_size_max is not None:
                             return None
                     else:
                         if cut_size_min is None or not isfinite(cut_size_min):
-                            if cut_size_max is None or not isfinite(cut_size_max):
+                            if cut_size_max is None:
                                 time_selector = np.invert(np.isfinite(cut_size_times))
+                            elif not isfinite(cut_size_max):
+                                time_selector = np.isfinite(cut_size_times)
                             else:
                                 time_selector = cut_size_times < cut_size_max
                         else:
@@ -734,8 +738,6 @@ class Selection(InstrumentSelection):
                                     np.invert(np.isfinite(cut_size_times)),
                                     cut_size_times >= cut_size_min,
                                 ), axis=0)
-                                if return_cut_size_times:
-                                    result_cut_sizes = cut_size_times[time_selector]
                             elif not isfinite(cut_size_max):
                                 time_selector = cut_size_times >= cut_size_min
                             elif cut_size_min != cut_size_max:
@@ -749,8 +751,11 @@ class Selection(InstrumentSelection):
                 for cut_number in range(len(possible_cut_size)):
                     cut_size = possible_cut_size[cut_number]
                     if cut_size_min is None or not isfinite(cut_size_min):
-                        if cut_size_max is None or not isfinite(cut_size_max):
+                        if cut_size_max is None:
                             if isfinite(cut_size):
+                                continue
+                        elif not isfinite(cut_size_max):
+                            if not isfinite(cut_size):
                                 continue
                         else:
                             if cut_size >= cut_size_max:

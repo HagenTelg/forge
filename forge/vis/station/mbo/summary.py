@@ -5,7 +5,6 @@ from .gasses import Gasses
 
 
 class Summary(TimeSeries):
-    ScaleCO2 = Gasses.ScaleCO2
     CalculateMissing = Temperature.CalculateMissing
 
     THERMO_OZONE_SLOPE = 1.35135
@@ -105,7 +104,6 @@ return new GenericOperations.ApplyToFields(dataName, {
         CO2.data_record = f'{gas_mode}-gasses'
         CO2.data_field = 'CO2'
         cox.traces.append(CO2)
-        self.processing[CO2.data_record] = self.ScaleCO2()
 
 
         ozone = TimeSeries.Graph()

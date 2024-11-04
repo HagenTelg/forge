@@ -5,7 +5,7 @@ from forge.vis.data.archive import Selection, RealtimeSelection, InstrumentSelec
 
 
 STANDARD_CUT_SIZE_SPLIT = (
-    ("whole", nan),
+    ("whole", ()),
     ("pm10", (10, nan)),
     ("pm25", (2.5, 10)),
     ("pm1", (nan, 2.5)),
@@ -34,7 +34,7 @@ for archive in ("raw", "editing", "clean", "avgh"):
             for code, wavelength in STANDARD_THREE_WAVELENGTHS
         ] + [
             (f"Bbs{code}", [Selection(variable_name="backscattering_coefficient", wavelength=wavelength, cut_size=cut_size,
-                                     require_tags={"scattering"}, exclude_tags={"secondary"})])
+                                      require_tags={"scattering"}, exclude_tags={"secondary"})])
             for code, wavelength in STANDARD_THREE_WAVELENGTHS
         ]))
     for record, cut_size in STANDARD_CUT_SIZE_SPLIT:

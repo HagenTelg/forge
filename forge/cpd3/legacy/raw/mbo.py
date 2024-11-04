@@ -798,6 +798,8 @@ class CCGG(InstrumentConverter):
         data_X2.value *= 1E-3  # CPD3 stored in ppb
         self.apply_data(times, var_X2, data_X2)
 
+        return True
+
 
 class C(BaseConverter):
     @classmethod
