@@ -208,6 +208,12 @@ class ExportCSV(ArchiveExportEntry):
                             if fractional_digits:
                                 format_code += '.' + fractional_digits
                             format_code += parsed_format.group(4)
+                        if format_code:
+                            if np.issubdtype(self._values.dtype, np.floating):
+                                _ = format_code % 0.5
+                            elif np.issubdtype(self._values.dtype, np.integer):
+                                _ = format_code % 1
+                            self._number_format = format_code
                     except (AttributeError, TypeError, ValueError):
                         pass
 
