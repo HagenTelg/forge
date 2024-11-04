@@ -16,6 +16,7 @@ from forge.data.state import is_in_state_group
 from forge.data.statistics import find_statistics_origin
 from forge.data.dimensions import find_dimension_values
 from forge.data.merge.timealign import peer_output_time, incoming_before
+from forge.data.structure.variable import get_display_units
 from . import ParseCommand, ParseArguments
 from .netcdf import MergeInstrument
 from .get import WavelengthSelector, ArchiveRead
@@ -561,10 +562,13 @@ class _ColumnVariable(_Column):
     @property
     def description(self) -> str:
         try:
-            return self.source.variable.long_name
+            desc = str(self.source.variable.long_name)
         except AttributeError:
-            pass
-        return self.source.variable.name
+            desc = self.source.variable.name
+        units = get_display_units(self.source.variable)
+        if units:
+            desc += f" ({units})"
+        return desc
 
     @property
     def sort_key(self) -> typing.Tuple[int, str, int]:

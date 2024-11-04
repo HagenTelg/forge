@@ -4,6 +4,24 @@ from numpy import uint64
 from netCDF4 import Variable
 
 
+_DISPLAY_UNITS_MAP: typing.Dict[str, typing.Optional[str]] = {
+    "1e-9": "ppb",
+    "1e-6": "ppm",
+    "degC": "°C",
+    "m s-1": "m/s",
+    "ug m-3": "μg/m³",
+    "1": None,
+}
+
+
+def get_display_units(var: Variable) -> typing.Optional[str]:
+    try:
+        units = str(var.units)
+        return _DISPLAY_UNITS_MAP.get(units, units)
+    except (AttributeError, TypeError):
+        return None
+
+
 def variable_flags(var: Variable, flags: typing.Dict[int, str] = None) -> None:
     var.standard_name = "status_flag"
     var.long_name = "bitwise OR of status condition flags"
@@ -108,13 +126,6 @@ def variable_ozone(var: Variable) -> None:
     var.C_format = "%9.2f"
 
 
-def variable_co2(var: Variable) -> None:
-    var.long_name = "fractional concentration of carbon dioxide"
-    var.standard_name = "dry_atmosphere_mole_fraction_of_carbon_dioxide"
-    var.units = "1e-6"  # canonical ppm
-    var.C_format = "%9.2f"
-
-
 def variable_no(var: Variable) -> None:
     var.long_name = "fractional concentration of nitrogen monoxide"
     var.standard_name = "mole_fraction_of_nitrogen_monoxide_in_air"
@@ -136,7 +147,7 @@ def variable_nox(var: Variable) -> None:
 
 
 def variable_co(var: Variable, is_dried: bool = True) -> None:
-    var.long_name = "fractional concentration of carbon dioxide"
+    var.long_name = "fractional concentration of carbon monoxide"
     if is_dried:
         var.standard_name = "mole_fraction_of_carbon_monoxide_in_dry_air"
     else:

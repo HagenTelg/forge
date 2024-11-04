@@ -8,11 +8,11 @@ from pathlib import Path
 from math import floor, ceil, isfinite, nan
 from copy import deepcopy
 from abc import ABC, abstractmethod
-from tempfile import TemporaryFile
 from netCDF4 import Dataset
 from forge.const import MAX_I64
 from forge.logicaltime import containing_year_range, start_of_year
 from forge.data.merge.timealign import peer_output_time, incoming_before
+from forge.data.structure.variable import get_display_units
 from forge.vis.data.selection import InstrumentSelection, Selection, FileSource, FileContext, FileSequence, VariableContext
 from forge.vis.data.archive import FieldStream, walk_selectable
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
@@ -182,7 +182,10 @@ class ExportCSV(ArchiveExportEntry):
                             else:
                                 add_wl = [str(int(add_wl))]
                             if add_wl:
-                                desc += f" ({','.join(add_wl)} nm)"
+                                desc += f" at {','.join(add_wl)} nm"
+                        units = get_display_units(var.variable)
+                        if units:
+                            desc += f" ({units})"
                         self._description = desc
                     except (AttributeError, TypeError, ValueError):
                         pass
