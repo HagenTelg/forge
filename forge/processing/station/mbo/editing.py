@@ -62,7 +62,7 @@ def run(data: AvailableData) -> None:
     absorption_corrections(data)
     scattering_corrections(data)
 
-    for S11, A11, A12, N71, N11, N12, pid, dilution_flow in data.select_multiple(
+    for S11, A11, A12, N71, N11, pid, dilution_flow in data.select_multiple(
             {"instrument_id": "S11"},
             {"instrument_id": "A11"},
             {"instrument_id": "A12"},
