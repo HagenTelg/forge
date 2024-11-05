@@ -382,6 +382,7 @@ class _AverageVector(_AverageController):
         self._output_magnitude_quantiles[output_selector] = averager.quantiles(magnitude, STANDARD_QUANTILES)
 
         mean_magnitude = averager(magnitude)
+        mean_magnitude[mean_magnitude == 0.0] = nan
         self._output_magnitude_stability[output_selector] = vector_magnitude / mean_magnitude
 
 
