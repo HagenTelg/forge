@@ -76,6 +76,7 @@ setup(
         "forge-archive-server-diagnostics = forge.archive.server.diagnostics:main",
         "forge-archive-put = forge.archive.client.put:cli",
         "forge-archive-reindex = forge.archive.client.reindex:main",
+        "forge-archive-notify = forge.archive.client.notify:main",
         "forge-archive-edited-updater = forge.archive.update.edited:updater",
         "forge-archive-edited-flush = forge.archive.update.edited:flush",
         "forge-archive-clean-updater = forge.archive.update.clean:updater",
