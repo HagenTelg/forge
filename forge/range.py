@@ -105,7 +105,7 @@ class Subtractor(_Search):
     def duplicate_after(self, source: int, start: typing.Union[int, float], end: typing.Union[int, float]) -> None:
         pass
 
-    def __call__(self, sub_start: typing.Union[int, float], sub_end: typing.Union[int, float]) -> None:
+    def subtract(self, sub_start: typing.Union[int, float], sub_end: typing.Union[int, float]) -> None:
         canonical = self.canonical
         existing_index = self._find_before_start(sub_start)
 
@@ -142,6 +142,8 @@ class Subtractor(_Search):
             # Subtraction starts before the existing, so with a known intersection, then the start is the subtraction
             self.set_start(existing_index, sub_end)
             existing_index += 1
+
+    __call__ = subtract
 
 
 def subtract_tuple(existing: typing.List[typing.Union[typing.Tuple[int, int], typing.Tuple[float, float]]],
@@ -234,7 +236,7 @@ class Merge(Insertion, FindIntersecting):
         pass
 
     @abstractmethod
-    def insert(self, index: int, start: int, end: int) -> typing.Any:
+    def insert(self, index: int, start: typing.Union[int, float], end: typing.Union[int, float]) -> typing.Any:
         pass
 
     def merge_contained(self, index: int) -> typing.Any:
@@ -243,7 +245,7 @@ class Merge(Insertion, FindIntersecting):
     def combine_contiguous(self, index: int) -> bool:
         return True
 
-    def merge(self, start: int, end: int) -> typing.Any:
+    def merge(self, start: typing.Union[int, float], end: typing.Union[int, float]) -> typing.Any:
         extend_targets = self.intersecting(start, end)
 
         if not self.canonical:
@@ -324,7 +326,55 @@ def merge_tuple(existing: typing.List[typing.Union[typing.Tuple[int, int], typin
         def __delitem__(self, key: typing.Union[slice, int]) -> None:
             del existing[key]
 
-        def insert(self, index: int, start: int, end: int) -> typing.Any:
+        def insert(self, index: int, start: typing.Union[int, float], end: typing.Union[int, float]) -> typing.Any:
             existing.insert(index, (start, end))
 
     return TupleMerge()(merge_start, merge_end)
+
+
+class Replace(Insertion, Subtractor):
+    @abstractmethod
+    def insert(self, index: int, start: typing.Union[int, float], end: typing.Union[int, float]) -> typing.Any:
+        pass
+
+    def replace(self, start: typing.Union[int, float], end: typing.Union[int, float]) -> typing.Any:
+        self.subtract(start, end)
+        idx = self.before(start)
+        return self.insert(idx, start, end)
+
+    __call__ = replace
+
+
+def replace_tuple(existing: typing.List[typing.Union[typing.Tuple[int, int], typing.Tuple[float, float]]],
+                  replace_start: typing.Union[int, float], replace_end: typing.Union[int, float],
+                  canonical: bool = True) -> typing.Union[typing.List[int], range]:
+    class TupleReplace(Replace):
+        @property
+        def canonical(self) -> bool:
+            return canonical
+
+        def __len__(self) -> int:
+            return len(existing)
+
+        def __delitem__(self, key: int) -> None:
+            del existing[key]
+
+        def get_start(self, index: int) -> typing.Union[int, float]:
+            return existing[index][0]
+
+        def get_end(self, index: int) -> typing.Union[int, float]:
+            return existing[index][1]
+
+        def set_start(self, index: int, value: typing.Union[int, float]) -> None:
+            existing[index] = (value, existing[index][1])
+
+        def set_end(self, index: int, value: typing.Union[int, float]) -> None:
+            existing[index] = (existing[index][0], value)
+
+        def duplicate_after(self, source: int, start: typing.Union[int, float], end: typing.Union[int, float]) -> None:
+            existing.insert(source + 1, (start, end))
+
+        def insert(self, index: int, start: typing.Union[int, float], end: typing.Union[int, float]) -> typing.Any:
+            existing.insert(index, (start, end))
+
+    return TupleReplace()(replace_start, replace_end)

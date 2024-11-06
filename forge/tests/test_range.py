@@ -1,6 +1,6 @@
 import typing
 import pytest
-from forge.range import intersects, contains, subtract_tuple, intersecting_tuple, insertion_tuple, merge_tuple
+from forge.range import intersects, contains, subtract_tuple, intersecting_tuple, insertion_tuple, merge_tuple, replace_tuple
 
 
 def test_intersects():
@@ -172,3 +172,26 @@ def test_merge():
     assert merge([(100, 200), (300, 400), (500, 600)], 400, 490) == [(100, 200), (300, 490), (500, 600)]
     assert merge([(100, 200), (300, 400), (500, 600)], 410, 500) == [(100, 200), (300, 400), (410, 600)]
     assert merge([(100, 200), (300, 400), (500, 600)], 400, 500) == [(100, 200), (300, 600)]
+
+
+def test_replace():
+    def replace(existing, start, end):
+        first = list(existing)
+        replace_tuple(first, start, end)
+        second = list(existing)
+        replace_tuple(second, start, end, canonical=False)
+        assert sorted(first) == sorted(second)
+        return first
+
+    assert replace([], 100, 200) == [(100, 200)]
+    assert replace([(100, 200)], 100, 200) == [(100, 200)]
+    assert replace([(100, 200)], 200, 300) == [(100, 200), (200, 300)]
+    assert replace([(200, 300)], 100, 200) == [(100, 200), (200, 300)]
+    assert replace([(100, 200)], 190, 300) == [(100, 190), (190, 300)]
+    assert replace([(200, 300)], 100, 210) == [(100, 210), (210, 300)]
+    assert replace([(200, 300)], 100, 300) == [(100, 300)]
+    assert replace([(200, 300)], 100, 400) == [(100, 400)]
+    assert replace([(200, 300)], 200, 400) == [(200, 400)]
+    assert replace([(100, 200), (200, 300)], 100, 400) == [(100, 400)]
+    assert replace([(100, 200)], 300, 400) == [(100, 200), (300, 400)]
+    assert replace([(300, 400)], 100, 200) == [(100, 200), (300, 400)]
