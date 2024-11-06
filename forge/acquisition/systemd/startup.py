@@ -190,7 +190,8 @@ def start_instrument_serial(source: str, instrument_unit_name: str) -> typing.Op
     if _SERIAL_ACCESS_GROUPS:
         properties.append(("SupplementaryGroups", _SERIAL_ACCESS_GROUPS))
     properties.append(("ExecStart", assemble_forge_exec(
-        "forge-acquisition-serial-multiplexer", "--systemd", *(["--debug"] if _ENABLE_DEBUG else []),
+        "forge-acquisition-serial-multiplexer", "--systemd",
+        *(["--debug"] if _ENABLE_DEBUG or CONFIGURATION.get(f"INSTRUMENT.{source}.ENABLE_DEBUG") else []),
         "--eavesdropper", "${RUNTIME_DIRECTORY}/eavesdropper.sock",
         "--raw", "${RUNTIME_DIRECTORY}/raw.sock",
         "--control", "${RUNTIME_DIRECTORY}/control.dgram",
@@ -253,7 +254,8 @@ def start_instrument(source: str) -> None:
     properties.append(("UMask", dbus.types.UInt32(0o0007)))
     properties.append(("ReadWritePaths", [_COMPLETED_DATA_DIRECTORY, _STATE_LOCATION_DIRECTORY]))
     properties.append(("ExecStart", assemble_forge_exec(
-        "forge-acquisition-instrument", "--systemd", *(["--debug"] if _ENABLE_DEBUG else []),
+        "forge-acquisition-instrument", "--systemd",
+        *(["--debug"] if _ENABLE_DEBUG or CONFIGURATION.get(f"INSTRUMENT.{source}.ENABLE_DEBUG") else []),
         "--data-working", "${RUNTIME_DIRECTORY}",
         "--data-completed", _COMPLETED_DATA_DIRECTORY,
         "--state-location", _STATE_LOCATION_DIRECTORY,

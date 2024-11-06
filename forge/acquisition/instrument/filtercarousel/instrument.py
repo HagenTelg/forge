@@ -379,11 +379,6 @@ class Instrument(StandardInstrument):
             return
 
         self.data_Fp(next_index)
-        if self.data_mode.value == self.Mode.InitialBlank:
-            _LOGGER.debug(f"Exiting initial blank to filter {next_index}")
-            self.data_mode(self.Mode.Filter)
-        else:
-            _LOGGER.debug(f"Changed to filter {next_index}")
 
         if self._filter_time >= 24 * 60 * 60:
             rounded_start = floor(advance_at / (24 * 60 * 60)) * (24 * 60 * 60)
@@ -401,6 +396,12 @@ class Instrument(StandardInstrument):
         next_advance = rounded_start + self._filter_time
         while next_advance <= now + minimum_time:
             next_advance += self._filter_time
+
+        if self.data_mode.value == self.Mode.InitialBlank:
+            _LOGGER.debug(f"Exiting initial blank to filter {next_index} (advance {advance_at} to {next_advance} with {self._filter_time})")
+            self.data_mode(self.Mode.Filter)
+        else:
+            _LOGGER.debug(f"Changed to filter {next_index} (advance {advance_at} to {next_advance} with {self._filter_time})")
 
         self._advance_time = next_advance
         await self._update_next()
@@ -512,8 +513,11 @@ class Instrument(StandardInstrument):
             self._request_end_change = False
             if self.data_mode.value == self.Mode.Changing:
                 _LOGGER.debug("Filter carousel change ending")
-                self.context.bus.log("Filter carousel change ended.",
-                                     type=BaseBusInterface.LogType.INFO)
+                self.context.bus.log("Filter carousel change ended.", {
+                    "filter_time": self._filter_time,
+                    "initial_blank_time": self._initial_blank_time,
+                    "carousel_size": self._carousel_size,
+                }, type=BaseBusInterface.LogType.INFO)
 
                 self.data_Qt_complete(self.data_Qt.value, oneshot=True)
                 self.data_St_complete(self.data_St.value, oneshot=True)
