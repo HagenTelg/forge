@@ -7,7 +7,7 @@ from ..default.dashboard import Analyzer as BaseAnalyzer, RecordAnalyzer
 class StateRecord(RecordAnalyzer):
     def process_spot_number(self):
         spot_number = self.group.variables.get("spot_number")
-        if spot_number is None:
+        if spot_number is None or len(spot_number.shape) == 0 or spot_number.shape[0] == 0:
             return
         spot_number = int(spot_number[-1])
         if spot_number >= 8:
