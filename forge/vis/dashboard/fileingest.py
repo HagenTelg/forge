@@ -75,8 +75,21 @@ class FileIngestEntry(BasicEntry):
         def file_state_title(self) -> typing.Optional[str]:
             return None
 
+    class FileCorrupted(FileProcessed):
+        @property
+        def file_state_title(self) -> typing.Optional[str]:
+            return "File corrupted"
+
+    class FileError(FileProcessed):
+        @property
+        def file_state_title(self) -> typing.Optional[str]:
+            return "Error processing file"
+
+
     EVENT_CODES = {
         'file-processed': FileProcessed,
+        'file-corrupted': FileCorrupted,
+        'file-error': FileError,
     }
 
 
