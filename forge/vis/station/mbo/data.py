@@ -823,8 +823,8 @@ else:
             Selection(standard_name="mole_fraction_of_ozone_in_air", instrument_code="thermo49"),
             Selection(standard_name="mole_fraction_of_ozone_in_air", instrument_code="thermo49iq"),
         ],
-        "ecotech": [Selection(standard_name="mole_fraction_of_ozone_in_air", instrument_id="G82")],
-        "twob": [Selection(standard_name="mole_fraction_of_ozone_in_air", instrument_id="G83")],
+        "ecotech": [Selection(variable_id="X_G82")],
+        "twob": [Selection(variable_id="X_G83")],
     })
     data_records["aerosol-realtime-ozone"] = RealtimeRecord({
         "thermo": [
