@@ -17,7 +17,7 @@ _AMBIGUOUS_ISO8601_DURATION = re.compile(
 )
 _MATCH_ISO8601_TIME = re.compile(
     r'(\d{4})-?(\d{2})-?(\d{2})'
-    r'T?'
+    r'(?:T|\s+)?'
     r'(?:(\d{2}):?(\d{2}):?(\d{2}(\.\d*)?))?'
     r'Z?',
     flags=re.IGNORECASE
