@@ -8,6 +8,10 @@ from forge.solver import newton_raphson, polynomial
 def test_newton_raphson():
     assert newton_raphson(3.5, lambda x: x * 0.5 + 1.0) == 5.0
 
+    assert newton_raphson(np.array([3.5, 6.0, nan]), lambda x: x * 0.5 + 1.0).tolist() == pytest.approx([
+        5.0, 10.0, nan], nan_ok=True
+    )
+
 
 def test_polynomial():
     assert polynomial([0.0, 2.0], 60.0) == [30.0]

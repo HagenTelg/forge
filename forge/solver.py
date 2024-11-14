@@ -4,8 +4,55 @@ from math import isfinite, sqrt, nan
 from cmath import sqrt as csqrt
 
 
-def newton_raphson(y_target: float, evaluate: typing.Callable[[float], float], x0: float = 0.0, x1: float = None,
-                   x_epsilon: float = 1E-6, max_iterations: int = 20) -> float:
+def _newton_raphson_array(
+        y_target: np.ndarray,
+        evaluate: typing.Callable[[np.ndarray], np.ndarray],
+        x0: np.ndarray = None, x1: np.ndarray = None,
+        x_epsilon: float = 1E-6, max_iterations: int = 20,
+) -> np.ndarray:
+    if x0 is None:
+        x0 = np.full_like(y_target, 0)
+    elif isinstance(x0, (int, float)):
+        x0 = np.full_like(y_target, x0)
+    else:
+        x0 = np.array(x0)
+
+    if x1 is None:
+        x1 = x0 * 0.9
+        replace = x1 == x0
+        x1[replace] = x0[replace] + 0.1
+    elif isinstance(x1, (int, float)):
+        x1 = np.full_like(y_target, x1)
+    else:
+        x1 = np.array(x1)
+
+    iterating = np.full(y_target.shape, True, dtype=bool)
+    y0 = evaluate(x0)
+    for _ in range(max_iterations):
+        y1 = evaluate(x1[iterating])
+        dX = ((x1[iterating] - x0[iterating]) / (y1 - y0[iterating])) * (y_target[iterating] - y1)
+
+        y0[iterating] = y1
+        x0[iterating] = x1[iterating]
+        x1[iterating] += dX
+
+        continue_iteration = np.abs(dX) > x_epsilon
+        if not np.any(continue_iteration):
+            break
+        iterating[iterating] = continue_iteration
+
+    return x1
+
+
+def newton_raphson(
+        y_target: typing.Union[float, np.ndarray],
+        evaluate: typing.Union[typing.Callable[[float], float], typing.Callable[[np.ndarray], np.ndarray]],
+        x0: typing.Union[float, np.ndarray] = 0.0, x1: typing.Union[float, np.ndarray] = None,
+        x_epsilon: float = 1E-6, max_iterations: int = 20
+) -> typing.Union[float, np.ndarray]:
+    if not isinstance(y_target, (int, float)):
+        return _newton_raphson_array(y_target, evaluate, x0, x1, x_epsilon, max_iterations)
+
     if not isfinite(y_target) or not isfinite(x0):
         raise ValueError
     if x1 is None:
