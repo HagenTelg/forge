@@ -26,6 +26,8 @@ def title(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing
         return "Surface Ozone Measurements"
     if tags and 'met' in tags:
         return "Meteorological Measurements"
+    if tags and 'radiation' in tags:
+        return "Surface Radiation Measurements"
     return "Aerosol Extensive Properties"
 
 
@@ -48,6 +50,11 @@ def keywords(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typ
         keywords.append("GCMD:RELATIVE HUMIDITY")
         keywords.append("GCMD:DEW POINT TEMPERATURE")
         keywords.append("GCMD:LIQUID SURFACE PRECIPITATION RATE")
+    elif tags and 'radiation' in tags:
+        keywords.append("GCMD:INCOMING SOLAR RADIATION")
+        keywords.append("GCMD:DOWNWELLING LONGWAVE RADIATION")
+        keywords.append("GCMD:UPWELLING LONGWAVE RADIATION")
+        keywords.append("GCMD:SHORTWAVE RADIATION")
     elif tags and 'eventlog' in tags:
         pass
     elif tags and 'edits' in tags:
@@ -98,13 +105,15 @@ def summary(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typi
     elif tags and 'passed' in tags:
         return "This dataset represents a record of when QA/QC was completed on data and it was marked as ready " \
                "for analysis."
-    if tags and 'ozone' in tags:
+    elif tags and 'ozone' in tags:
         return "This data set contains continuous UV Photometric data of surface level ozone collected and processed " \
                "by the National Oceanic and Atmospheric Administration, Global Monitoring Division."
-    if tags and 'met' in tags:
+    elif tags and 'met' in tags:
         return "This dataset represents a range of time of continuous meteorological measurements.  The exact " \
                "contents depends on instrument availability but include wind speed and direction, ambient " \
                "temperature, ambient relative humidity, ambient pressure and/or precipitation rate."
+    elif tags and 'radiation' in tags:
+        return "This data set contains contains surface radiation measurements."
     return "This dataset represents a range of time of continuous aerosol optical and/or microphysical measurements.  "\
            "The exact contents depends on instrument availability but include aerosol light scattering coefficients, "\
            "aerosol light absorption coefficients, and/or particle number concentration."
@@ -126,6 +135,8 @@ Herbert, G., M. Bieniulis, T. Mefford, and K. Thaut, Acquisition and Data Manage
 Herbert, G.A., J. Harris, M. Bieniulis, and J. McCutcheon, Acquisition and Data Management, in CMDL Summary Report 1989, No. 18, 1990, Pg. 50.
 Herbert, G.A., E.R. Green, G.L. Koenig, and K.W. Thaut, Monitoring instrumentation for the continuous measurement and quality assurance of meteorological observations, NOAA Tech. Memo. ERL ARL-148, 44 pp, 1986.
 Herbert, G.A., E.R. Green, J.M. Harris, G.L. Koenig, S.J. Roughton, and K.W. Thaut, Control and Monitoring Instrumentation for the Continuous Measurement of Atmospheric CO2 and Meteorological Variables, J. of Atmos. and Oceanic Tech., 3, 414-421, 1986."""
+    if tags and 'radiation' in tags:
+        return None
     return """Anderson, T. L., et al., J. Atmos. Oceanic Tech. 13, 967-986, 1996
 Anderson, T. L. and Ogren, J. A., Aerosol Sci. Technol., 29, 57-69, 1998
 Bond, T. C., et al., Aerosol Sci. Technol., 30, 582-600, doi 10.1080/027868299304435, 1999

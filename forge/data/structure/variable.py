@@ -155,6 +155,47 @@ def variable_co2(var: Variable, is_dried: bool = True) -> None:
     var.C_format = "%9.2f"
 
 
+def variable_solar_radiation(var: Variable) -> None:
+    var.units = "W m-2"
+    var.C_format = "%6.1f"
+
+
+def variable_downwelling_global_radiation(var: Variable) -> None:
+    var.long_name = "downwelling global radiation"
+    var.standard_name = "surface_downwelling_shortwave_flux_in_air"
+    variable_solar_radiation(var)
+
+
+def variable_upwelling_global_radiation(var: Variable) -> None:
+    var.long_name = "upwelling global radiation"
+    var.standard_name = "surface_upwelling_shortwave_flux_in_air"
+    variable_solar_radiation(var)
+
+
+def variable_direct_normal_radiation(var: Variable) -> None:
+    var.long_name = "direct normal radiation"
+    var.standard_name = "surface_direct_along_beam_shortwave_flux_in_air"
+    variable_solar_radiation(var)
+
+
+def variable_diffuse_radiation(var: Variable) -> None:
+    var.long_name = "diffuse radiation"
+    var.standard_name = "surface_diffuse_downwelling_shortwave_flux_in_air"
+    variable_solar_radiation(var)
+
+
+def variable_downwelling_ir_radiation(var: Variable) -> None:
+    var.long_name = "downwelling IR radiation"
+    var.standard_name = "surface_downwelling_longwave_flux_in_air"
+    variable_solar_radiation(var)
+
+
+def variable_upwelling_ir_radiation(var: Variable) -> None:
+    var.long_name = "upwelling IR radiation"
+    var.standard_name = "surface_upwelling_longwave_flux_in_air"
+    variable_solar_radiation(var)
+
+
 def variable_wind_speed(var: Variable) -> None:
     var.long_name = "wind speed"
     var.standard_name = "wind_speed"
