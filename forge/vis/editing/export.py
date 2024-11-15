@@ -48,7 +48,7 @@ async def export_csv(request: Request) -> Response:
     include_deleted = 'deleted' in request.query_params
     include_other_type = 'alltypes' in request.query_params
 
-    queue = asyncio.Queue()
+    queue = asyncio.Queue(maxsize=256)
 
     def format_time(ts: int) -> str:
         if not ts:
@@ -69,8 +69,25 @@ async def export_csv(request: Request) -> Response:
         if directive['action'] == 'invalidate':
             items = list()
             for sel in directive['selection']:
-                if sel['type'] == 'variable':
-                    items.append(sel['variable'])
+                if sel.get('type') == 'cpd3_variable':
+                    v = sel.get('variable')
+                    if v:
+                        items.append(v)
+                else:
+                    variable_id = sel.get('variable_id')
+                    if variable_id:
+                        if '_' not in variable_id:
+                            instrument_id = sel.get('instrument_id')
+                            if instrument_id:
+                                variable_id += "_" + instrument_id
+                        wavelength = sel.get('wavelength')
+                        if wavelength:
+                            try:
+                                wavelength = float(wavelength)
+                                variable_id += f" ({wavelength:g} nm)"
+                            except (TypeError, ValueError):
+                                pass
+                        items.append(variable_id)
             return " ".join(items)
         return ""
 
@@ -100,6 +117,9 @@ async def export_csv(request: Request) -> Response:
         await queue.put(",".join(fields) + "\n")
 
     async def run(stream: DataStream):
+        async def ignore_stall(reason: typing.Optional[str]):
+            pass
+        await stream.begin(ignore_stall)
         await stream.run()
         await queue.put(None)
 
@@ -148,7 +168,7 @@ async def export_json(request: Request) -> Response:
     include_deleted = 'deleted' in request.query_params
     include_other_type = 'alltypes' in request.query_params
 
-    queue = asyncio.Queue()
+    queue = asyncio.Queue(maxsize=256)
 
     async def send(contents: typing.Dict):
         if not include_deleted and contents.get('deleted'):
@@ -159,6 +179,9 @@ async def export_json(request: Request) -> Response:
         await queue.put(to_json(contents))
 
     async def run(stream: DataStream):
+        async def ignore_stall(reason: typing.Optional[str]):
+            pass
+        await stream.begin(ignore_stall)
         await stream.run()
         await queue.put(None)
 

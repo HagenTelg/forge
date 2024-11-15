@@ -271,9 +271,9 @@ def _to_archive_condition(condition: typing.Dict[str, typing.Any]) -> typing.Tup
 
 def _from_archive_history(history: str) -> typing.List[typing.Dict[str, typing.Any]]:
     def format_time(ts: float) -> str:
-        if not ts or not isfinite(ts):
+        if not ts or not isfinite(ts) or ts == MAX_I64 or ts == -MAX_I64:
             return "∞"
-        return format_export_time(ts)
+        return format_export_time(ts / 1000.0)
 
     if not history:
         return []
@@ -456,6 +456,8 @@ class _EditReadStream(ArchiveReadStream):
                 await self._stream_file(file)
             finally:
                 file.close()
+            # Explicitly yield, since the send may just be queueing things
+            await asyncio.sleep(0)
 
     async def run(self) -> None:
         try:

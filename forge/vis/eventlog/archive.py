@@ -112,6 +112,8 @@ class _EventLogStream(ArchiveReadStream):
                     await self._send_file(data)
                 finally:
                     data.close()
+            # Explicitly yield, since the send may just be queueing things
+            await asyncio.sleep(0)
 
 
 def read_eventlog(station: str, mode_name: str, start_epoch_ms: int, end_epoch_ms: int,

@@ -47,7 +47,7 @@ async def export_csv(request: Request) -> Response:
     start_epoch_ms, end_epoch_ms = _get_export_bounds(request)
     include_acquisition = 'acquisition' in request.query_params
 
-    queue = asyncio.Queue()
+    queue = asyncio.Queue(maxsize=256)
 
     def format_time(ts: int) -> str:
         if not ts:
@@ -79,6 +79,9 @@ async def export_csv(request: Request) -> Response:
         await queue.put(",".join(fields) + "\n")
 
     async def run(stream: DataStream):
+        async def ignore_stall(reason: typing.Optional[str]):
+            pass
+        await stream.begin(ignore_stall)
         await stream.run()
         await queue.put(None)
 
@@ -120,7 +123,7 @@ async def export_json(request: Request) -> Response:
     start_epoch_ms, end_epoch_ms = _get_export_bounds(request)
     include_acquisition = 'acquisition' in request.query_params
 
-    queue = asyncio.Queue()
+    queue = asyncio.Queue(maxsize=256)
 
     async def send(contents: typing.Dict):
         if not include_acquisition and contents.get('acquisition'):
@@ -128,6 +131,9 @@ async def export_json(request: Request) -> Response:
         await queue.put(to_json(contents))
 
     async def run(stream: DataStream):
+        async def ignore_stall(reason: typing.Optional[str]):
+            pass
+        await stream.begin(ignore_stall)
         await stream.run()
         await queue.put(None)
 

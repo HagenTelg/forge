@@ -245,9 +245,9 @@ class EditDirective:
                 item['changed_profile'] = entry['OriginalProfile']
             elif operation == 'BoundsChanged':
                 t = entry['OriginalBounds'].get('Start')
-                item['changed_start_time'] = round(t * 1000) if t and isfinite(t) else -MAX_I64
+                item['changed_start_time'] = round(t * 1000) if t and isfinite(t) else None
                 t = entry['OriginalBounds'].get('End')
-                item['changed_end_time'] = round(t * 1000) if t and isfinite(t) else MAX_I64
+                item['changed_end_time'] = round(t * 1000) if t and isfinite(t) else None
             elif operation == 'ParametersChanged':
                 op = entry.get("OriginalParameters") or dict()
 
