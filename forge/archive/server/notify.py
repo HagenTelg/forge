@@ -10,7 +10,7 @@ if typing.TYPE_CHECKING:
 
 class NotificationDispatch:
     def __init__(self):
-        self._listen_targets: typing.Dict[str, typing.Set["Connection"]] = dict()
+        self._listen_targets: typing.Dict[str, typing.Dict["Connection", bool]] = dict()
         self._connection_attached: typing.Dict["Connection", typing.Set[str]] = dict()
         self._awaiting_send: typing.Dict["Connection", typing.Set["NotificationDispatch.Queued"]] = dict()
         self._awaiting_acknowledge: typing.Dict["Connection", typing.Dict[int, "NotificationDispatch.Queued"]] = dict()
@@ -24,12 +24,12 @@ class NotificationDispatch:
             return
         await waiting.acknowledged_received(connection)
 
-    def listen(self, connection: "Connection", key: str) -> None:
+    def listen(self, connection: "Connection", key: str, synchronous: bool) -> None:
         target = self._listen_targets.get(key)
         if target is None:
-            target = set()
+            target = dict()
             self._listen_targets[key] = target
-        target.add(connection)
+        target[connection] = synchronous or target.get(connection, False)
         target = self._connection_attached.get(connection)
         if not target:
             target = set()
@@ -41,7 +41,7 @@ class NotificationDispatch:
         if targets:
             for key in targets:
                 listeners = self._listen_targets[key]
-                listeners.discard(connection)
+                listeners.pop(connection, None)
                 if not listeners:
                     del self._listen_targets[key]
 
@@ -65,25 +65,29 @@ class NotificationDispatch:
             self._waiting_send: typing.Set["Connection"] = set()
             self._waiting_for: typing.Set["Connection"] = set()
 
-        async def _send_notification(self, connection: "Connection") -> None:
+        async def _send_notification(self, connection: "Connection", synchronous: bool) -> None:
             async with self._wait_changed:
                 self._waiting_send.discard(connection)
                 self.dispatch._awaiting_send[connection].discard(self)
 
-                uid = connection.write_notification(self.key, self.start, self.end)
-                self._waiting_for.add(connection)
-                waiting = self.dispatch._awaiting_acknowledge.get(connection)
-                if waiting is None:
-                    waiting = dict()
-                    self.dispatch._awaiting_acknowledge[connection] = waiting
-                waiting[uid] = self
+                if synchronous:
+                    uid = connection.write_notification(self.key, self.start, self.end, True)
+                    self._waiting_for.add(connection)
+                    waiting = self.dispatch._awaiting_acknowledge.get(connection)
+                    if waiting is None:
+                        waiting = dict()
+                        self.dispatch._awaiting_acknowledge[connection] = waiting
+                    waiting[uid] = self
+                else:
+                    connection.write_notification(self.key, self.start, self.end, False)
+                    self._wait_changed.notify_all()
 
         def send(self) -> None:
             targets = self.dispatch._listen_targets.get(self.key)
             if not targets:
                 return
 
-            for connection in targets:
+            for connection, synchronous in targets.items():
                 self._waiting_send.add(connection)
 
                 waiting = self.dispatch._awaiting_send.get(connection)
@@ -92,7 +96,7 @@ class NotificationDispatch:
                     self.dispatch._awaiting_send[connection] = waiting
                 waiting.add(self)
 
-                connection.queue_unsolicited(self._send_notification, connection)
+                connection.queue_unsolicited(self._send_notification, connection, synchronous)
 
         async def disconnected(self, connection: "Connection") -> None:
             async with self._wait_changed:

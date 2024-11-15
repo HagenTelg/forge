@@ -207,7 +207,8 @@ class Connection:
         async def send_ack(connection: "Connection", uid: int):
             connection.writer.write(struct.pack('<BQ', ClientPacket.ACKNOWLEDGE_NOTIFICATION.value, uid))
 
-        await self._request_response(send_ack, None, uid)
+        if uid != 0:
+            await self._request_response(send_ack, None, uid)
 
     async def run(self) -> None:
         _LOGGER.debug("Connection ready", extra=self.log_extra)
@@ -657,7 +658,7 @@ class Connection:
         await self._request_response(request, response)
 
     async def listen_notification(self, key: str, handler: "typing.Callable[[str, int, int, ...], typing.Awaitable]",
-                                  *args, **kwargs) -> None:
+                                  *args, synchronous: bool = True, **kwargs) -> None:
         target = self._notification_handlers.get(key)
         if target is not None:
             target.append((handler, args, kwargs))
@@ -669,6 +670,7 @@ class Connection:
         async def request(connection: "Connection"):
             connection.writer.write(struct.pack('<B', ClientPacket.LISTEN_NOTIFICATION.value))
             write_string(connection.writer, key)
+            connection.writer.write(struct.pack('<B', 1 if synchronous else 0))
 
         async def response(connection: "Connection", packet_type: ServerPacket):
             return packet_type == ServerPacket.NOTIFICATION_LISTENING or None

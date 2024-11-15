@@ -21,6 +21,7 @@ class UpdateController(ABC):
 
     CANDIDATE_PROCESS_DELAY: float = 10.0
     AUTOMATIC_COMMIT: bool = False
+    SYNCHRONOUS_NOTIFICATION: bool = False
 
     def __init__(self, connection: Connection):
         self.connection = connection
@@ -58,7 +59,8 @@ class UpdateController(ABC):
         for tracker in self._trackers:
             await self.connection.listen_notification(
                 data_notification_key(tracker.station, tracker.archive),
-                self._tracker_notified, tracker
+                self._tracker_notified, tracker,
+                synchronous=self.SYNCHRONOUS_NOTIFICATION,
             )
 
     async def _matched_trackers(

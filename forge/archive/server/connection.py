@@ -241,7 +241,8 @@ class Connection:
             self.writer.write(struct.pack('<B', ServerPacket.NOTIFICATION_QUEUED.value))
         elif packet_type == ClientPacket.LISTEN_NOTIFICATION:
             key = await read_string(self.reader)
-            self.control.notify.listen(self, key)
+            synchronous = struct.unpack('<B', await self.reader.readexactly(1))[0]
+            self.control.notify.listen(self, key, synchronous)
             self.writer.write(struct.pack('<B', ServerPacket.NOTIFICATION_LISTENING.value))
         elif packet_type == ClientPacket.ACKNOWLEDGE_NOTIFICATION:
             uid = struct.unpack('<Q', await self.reader.readexactly(8))[0]
@@ -323,9 +324,12 @@ class Connection:
                 except:
                     pass
 
-    def write_notification(self, key: str, start: int, end: int) -> int:
-        uid = self.next_notification_uid
-        self.next_notification_uid += 1
+    def write_notification(self, key: str, start: int, end: int, synchronous: bool) -> int:
+        if synchronous:
+            uid = self.next_notification_uid
+            self.next_notification_uid += 1
+        else:
+            uid = 0
         self.writer.write(struct.pack('<B', ServerPacket.NOTIFICATION_RECEIVED.value))
         write_string(self.writer, key)
         self.writer.write(struct.pack('<qqQ', start, end, uid))
