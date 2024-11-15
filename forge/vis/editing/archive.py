@@ -723,10 +723,12 @@ async def _apply_edit_save(
             for var in ("action_parameters", "condition_parameters", "author", "comment", "history"):
                 input_var = existing_root.variables[var]
                 output_var = output_root.variables[var]
+                output_index = 0
                 for input_idx in range(input_var.shape[0]):
                     if input_idx == remove_index:
                         continue
-                    output_var[input_idx] = input_var[input_idx]
+                    output_var[output_index] = input_var[input_idx]
+                    output_index += 1
             for var in ("profile", "action_type", "condition_type", "deleted"):
                 remap_enum(existing_root.variables[var], output_root.variables[var], remove_index=remove_index)
 

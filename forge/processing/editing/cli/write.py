@@ -172,15 +172,17 @@ def main():
                         output_var[remove_index:] = input_var[remove_index+1:]
 
                 for var in ("profile", "action_type", "condition_type", "deleted"):
-                    remap_enum(input_root.variables[var], output_root.variables[var])
+                    remap_enum(input_root.variables[var], output_root.variables[var], remove_index=remove_index)
 
                 for var in ("action_parameters", "condition_parameters", "author", "comment", "history"):
                     input_var = input_root.variables[var]
                     output_var = output_root.variables[var]
+                    output_index = 0
                     for input_idx in range(input_var.shape[0]):
                         if input_idx == remove_index:
                             continue
-                        output_var[output_var.shape[0]] = input_var[input_idx]
+                        output_var[output_index] = input_var[input_idx]
+                        output_index += 1
 
                 existing_file.close()
                 return exiting_start_time, exiting_end_time
