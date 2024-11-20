@@ -18,4 +18,6 @@ def country_code(station: str, tags: typing.Optional[typing.Set[str]] = None) ->
 
 
 def name(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
+    if tags and 'radiation' in tags:
+        return "Bermuda"
     return "Tudor Hill (Bermuda)"
