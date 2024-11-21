@@ -803,6 +803,10 @@ class Selection(InstrumentSelection):
             data_values = data_values[time_selector]
             if return_cut_size_times and cut_size_times is not None:
                 cut_size_times = cut_size_times[time_selector]
+        if time_values is not None:
+            assert len(time_values.shape) == 1
+            if time_values.shape[0] == 0:
+                return None
 
         data_selector = list()
         if cut_size_dimension_selector is not None:
