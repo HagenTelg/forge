@@ -354,7 +354,7 @@ class LegacyBMITAP(WavelengthConverter):
         if any([v.time.shape != 0 for v in data_If]):
             var_If = g.createVariable("reference_intensity", "f8", ("time", "wavelength"), fill_value=nan)
             netcdf_timeseries.variable_coordinates(g, var_If)
-            var_If.variable_id = "Ip"
+            var_If.variable_id = "If"
             var_If.coverage_content_type = "physicalMeasurement"
             var_If.cell_methods = "time: mean"
             var_If.long_name = "active spot sample intensity"
