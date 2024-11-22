@@ -69,9 +69,15 @@ def standard_intensives(data: AvailableData) -> None:
         generate_intensives(intensives, cpc, scattering, absorption)
 
 
+def standard_meteorological(data: AvailableData) -> None:
+    for met in data.select_instrument({"tags": "met"}):
+        populate_humidity(met)
+
+
 def run(data: AvailableData) -> None:
     standard_corrections(data)
     standard_intensives(data)
+    standard_meteorological(data)
 
 
 if __name__ == '__main__':

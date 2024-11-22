@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from math import nan
 from netCDF4 import Dataset, Variable
 from forge.const import MAX_I64
+from forge.data.state import is_state_group
 from forge.data.structure.history import append_history
 from forge.data.structure.timeseries import time_coordinate, cutsize_variable, cutsize_coordinate, variable_coordinates
 from .variable import SelectedVariable, EmptySelectedVariable, DataVariable
@@ -96,6 +97,10 @@ class SelectedData(ABC):
         pass
 
     @abstractmethod
+    def system_flags(self, commit_flags: bool = True) -> "typing.Iterator[SelectedVariable]":
+        pass
+
+    @abstractmethod
     def get_input(
             self,
             for_variable: SelectedVariable,
@@ -181,6 +186,9 @@ class EmptySelectedData(SelectedData):
             commit_variable: bool = True,
             commit_auxiliary: bool = False,
     ) -> "typing.Iterator[typing.Union[SelectedVariable, typing.Tuple[SelectedVariable, ...]]]":
+        return iter(())
+
+    def system_flags(self, commit_flags: bool = True) -> "typing.Iterator[SelectedVariable]":
         return iter(())
 
     def get_input(
@@ -324,6 +332,46 @@ class FileData(SelectedData):
                 if commit_auxiliary:
                     for aux in matched_aux:
                         aux.commit()
+
+    def system_flags(self, commit_flags: bool = True) -> "typing.Iterator[SelectedVariable]":
+        def has_time_variable(group: Dataset) -> bool:
+            for var in group.variables.values():
+                if len(var.dimensions) == 0:
+                    continue
+                if var.dimensions[0] != 'time':
+                    continue
+                return True
+            return False
+
+        def walk_inner(group: Dataset, is_parent_state: typing.Optional[bool] = None):
+            is_state = is_state_group(group)
+            if is_state is None:
+                is_state = is_parent_state
+
+            if not is_state and has_time_variable(group):
+                yield group
+
+            for g in group.groups.values():
+                yield from walk_inner(g, is_state)
+
+        for group in walk_inner(self.root):
+            var = group.variables.get('system_flags')
+            if var is None:
+                var = group.createVariable('system_flags', 'u8', ('time',), fill_value=False)
+                variable_coordinates(group, var)
+                var.coverage_content_type = "physicalMeasurement"
+                var.variable_id = "F1"
+                var[:] = 0
+
+            matched_variable = DataVariable.from_data(var)
+            matched_variable.restrict_times(self._time_start, self._time_end)
+            if len(matched_variable.times) == 0 or matched_variable.times.shape[0] == 0:
+                continue
+
+            yield matched_variable
+
+            if commit_flags:
+                matched_variable.commit()
 
     def get_input(
             self,

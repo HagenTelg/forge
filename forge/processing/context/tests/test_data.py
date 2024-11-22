@@ -633,3 +633,20 @@ def test_cut_dimension(cut_dimension_data: SelectedData):
         assert var2[value_index].tolist() == [200.0, 201.0, 202.0, 203.0]
         assert var2.times[time_index].tolist() == [1000, 2000, 3000, 4000]
     assert count == 1
+
+
+def test_system_flags(first_data: SelectedData):
+    count = 0
+    for system_flags in first_data.system_flags():
+        assert system_flags.variable.name == "system_flags"
+        assert system_flags[...].tolist() == [0, 0, 0, 0]
+        system_flags[0] = 1
+        count += 1
+    assert count == 1
+
+    count = 0
+    for system_flags in first_data.system_flags(commit_flags=False):
+        assert system_flags.variable.name == "system_flags"
+        assert system_flags[...].tolist() == [1, 0, 0, 0]
+        count += 1
+    assert count == 1

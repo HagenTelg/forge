@@ -4,7 +4,7 @@ import datetime
 from forge.processing.station.lookup import station_data
 from forge.processing.context import AvailableData
 from forge.processing.corrections import *
-from forge.processing.station.default.editing import standard_corrections, standard_intensives
+from forge.processing.station.default.editing import standard_intensives, standard_meteorological
 
 
 # Old data ingest is "already corrected"
@@ -87,6 +87,7 @@ def run(data: AvailableData) -> None:
         )
 
     standard_intensives(data)
+    standard_meteorological(data)
 
 
 if __name__ == '__main__':
