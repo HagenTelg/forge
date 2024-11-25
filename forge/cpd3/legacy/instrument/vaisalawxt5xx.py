@@ -83,6 +83,16 @@ class Converter(InstrumentConverter):
         var_P.long_name = "ambient pressure"
         self.apply_data(times, var_P, data_P)
 
+        var_WI = g.createVariable("precipitation_rate", "f8", ("time",), fill_value=nan)
+        netcdf_timeseries.variable_coordinates(g, var_WI)
+        var_WI.variable_id = "WI"
+        var_WI.coverage_content_type = "physicalMeasurement"
+        var_WI.cell_methods = "time: mean"
+        var_WI.long_name = "precipitation rate"
+        var_WI.units = "mm h-1"
+        var_WI.C_format = "%7.3f"
+        self.apply_data(times, var_WI, data_WI)
+
         var_U1 = g.createVariable("ambient_humidity", "f8", ("time",), fill_value=nan)
         netcdf_var.variable_air_rh(var_U1)
         netcdf_timeseries.variable_coordinates(g, var_U1)

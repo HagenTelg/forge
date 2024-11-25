@@ -87,7 +87,7 @@ class Converter(InstrumentConverter):
             netcdf_var.variable_air_dewpoint(var_TD)
             netcdf_timeseries.variable_coordinates(g, var_TD)
             var_TD.variable_id = "TD1"
-            var_TD.coverage_content_TDype = "physicalMeasurement"
+            var_TD.coverage_content_type = "physicalMeasurement"
             var_TD.cell_methods = "time: mean"
             var_TD.long_name = "ambient air dewpoint"
             self.apply_data(times, var_TD, data_TD)

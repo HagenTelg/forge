@@ -5,6 +5,7 @@ import netCDF4
 import forge.data.structure.timeseries as netcdf_timeseries
 from math import nan
 from forge.data.structure.stp import standard_temperature, standard_pressure
+from forge.cpd3.convert.instrument.default.units import from_cpd3 as from_cpd3_units
 from .converter import InstrumentConverter, read_archive, Selection, variant
 
 
@@ -54,9 +55,11 @@ class Converter(InstrumentConverter):
                 continue
             loaded_data[cpd3_name] = data
 
-        all_data = list(loaded_data.values()) + (group_vars or [])
+        all_data = list(loaded_data.values()) + ([v for v in group_vars if v.time.shape[0] != 0] if group_vars else [])
         if not all_data:
             return None
+        if self._average_interval is None:
+            self._average_interval = self.calculate_average_interval(np.concatenate([v.time for v in loaded_data.values()]))
 
         g, times = self.data_group(all_data, **kwargs)
 
@@ -135,6 +138,22 @@ class Converter(InstrumentConverter):
                         if key:
                             self._all_firmware_versions[key] = str(v)
 
+                if not variables[cpd3_name]:
+                    v = value.get("Description")
+                    if v:
+                        var.long_name = str(v)
+
+                    v_units = value.get("Units")
+                    v_format = value.get("Format")
+                    apply_unit = from_cpd3_units(
+                        str(v_units) if v_units else None,
+                        str(v_format) if v_format else None
+                    )
+                    if apply_unit.units:
+                        var.units = apply_unit.units
+                    if apply_unit.format:
+                        var.C_format = apply_unit.format
+
             for a, v in variables[cpd3_name].items():
                 setattr(var, a, v)
             self.apply_data(times, var, data)
@@ -143,34 +162,8 @@ class Converter(InstrumentConverter):
 
     def run(self) -> bool:
         data_raw_inputs = self.load_array_variable(f"ZINPUTS_{self.instrument_id}")
-        if data_raw_inputs.time.shape[0] == 0:
-            return False
-        self._average_interval = self.calculate_average_interval(data_raw_inputs.time)
-        if not super().run():
-            return False
-
-        result = self._apply_variable_data(self.CUT_SPLIT_VARIABLES)
-        if result:
-            g, times, cut_variables = result
-            self.apply_cut_size(g, times, cut_variables)
-            self.apply_coverage(g, times, cut_variables[0][0].variable_id)
-
-        g, times, _ = self._apply_variable_data(
-            self.UNSPLIT_VARIABLES,
-            group_vars=[data_raw_inputs],
-            name="upstream"
-        )
-
-        g.createDimension("controller_value", data_raw_inputs.value.shape[1])
-        var_raw_inputs = g.createVariable("controller_value", "f8", ("time", "controller_value"), fill_value=nan)
-        netcdf_timeseries.variable_coordinates(g, var_raw_inputs)
-        var_raw_inputs.variable_id = "ZINPUTS"
-        var_raw_inputs.coverage_content_Vype = "physicalMeasurement"
-        var_raw_inputs.long_name = "raw controller values"
-        var_raw_inputs.C_format = "%5.2f"
-        self.apply_data(times, var_raw_inputs, data_raw_inputs)
-
-        self.apply_coverage(g, times, f"ZINPUTS_{self.instrument_id}")
+        if data_raw_inputs.time.shape[0] != 0:
+            self._average_interval = self.calculate_average_interval(data_raw_inputs.time)
 
         g = self.apply_instrument_metadata(f"ZINPUTS_{self.instrument_id}", manufacturer="Love", model="PID")
         var = g.variables.get("firmware_version")
@@ -179,4 +172,35 @@ class Converter(InstrumentConverter):
             var.coverage_content_type = "referenceInformation"
             var.long_name = "instrument firmware version information"
             var[0] = " ".join([self._all_firmware_versions[k] for k in sorted(self._all_firmware_versions.keys())])
+
+        cut_split = self._apply_variable_data(self.CUT_SPLIT_VARIABLES)
+        if cut_split:
+            g, times, cut_variables = cut_split
+            self.apply_cut_size(g, times, cut_variables)
+            self.apply_coverage(g, times, cut_variables[0][0].variable_id)
+
+        unsplit = self._apply_variable_data(
+            self.UNSPLIT_VARIABLES,
+            group_vars=[data_raw_inputs],
+            name="upstream"
+        )
+        if not super().run():
+            return False
+        if not unsplit:
+            if not cut_split:
+                return False
+            return True
+        g, times, _ = unsplit
+
+        if data_raw_inputs.time.shape[0] != 0:
+            g.createDimension("controller_value", data_raw_inputs.value.shape[1])
+            var_raw_inputs = g.createVariable("controller_value", "f8", ("time", "controller_value"), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(g, var_raw_inputs)
+            var_raw_inputs.variable_id = "ZINPUTS"
+            var_raw_inputs.coverage_content_type = "physicalMeasurement"
+            var_raw_inputs.long_name = "raw controller values"
+            var_raw_inputs.C_format = "%5.2f"
+            self.apply_data(times, var_raw_inputs, data_raw_inputs)
+
+        self.apply_coverage(g, times, f"ZINPUTS_{self.instrument_id}")
         return True

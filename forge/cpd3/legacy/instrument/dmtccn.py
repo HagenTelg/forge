@@ -71,12 +71,12 @@ class Converter(InstrumentConverter):
         if n_diameters > 0:
             g.createDimension("diameter", n_diameters)
 
-        if data_Nb.time.shape[0] > 0:
+        if n_diameters > 0 and data_Nb.time.shape[0] > 0 and len(data_Nb.value.shape) == 2 and data_Nb.value.shape[1] > 0:
             var_Nb = g.createVariable("number_distribution", "f8", ("time", "diameter"), fill_value=nan)
             netcdf_var.variable_size_distribution_dN(var_Nb)
             netcdf_timeseries.variable_coordinates(g, var_Nb)
             var_Nb.variable_id = "Nb"
-            var_Nb.coverage_content_Vype = "physicalMeasurement"
+            var_Nb.coverage_content_type = "physicalMeasurement"
             var_Nb.long_name = "binned number concentration (dN) with ADC overflow in the final bin"
             n_add = n_diameters - data_Nb.value.shape[1]
             if n_add > 0:
@@ -87,12 +87,12 @@ class Converter(InstrumentConverter):
         else:
             var_Nb = None
 
-        if data_Np.time.shape[0] > 0:
+        if n_diameters > 0 and data_Np.time.shape[0] > 0 and len(data_Np.value.shape) == 2 and data_Np.value.shape[1] > 0:
             var_Np = g.createVariable("number_distribution_stable", "f8", ("time", "diameter"), fill_value=nan)
             netcdf_var.variable_size_distribution_dN(var_Np)
             netcdf_timeseries.variable_coordinates(g, var_Np)
             var_Np.variable_id = "Np"
-            var_Np.coverage_content_Vype = "physicalMeasurement"
+            var_Np.coverage_content_type = "physicalMeasurement"
             var_Np.long_name = "binned number concentration (dN) with unstable data removed"
             n_add = n_diameters - data_Np.value.shape[1]
             if n_add > 0:

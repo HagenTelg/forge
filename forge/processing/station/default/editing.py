@@ -6,7 +6,7 @@ from forge.processing.context import AvailableData
 from forge.processing.corrections import *
 
 
-def standard_stp_corrections(data: AvailableData) -> None:
+def standard_stp_corrections(data: AvailableData, **kwargs) -> None:
     for instrument in data.select_instrument((
             {"instrument": "bmi1710cpc"},
             {"instrument": "tsi302xcpc"},
@@ -15,7 +15,7 @@ def standard_stp_corrections(data: AvailableData) -> None:
             {"instrument": "tsi3010cpc"},
             {"instrument": "tsi3760cpc"},
             {"instrument": "tsi3781cpc"},
-    )):
+    ), **kwargs):
         to_stp(instrument, temperature=12.0,
                pressure=station_data(instrument.station, 'climatology',
                                      'surface_pressure')(instrument.station))
@@ -24,41 +24,41 @@ def standard_stp_corrections(data: AvailableData) -> None:
             {"instrument": "admagic250cpc"},
             {"instrument": "bmi1720cpc"},
             {"instrument": "tsi3783cpc"},
-    )):
+    ), **kwargs):
         to_stp(instrument, temperature={"variable_name": "optics_temperature"})
     for instrument in data.select_instrument((
             {"instrument": "teledynet640"},
             {"instrument": "tsi3563nephelometer"},
-    )):
+    ), **kwargs):
         to_stp(instrument)
 
 
-def standard_absorption_corrections(data: AvailableData) -> None:
+def standard_absorption_corrections(data: AvailableData, **kwargs) -> None:
     for absorption, scattering in data.select_instrument((
             {"instrument": "bmitap"},
             {"instrument": "clap"},
             {"instrument": "psap1w"},
             {"instrument": "psap3w"},
-    ), {"tags": "scattering -secondary"}):
+    ), {"tags": "scattering -secondary"}, **kwargs):
         remove_low_transmittance(absorption)
         weiss(absorption)
         bond_1999(absorption, scattering)
 
 
-def standard_scattering_corrections(data: AvailableData) -> None:
-    for scattering in data.select_instrument({"instrument": "tsi3563nephelometer"}):
+def standard_scattering_corrections(data: AvailableData, **kwargs) -> None:
+    for scattering in data.select_instrument({"instrument": "tsi3563nephelometer"}, **kwargs):
         anderson_ogren_1998(scattering)
     for scattering in data.select_instrument((
             {"instrument": "ecotechnephelometer"},
             {"instrument": "acoemnex00nephelometer"},
-    )):
+    ),  **kwargs):
         mueller_2011(scattering)
 
 
-def standard_corrections(data: AvailableData) -> None:
-    standard_stp_corrections(data)
-    standard_absorption_corrections(data)
-    standard_scattering_corrections(data)
+def standard_corrections(data: AvailableData, **kwargs) -> None:
+    standard_stp_corrections(data, **kwargs)
+    standard_absorption_corrections(data, **kwargs)
+    standard_scattering_corrections(data, **kwargs)
 
 
 def standard_intensives(data: AvailableData) -> None:

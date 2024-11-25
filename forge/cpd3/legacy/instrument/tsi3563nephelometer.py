@@ -1,4 +1,6 @@
 import typing
+from os.path import split
+
 import numpy as np
 import forge.data.structure.variable as netcdf_var
 import forge.data.structure.timeseries as netcdf_timeseries
@@ -30,6 +32,10 @@ class Converter(WavelengthConverter):
     @property
     def average_interval(self) -> typing.Optional[float]:
         return self._average_interval
+
+    @property
+    def split_monitor(self) -> typing.Optional[bool]:
+        return None
 
     def _declare_parameters(self, parameters: typing.Dict[str, typing.Any]) -> None:
         if not isinstance(parameters, dict):
@@ -148,7 +154,7 @@ class Converter(WavelengthConverter):
 
         system_flags_time = self.load_variable(f"F1?_{self.instrument_id}", convert=bool, dtype=np.bool_).time
 
-        g, times = self.data_group([system_flags_time], fill_gaps=False)
+        g, times = self.data_group(data_Bs + [system_flags_time], fill_gaps=False)
         data_system_flags, system_flags_bits = self.declare_system_flags(g, times)
 
         var_Bs = g.createVariable("scattering_coefficient", "f8", ("time", "wavelength"), fill_value=nan)
@@ -215,35 +221,18 @@ class Converter(WavelengthConverter):
         var_Uu.long_name = "calculated inlet humidity"
         self.apply_data(times, var_Uu, data_Uu)
 
-        var_Vl = g.createVariable("lamp_voltage", "f8", ("time",), fill_value=nan)
-        netcdf_timeseries.variable_coordinates(g, var_Vl)
-        var_Vl.variable_id = "Vl"
-        var_Vl.coverage_content_type = "physicalMeasurement"
-        var_Vl.cell_methods = "time: mean"
-        var_Vl.long_name = "lamp supply voltage"
-        var_Vl.units = "V"
-        var_Vl.C_format = "%4.1f"
-        self.apply_data(times, var_Vl, data_Vl)
-
-        var_Al = g.createVariable("lamp_current", "f8", ("time",), fill_value=nan)
-        netcdf_timeseries.variable_coordinates(g, var_Al)
-        var_Al.variable_id = "Al"
-        var_Al.coverage_content_type = "physicalMeasurement"
-        var_Al.cell_methods = "time: mean"
-        var_Al.long_name = "lamp current"
-        var_Al.units = "A"
-        var_Al.C_format = "%4.1f"
-        self.apply_data(times, var_Al, data_Al)
-
-        var_Cs = g.createVariable("scattering_counts", "f8", ("time", "wavelength"), fill_value=nan)
-        netcdf_timeseries.variable_coordinates(g, var_Cs)
-        var_Cs.variable_id = "Cs"
-        var_Cs.coverage_content_type = "physicalMeasurement"
-        var_Cs.cell_methods = "time: mean"
-        var_Cs.long_name = "total scattering photon count rate"
-        var_Cs.units = "Hz"
-        var_Cs.C_format = "%7.0f"
-        self.apply_wavelength_data(times, var_Cs, data_Cs)
+        if any([v.time.shape != 0 for v in data_Cs]):
+            var_Cs = g.createVariable("scattering_counts", "f8", ("time", "wavelength"), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(g, var_Cs)
+            var_Cs.variable_id = "Cs"
+            var_Cs.coverage_content_type = "physicalMeasurement"
+            var_Cs.cell_methods = "time: mean"
+            var_Cs.long_name = "total scattering photon count rate"
+            var_Cs.units = "Hz"
+            var_Cs.C_format = "%7.0f"
+            self.apply_wavelength_data(times, var_Cs, data_Cs)
+        else:
+            var_Cs = None
 
         if any([v.time.shape != 0 for v in data_Cbs]):
             var_Cbs = g.createVariable("backscattering_counts", "f8", ("time", "wavelength"), fill_value=nan)
@@ -258,25 +247,18 @@ class Converter(WavelengthConverter):
         else:
             var_Cbs = None
 
-        var_Cf = g.createVariable("reference_counts", "f8", ("time", "wavelength"), fill_value=nan)
-        netcdf_timeseries.variable_coordinates(g, var_Cf)
-        var_Cf.variable_id = "Cf"
-        var_Cf.coverage_content_type = "physicalMeasurement"
-        var_Cf.cell_methods = "time: mean"
-        var_Cf.long_name = "reference shutter photon count rate"
-        var_Cf.units = "Hz"
-        var_Cf.C_format = "%7.0f"
-        self.apply_wavelength_data(times, var_Cf, data_Cf)
-
-        var_Cd = g.createVariable("scattering_dark_counts", "f8", ("time", "wavelength"), fill_value=nan)
-        netcdf_timeseries.variable_coordinates(g, var_Cd)
-        var_Cd.variable_id = "Cs"
-        var_Cd.coverage_content_type = "physicalMeasurement"
-        var_Cd.cell_methods = "time: mean"
-        var_Cd.long_name = "total scattering dark count rate"
-        var_Cd.units = "Hz"
-        var_Cd.C_format = "%7.0f"
-        self.apply_wavelength_data(times, var_Cd, data_Cd)
+        if any([v.time.shape != 0 for v in data_Cd]):
+            var_Cd = g.createVariable("scattering_dark_counts", "f8", ("time", "wavelength"), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(g, var_Cd)
+            var_Cd.variable_id = "Cs"
+            var_Cd.coverage_content_type = "physicalMeasurement"
+            var_Cd.cell_methods = "time: mean"
+            var_Cd.long_name = "total scattering dark count rate"
+            var_Cd.units = "Hz"
+            var_Cd.C_format = "%7.0f"
+            self.apply_wavelength_data(times, var_Cd, data_Cd)
+        else:
+            var_Cd = None
 
         if any([v.time.shape != 0 for v in data_Cbd]):
             var_Cbd = g.createVariable("backscattering_dark_counts", "f8", ("time", "wavelength"), fill_value=nan)
@@ -291,23 +273,85 @@ class Converter(WavelengthConverter):
         else:
             var_Cbd = None
 
-        self.apply_cut_size(g, times, [
-            (var_P, data_P),
-            (var_T, data_T),
-            (var_Tu, data_Tu),
-            (var_U, data_U),
-            (var_Uu, data_Uu),
-            (var_Vl, data_Vl),
-            (var_Al, data_Al),
-        ], [
-            (var_Bs, data_Bs),
-            (var_Bbs, data_Bbs),
-            (var_Cs, data_Cs),
-            (var_Cbs, data_Cbs),
-            (var_Cf, data_Cf),
-            (var_Cd, data_Cd),
-            (var_Cbd, data_Cbd),
-        ], extra_sources=[data_system_flags])
+        split_monitor = self.split_monitor
+        if split_monitor is None:
+            split_monitor = self.calculate_split_monitor(data_Vl.time)
+        if not split_monitor:
+            mon_g = g
+            mon_times = times
+        elif data_Vl.time.shape[0] > 0 or data_Al.time.shape[0] > 0 or any([v.time.shape != 0 for v in data_Cs]):
+            mon_g, mon_times = self.data_group([data_Al], name='status', fill_gaps=False)
+        else:
+            mon_g, mon_times = None, None
+            split_monitor = True
+
+        if mon_g is not None:
+            var_Vl = mon_g.createVariable("lamp_voltage", "f8", ("time",), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(mon_g, var_Vl)
+            var_Vl.variable_id = "Vl"
+            var_Vl.coverage_content_type = "physicalMeasurement"
+            var_Vl.cell_methods = "time: mean"
+            var_Vl.long_name = "lamp supply voltage"
+            var_Vl.units = "V"
+            var_Vl.C_format = "%4.1f"
+            self.apply_data(mon_times, var_Vl, data_Vl)
+
+            var_Al = mon_g.createVariable("lamp_current", "f8", ("time",), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(mon_g, var_Al)
+            var_Al.variable_id = "Al"
+            var_Al.coverage_content_type = "physicalMeasurement"
+            var_Al.cell_methods = "time: mean"
+            var_Al.long_name = "lamp current"
+            var_Al.units = "A"
+            var_Al.C_format = "%4.1f"
+            self.apply_data(mon_times, var_Al, data_Al)
+
+            if any([v.time.shape != 0 for v in data_Cf]):
+                var_Cf = mon_g.createVariable("reference_counts", "f8", ("time", "wavelength"), fill_value=nan)
+                netcdf_timeseries.variable_coordinates(mon_g, var_Cf)
+                var_Cf.variable_id = "Cf"
+                var_Cf.coverage_content_type = "physicalMeasurement"
+                var_Cf.cell_methods = "time: mean"
+                var_Cf.long_name = "reference shutter photon count rate"
+                var_Cf.units = "Hz"
+                var_Cf.C_format = "%7.0f"
+                self.apply_wavelength_data(mon_times, var_Cf, data_Cf)
+            else:
+                var_Cf = None
+
+        if not split_monitor:
+            self.apply_cut_size(g, times, [
+                (var_P, data_P),
+                (var_T, data_T),
+                (var_Tu, data_Tu),
+                (var_U, data_U),
+                (var_Uu, data_Uu),
+                (var_Vl, data_Vl),
+                (var_Al, data_Al),
+            ], [
+                (var_Bs, data_Bs),
+                (var_Bbs, data_Bbs),
+                (var_Cs, data_Cs),
+                (var_Cbs, data_Cbs),
+                (var_Cf, data_Cf),
+                (var_Cd, data_Cd),
+                (var_Cbd, data_Cbd),
+            ], extra_sources=[data_system_flags])
+        else:
+            self.apply_cut_size(g, times, [
+                (var_P, data_P),
+                (var_T, data_T),
+                (var_Tu, data_Tu),
+                (var_U, data_U),
+                (var_Uu, data_Uu),
+            ], [
+                (var_Bs, data_Bs),
+                (var_Bbs, data_Bbs),
+                (var_Cs, data_Cs),
+                (var_Cbs, data_Cbs),
+                (var_Cd, data_Cd),
+                (var_Cbd, data_Cbd),
+            ], extra_sources=[data_system_flags])
         selected_idx = 0
         for wlidx in range(len(self.WAVELENGTHS)):
             if data_Bs[wlidx].time.shape[0] > data_Bs[selected_idx].time.shape[0]:

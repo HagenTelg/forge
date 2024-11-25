@@ -35,14 +35,7 @@ class InstrumentTimeConversion:
                 converter = import_module('.', converter).Converter
 
             if tags:
-                class WithTags(converter):
-                    @property
-                    def tags(self) -> typing.Optional[typing.Set[str]]:
-                        result = set(super().tags)
-                        result.update(tags)
-                        return result
-
-                converter = WithTags
+                converter = converter.with_added_tag(*tags)
 
         self.converter: typing.Type[InstrumentConverter] = converter
 

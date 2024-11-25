@@ -1,4 +1,6 @@
 import typing
+from select import select
+
 import numpy as np
 import forge.cpd3.variant as variant
 from netCDF4 import Dataset, Group, Variable, VLType
@@ -38,6 +40,19 @@ class InstrumentConverter(ABC):
                 return super().apply_instrument_info(**kwargs)
         return Result
 
+    @classmethod
+    def with_added_tag(
+            cls,
+            *t: str,
+    ) -> typing.Type['InstrumentConverter']:
+        class Result(cls):
+            @property
+            def tags(self) -> typing.Optional[typing.Set[str]]:
+                result = set(super().tags)
+                result.update(t)
+                return result
+        return Result
+
     @property
     def archive(self) -> str:
         return "raw"
@@ -69,6 +84,28 @@ class InstrumentConverter(ABC):
     @property
     def average_interval(self) -> typing.Optional[float]:
         return 60.0
+
+    def calculate_split_monitor(self, candidate_times: np.ndarray) -> bool:
+        if candidate_times.shape[0] < 2:
+            return False
+        seconds = np.round(candidate_times / (60 * 1000.0)) * 60.0
+        time_difference = seconds[1:] - seconds[:-1]
+        valid = time_difference > 0.0
+        if not np.any(valid):
+            return False
+        time_difference = seconds[1:] - seconds[:-1]
+        valid = time_difference > 0.0
+        if not np.any(valid):
+            return False
+        time_difference = time_difference[valid]
+        time_step_values, time_step_count = np.unique(time_difference, return_counts=True)
+        time_step = float(time_step_values[np.argmax(time_step_count)])
+        data_interval = self.average_interval
+        if not data_interval:
+            return False
+        if time_step <= data_interval * 2:
+            return False
+        return True
 
     def convert_loaded(
             self,
@@ -374,6 +411,8 @@ class InstrumentConverter(ABC):
             variable: str,
             snap_start_times: typing.Union[bool, float] = True,
     ) -> None:
+        if len(group_times.shape) == 0 or group_times.shape[0] == 0:
+            return
         interval = self.average_interval
         if not interval:
             return
@@ -499,6 +538,9 @@ class InstrumentConverter(ABC):
             skip_gaps: typing.Union[bool, float] = True,
             snap_start_times: typing.Union[bool, float] = True,
     ) -> None:
+        if group_times.shape[0] == 0:
+            return
+
         if isinstance(var_times_or_data, InstrumentConverter.Data):
             var_times = var_times_or_data.time
             if var_values is None:
@@ -554,6 +596,9 @@ class InstrumentConverter(ABC):
             var_values: typing.Optional[np.ndarray] = None,
             apply_index: typing.Tuple = (),
     ) -> None:
+        if group_times.shape[0] == 0:
+            return
+
         if isinstance(var_times_or_data, InstrumentConverter.Data):
             var_times = var_times_or_data.time
             if var_values is None:
@@ -573,9 +618,9 @@ class InstrumentConverter(ABC):
             variables: "typing.List[typing.Tuple[typing.Optional, ...]]",
             extra_sources: "typing.List[typing.Union[typing.Tuple[np.ndarray, np.ndarray], InstrumentConverter.Data]]" = None,
     ) -> None:
-        # InstrumentConverter.Data | times, cut_size
-        if len(group_times.shape) == 0:
+        if len(group_times.shape) == 0 or group_times.shape[0] == 0:
             return
+        # InstrumentConverter.Data | times, cut_size
         if extra_sources is None:
             extra_sources = list()
 
@@ -638,6 +683,10 @@ class InstrumentConverter(ABC):
                     flags_map[cpd3_flag.code] = (forge_flag, bit)
                 else:
                     flags_map[cpd3_flag.code] = forge_flag
+            flags_map["ContaminationAutomatic"] = "data_contamination_legacy_automatic"
+            flags_map["ContaminationManual"] = "data_contamination_legacy_manual"
+            flags_map["ContaminationWindRuntime"] = "data_contamination_legacy_wind"
+            flags_map["ContaminationWindPost"] = "data_contamination_legacy_wind"
         bit_to_flag: typing.Dict[int, str] = dict()
         flag_to_bit: typing.Dict[str, int] = dict()
         cpd3_to_bit: typing.Dict[str, int] = dict()
@@ -672,12 +721,19 @@ class InstrumentConverter(ABC):
             flag_to_bit[flag] = bit
             cpd3_to_bit[cpd3_flag] = bit
 
+        # Remove contamination flags when they're not actually used
+        remove_bits = flag_to_bit["data_contamination_legacy_automatic"] | \
+                      flag_to_bit["data_contamination_legacy_wind"] | \
+                      flag_to_bit["data_contamination_legacy_manual"]
         def convert(val: typing.Any) -> int:
+            nonlocal remove_bits
             if not isinstance(val, set):
                 return 0
             bits = 0
             for flag in val:
-                bits |= cpd3_to_bit.get(flag, 0)
+                add_bit = cpd3_to_bit.get(flag, 0)
+                bits |= add_bit
+                remove_bits &= ~add_bit
             return bits
 
         flags_data = self.load_variable(variable or f"F1?_{self.instrument_id}", convert=convert, dtype=np.uint64)
@@ -686,8 +742,14 @@ class InstrumentConverter(ABC):
         variable_coordinates(g, system_flags)
         system_flags.coverage_content_type = "physicalMeasurement"
         system_flags.variable_id = "F1"
+        if flags_data.time.shape[0] == 0:
+            system_flags[:] = 0
+        else:
+            self.apply_data(group_times, system_flags, flags_data, skip_gaps=False)
+        for check_bit in list(bit_to_flag.keys()):
+            if (remove_bits & check_bit) != 0:
+                del bit_to_flag[check_bit]
         variable_flags(system_flags, bit_to_flag)
-        self.apply_data(group_times, system_flags, flags_data, skip_gaps=False)
 
         return flags_data, flag_to_bit
 

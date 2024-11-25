@@ -24,6 +24,10 @@ class Converter(InstrumentConverter):
     def average_interval(self) -> typing.Optional[float]:
         return self._average_interval
 
+    @property
+    def split_monitor(self) -> typing.Optional[bool]:
+        return None
+
     def run(self) -> bool:
         data_N = self.load_variable(f"N_{self.instrument_id}")
         if data_N.time.shape[0] == 0:
@@ -57,144 +61,162 @@ class Converter(InstrumentConverter):
         var_N.cell_methods = "time: mean"
         self.apply_data(times, var_N, data_N)
 
-        var_Qu = g.createVariable("inlet_flow", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_flow(var_Qu)
-        netcdf_timeseries.variable_coordinates(g, var_Qu)
-        var_Qu.variable_id = "Qu"
-        var_Qu.coverage_content_type = "physicalMeasurement"
-        var_Qu.cell_methods = "time: mean"
-        var_Qu.C_format = "%5.3f"
-        var_Qu.long_name = "inlet flow rate"
-        self.apply_data(times, var_Qu, data_Qu)
+        split_monitor = self.split_monitor
+        if split_monitor is None:
+            split_monitor = self.calculate_split_monitor(data_T1.time)
+        if not split_monitor:
+            mon_g = g
+            mon_times = times
+        elif data_T1.time.shape[0] > 0:
+            mon_g, mon_times = self.data_group([data_T1], name='status', fill_gaps=False)
+        else:
+            mon_g, mon_times = None, None
+            split_monitor = True
 
-        var_P1 = g.createVariable("pressure", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_air_pressure(var_P1)
-        netcdf_timeseries.variable_coordinates(g, var_P1)
-        var_P1.variable_id = "P1"
-        var_P1.coverage_content_type = "physicalMeasurement"
-        var_P1.cell_methods = "time: mean"
-        var_P1.long_name = "absolute pressure at instrument inlet"
-        self.apply_data(times, var_P1, data_P1)
+        if mon_g is not None:
+            var_Qu = mon_g.createVariable("inlet_flow", "f8", ("time",), fill_value=nan)
+            netcdf_var.variable_flow(var_Qu)
+            netcdf_timeseries.variable_coordinates(mon_g, var_Qu)
+            var_Qu.variable_id = "Qu"
+            var_Qu.coverage_content_type = "physicalMeasurement"
+            var_Qu.cell_methods = "time: mean"
+            var_Qu.C_format = "%5.3f"
+            var_Qu.long_name = "inlet flow rate"
+            self.apply_data(mon_times, var_Qu, data_Qu)
 
-        var_P2 = g.createVariable("vacuum_pressure", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_pressure(var_P2)
-        netcdf_timeseries.variable_coordinates(g, var_P2)
-        var_P2.variable_id = "P2"
-        var_P2.coverage_content_type = "physicalMeasurement"
-        var_P2.cell_methods = "time: mean"
-        var_P2.long_name = "vacuum pressure at instrument outlet"
-        self.apply_data(times, var_P2, data_P2)
+            var_P1 = mon_g.createVariable("pressure", "f8", ("time",), fill_value=nan)
+            netcdf_var.variable_air_pressure(var_P1)
+            netcdf_timeseries.variable_coordinates(mon_g, var_P1)
+            var_P1.variable_id = "P1"
+            var_P1.coverage_content_type = "physicalMeasurement"
+            var_P1.cell_methods = "time: mean"
+            var_P1.long_name = "absolute pressure at instrument inlet"
+            self.apply_data(mon_times, var_P1, data_P1)
 
-        var_Tu = g.createVariable("inlet_temperature", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_air_temperature(var_Tu)
-        netcdf_timeseries.variable_coordinates(g, var_Tu)
-        var_Tu.variable_id = "Tu"
-        var_Tu.coverage_content_type = "physicalMeasurement"
-        var_Tu.cell_methods = "time: mean"
-        var_Tu.long_name = "air temperature at the instrument inlet"
-        self.apply_data(times, var_Tu, data_Tu)
+            var_P2 = mon_g.createVariable("vacuum_pressure", "f8", ("time",), fill_value=nan)
+            netcdf_var.variable_pressure(var_P2)
+            netcdf_timeseries.variable_coordinates(mon_g, var_P2)
+            var_P2.variable_id = "P2"
+            var_P2.coverage_content_type = "physicalMeasurement"
+            var_P2.cell_methods = "time: mean"
+            var_P2.long_name = "vacuum pressure at instrument outlet"
+            self.apply_data(mon_times, var_P2, data_P2)
 
-        var_T1 = g.createVariable("saturator_temperature", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_temperature(var_T1)
-        netcdf_timeseries.variable_coordinates(g, var_T1)
-        var_T1.variable_id = "T1"
-        var_T1.coverage_content_type = "physicalMeasurement"
-        var_T1.cell_methods = "time: mean"
-        var_T1.long_name = "saturator temperature"
-        self.apply_data(times, var_T1, data_T1)
+            var_Tu = mon_g.createVariable("inlet_temperature", "f8", ("time",), fill_value=nan)
+            netcdf_var.variable_air_temperature(var_Tu)
+            netcdf_timeseries.variable_coordinates(mon_g, var_Tu)
+            var_Tu.variable_id = "Tu"
+            var_Tu.coverage_content_type = "physicalMeasurement"
+            var_Tu.cell_methods = "time: mean"
+            var_Tu.long_name = "air temperature at the instrument inlet"
+            self.apply_data(mon_times, var_Tu, data_Tu)
 
-        var_T2 = g.createVariable("growth_tube_temperature", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_temperature(var_T2)
-        netcdf_timeseries.variable_coordinates(g, var_T2)
-        var_T2.variable_id = "T2"
-        var_T2.coverage_content_type = "physicalMeasurement"
-        var_T2.cell_methods = "time: mean"
-        var_T2.long_name = "growth tube temperature"
-        self.apply_data(times, var_T2, data_T2)
+            var_T1 = mon_g.createVariable("saturator_temperature", "f8", ("time",), fill_value=nan)
+            netcdf_var.variable_temperature(var_T1)
+            netcdf_timeseries.variable_coordinates(mon_g, var_T1)
+            var_T1.variable_id = "T1"
+            var_T1.coverage_content_type = "physicalMeasurement"
+            var_T1.cell_methods = "time: mean"
+            var_T1.long_name = "saturator temperature"
+            self.apply_data(mon_times, var_T1, data_T1)
 
-        var_T3 = g.createVariable("optics_temperature", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_temperature(var_T3)
-        netcdf_timeseries.variable_coordinates(g, var_T3)
-        var_T3.variable_id = "T3"
-        var_T3.coverage_content_type = "physicalMeasurement"
-        var_T3.cell_methods = "time: mean"
-        var_T3.long_name = "optics block temperature"
-        self.apply_data(times, var_T3, data_T3)
+            var_T2 = mon_g.createVariable("growth_tube_temperature", "f8", ("time",), fill_value=nan)
+            netcdf_var.variable_temperature(var_T2)
+            netcdf_timeseries.variable_coordinates(mon_g, var_T2)
+            var_T2.variable_id = "T2"
+            var_T2.coverage_content_type = "physicalMeasurement"
+            var_T2.cell_methods = "time: mean"
+            var_T2.long_name = "growth tube temperature"
+            self.apply_data(mon_times, var_T2, data_T2)
 
-        var_T4 = g.createVariable("water_seperator_temperature", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_temperature(var_T4)
-        netcdf_timeseries.variable_coordinates(g, var_T4)
-        var_T4.variable_id = "T4"
-        var_T4.coverage_content_type = "physicalMeasurement"
-        var_T4.cell_methods = "time: mean"
-        var_T4.long_name = "water separator temperature"
-        self.apply_data(times, var_T4, data_T4)
+            var_T3 = mon_g.createVariable("optics_temperature", "f8", ("time",), fill_value=nan)
+            netcdf_var.variable_temperature(var_T3)
+            netcdf_timeseries.variable_coordinates(mon_g, var_T3)
+            var_T3.variable_id = "T3"
+            var_T3.coverage_content_type = "physicalMeasurement"
+            var_T3.cell_methods = "time: mean"
+            var_T3.long_name = "optics block temperature"
+            self.apply_data(mon_times, var_T3, data_T3)
 
-        var_T5 = g.createVariable("cabinet_temperature", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_temperature(var_T5)
-        netcdf_timeseries.variable_coordinates(g, var_T5)
-        var_T5.variable_id = "T5"
-        var_T5.coverage_content_type = "physicalMeasurement"
-        var_T5.cell_methods = "time: mean"
-        var_T5.long_name = "temperature inside the cabinet"
-        self.apply_data(times, var_T5, data_T5)
+            var_T4 = mon_g.createVariable("water_seperator_temperature", "f8", ("time",), fill_value=nan)
+            netcdf_var.variable_temperature(var_T4)
+            netcdf_timeseries.variable_coordinates(mon_g, var_T4)
+            var_T4.variable_id = "T4"
+            var_T4.coverage_content_type = "physicalMeasurement"
+            var_T4.cell_methods = "time: mean"
+            var_T4.long_name = "water separator temperature"
+            self.apply_data(mon_times, var_T4, data_T4)
 
-        var_A = g.createVariable("laser_current", "f8", ("time",), fill_value=nan)
-        netcdf_timeseries.variable_coordinates(g, var_A)
-        var_A.variable_id = "A"
-        var_A.coverage_content_type = "physicalMeasurement"
-        var_A.cell_methods = "time: mean"
-        var_A.long_name = "laser current"
-        var_A.units = "mA"
-        var_A.C_format = "%3.0f"
-        self.apply_data(times, var_A, data_A)
+            var_T5 = mon_g.createVariable("cabinet_temperature", "f8", ("time",), fill_value=nan)
+            netcdf_var.variable_temperature(var_T5)
+            netcdf_timeseries.variable_coordinates(mon_g, var_T5)
+            var_T5.variable_id = "T5"
+            var_T5.coverage_content_type = "physicalMeasurement"
+            var_T5.cell_methods = "time: mean"
+            var_T5.long_name = "temperature inside the cabinet"
+            self.apply_data(mon_times, var_T5, data_T5)
 
-        var_PCT = g.createVariable("nozzle_pressure_drop", "f8", ("time",), fill_value=nan)
-        netcdf_timeseries.variable_coordinates(g, var_PCT)
-        var_PCT.variable_id = "PCT"
-        var_PCT.coverage_content_type = "physicalMeasurement"
-        var_PCT.cell_methods = "time: mean"
-        var_PCT.long_name = "normalized pressure drop across the nozzle"
-        var_PCT.units = "%"
-        var_PCT.C_format = "%3.0f"
-        self.apply_data(times, var_PCT, data_PCT)
+            var_A = mon_g.createVariable("laser_current", "f8", ("time",), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(mon_g, var_A)
+            var_A.variable_id = "A"
+            var_A.coverage_content_type = "physicalMeasurement"
+            var_A.cell_methods = "time: mean"
+            var_A.long_name = "laser current"
+            var_A.units = "mA"
+            var_A.C_format = "%3.0f"
+            self.apply_data(mon_times, var_A, data_A)
 
-        var_V1 = g.createVariable("photodetector_voltage", "f8", ("time",), fill_value=nan)
-        netcdf_timeseries.variable_coordinates(g, var_V1)
-        var_V1.variable_id = "V1"
-        var_V1.coverage_content_type = "physicalMeasurement"
-        var_V1.cell_methods = "time: mean"
-        var_V1.long_name = "average photodetector voltage"
-        var_V1.units = "mV"
-        var_V1.C_format = "%3.0f"
-        self.apply_data(times, var_V1, data_V1)
+            var_PCT = mon_g.createVariable("nozzle_pressure_drop", "f8", ("time",), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(mon_g, var_PCT)
+            var_PCT.variable_id = "PCT"
+            var_PCT.coverage_content_type = "physicalMeasurement"
+            var_PCT.cell_methods = "time: mean"
+            var_PCT.long_name = "normalized pressure drop across the nozzle"
+            var_PCT.units = "%"
+            var_PCT.C_format = "%3.0f"
+            self.apply_data(mon_times, var_PCT, data_PCT)
 
-        var_V2 = g.createVariable("pulse_height", "f8", ("time",), fill_value=nan)
-        netcdf_timeseries.variable_coordinates(g, var_V2)
-        var_V2.variable_id = "V2"
-        var_V2.coverage_content_type = "physicalMeasurement"
-        var_V2.cell_methods = "time: mean"
-        var_V2.long_name = "average pulse height"
-        var_V2.units = "mV"
-        var_V2.C_format = "%3.0f"
-        self.apply_data(times, var_V2, data_V2)
+            var_V1 = mon_g.createVariable("photodetector_voltage", "f8", ("time",), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(mon_g, var_V1)
+            var_V1.variable_id = "V1"
+            var_V1.coverage_content_type = "physicalMeasurement"
+            var_V1.cell_methods = "time: mean"
+            var_V1.long_name = "average photodetector voltage"
+            var_V1.units = "mV"
+            var_V1.C_format = "%3.0f"
+            self.apply_data(mon_times, var_V1, data_V1)
 
-        self.apply_cut_size(g, times, [
-            (var_N, data_N),
-            (var_Qu, data_Qu),
-            (var_P1, data_P1),
-            (var_P2, data_P2),
-            (var_Tu, data_Tu),
-            (var_T1, data_T1),
-            (var_T2, data_T2),
-            (var_T3, data_T3),
-            (var_T4, data_T4),
-            (var_T5, data_T5),
-            (var_A, data_A),
-            (var_PCT, data_PCT),
-            (var_V1, data_V1),
-            (var_V2, data_V2),
-        ])
+            var_V2 = mon_g.createVariable("pulse_height", "f8", ("time",), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(mon_g, var_V2)
+            var_V2.variable_id = "V2"
+            var_V2.coverage_content_type = "physicalMeasurement"
+            var_V2.cell_methods = "time: mean"
+            var_V2.long_name = "average pulse height"
+            var_V2.units = "mV"
+            var_V2.C_format = "%3.0f"
+            self.apply_data(mon_times, var_V2, data_V2)
+
+        if not split_monitor:
+            self.apply_cut_size(g, times, [
+                (var_N, data_N),
+                (var_Qu, data_Qu),
+                (var_P1, data_P1),
+                (var_P2, data_P2),
+                (var_Tu, data_Tu),
+                (var_T1, data_T1),
+                (var_T2, data_T2),
+                (var_T3, data_T3),
+                (var_T4, data_T4),
+                (var_T5, data_T5),
+                (var_A, data_A),
+                (var_PCT, data_PCT),
+                (var_V1, data_V1),
+                (var_V2, data_V2),
+            ])
+        else:
+            self.apply_cut_size(g, times, [
+                (var_N, data_N),
+            ])
         self.apply_coverage(g, times, f"N_{self.instrument_id}")
 
         self.apply_instrument_metadata(f"N_{self.instrument_id}", manufacturer="TSI", model="3783")

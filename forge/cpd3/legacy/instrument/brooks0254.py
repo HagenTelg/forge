@@ -53,7 +53,7 @@ class Converter(InstrumentConverter):
                 continue
             loaded_data[cpd3_name] = data
 
-        all_data = list(loaded_data.values()) + (group_vars or [])
+        all_data = list(loaded_data.values()) + ([v for v in group_vars if v.time.shape[0] != 0] if group_vars else [])
         if not all_data:
             return None
 
@@ -132,7 +132,7 @@ class Converter(InstrumentConverter):
         var_raw_inputs = g.createVariable("process_value", "f8", ("time", "controller_value"), fill_value=nan)
         netcdf_timeseries.variable_coordinates(g, var_raw_inputs)
         var_raw_inputs.variable_id = "ZINPUTS"
-        var_raw_inputs.coverage_content_Vype = "physicalMeasurement"
+        var_raw_inputs.coverage_content_type = "physicalMeasurement"
         var_raw_inputs.long_name = "raw process values"
         var_raw_inputs.C_format = "%5.3f"
         self.apply_data(times, var_raw_inputs, data_raw_inputs)

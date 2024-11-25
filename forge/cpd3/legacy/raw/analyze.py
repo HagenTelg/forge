@@ -48,6 +48,7 @@ class Instrument:
         self.end: float = nan
         self.source = self.Identifier()
         self.variables: typing.Set[str] = set()
+        self.has_cut_split: bool = False
 
         self._last_identifier: typing.Dict[str, typing.Any] = dict()
 
@@ -64,6 +65,8 @@ class Instrument:
                 if not root:
                     return None
             return root
+
+        cut_flavors = frozenset({"pm1", "pm10", "pm25"})
 
         def scan_chunks():
             next_start = start
@@ -153,6 +156,7 @@ class Instrument:
                 if source_identifier:
                     instrument_data.source = source_identifier
                 instrument_data.variables.add(identity.variable)
+                instrument_data.has_cut_split = instrument_data.has_cut_split or bool(identity.flavors & cut_flavors)
                 instrument_data._last_identifier = identifier
 
         return result

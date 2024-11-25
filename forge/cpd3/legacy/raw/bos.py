@@ -93,7 +93,7 @@ class DMPS(BaseSizeDistribution):
         if data_V.time.shape[0] > 0:
             var_V = g.createVariable("dma_voltage", "f8", ("time", "diameter"), fill_value=nan)
             var_V.variable_id = "V"
-            var_V.coverage_content_Vype = "physicalMeasurement"
+            var_V.coverage_content_type = "physicalMeasurement"
             var_V.cell_methods = "time: mean"
             var_V.long_name = "DMA voltage"
             var_V.units = "V"

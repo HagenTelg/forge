@@ -256,16 +256,12 @@ class FileData(SelectedData):
     def times(self) -> np.ndarray:
         if self._times is None:
             def find_time_variable():
-                g = self.root.groups.get("data")
-                if g is not None:
-                    v = g.variables.get("time")
-                    if v is not None:
-                        return v[:]
-                g = self.root.groups.get("upstream")
-                if g is not None:
-                    v = g.variables.get("time")
-                    if v is not None:
-                        return v[:]
+                for check_group in ("data", "upstream", "status"):
+                    g = self.root.groups.get(check_group)
+                    if g is not None:
+                        v = g.variables.get("time")
+                        if v is not None:
+                            return v[:]
                 return None
 
             raw = find_time_variable()

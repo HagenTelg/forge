@@ -24,6 +24,10 @@ class Converter(InstrumentConverter):
     def average_interval(self) -> typing.Optional[float]:
         return self._average_interval
 
+    @property
+    def split_monitor(self) -> typing.Optional[bool]:
+        return None
+
     def run(self) -> bool:
         data_N = self.load_variable(f"N_{self.instrument_id}")
         if data_N.time.shape[0] == 0:
@@ -82,17 +86,8 @@ class Converter(InstrumentConverter):
         netcdf_var.variable_size_distribution_dN(var_Nb)
         netcdf_timeseries.variable_coordinates(g, var_Nb)
         var_Nb.variable_id = "Nb"
-        var_Nb.coverage_content_Vype = "physicalMeasurement"
+        var_Nb.coverage_content_type = "physicalMeasurement"
         self.apply_data(times, var_Nb, data_Nb)
-
-        var_Q = g.createVariable("sample_flow", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_sample_flow(var_Q)
-        netcdf_timeseries.variable_coordinates(g, var_Q)
-        var_Q.variable_id = "Q"
-        var_Q.coverage_content_type = "physicalMeasurement"
-        var_Q.cell_methods = "time: mean"
-        var_Q.C_format = "%6.3f"
-        self.apply_data(times, var_Q, data_Q)
 
         if data_X:
             mass_diameters = sorted(data_X.keys())
@@ -117,6 +112,28 @@ class Converter(InstrumentConverter):
                 self.apply_data(times, var_X, data.time, data.value, (idx,))
 
         self.apply_coverage(g, times, f"N_{self.instrument_id}")
+
+        split_monitor = self.split_monitor
+        if split_monitor is None:
+            split_monitor = self.calculate_split_monitor(data_Q.time)
+        if not split_monitor:
+            mon_g = g
+            mon_times = times
+        elif data_Q.time.shape[0] > 0:
+            mon_g, mon_times = self.data_group([data_Q], name='status', fill_gaps=False)
+        else:
+            mon_g, mon_times = None, None
+            split_monitor = True
+
+        if mon_g is not None:
+            var_Q = mon_g.createVariable("sample_flow", "f8", ("time",), fill_value=nan)
+            netcdf_var.variable_sample_flow(var_Q)
+            netcdf_timeseries.variable_coordinates(mon_g, var_Q)
+            var_Q.variable_id = "Q"
+            var_Q.coverage_content_type = "physicalMeasurement"
+            var_Q.cell_methods = "time: mean"
+            var_Q.C_format = "%6.3f"
+            self.apply_data(mon_times, var_Q, data_Q)
 
         self.apply_instrument_metadata(f"N_{self.instrument_id}", manufacturer="Grimm", generic_model="1.10x")
 

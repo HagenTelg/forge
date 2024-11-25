@@ -58,7 +58,7 @@ class Converter(InstrumentConverter):
             netcdf_var.variable_size_distribution_dN(var_Nb)
             netcdf_timeseries.variable_coordinates(g, var_Nb)
             var_Nb.variable_id = "Nb"
-            var_Nb.coverage_content_Vype = "physicalMeasurement"
+            var_Nb.coverage_content_type = "physicalMeasurement"
             n_add = n_diameters - data_Nb.value.shape[1]
             if n_add > 0:
                 value_Nb = np.pad(data_Nb.value, ((0, 0), (0, n_add)), mode='constant', constant_values=nan)
@@ -71,7 +71,7 @@ class Converter(InstrumentConverter):
             netcdf_var.variable_size_distribution_dNdlogDp(var_Nn)
             netcdf_timeseries.variable_coordinates(g, var_Nn)
             var_Nn.variable_id = "Nn"
-            var_Nn.coverage_content_Vype = "physicalMeasurement"
+            var_Nn.coverage_content_type = "physicalMeasurement"
             n_add = n_diameters - data_Nn.value.shape[1]
             if n_add > 0:
                 value_Nn = np.pad(data_Nn.value, ((0, 0), (0, n_add)), mode='constant', constant_values=nan)

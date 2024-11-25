@@ -10,8 +10,8 @@ from forge.data.structure.stp import standard_temperature, standard_pressure
 class Converter(WavelengthConverter):
     WAVELENGTHS = [
         (467.0, "B"),
-        (528.0, "G"),
-        (652.0, "R"),
+        (530.0, "G"),
+        (660.0, "R"),
     ]
 
     def __init__(self, *args, **kwargs):
@@ -21,11 +21,11 @@ class Converter(WavelengthConverter):
 
     @property
     def tags(self) -> typing.Optional[typing.Set[str]]:
-        return {"aerosol", "absorption", "clap"}
+        return {"aerosol", "absorption", "psap3w"}
 
     @property
     def instrument_type(self) -> typing.Optional[str]:
-        return "clap"
+        return "psap3w"
 
     @property
     def average_interval(self) -> typing.Optional[float]:
@@ -51,12 +51,8 @@ class Converter(WavelengthConverter):
         data_Ip = self.load_wavelength_variable("Ip")
         data_If = self.load_wavelength_variable("If")
         data_Q = self.load_variable(f"Q_{self.instrument_id}")
-        data_T1 = self.load_variable(f"T1_{self.instrument_id}")
-        data_T2 = self.load_variable(f"T2_{self.instrument_id}")
-        data_Ld = self.load_variable(f"Ld_{self.instrument_id}")
 
         data_Ff = self.load_state(f"Ff_{self.instrument_id}", dtype=np.uint64)
-        data_Fn = self.load_state(f"Fn_{self.instrument_id}", dtype=np.uint64)
         spot = self.load_state(f"ZSPOT_{self.instrument_id}", dtype=dict)
 
         system_flags_time = self.load_variable(f"F1?_{self.instrument_id}", convert=bool, dtype=np.bool_).time
@@ -90,7 +86,7 @@ class Converter(WavelengthConverter):
         if mon_g is not None:
             var_Ir = mon_g.createVariable("transmittance", "f8", ("time", "wavelength"), fill_value=nan)
             netcdf_var.variable_transmittance(var_Ir)
-            netcdf_timeseries.variable_coordinates(mon_g, var_Ir)
+            netcdf_timeseries.variable_coordinates(g, var_Ir)
             var_Ir.variable_id = "Ir"
             var_Ir.coverage_content_type = "physicalMeasurement"
             var_Ir.cell_methods = "time: last"
@@ -101,13 +97,13 @@ class Converter(WavelengthConverter):
         if split_monitor is None:
             split_monitor = self.split_monitor
         if split_monitor is None:
-            split_monitor = self.calculate_split_monitor(data_T1.time)
+            split_monitor = self.calculate_split_monitor(data_Q.time)
         if mon_g is None:
             if not split_monitor:
                 mon_g = g
                 mon_times = times
-            elif data_T1.time.shape[0] > 0:
-                mon_g, mon_times = self.data_group([data_T1], name='status', fill_gaps=False)
+            elif data_Q.time.shape[0] > 0:
+                mon_g, mon_times = self.data_group([data_Q], name='status', fill_gaps=False)
             else:
                 mon_g, mon_times = None, None
                 split_monitor = True
@@ -164,32 +160,6 @@ class Converter(WavelengthConverter):
                 if comment:
                     var_Q.comment = "\n".join(comment)
 
-            var_T1 = mon_g.createVariable("sample_temperature", "f8", ("time",), fill_value=nan)
-            netcdf_var.variable_air_temperature(var_T1)
-            netcdf_timeseries.variable_coordinates(mon_g, var_T1)
-            var_T1.variable_id = "T1"
-            var_T1.coverage_content_T1ype = "physicalMeasurement"
-            var_T1.cell_methods = "time: mean"
-            self.apply_data(mon_times, var_T1, data_T1)
-
-            var_T2 = mon_g.createVariable("case_temperature", "f8", ("time",), fill_value=nan)
-            netcdf_var.variable_temperature(var_T2)
-            netcdf_timeseries.variable_coordinates(mon_g, var_T2)
-            var_T2.variable_id = "T2"
-            var_T2.coverage_content_type = "physicalMeasurement"
-            var_T2.cell_methods = "time: mean"
-            var_T2.long_name = "case temperature"
-            self.apply_data(mon_times, var_T2, data_T2)
-
-        var_Ld = g.createVariable("path_length_change", "f8", ("time",), fill_value=nan)
-        netcdf_timeseries.variable_coordinates(g, var_Ld)
-        var_Ld.variable_id = "Ld"
-        var_Ld.coverage_content_type = "physicalMeasurement"
-        var_Ld.cell_methods = "time: sum"
-        var_Ld.long_name = "change in path sample path length (flow/area)"
-        var_Ld.units = "m"
-        var_Ld.C_format = "%7.4f"
-        var_Ld.ancillary_variables = "standard_temperature standard_pressure"
         data_L_start = self.Data(*self.convert_loaded(read_archive([Selection(
             start=self.file_start,
             end=self.file_end,
@@ -200,18 +170,28 @@ class Converter(WavelengthConverter):
             include_default_station=False,
             lacks_flavors=["cover", "stats", "end"],
         )]), is_state=False, dtype=np.float64, return_cut_size=True))
-        data_L_end = self.Data(*self.convert_loaded(read_archive([Selection(
-            start=self.file_start,
-            end=self.file_end,
-            stations=[self.station],
-            archives=[self.archive],
-            variables=[f"L_{self.instrument_id}"],
-            include_meta_archive=False,
-            include_default_station=False,
-            has_flavors=["end"],
-            lacks_flavors=["cover", "stats"],
-        )]), is_state=False, dtype=np.float64))
         if data_L_start.time.shape[0] > 0:
+            data_L_end = self.Data(*self.convert_loaded(read_archive([Selection(
+                start=self.file_start,
+                end=self.file_end,
+                stations=[self.station],
+                archives=[self.archive],
+                variables=[f"L_{self.instrument_id}"],
+                include_meta_archive=False,
+                include_default_station=False,
+                has_flavors=["end"],
+                lacks_flavors=["cover", "stats"],
+            )]), is_state=False, dtype=np.float64))
+
+            var_Ld = g.createVariable("path_length_change", "f8", ("time",), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(g, var_Ld)
+            var_Ld.variable_id = "Ld"
+            var_Ld.coverage_content_type = "physicalMeasurement"
+            var_Ld.cell_methods = "time: sum"
+            var_Ld.long_name = "change in path sample path length (flow/area)"
+            var_Ld.units = "m"
+            var_Ld.C_format = "%7.4f"
+            var_Ld.ancillary_variables = "standard_temperature standard_pressure"
             calc_Ld = np.full(data_L_start.time.shape, nan, dtype=np.float64)
             if data_L_end.time.shape[0] > 0:
                 out_begin = np.searchsorted(data_L_start.time, data_L_end.time[0], side="left")
@@ -229,15 +209,13 @@ class Converter(WavelengthConverter):
                 calc_Ld[calc_dest] = diff_Ld[calc_dest]
 
             self.apply_data(times, var_Ld, data_L_start.time, calc_Ld)
-        self.apply_data(times, var_Ld, data_Ld)
+        else:
+            var_Ld = None
 
         self.apply_cut_size(g, times, [
-            (var_Ld, data_Ld),
-            (None, data_L_start),
+            (var_Ld, data_L_start),
         ] + ([
             (var_Q, data_Q),
-            (var_T1, data_T1),
-            (var_T2, data_T2),
         ] if not split_monitor else []), [
             (var_Ba, data_Ba),
         ] + ([
@@ -252,7 +230,7 @@ class Converter(WavelengthConverter):
                 selected_idx = wlidx
         self.apply_coverage(g, times,f"Ba{self.WAVELENGTHS[selected_idx][1]}_{self.instrument_id}")
 
-        g, times = self.state_group([data_Ff, data_Fn, spot])
+        g, times = self.state_group([data_Ff])
 
         var_Ff = g.createVariable("filter_id", "u8", ("time",), fill_value=False)
         netcdf_timeseries.variable_coordinates(g, var_Ff)
@@ -261,14 +239,6 @@ class Converter(WavelengthConverter):
         var_Ff.cell_methods = "time: point"
         var_Ff.long_name = "filter identifier"
         self.apply_state(times, var_Ff, data_Ff)
-
-        var_Fn = g.createVariable("spot_number", "u8", ("time",), fill_value=False)
-        netcdf_timeseries.variable_coordinates(g, var_Fn)
-        var_Fn.variable_id = "Fn"
-        var_Fn.coverage_content_type = "auxiliaryInformation"
-        var_Fn.cell_methods = "time: point"
-        var_Fn.long_name = "active spot number"
-        self.apply_state(times, var_Fn, data_Fn)
 
         var_In = g.createVariable("spot_normalization", "f8", ("time", "wavelength"), fill_value=nan)
         netcdf_timeseries.variable_coordinates(g, var_In)
@@ -293,6 +263,6 @@ class Converter(WavelengthConverter):
 
         self.apply_instrument_metadata(
             [f"Ba{code}_{self.instrument_id}" for _, code in self.WAVELENGTHS],
-            manufacturer="GML", model="CLAP"
+            manufacturer="Radiance Research", model="PSAP-3W"
         )
         return True

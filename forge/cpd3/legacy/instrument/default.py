@@ -5,6 +5,29 @@ if typing.TYPE_CHECKING:
     from ..raw.analyze import Instrument as RawInstrument
 
 
+def _default_variable_definitions(source: "RawInstrument") -> typing.Tuple[typing.Dict[str, typing.Dict[str, str]], typing.Dict[str, typing.Dict[str, str]]]:
+    cut_split: typing.Dict[str, typing.Dict[str, str]] = dict()
+    unsplit: typing.Dict[str, typing.Dict[str, str]] = dict()
+
+    for variable_id in source.variables:
+        if '_' not in variable_id:
+            continue
+        if not source.has_cut_split:
+            unsplit[variable_id] = {}
+            continue
+
+        prefix, suffix = variable_id.split('_', 1)
+        if len(suffix) != 3:
+            unsplit[variable_id] = {}
+            continue
+        if suffix[1] == "1" and not suffix[0].isdigit() and suffix[2].isdigit():
+            cut_split[variable_id] = {}
+        else:
+            unsplit[variable_id] = {}
+
+    return cut_split, unsplit
+
+
 def convert_raw(source: "RawInstrument", station: str, instrument_id: str,
                 file_start: float, file_end: float, root: Dataset) -> bool:
     if source.source.cpd3_component == "acquire_2b_ozone205" or source.source.forge_instrument == "tech2b205":
@@ -106,4 +129,22 @@ def convert_raw(source: "RawInstrument", station: str, instrument_id: str,
     if source.source.forge_instrument == "tsi375xcpc":
         from .tsi375xcpc import Converter
         return Converter(station, instrument_id, file_start, file_end, root).run()
+    if source.source.cpd3_component == "acquire_rr_psap1w":
+        from .psap1w import Converter
+        return Converter(station, instrument_id, file_start, file_end, root).run()
+    if source.source.cpd3_component == "acquire_rr_psap3w":
+        from .psap3w import Converter
+        return Converter(station, instrument_id, file_start, file_end, root).run()
+    if source.source.cpd3_component == "acquire_azonix_umac1050" or source.source.forge_instrument == "azonixumac1050":
+        from .azonixumac1050 import Converter
+        cut_split, unsplit = _default_variable_definitions(source)
+        return Converter(station, instrument_id, file_start, file_end, root).with_variables(cut_split, unsplit).run()
+    if source.source.cpd3_component == "acquire_love_pid" or source.source.forge_instrument == "lovepid":
+        from .azonixumac1050 import Converter
+        cut_split, unsplit = _default_variable_definitions(source)
+        return Converter(station, instrument_id, file_start, file_end, root).with_variables(cut_split, unsplit).run()
+    if source.source.cpd3_component == "acquire_campbell_cr1000gmd" or source.source.forge_instrument == "campbellcr1000gmd":
+        from .azonixumac1050 import Converter
+        cut_split, unsplit = _default_variable_definitions(source)
+        return Converter(station, instrument_id, file_start, file_end, root).with_variables(cut_split, unsplit).run()
     return False
