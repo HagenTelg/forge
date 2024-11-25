@@ -1,0 +1,162 @@
+<div class="display-container collapsable collapsed{% if writable %} menu{% endif %}">
+    <div class="header communication-state warning-state format-source" instrument="Ecotech Aurora"></div>
+
+    {% include 'acquisition/display/header_buttons.html' %}
+
+    {% if writable %}
+    <div class="menu communication-state hide-false">
+        <button class="menu mdi mdi-menu" title="Instrument actions"></button>
+        <ul class="menu menu-below">
+            <li><button class="simple-command" command="reboot"
+                        title="Reboot the instrument (communications will e interrupted).">Reboot Instrument</button></li>
+        </ul>
+    </div>
+    {% endif %}
+
+    {% include 'acquisition/display/nocommunication_content.html' %}
+
+    <nav class="content display-tabs communication-state hide-false">
+        <ul>
+            <li><button display="#{{uid}} .tab-scattering">Scattering</button></li>
+            <li><button display="#{{uid}} .tab-counts">Counts</button></li>
+        </ul>
+    </nav>
+
+    <table class="content display-data column-split communication-state hide-false tab-scattering">
+        <thead>
+            <tr>
+                <th></th>
+                <th class="blue">B (450 nm)</th>
+                <th class="green">G (525 nm)</th>
+                <th class="red">R (635 nm)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>σ<sub>sp</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BsB" decimals="2"></td>
+                <td class="green value-formatted" field="BsG" decimals="2"></td>
+                <td class="red value-formatted" field="BsR" decimals="2"></td>
+            </tr>
+            <tr>
+                <td>σ<sub>bsp</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BbsB" decimals="2"></td>
+                <td class="green value-formatted" field="BbsG" decimals="2"></td>
+                <td class="red value-formatted" field="BbsR" decimals="2"></td>
+            </tr>
+
+            <tr>
+                <td>σ<sub>sp wall</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BswB" decimals="2"></td>
+                <td class="green value-formatted" field="BswG" decimals="2"></td>
+                <td class="red value-formatted" field="BswR" decimals="2"></td>
+            </tr>
+            <tr>
+                <td>σ<sub>bsp wall</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BbswB" decimals="2"></td>
+                <td class="green value-formatted" field="BbswG" decimals="2"></td>
+                <td class="red value-formatted" field="BbswR" decimals="2"></td>
+            </tr>
+
+            <tr>
+                <td>σ<sub>sp wall shift</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BswdB" decimals="2"></td>
+                <td class="green value-formatted" field="BswdG" decimals="2"></td>
+                <td class="red value-formatted" field="BswdR" decimals="2"></td>
+            </tr>
+            <tr>
+                <td>σ<sub>bsp wall shift</sub> (Mm⁻¹)</td>
+                <td class="blue value-formatted" field="BbswdB" decimals="2"></td>
+                <td class="green value-formatted" field="BbswdG" decimals="2"></td>
+                <td class="red value-formatted" field="BbswdR" decimals="2"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data column-split communication-state hide-false tab-counts">
+        <thead>
+            <tr>
+                <th></th>
+                <th class="blue">B (450 nm)</th>
+                <th class="green">G (525 nm)</th>
+                <th class="red">R (635 nm)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>C<sub>total</sub> (Hz)</td>
+                <td class="blue value-formatted" field="CsB" decimals="0" rightpad="6"></td>
+                <td class="green value-formatted" field="CsG" decimals="0" rightpad="6"></td>
+                <td class="red value-formatted" field="CsR" decimals="0" rightpad="6"></td>
+            </tr>
+            <tr>
+                <td>C<sub>back</sub> (Hz)</td>
+                <td class="blue value-formatted" field="CbsB" decimals="0" rightpad="6"></td>
+                <td class="green value-formatted" field="CbsG" decimals="0" rightpad="6"></td>
+                <td class="red value-formatted" field="CbsR" decimals="0" rightpad="6"></td>
+            </tr>
+
+            <tr>
+                <td>Reference (Hz)</td>
+                <td class="blue value-formatted" field="CfB" decimals="0" rightpad="6"></td>
+                <td class="green value-formatted" field="CfG" decimals="0" rightpad="6"></td>
+                <td class="red value-formatted" field="CfR" decimals="0" rightpad="6"></td>
+            </tr>
+
+            <tr>
+                <td>Ratio<sub>total</sub></td>
+                <td class="blue value-formatted" field="CrB" decimals="5"></td>
+                <td class="green value-formatted" field="CrG" decimals="5"></td>
+                <td class="red value-formatted" field="CrR" decimals="5"></td>
+            </tr>
+            <tr>
+                <td>Ratio<sub>back</sub></td>
+                <td class="blue value-formatted" field="CbrB" decimals="5"></td>
+                <td class="green value-formatted" field="CbrG" decimals="5"></td>
+                <td class="red value-formatted" field="CbrR" decimals="5"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <table class="content display-data communication-state hide-false tab-scattering tab-counts">
+        <tbody>
+            <tr> <td>Sample temperature (°C)</td>   <td class="value-formatted" field="Tsample" rightpad="1"></td> </tr>
+            <tr> <td>Sample RH (%)</td>             <td class="value-formatted" field="Usample" rightpad="1"></td> </tr>
+            <tr> <td>Sample pressure (hPa)</td>     <td class="value-formatted" field="Psample" rightpad="1"></td> </tr>
+            <tr> <td>Chassis temperature (°C)</td>  <td class="value-formatted" field="Tchassis" rightpad="1"></td> </tr>
+            <tr> <td>Chassis RH (%)</td>            <td class="value-formatted" field="Uchassis" rightpad="1"></td> </tr>
+            <tr> <td>Chassis pressure (hPa)</td>    <td class="value-formatted" field="Pchassis" rightpad="1"></td> </tr>
+            <tr> <td>Dark counts (Hz)</td>          <td class="value-formatted" field="Cd" decimals="0" rightpad="2"></td> </tr>
+            <tr> <td>Flow (lpm)</td>                <td class="value-formatted" field="Q" rightpad="1"></td> </tr>
+        </tbody>
+    </table>
+
+    <div class="content display-data communication-state notification-state hide-false" notification="zero">
+        <span class="mdi mdi-loading mdi-spin"></span>Zero in progress
+    </div>
+    <div class="content display-data communication-state notification-state hide-false" notification="spancheck">
+        <span class="mdi mdi-loading mdi-spin"></span>Spancheck in progress
+    </div>
+
+</div>
+
+
+<style>
+#{{uid}} table sub {
+    font-size: 10px;
+}
+#{{uid}} .blue { color: #00a; }
+#{{uid}} .green { color: #0a0; }
+#{{uid}} .red { color: #a00; }
+#{{uid}} .warning { color: #f80; }
+</style>
+
+<script>
+(function() {
+    {% include 'acquisition/display/tab_contents.js' %}
+})();
+(function() {
+    const context = document.getElementById('{{uid}}').context;
+    context.standardMode();
+})();
+</script>

@@ -38,6 +38,7 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('teledynet640'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3563nephelometer'))
         self.display_instrument.append(self.DisplayInstrumentSimple('ecotechnephelometer'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('acoemnex00nephelometer'))
         self.display_instrument.append(self.DisplayInstrumentSimple('thermo49'))
         self.display_instrument.append(self.DisplayInstrumentSimple('thermo49iq'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tech2b205'))
@@ -79,6 +80,7 @@ class Acquisition(BaseAcquisition):
 
         self.summary_instrument.append(self.SummaryInstrumentSimple('tsi3563nephelometer', priority=2000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('ecotechnephelometer', priority=2000))
+        self.summary_instrument.append(self.SummaryInstrumentSimple('acoemnex00nephelometer', priority=2000))
 
         self.summary_instrument.append(self.SummaryInstrumentSimple('vaisalawmt700', priority=1000))
         self.summary_instrument.append(self.SummaryInstrumentSimple('vaisalawxt5xx', priority=1000))
@@ -121,6 +123,12 @@ _type_summary: typing.Dict[str, SummaryItem] = {
     'tsi3563nephelometer': ParameterSummary('nephelometer', {'instrument': "TSI 3563"}),
     'ecotechnephelometer': ParameterSummary('nephelometer', {
         'instrument': "Ecotech Aurora",
+        'blue': 450,
+        'green': 525,
+        'red': 635,
+    }),
+    'acoemnex00nephelometer': ParameterSummary('nephelometer', {
+        'instrument': "Acoem NE",
         'blue': 450,
         'green': 525,
         'red': 635,

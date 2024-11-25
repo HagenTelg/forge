@@ -2,6 +2,19 @@
 
 # Instrument Quick Reference
 
+## Acoem (formerly Ecotech) NE-x00 Nephelometer
+
+```toml
+[instrument.S11]
+type = "acoemnex00nephelometer"
+serial_port = "/dev/serial/by-id/..."
+```
+
+- Instrument baud rate: 38400
+- Instrument protocol setting: Acoem
+- Display letter: N
+- Zero and Spancheck acquisition control not supported
+
 ## Aerosol Dynamics MAGIC 200 CPC
 
 ```toml
