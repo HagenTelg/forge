@@ -340,10 +340,19 @@ serial_number = 1077
 
 ## TSI 375x and 3789 CPC
 
+RS-232 serial connection:
 ```toml
 [instrument.N71]
 type = "tsi375xcpc"
 serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+Network or USB connection:
+```toml
+[instrument.N71]
+type = "tsi375xcpcnet"
+tcp = "169.254.15.133:3603"
 cut_size = false
 ```
 

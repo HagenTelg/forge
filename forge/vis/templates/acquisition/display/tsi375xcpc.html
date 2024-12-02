@@ -8,7 +8,13 @@
     <table class="content display-data communication-state hide-false">
         <tbody>
             <tr> <td>Concentration (cm⁻³)</td>              <td class="value-formatted" field="N" rightpad="2"></td> </tr>
+            <tr class="value-exists hide-false" field="C">
+                 <td>Count rate (Hz)</td>                   <td class="value-formatted" field="C" decimals="0" rightpad="4"></td>
+            </tr>
             <tr> <td>Sample pressure (hPa)</td>             <td class="value-formatted" field="P" rightpad="2"></td> </tr>
+            <tr class="value-exists hide-false" field="PDinlet">
+                 <td>Inlet pressure drop (hPa)</td>         <td class="value-formatted" field="PDinlet" decimals="3"></td>
+            </tr>
             <tr class="value-exists hide-false" field="PDnozzle">
                 <td>Nozzle pressure drop (hPa)</td>         <td class="value-formatted" field="PDnozzle" decimals="3"></td>
             </tr>
@@ -16,10 +22,13 @@
             <tr class="value-exists hide-false" field="Alaser">
                 <td>Laser current (mA)</td>                 <td class="value-formatted" field="Alaser" decimals="0" rightpad="4"></td>
             </tr>
+            <tr class="value-exists hide-false" field="PCT">
+                 <td>Pulse height (%)</td>                  <td class="value-formatted" field="PCT" decimals="0" rightpad="4"></td>
+            </tr>
+            <tr> <td>Liquid level sensor</td>               <td class="value-formatted" field="liquid_level" decimals="0" rightpad="4"></td> </tr>
             <tr class="value-exists hide-false" field="Vphoto">
                 <td>Photmetric voltage (V)</td>             <td class="value-formatted" field="Vphoto" decimals="3"></td>
             </tr>
-            <tr> <td>Liquid level sensor</td>               <td class="value-formatted" field="liquid_level" decimals="0" rightpad="4"></td> </tr>
         </tbody>
     </table>
 
@@ -34,6 +43,9 @@
                 <td>Optics (°C)</td>            <td class="value-formatted" field="Toptics" rightpad="2"></td>
             </tr>
             <tr> <td>Cabinet (°C)</td>          <td class="value-formatted" field="Tcabinet" rightpad="2"></td> </tr>
+            <tr class="value-exists hide-false" field="Twatertrap">
+                 <td>Water trap (°C)</td>       <td class="value-formatted" field="Twatertrap" rightpad="2"></td>
+            </tr>
         </tbody>
     </table>
 
@@ -57,14 +69,48 @@
     <div class="content display-data communication-state notification-state hide-false warning"
          notification="optics_temperature_error">Optics temperature error detected</div>
     <div class="content display-data communication-state notification-state hide-false warning"
+         notification="water_trap_temperature_error">Water trap temperature error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="case_temperature_error">Case temperature error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
          notification="inlet_flow_error">Inlet flow error detected</div>
     <div class="content display-data communication-state notification-state hide-false warning"
          notification="sample_flow_error">Sample flow error detected</div>
     <div class="content display-data communication-state notification-state hide-false warning"
          notification="laser_power_error">Laser power error detected</div>
     <div class="content display-data communication-state notification-state hide-false warning"
+         notification="orifice_pressure_drop_error">Orifice pressure drop error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="nozzle_pressure_drop_error">Nozzle pressure drop error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="inlet_pressure_drop_error">Inlet pressure drop error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="absolute_pressure_error">Absolute pressure error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="pulse_height_error">Pulse height error detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
+         notification="instrument_tilt_detected">Instrument tilt detected</div>
+    <div class="content display-data communication-state notification-state hide-false warning"
          notification="liquid_low">Low liquid level</div>
 
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="saturator_temperature_warning">Saturator temperature warning</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="optics_temperature_warning">Optics temperature warning</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="water_trap_temperature_warning">Water trap temperature warning</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="case_temperature_error">Case temperature warning</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="orifice_pressure_drop_warning">Orifice pressure drop warning</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="nozzle_pressure_drop_warning">Nozzle pressure drop warning</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="inlet_pressure_drop_warning">Inlet pressure drop warning</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="pulse_height_warning">Pulse height warning</div>
+    <div class="content display-data communication-state notification-state hide-false"
+         notification="sample_flow_warning">Sample flow warning</div>
     <div class="content display-data communication-state notification-state hide-false"
          notification="concentration_out_of_range">Concentration out of range</div>
 </div>
