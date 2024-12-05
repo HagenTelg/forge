@@ -200,6 +200,9 @@ class Command(ParseCommand):
         group.add_argument('--fill',
                            dest='fill_interval',
                            help="set the record fill interval")
+        parser.add_argument('--fill-to-bounds',
+                            dest='fill_selected', action='store_true',
+                            help="use the source time selection for fill bounds")
 
     @classmethod
     def instantiate_pure(cls, cmd: ParseArguments.SubCommand, execute: "Execute",
@@ -576,7 +579,11 @@ class _ColumnVariable(_Column):
 
     @property
     def time_sources(self) -> typing.List[typing.Tuple[Variable, bool]]:
-        _, time_var = find_dimension_values(self.source.variable.group(), 'time')
+        try:
+            _, time_var = find_dimension_values(self.source.variable.group(), 'time')
+        except KeyError:
+            # Might be a dimension variable (e.x. bin size)
+            return []
         is_state = is_in_state_group(self.source.variable)
         return [(time_var, is_state)]
 
@@ -748,6 +755,8 @@ class _ColumnVariableNumeric(_ColumnVariable):
         self._mvc = mvc
 
     def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
+        if not self.source.indexed_by_time:
+            return self.formatter(self.source(0), False)
         var_idx = time_indices[0]
         if var_idx is None:
             return self.formatter(None, True)
@@ -880,6 +889,8 @@ class _ColumnVariableStatisticsQuantile(_ColumnVariableFloat):
         self._lookup = make_lookup()
 
     def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
+        if not self.source.indexed_by_time:
+            return self.formatter(self._lookup(0), False)
         var_idx = time_indices[0]
         if var_idx is None:
             return self.formatter(None, True)
@@ -930,10 +941,13 @@ class _ColumnVariableMVCFlag(_ColumnVariable):
             return 0, self.header_name, 1
 
     def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
-        var_idx = time_indices[0]
-        if var_idx is None:
-            return "1"
-        value = self.source(time_indices[0])
+        if self.source.indexed_by_time:
+            var_idx = time_indices[0]
+            if var_idx is None:
+                return "1"
+            value = self.source(time_indices[0])
+        else:
+            value = self.source(0)
         if value is None or not isfinite(value):
             return "1"
         return "0"
@@ -951,10 +965,13 @@ class _ColumnVariableFlags(_ColumnVariable):
 
 class _ColumnVariableFlagsList(_ColumnVariableFlags):
     def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
-        var_idx = time_indices[0]
-        if var_idx is None:
-            return self.mvc
-        bits = int(self.source(time_indices[0]))
+        if self.source.indexed_by_time:
+            var_idx = time_indices[0]
+            if var_idx is None:
+                return self.mvc
+            bits = int(self.source(time_indices[0]))
+        else:
+            bits = int(self.source(0))
         set_flags: typing.Set[str] = set()
         for flag_bit, flag_name in self.flag_lookup.items():
             if (bits & flag_bit) == 0:
@@ -985,10 +1002,13 @@ class _ColumnVariableFlagsHex(_ColumnVariableFlags):
         return self._mvc
 
     def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
-        var_idx = time_indices[0]
-        if var_idx is None:
-            return self.mvc
-        bits = int(self.source(time_indices[0]))
+        if self.source.indexed_by_time:
+            var_idx = time_indices[0]
+            if var_idx is None:
+                return self.mvc
+            bits = int(self.source(time_indices[0]))
+        else:
+            bits = int(self.source(0))
         return self.format % bits
 
 
@@ -1015,10 +1035,13 @@ class _ColumnVariableFlagsBreakdown(_ColumnVariableFlags):
         return -1, super().header_name, self.bit
 
     def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
-        var_idx = time_indices[0]
-        if var_idx is None:
-            return self.mvc
-        bits = int(self.source(time_indices[0]))
+        if self.source.indexed_by_time:
+            var_idx = time_indices[0]
+            if var_idx is None:
+                return self.mvc
+            bits = int(self.source(time_indices[0]))
+        else:
+            bits = int(self.source(0))
         return "1" if (bits & self.bit) != 0 else "0"
 
 
@@ -1028,6 +1051,8 @@ class _ColumnVariableOther(_ColumnVariable):
         self._mvc = mvc or ""
 
     def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
+        if not self.source.indexed_by_time:
+            return str(self.source(0))
         var_idx = time_indices[0]
         if var_idx is None:
             return self.mvc
@@ -1197,6 +1222,9 @@ class _ExportStage(ExecuteStage):
         except ValueError:
             _LOGGER.debug("Error parsing fill argument", exc_info=True)
             parser.error(f"invalid fill interval: '{args.fill_interval}'")
+        self._fill_to_selected_times = args.fill_selected
+        if self._fill_to_selected_times and not self._fill_interval:
+            parser.error("--fill-to-bounds has no effect without --fill")
         self._keep_latest: bool = args.latest_in_gaps
 
         station = False
@@ -1678,18 +1706,34 @@ class _ExportStage(ExecuteStage):
                     data_time_variables = state_time_variables
 
                 if self._fill_interval:
-                    begin_time = min([
-                        int(v[:].data[0]) for v in data_time_variables
-                    ])
-                    end_time = max([
-                        int(v[:].data[-1]) for v in data_time_variables
-                    ])
-                    interval_ms = int(ceil(self._fill_interval * 1000))
-                    begin_rounded = int(floor(begin_time / interval_ms) * interval_ms)
-                    end_rounded = int(floor(end_time / interval_ms) * interval_ms)
-                    if end_rounded < end_time:
-                        end_rounded += interval_ms
-                    output_times = np.arange(begin_rounded, end_rounded + interval_ms, interval_ms, dtype=np.int64)
+                    try:
+                        begin_time = min([
+                            int(v[:].data[0]) for v in data_time_variables
+                        ])
+                        end_time = max([
+                            int(v[:].data[-1]) for v in data_time_variables
+                        ])
+                    except ValueError:
+                        begin_time = None
+                        end_time = None
+                    if not begin_time or self._fill_to_selected_times:
+                        for stage in reversed(self.exec.stages):
+                            if isinstance(stage, ArchiveRead):
+                                begin_time = stage.start_ms
+                                end_time = max(stage.end_ms - 1, begin_time + 1)
+                                break
+                        else:
+                            begin_time = None
+                            end_time = None
+                    if begin_time and end_time:
+                        interval_ms = int(ceil(self._fill_interval * 1000))
+                        begin_rounded = int(floor(begin_time / interval_ms) * interval_ms)
+                        end_rounded = int(floor(end_time / interval_ms) * interval_ms)
+                        if end_rounded <= end_time:
+                            end_rounded += interval_ms
+                        output_times = np.arange(begin_rounded, end_rounded, interval_ms, dtype=np.int64)
+                    else:
+                        output_times = None
                 elif self._fill_archive_time:
                     output_times = ArchiveRead.nominal_record_spacing(self.exec)
                 else:
@@ -1702,7 +1746,7 @@ class _ExportStage(ExecuteStage):
                 if output_times.shape[0] == 0:
                     _LOGGER.debug('No time to export')
                     if not self.exec.stderr_is_output:
-                        sys.stderr.write("No values in data to export\n")
+                        sys.stderr.write("\x1B[2K\rNo values in data to export\n")
                     return
                 state_time_variables.clear()
                 data_time_variables.clear()

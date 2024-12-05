@@ -966,7 +966,10 @@ class DataSelection:
                 destination_group.createEnumType(source_var.datatype.name, source_var.datatype.dtype,
                                                  source_var.datatype.enum_dict)
 
-            destination_var = create_and_copy_variable(source_var, destination_group, copy_values=False)
+            # Might already exist if it's a dimension variable
+            destination_var = destination_group.variables.get(source_var.name)
+            if destination_var is None:
+                destination_var = create_and_copy_variable(source_var, destination_group, copy_values=False)
             source_values = source_var[source_selector]
             if isinstance(destination_var.datatype, VLType):
                 for idx in np.ndindex(source_values.shape):
