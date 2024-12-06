@@ -48,7 +48,10 @@ def standard_absorption_corrections(data: AvailableData) -> None:
 def standard_scattering_corrections(data: AvailableData) -> None:
     for scattering in data.select_instrument({"instrument": "tsi3563nephelometer"}):
         anderson_ogren_1998(scattering)
-    for scattering in data.select_instrument({"instrument": "ecotechnephelometer"}):
+    for scattering in data.select_instrument((
+            {"instrument": "ecotechnephelometer"},
+            {"instrument": "acoemnex00nephelometer"},
+    )):
         mueller_2011(scattering)
 
 

@@ -79,56 +79,56 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
 
     if tags and 'aod' in tags:
         return [DataObject(
-            PS_LAST_NAME='Augustine', PS_FIRST_NAME='John',
-            PS_EMAIL='John.A.Augustine@noaa.gov',
-            PS_ORG_NAME='National Oceanic and Atmospheric Administration/Earth System Research Laboratory/Global Monitoring Division',
-            PS_ORG_ACR='NOAA/ESRL/GMD', PS_ORG_UNIT=None,
-            PS_ADDR_LINE1='325 Broadway', PS_ADDR_LINE2=None,
-            PS_ADDR_ZIP='80305', PS_ADDR_CITY='Boulder, CO',
-            PS_ADDR_COUNTRY='USA',
-            PS_ORCID='0000-0002-6645-7404',
+            PS_LAST_NAME="Augustine", PS_FIRST_NAME="John",
+            PS_EMAIL="John.A.Augustine@noaa.gov",
+            PS_ORG_NAME="National Oceanic and Atmospheric Administration/Earth System Research Laboratory/Global Monitoring Division",
+            PS_ORG_ACR="NOAA/ESRL/GMD", PS_ORG_UNIT=None,
+            PS_ADDR_LINE1="325 Broadway", PS_ADDR_LINE2=None,
+            PS_ADDR_ZIP="80305", PS_ADDR_CITY="Boulder, CO",
+            PS_ADDR_COUNTRY="USA",
+            PS_ORCID="0000-0002-6645-7404",
         )]
     if tags and 'ozone' in tags:
         return [DataObject(
-            PS_LAST_NAME='Effertz', PS_FIRST_NAME='Peter',
-            PS_EMAIL='peter.effertz@noaa.gov',
-            PS_ORG_NAME='National Oceanic and Atmospheric Administration/Earth System Research Laboratory/Global Monitoring Division',
-            PS_ORG_ACR='NOAA/ESRL/GMD', PS_ORG_UNIT=None,
-            PS_ADDR_LINE1='325 Broadway', PS_ADDR_LINE2=None,
-            PS_ADDR_ZIP='80305', PS_ADDR_CITY='Boulder, CO',
-            PS_ADDR_COUNTRY='USA',
-            PS_ORCID='0000-0002-5147-763X',
+            PS_LAST_NAME="Effertz", PS_FIRST_NAME="Peter",
+            PS_EMAIL="peter.effertz@noaa.gov",
+            PS_ORG_NAME="National Oceanic and Atmospheric Administration/Earth System Research Laboratory/Global Monitoring Division",
+            PS_ORG_ACR="NOAA/ESRL/GMD", PS_ORG_UNIT=None,
+            PS_ADDR_LINE1="325 Broadway", PS_ADDR_LINE2=None,
+            PS_ADDR_ZIP="80305", PS_ADDR_CITY="Boulder, CO",
+            PS_ADDR_COUNTRY="USA",
+            PS_ORCID="0000-0002-5147-763X",
         ), DataObject(
-            PS_LAST_NAME='Irina', PS_FIRST_NAME='Petropavlovskikh',
-            PS_EMAIL='Irina.petro@noaa.gov',
+            PS_LAST_NAME="Irina", PS_FIRST_NAME="Petropavlovskikh",
+            PS_EMAIL="Irina.petro@noaa.gov",
             PS_ORG_NAME='National Oceanic and Atmospheric Administration/Earth System Research Laboratory/Global Monitoring Division',
-            PS_ORG_ACR='NOAA/ESRL/GMD', PS_ORG_UNIT=None,
-            PS_ADDR_LINE1='325 Broadway', PS_ADDR_LINE2=None,
-            PS_ADDR_ZIP='80305', PS_ADDR_CITY='Boulder, CO',
-            PS_ADDR_COUNTRY='USA',
-            PS_ORCID='0000-0001-5352-1369',
+            PS_ORG_ACR="NOAA/ESRL/GMD", PS_ORG_UNIT=None,
+            PS_ADDR_LINE1="325 Broadway", PS_ADDR_LINE2=None,
+            PS_ADDR_ZIP="80305", PS_ADDR_CITY="Boulder, CO",
+            PS_ADDR_COUNTRY="USA",
+            PS_ORCID="0000-0001-5352-1369",
         )]
     if tags and 'met' in tags and 'aerosol' not in tags:
         return [DataObject(
-            PS_LAST_NAME='Schultz', PS_FIRST_NAME='Christine',
-            PS_EMAIL='christine.schultz@noaa.gov',
-            PS_ORG_NAME='National Oceanic and Atmospheric Administration/Earth System Research Laboratory/Global Monitoring Division',
-            PS_ORG_ACR='NOAA/ESRL/GMD', PS_ORG_UNIT=None,
-            PS_ADDR_LINE1='325 Broadway', PS_ADDR_LINE2=None,
-            PS_ADDR_ZIP='80305', PS_ADDR_CITY='Boulder, CO',
-            PS_ADDR_COUNTRY='USA',
+            PS_LAST_NAME="Schultz", PS_FIRST_NAME="Christine",
+            PS_EMAIL="christine.schultz@noaa.gov",
+            PS_ORG_NAME="National Oceanic and Atmospheric Administration/Earth System Research Laboratory/Global Monitoring Division",
+            PS_ORG_ACR="NOAA/ESRL/GMD", PS_ORG_UNIT=None,
+            PS_ADDR_LINE1="325 Broadway", PS_ADDR_LINE2=None,
+            PS_ADDR_ZIP="80305", PS_ADDR_CITY="Boulder, CO",
+            PS_ADDR_COUNTRY="USA",
             PS_ORCID=None,
         )]
 
     return [DataObject(
-        PS_LAST_NAME='Andrews', PS_FIRST_NAME='Betsy',
-        PS_EMAIL='betsy.andrews@noaa.gov',
-        PS_ORG_NAME='National Oceanic and Atmospheric Administration/Earth System Research Laboratory/Global Monitoring Division',
-        PS_ORG_ACR='NOAA/ESRL/GMD', PS_ORG_UNIT=None,
-        PS_ADDR_LINE1='325 Broadway', PS_ADDR_LINE2=None,
-        PS_ADDR_ZIP='80305', PS_ADDR_CITY='Boulder, CO',
-        PS_ADDR_COUNTRY='USA',
-        PS_ORCID='0000-0002-9394-024X',
+        PS_LAST_NAME="Andrews", PS_FIRST_NAME="Betsy",
+        PS_EMAIL="betsy.andrews@noaa.gov",
+        PS_ORG_NAME="National Oceanic and Atmospheric Administration/Earth System Research Laboratory/Global Monitoring Division",
+        PS_ORG_ACR="NOAA/ESRL/GMD", PS_ORG_UNIT=None,
+        PS_ADDR_LINE1="325 Broadway", PS_ADDR_LINE2=None,
+        PS_ADDR_ZIP="80305", PS_ADDR_CITY="Boulder, CO",
+        PS_ADDR_COUNTRY="USA",
+        PS_ORCID="0000-0002-9394-024X",
     )]
 
 
@@ -136,16 +136,18 @@ def submitter(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -
     from nilutility.datatypes import DataObject
     from forge.processing.station.lookup import station_data
 
-    """DataObject(
-        PS_LAST_NAME='Hageman', PS_FIRST_NAME='Derek',
-        PS_EMAIL='Derek.Hageman@noaa.gov',
-        PS_ORG_NAME='National Oceanic and Atmospheric Administration/Earth System Research Laboratory/Global Monitoring Division',
-        PS_ORG_ACR='NOAA/ESRL/GMD', PS_ORG_UNIT=None,
-        PS_ADDR_LINE1='325 Broadway', PS_ADDR_LINE2=None,
-        PS_ADDR_ZIP='80305', PS_ADDR_CITY='Boulder, CO',
-        PS_ADDR_COUNTRY='USA',
-        PS_ORCID='0000-0002-4727-5410',
-    )"""
+    """
+    DataObject(
+        PS_LAST_NAME="Hageman", PS_FIRST_NAME="Derek",
+        PS_EMAIL="Derek.Hageman@noaa.gov",
+        PS_ORG_NAME="National Oceanic and Atmospheric Administration/Earth System Research Laboratory/Global Monitoring Division",
+        PS_ORG_ACR="NOAA/ESRL/GMD", PS_ORG_UNIT=None,
+        PS_ADDR_LINE1="325 Broadway", PS_ADDR_LINE2=None,
+        PS_ADDR_ZIP="80305", PS_ADDR_CITY="Boulder, CO",
+        PS_ADDR_COUNTRY="USA",
+        PS_ORCID="0000-0002-4727-5410",
+    )
+    """
 
     return station_data(gaw_station, 'ebas', 'originator')(station, tags)
 
