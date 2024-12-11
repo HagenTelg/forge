@@ -313,7 +313,7 @@ class Instrument(StreamingInstrument):
         self.parameter_cal_slope = self.parameters_record.array_float("calibration_slope", attributes={
             'long_name': "instrument calibration slope",
             'units': "Mm",
-            'C_format': "%7.3f",
+            'C_format': "%.3e",
         })
         self.parameter_cal_offset = self.parameters_record.array_float("calibration_offset", attributes={
             'long_name': "instrument calibration offset",
