@@ -31,17 +31,13 @@ class Instrument(StreamingInstrument):
         self.data_P = self.input("P")
         self.data_U = self.input("U")
 
-        self.flow_var = self.variable_sample_flow(self.data_Q, code="Q", attributes={'C_format': "%6.3f"})
-        self.flow_var.data.use_standard_temperature = True
-        self.flow_var.data.use_standard_pressure = True
+        self.flow_var = self.variable_sample_flow(self.data_Q, code="Q", attributes={'C_format': "%6.3f"}).at_stp()
 
         self.instrument_report = self.report(
             self.flow_var,
             self.variable_air_pressure(self.data_P, "pressure", code="P"),
             self.variable_air_temperature(self.data_T, "temperature", code="T"),
         )
-        self.instrument_report.record.data_record.standard_temperature = 0.0
-        self.instrument_report.record.data_record.standard_pressure = ONE_ATM_IN_HPA
 
         self.extended_report: typing.Optional[Report] = None
 

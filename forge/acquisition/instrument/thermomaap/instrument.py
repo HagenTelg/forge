@@ -139,25 +139,20 @@ class Instrument(StreamingInstrument):
         if config_spot_size is not None:
             self.data_Ld.field.add_comment(context.config.comment('SPOT'))
 
-        def at_stp(s: Instrument.Variable):
-            s.data.use_standard_pressure = True
-            s.data.use_standard_temperature = True
-            return s
-
         self.data_wavelength = self.persistent("wavelength", save_value=False, send_to_bus=False)
         self.data_wavelength([self.wavelength])
         dimension_wavelength = self.dimension_wavelength(self.data_wavelength)
         self.bit_flags: typing.Dict[int, Instrument.Notification] = dict()
         self.flag_spot_advancing = self.flag_bit(self.bit_flags, 0x000001, "spot_advancing")
         self.instrument_report = self.report(
-            at_stp(self.variable_ebc(self._wavelength_arrays[self.data_X], dimension_wavelength, code="X")),
-            at_stp(self.variable_absorption(self._wavelength_arrays[self.data_Bac], dimension_wavelength, code="Bac")),
+            self.variable_ebc(self._wavelength_arrays[self.data_X], dimension_wavelength, code="X").at_stp(),
+            self.variable_absorption(self._wavelength_arrays[self.data_Bac], dimension_wavelength, code="Bac").at_stp(),
 
-            at_stp(self.variable_absorption(self._wavelength_arrays[self.data_Ba], dimension_wavelength,
+            self.variable_absorption(self._wavelength_arrays[self.data_Ba], dimension_wavelength,
                                             "uncorrected_light_absorption", code="Ba", attributes={
                 'long_name': "uncorrected light absorption coefficient at STP",
                 'standard_name': None,
-            })),
+            }).at_stp(),
 
             self.variable_transmittance(self._wavelength_arrays[self.data_Ir], dimension_wavelength, code="Ir"),
             self.variable_array(self._wavelength_arrays[self.data_If], dimension_wavelength, "reference_intensity",
@@ -187,12 +182,12 @@ class Instrument(StreamingInstrument):
                 'C_format': "%8.6f"
             }),
 
-            at_stp(self.variable_sample_flow(self.data_Q, code="Q", attributes={'C_format': "%6.3f"})),
-            at_stp(self.variable_rate(self.data_Ld, "path_length_change", code="Ld", attributes={
+            self.variable_sample_flow(self.data_Q, code="Q", attributes={'C_format': "%6.3f"}).at_stp(),
+            self.variable_rate(self.data_Ld, "path_length_change", code="Ld", attributes={
                 'long_name': "change in path sample path length (flow/area)",
                 'units': "m",
                 'C_format': "%7.4f",
-            })),
+            }).at_stp(),
 
             self.variable_air_temperature(self.data_Tsample, "sample_temperature", code="T1"),
             self.variable_temperature(self.data_Thead, "measurement_head_temperature", code="T2",

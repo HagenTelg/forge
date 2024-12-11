@@ -636,8 +636,6 @@ class Instrument(StreamingInstrument):
                 [self.variable(s) for s in self.data_Cf_wavelength]
             )
         )
-        self.instrument_report.record.data_record.standard_temperature = 0.0
-        self.instrument_report.record.data_record.standard_pressure = ONE_ATM_IN_HPA
         self.polar_report: typing.Optional[Report] = None
 
         self.instrument_state = self.change_event(
@@ -660,44 +658,35 @@ class Instrument(StreamingInstrument):
             at_instrument_stp(self.state_wall_back_scattering(self.data_Bbsw, self.dimension_wavelength, code="Bbsw")),
             name="zero",
         )
-        self.zero_state.data_record.standard_temperature = 0.0
-        self.zero_state.data_record.standard_pressure = ONE_ATM_IN_HPA
         self.polar_zero_state: typing.Optional[ChangeEvent] = None
 
-        def at_stp(s):
-            s.data.use_standard_pressure = True
-            s.data.use_standard_temperature = True
-            return s
-
         self.spancheck_state = self.change_event(
-            at_stp(self.state_measurement_array(
+            self.state_measurement_array(
                 self.data_PCTc, self.dimension_wavelength, "scattering_percent_error", code="PCTc", attributes={
                     'long_name': "spancheck total light scattering percent error",
                     'units': "%",
                     'C_format': "%6.2f"
-                })),
-            at_stp(self.state_measurement_array(
+                }).at_stp(),
+            self.state_measurement_array(
                 self.data_PCTbc, self.dimension_wavelength, "backscattering_percent_error", code="PCTbc", attributes={
                     'long_name': "spancheck backwards hemispheric light scattering percent error",
                     'units': "%",
                     'C_format': "%6.2f"
-                })),
-            at_stp(self.state_measurement_array(
+                }).at_stp(),
+            self.state_measurement_array(
                 self.data_Cc, self.dimension_wavelength, "scattering_sensitivity_factor", code="Cc", attributes={
                     'long_name': "total photon count rate attributable to Rayleigh scattering by air at STP",
                     'units': "Hz",
                     'C_format': "%7.1f"
-                })),
-            at_stp(self.state_measurement_array(
+                }).at_stp(),
+            self.state_measurement_array(
                 self.data_Cbc, self.dimension_wavelength, "backscattering_sensitivity_factor", code="Cbc", attributes={
                     'long_name': "backwards hemispheric photon count rate attributable to Rayleigh scattering by air at STP",
                     'units': "Hz",
                     'C_format': "%7.1f"
-                })),
+                }).at_stp(),
             name="spancheck",
         )
-        self.spancheck_state.data_record.standard_temperature = 0.0
-        self.spancheck_state.data_record.standard_pressure = ONE_ATM_IN_HPA
         self.polar_spancheck_state: typing.Optional[ChangeEvent] = None
 
         self._zero_request: bool = False
@@ -752,17 +741,15 @@ class Instrument(StreamingInstrument):
         self.polar_zero_state.data_record.standard_temperature = self.zero_state.data_record.standard_temperature
         self.polar_zero_state.data_record.standard_pressure = self.zero_state.data_record.standard_pressure
 
-        var = self.state_measurement_array(self.data_PCTnc, [self.dimension_angle, self.dimension_wavelength],
-                                           "polar_scattering_percent_error", code="PCTnc", attributes={
-                'long_name': "spancheck polar light scattering percent error",
-                'units': "%",
-                'C_format': "%6.2f"
-            })
-        var.data.use_standard_pressure = True
-        var.data.use_standard_temperature = True
-        self.polar_spancheck_state = self.change_event(var, name="polar_spancheck")
-        self.polar_spancheck_state.data_record.standard_temperature = 0.0
-        self.polar_spancheck_state.data_record.standard_pressure = ONE_ATM_IN_HPA
+        self.polar_spancheck_state = self.change_event(
+            self.state_measurement_array(self.data_PCTnc, [self.dimension_angle, self.dimension_wavelength],
+                                         "polar_scattering_percent_error", code="PCTnc", attributes={
+                    'long_name': "spancheck polar light scattering percent error",
+                    'units': "%",
+                    'C_format': "%6.2f"
+                }).at_stp(),
+            name="polar_spancheck"
+        )
 
     def _find_angle(self, target: float) -> typing.Optional[int]:
         for angle in range(len(self.data_angle.value)):

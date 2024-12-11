@@ -114,28 +114,22 @@ class Instrument(StreamingInstrument):
         if config_spot_size is not None:
             self.data_Ld.field.add_comment(context.config.comment('SPOT'))
 
-        def at_stp(s: Instrument.Variable):
-            s.data.use_standard_pressure = True
-            s.data.use_standard_temperature = True
-            return s
-
-        self.variable_Q = at_stp(self.variable_sample_flow(self.data_Q, code="Q",
-                                                           attributes={'C_format': "%6.3f"}))
+        self.variable_Q = self.variable_sample_flow(self.data_Q, code="Q", attributes={'C_format': "%6.3f"}).at_stp()
 
         dimension_wavelength = self.dimension_wavelength(self.data_wavelength)
         self.bit_flags: typing.Dict[int, Instrument.Notification] = dict()
         self.instrument_report = self.report(
-            at_stp(self.variable_absorption(self.data_Ba, dimension_wavelength, code="Ba")),
+            self.variable_absorption(self.data_Ba, dimension_wavelength, code="Ba").at_stp(),
             self.variable_transmittance(self.data_Ir, dimension_wavelength, code="Ir"),
             self.variable_Q,
             self.variable_air_temperature(self.data_Tsample, "sample_temperature", code="T1"),
             self.variable_temperature(self.data_Tcase, "case_temperature", code="T2",
                                       attributes={'long_name': "case temperature"}),
-            at_stp(self.variable_rate(self.data_Ld, "path_length_change", code="Ld", attributes={
+            self.variable_rate(self.data_Ld, "path_length_change", code="Ld", attributes={
                 'long_name': "change in path sample path length (flow/area)",
                 'units': "m",
                 'C_format': "%7.4f",
-            })),
+            }).at_stp(),
             self.variable_array(self.data_Ip, dimension_wavelength, "sample_intensity", code="Ip", attributes={
                 'long_name': "active spot sample intensity",
                 'C_format': "%10.2f",
@@ -168,8 +162,6 @@ class Instrument(StreamingInstrument):
                 [self.variable(w) for w in self.data_If_wavelength]
             ),
         )
-        self.instrument_report.record.data_record.standard_temperature = 0.0
-        self.instrument_report.record.data_record.standard_pressure = ONE_ATM_IN_HPA
 
         self.filter_state = self.change_event(
             self.state_unsigned_integer(self.data_Ff, "filter_id", code="Ff", attributes={

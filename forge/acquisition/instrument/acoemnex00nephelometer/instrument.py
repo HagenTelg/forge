@@ -291,8 +291,6 @@ class Instrument(StreamingInstrument):
                     [self.variable(s) for s in self.data_Cf_wavelength]
             )
         )
-        self.instrument_report.record.data_record.standard_temperature = 0.0
-        self.instrument_report.record.data_record.standard_pressure = ONE_ATM_IN_HPA
         self.polar_report: typing.Optional[Report] = None
 
         self.instrument_state = self.change_event(
@@ -309,8 +307,6 @@ class Instrument(StreamingInstrument):
             at_instrument_stp(self.state_wall_back_scattering(self.data_Bbsw, self.dimension_wavelength, code="Bbsw")),
             name="zero",
         )
-        self.zero_state.data_record.standard_temperature = 0.0
-        self.zero_state.data_record.standard_pressure = ONE_ATM_IN_HPA
         self.polar_zero_state: typing.Optional[ChangeEvent] = None
 
         self.parameters_record = self.context.data.constant_record("parameters")

@@ -543,40 +543,33 @@ class Instrument(StreamingInstrument):
             name="zero",
         )
 
-        def at_stp(s):
-            s.data.use_standard_pressure = True
-            s.data.use_standard_temperature = True
-            return s
-
         self.spancheck_state = self.change_event(
-            at_stp(self.state_measurement_array(
+            self.state_measurement_array(
                 self.data_PCTc, dimension_wavelength, "scattering_percent_error", code="PCTc", attributes={
                     'long_name': "spancheck total light scattering percent error",
                     'units': "%",
                     'C_format': "%6.2f"
-                })),
-            at_stp(self.state_measurement_array(
+                }).at_stp(),
+            self.state_measurement_array(
                 self.data_PCTbc, dimension_wavelength, "backscattering_percent_error", code="PCTbc", attributes={
                     'long_name': "spancheck backwards hemispheric light scattering percent error",
                     'units': "%",
                     'C_format': "%6.2f"
-                })),
-            at_stp(self.state_measurement_array(
+                }).at_stp(),
+            self.state_measurement_array(
                 self.data_Cc, dimension_wavelength, "scattering_sensitivity_factor", code="Cc", attributes={
                     'long_name': "total photon count rate attributable to Rayleigh scattering by air at STP",
                     'units': "Hz",
                     'C_format': "%7.1f"
-                })),
-            at_stp(self.state_measurement_array(
+                }).at_stp(),
+            self.state_measurement_array(
                 self.data_Cbc, dimension_wavelength, "backscattering_sensitivity_factor", code="Cbc", attributes={
                     'long_name': "backwards hemispheric photon count rate attributable to Rayleigh scattering by air at STP",
                     'units': "Hz",
                     'C_format': "%7.1f"
-                })),
+                }).at_stp(),
             name="spancheck",
         )
-        self.spancheck_state.data_record.standard_temperature = 0.0
-        self.spancheck_state.data_record.standard_pressure = ONE_ATM_IN_HPA
 
         self.active_parameters.record(self.context.data.constant_record("parameters"), dimension_wavelength)
 

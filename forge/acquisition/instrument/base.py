@@ -455,6 +455,11 @@ class BaseInstrument:
         def attach_to_record(self, record: "BaseInstrument.Record") -> None:
             pass
 
+        def at_stp(self):
+            self.data.use_standard_temperature = True
+            self.data.use_standard_pressure = True
+            return self
+
     class Variable(DataField):
         def __call__(self) -> None:
             raise NotImplementedError

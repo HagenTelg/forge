@@ -2,6 +2,7 @@ import typing
 import asyncio
 import time
 from math import nan
+from forge.units import ONE_ATM_IN_HPA
 from forge.acquisition import LayeredConfiguration
 from forge.acquisition.cutsize import CutSize
 from forge.acquisition.util import parse_interval
@@ -241,6 +242,10 @@ class Report(BaseInstrument.Report):
                 continue
             self.variables.append(v)
             self.record.attach_variable(v)
+            if v.data.use_standard_temperature and self.record.data_record.standard_temperature is None:
+                self.record.data_record.standard_temperature = 0.0
+            if v.data.use_standard_pressure and self.record.data_record.standard_pressure is None:
+                self.record.data_record.standard_pressure = ONE_ATM_IN_HPA
 
         for v in auxiliary_variables:
             if v is None:

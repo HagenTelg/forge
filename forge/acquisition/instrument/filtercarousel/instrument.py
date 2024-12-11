@@ -248,24 +248,19 @@ class Instrument(StandardInstrument):
         self.notify_wind_out_of_sector = self.notification("wind_out_of_sector", is_warning=True)
         self.notify_wind_speed_low = self.notification("wind_speed_low", is_warning=True)
 
-        def at_stp(s):
-            s.data.use_standard_pressure = True
-            s.data.use_standard_temperature = True
-            return s
-
         self.data_Qt = self.input_array("Qt", send_to_bus=False)
         self.data_St = self.input_array("St", send_to_bus=False)
         self.data_PD = self.input_array("PD", send_to_bus=False)
         self.measurement_report = self.report(
-            at_stp(self.variable_sample_flow(self.data_Q, code="Q", attributes={
+            self.variable_sample_flow(self.data_Q, code="Q", attributes={
                 'long_name': "flow through the active filter",
-            })),
+            }).at_stp(),
 
-            at_stp(self.variable_array_last_valid(self.data_Qt, name="total_volume", code="Qt", attributes={
+            self.variable_array_last_valid(self.data_Qt, name="total_volume", code="Qt", attributes={
                 'long_name': "total volume through each filter with the first (zero) as the bypass line",
                 'units': "m3",
                 'C_format': "%10.5f",
-            })),
+            }).at_stp(),
 
             self.variable_array(self.data_PD, name="filter_pressure_drop", code="Pd", attributes={
                 'long_name': "pressure drop across each filter in the carousel",
@@ -310,11 +305,11 @@ class Instrument(StandardInstrument):
                 'long_name': "start time of the completed carousel",
                 'units': "milliseconds since 1970-01-01 00:00:00",
             }),
-            at_stp(self.state_measurement_array(self.data_Qt_complete, name="final_volume", attributes={
+            self.state_measurement_array(self.data_Qt_complete, name="final_volume", attributes={
                 'long_name': "final volume through each filter in the completed carousel with the first (zero) as the bypass line",
                 'units': "m3",
                 'C_format': "%10.5f",
-            })),
+            }).at_stp(),
             self.state_measurement_array(self.data_St_complete, name="final_accumulated_time", attributes={
                 'long_name': "final amount of sampling time on the completed carousel with the first (zero) as the bypass line",
                 'units': "seconds",

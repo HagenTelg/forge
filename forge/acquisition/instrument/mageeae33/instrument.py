@@ -385,11 +385,6 @@ class Instrument(StreamingInstrument):
         self._normalization_changed: bool = False
         self._spot_change_observed: bool = False
 
-        def at_stp(s: Instrument.Variable):
-            s.data.use_standard_pressure = True
-            s.data.use_standard_temperature = True
-            return s
-
         self.notify_spot_advancing = self.notification('spot_advancing')
         self.notify_flow_check_history = self.notification('flow_check_history')
         self.notify_stability_test = self.notification('stability_test')
@@ -420,19 +415,19 @@ class Instrument(StreamingInstrument):
 
         dimension_wavelength = self.dimension_wavelength(self.data_wavelength)
         self.instrument_report = self.report(
-            at_stp(self.variable_ebc(self.data_X, dimension_wavelength, code="X")),
-            at_stp(self.variable_absorption(self.data_Bac, dimension_wavelength, code="Bac")),
+            self.variable_ebc(self.data_X, dimension_wavelength, code="X").at_stp(),
+            self.variable_absorption(self.data_Bac, dimension_wavelength, code="Bac").at_stp(),
 
-            at_stp(self.variable_absorption(self.data_Ba, dimension_wavelength, "spot_one_light_absorption",
+            self.variable_absorption(self.data_Ba, dimension_wavelength, "spot_one_light_absorption",
                                             code="Ba", attributes={
                 'long_name': "uncorrected light absorption coefficient at STP on spot one",
                 'standard_name': None,
-            })),
-            at_stp(self.variable_absorption(self.data_Bas, dimension_wavelength, "spot_two_light_absorption",
+            }).at_stp(),
+            self.variable_absorption(self.data_Bas, dimension_wavelength, "spot_two_light_absorption",
                                             code="Bas", attributes={
                 'long_name': "uncorrected light absorption coefficient at STP on spot two",
                 'standard_name': None,
-            })),
+            }).at_stp(),
             self.variable_transmittance(self.data_Ir, dimension_wavelength, "spot_one_transmittance", code="Ir",
                                         attributes={
                 'long_name': "transmittance fraction of light through the filter relative to the amount before sampling on spot one",
@@ -464,11 +459,11 @@ class Instrument(StreamingInstrument):
             self.variable_flow(self.data_Q1, "spot_one_flow", code="Q1", attributes={
                 'long_name': "sample flow through spot one",
                 'C_format': "%7.3f",
-            }),
+            }).at_stp(),
             self.variable_flow(self.data_Q2, "spot_two_flow", code="Q2", attributes={
                 'long_name': "sample flow through spot two",
                 'C_format': "%7.3f",
-            }),
+            }).at_stp(),
             self.variable_temperature(self.data_Tcontroller, "controller_temperature", code="T1",
                                       attributes={'long_name': "controller board temperature"}),
             self.variable_temperature(self.data_Tsupply, "supply_temperature", code="T2",
@@ -513,8 +508,6 @@ class Instrument(StreamingInstrument):
                 [self.variable_last_valid(w) for w in self.data_Ir_wavelength]
             ),
         )
-        self.instrument_report.record.data_record.standard_temperature = 0.0
-        self.instrument_report.record.data_record.standard_pressure = ONE_ATM_IN_HPA
 
         self.filter_state = self.change_event(
             self.state_unsigned_integer(self.data_Fn, "tape_advance", code="Fn", attributes={

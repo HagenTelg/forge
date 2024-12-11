@@ -2,6 +2,7 @@ import typing
 import asyncio
 import enum
 import time
+from forge.units import ONE_ATM_IN_HPA
 from .base import BaseInstrument
 
 
@@ -176,6 +177,10 @@ class ChangeEvent(BaseInstrument.ChangeEvent):
                 s.source.on_update.append(self)
 
             self.data_record.add_variable(s.data)
+            if s.data.use_standard_temperature and self.data_record.standard_temperature is None:
+                self.data_record.standard_temperature = 0.0
+            if s.data.use_standard_pressure and self.data_record.standard_pressure is None:
+                self.data_record.standard_pressure = ONE_ATM_IN_HPA
 
     def __repr__(self) -> str:
         return "ChangeEvent(" + repr(self.state) + ")"

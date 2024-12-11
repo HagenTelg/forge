@@ -230,17 +230,12 @@ class Instrument(StreamingInstrument):
         self._prior_report_time: typing.Optional[float] = None
         self._Ir0: typing.Optional[typing.List[float]] = None
 
-        def at_stp(s: Instrument.Variable):
-            s.data.use_standard_pressure = True
-            s.data.use_standard_temperature = True
-            return s
-
         self.notify_spot_advancing = self.notification('spot_advancing')
 
         dimension_wavelength = self.dimension_wavelength(self.data_wavelength)
         self.instrument_report = self.report(
-            at_stp(self.variable_ebc(self.data_X, dimension_wavelength, code="X")),
-            at_stp(self.variable_absorption(self.data_Ba, dimension_wavelength, code="Ba")),
+            self.variable_ebc(self.data_X, dimension_wavelength, code="X").st_stp(),
+            self.variable_absorption(self.data_Ba, dimension_wavelength, code="Ba").st_stp(),
 
             self.variable_transmittance(self.data_Ir, dimension_wavelength, code="Ir"),
             self.variable_array(self.data_If, dimension_wavelength, "reference_intensity", code="If", attributes={
@@ -253,7 +248,7 @@ class Instrument(StreamingInstrument):
                 'C_format': "%7.4f",
             }),
 
-            at_stp(self.variable_sample_flow(self.data_Q, code="Q", attributes={'C_format': "%6.3f"})),
+            self.variable_sample_flow(self.data_Q, code="Q", attributes={'C_format': "%6.3f"}).at_stp(),
 
             flags=[
                 self.flag(self.notify_spot_advancing),
@@ -265,8 +260,6 @@ class Instrument(StreamingInstrument):
                 [self.variable_last_valid(w) for w in self.data_Ir_wavelength]
             ),
         )
-        self.instrument_report.record.data_record.standard_temperature = 0.0
-        self.instrument_report.record.data_record.standard_pressure = ONE_ATM_IN_HPA
         self.instrument_report.record.data_record.report_interval = self._report_interval
 
         self.parameters_record = self.context.data.constant_record("parameters")
