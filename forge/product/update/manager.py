@@ -6,6 +6,7 @@ import re
 import os
 from abc import ABC, abstractmethod
 from forge.tasks import wait_cancelable
+from forge.range import intersects
 from forge.archive.client import data_notification_key
 from forge.archive.client.connection import Connection
 from forge.dashboard.report import report_ok, report_failed
@@ -36,6 +37,7 @@ class UpdateController(ABC):
         self._external_commit_queue: typing.List[typing.Tuple[FileModifiedTracker, int, int]] = list()
 
         self._commit_request: typing.Set[FileModifiedTracker] = set()
+        self._suspended_trackers: typing.Set[FileModifiedTracker] = set()
 
     @abstractmethod
     async def create_trackers(self) -> typing.List[FileModifiedTracker]:
@@ -44,6 +46,9 @@ class UpdateController(ABC):
     async def _tracker_notified(self, key: str, start_epoch_ms: int, end_epoch_ms: int,
                                 tracker: FileModifiedTracker) -> None:
         async with self._lock:
+            if tracker in self._suspended_trackers:
+                _LOGGER.debug(f"Archive notification {start_epoch_ms},{end_epoch_ms} ignored on suspended {str(tracker)}")
+                return
             self._notification_queue.append((tracker, start_epoch_ms, end_epoch_ms))
         self._updated.set()
         _LOGGER.debug(f"Archive notification {start_epoch_ms},{end_epoch_ms} received for {str(tracker)}")
@@ -135,6 +140,48 @@ class UpdateController(ABC):
                 self._next_candidate_process = time.monotonic()
             self._updated.set()
             _LOGGER.debug(f"Commit requested for {str(tracker)}")
+
+    async def suspend_tracker(
+            self,
+            station: typing.Optional[str] = None,
+            archive: typing.Optional[str] = None,
+            key: typing.Optional[str] = None,
+    ) -> None:
+        async for tracker in self._matched_trackers(station, archive, key):
+            self._suspended_trackers.add(tracker)
+            _LOGGER.debug(f"Suspend set for {str(tracker)}")
+
+    async def unsuspend_tracker(
+            self,
+            station: typing.Optional[str] = None,
+            archive: typing.Optional[str] = None,
+            key: typing.Optional[str] = None,
+    ) -> None:
+        async for tracker in self._matched_trackers(station, archive, key):
+            self._suspended_trackers.discard(tracker)
+            _LOGGER.debug(f"Suspend cleared for {str(tracker)}")
+
+    async def discard(
+            self,
+            start_epoch_ms: int, end_epoch_ms: int,
+            discard_outputs: bool = False,
+            station: typing.Optional[str] = None,
+            archive: typing.Optional[str] = None,
+            key: typing.Optional[str] = None,
+    ) -> None:
+        async for tracker in self._matched_trackers(station, archive, key):
+            for idx in reversed(range(len(self._notification_queue))):
+                check_tracker, check_start, check_end = self._notification_queue[idx]
+                if check_tracker != tracker:
+                    continue
+                if not intersects(check_start, check_end, start_epoch_ms, end_epoch_ms):
+                    continue
+                del self._notification_queue[idx]
+                _LOGGER.debug(f"Removed notification on {check_start},{check_end} for {str(check_tracker)}")
+            tracker.discard_updates(start_epoch_ms, end_epoch_ms)
+            if discard_outputs:
+                tracker.discard_outputs(start_epoch_ms, end_epoch_ms)
+            tracker.save_state()
 
     async def _flush_notifications(self, save_state: bool = True) -> None:
         async with self._lock:
@@ -234,7 +281,7 @@ class UpdateController(ABC):
             tracker.save_state(sync=True)
 
     @classmethod
-    def create_updater(cls, connection: Connection, args) -> "StationsController":
+    def create_updater(cls, connection: Connection, args) -> "UpdateController":
         return cls(connection)
 
     @classmethod
@@ -301,6 +348,7 @@ class UpdateController(ABC):
                 n = struct.unpack('<I', await reader.readexactly(4))[0]
                 return (await reader.readexactly(n)).decode('utf-8')
 
+            _LOGGER.debug("Control connection accepted")
             try:
                 command = struct.unpack('<B', await reader.readexactly(1))[0]
                 if command == 0:
@@ -346,6 +394,37 @@ class UpdateController(ABC):
                     else:
                         writer.write(struct.pack('<B', 1))
                     await writer.drain()
+                elif command == 4:
+                    station = await read_string()
+                    archive = await read_string()
+                    key = await read_string()
+                    if controller:
+                        await controller.suspend_tracker(station, archive, key)
+                        writer.write(struct.pack('<B', 0))
+                    else:
+                        writer.write(struct.pack('<B', 1))
+                    await writer.drain()
+                elif command == 5:
+                    station = await read_string()
+                    archive = await read_string()
+                    key = await read_string()
+                    if controller:
+                        await controller.unsuspend_tracker(station, archive, key)
+                        writer.write(struct.pack('<B', 0))
+                    else:
+                        writer.write(struct.pack('<B', 1))
+                    await writer.drain()
+                elif command == 6:
+                    start, end, discard_outputs = struct.unpack('<qqB', await reader.readexactly(17))
+                    station = await read_string()
+                    archive = await read_string()
+                    key = await read_string()
+                    if controller:
+                        await controller.discard(start, end, discard_outputs, station, archive, key)
+                        writer.write(struct.pack('<B', 0))
+                    else:
+                        writer.write(struct.pack('<B', 1))
+                    await writer.drain()
                 else:
                     _LOGGER.error(f"Invalid updater command {command}")
             finally:
@@ -353,6 +432,7 @@ class UpdateController(ABC):
                     writer.close()
                 except:
                     pass
+                _LOGGER.debug("Control connection closed")
 
         async def initialize():
             nonlocal connection
@@ -562,12 +642,67 @@ class UpdateController(ABC):
                                     help="limit rescan to a key matching a regular expression")
         command_parser.add_argument('time', help="time bounds to rescan", nargs='+')
 
+        command_parser = subparsers.add_parser('suspend',
+                                               help="suspend automatic file modification tracking")
+        command_parser.add_argument('--multiple',
+                                    dest='multiple', action='store_true',
+                                    help="required if a station is not selected")
+        command_parser.add_argument('--station',
+                                    dest='station',
+                                    help="limit suspend to a station")
+        command_parser.add_argument('--archive',
+                                    dest='archive',
+                                    choices=["raw", "edited", "clean", "avgh", "avgd", "avgm"],
+                                    help="limit suspend to an archive")
+        command_parser.add_argument('--key',
+                                    dest='key',
+                                    help="limit suspend to a key matching a regular expression")
+
+        command_parser = subparsers.add_parser('unsuspend',
+                                               help="unsuspend automatic file modification tracking")
+        command_parser.add_argument('--multiple',
+                                    dest='multiple', action='store_true',
+                                    help="required if a station is not selected")
+        command_parser.add_argument('--station',
+                                    dest='station',
+                                    help="limit unsuspend to a station")
+        command_parser.add_argument('--archive',
+                                    dest='archive',
+                                    choices=["raw", "edited", "clean", "avgh", "avgd", "avgm"],
+                                    help="limit unsuspend to an archive")
+        command_parser.add_argument('--key',
+                                    dest='key',
+                                    help="limit unsuspend to a key matching a regular expression")
+
+        command_parser = subparsers.add_parser('discard',
+                                               help="discard updates")
+        command_parser.add_argument('--multiple',
+                                    dest='multiple', action='store_true',
+                                    help="required if a station is not selected")
+        command_parser.add_argument('--station',
+                                    dest='station',
+                                    help="limit discard to a station")
+        command_parser.add_argument('--archive',
+                                    dest='archive',
+                                    choices=["raw", "edited", "clean", "avgh", "avgd", "avgm"],
+                                    help="limit discard to an archive")
+        command_parser.add_argument('--key',
+                                    dest='key',
+                                    help="limit discard to a key matching a regular expression")
+        command_parser.add_argument('--outputs',
+                                    dest='discard_outputs', action='store_true',
+                                    help="also discard existing outputs")
+        command_parser.add_argument('time', help="time bounds to discard", nargs='+')
+
         args = parser.parse_args()
         if not args.control_socket:
             parser.error("No control socket available")
+        if not args.command:
+            parser.error("No command specified")
 
         if args.debug:
             from forge.log import set_debug_logger
+            set_debug_logger()
 
         station = args.station
         if station:
@@ -627,6 +762,26 @@ class UpdateController(ABC):
                 end = end.timestamp()
 
                 writer.write(struct.pack('<Bqq', 3, int(floor(start * 1000)), int(ceil(end * 1000))))
+                write_string(station or "")
+                write_string(archive or "")
+                write_string(key or "")
+            elif args.command == 'suspend':
+                writer.write(struct.pack('<B', 4))
+                write_string(station or "")
+                write_string(archive or "")
+                write_string(key or "")
+            elif args.command == 'unsuspend':
+                writer.write(struct.pack('<B', 5))
+                write_string(station or "")
+                write_string(archive or "")
+                write_string(key or "")
+            elif args.command == 'discard':
+                start, end = parse_time_bounds_arguments(args.time)
+                start = start.timestamp()
+                end = end.timestamp()
+
+                writer.write(struct.pack('<BqqB', 6, int(floor(start * 1000)), int(ceil(end * 1000)),
+                                         1 if args.discard_outputs else 0))
                 write_string(station or "")
                 write_string(archive or "")
                 write_string(key or "")

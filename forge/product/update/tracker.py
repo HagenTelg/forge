@@ -8,7 +8,7 @@ from pathlib import Path
 from math import floor, ceil
 from tempfile import TemporaryDirectory
 from json import load as from_json, dump as to_json
-from forge.range import Merge as RangeMerge
+from forge.range import Merge as RangeMerge, intersects
 from netCDF4 import Dataset
 from forge.logicaltime import containing_year_range, year_bounds_ms, start_of_year_ms
 from forge.timeparse import parse_iso8601_time, parse_iso8601_duration
@@ -389,6 +389,29 @@ class Tracker(ABC):
 
         if any_commited:
             self.save_state(sync=True)
+
+    def discard_updates(self, start_epoch_ms: int, end_epoch_ms: int) -> None:
+        for idx in reversed(range(len(self._candidates))):
+            candidate = self._candidates[idx]
+            if not intersects(start_epoch_ms, end_epoch_ms, candidate.start_epoch_ms, candidate.end_epoch_ms):
+                continue
+            _LOGGER.debug("Discarding candidate %d,%d", candidate.start_epoch_ms, candidate.end_epoch_ms)
+            del self._candidates[idx]
+        for output in self._outputs:
+            for idx in reversed(range(len(output.updated))):
+                update = output.updated[idx]
+                if not intersects(start_epoch_ms, end_epoch_ms, update.start_epoch_ms, update.end_epoch_ms):
+                    continue
+                _LOGGER.debug("Discarding update %d,%d", update.start_epoch_ms, update.end_epoch_ms)
+                del output.updated[idx]
+
+    def discard_outputs(self, start_epoch_ms: int, end_epoch_ms: int) -> None:
+        for idx in reversed(range(len(self._outputs))):
+            output = self._outputs[idx]
+            if not intersects(start_epoch_ms, end_epoch_ms, output.start_epoch_ms, output.end_epoch_ms):
+                continue
+            _LOGGER.debug("Discarding output %d,%d", output.start_epoch_ms, output.end_epoch_ms)
+            del self._outputs[idx]
 
 
 class FileModifiedTracker(Tracker):
