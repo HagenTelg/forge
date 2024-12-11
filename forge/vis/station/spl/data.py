@@ -57,7 +57,7 @@ station_profile_data['aerosol']['raw']['cpcstatus2'] = lambda station, start_epo
         Name(station, 'raw', 'Qu_N74'): 'Qinlet',
         Name(station, 'raw', 'P_N74'): 'Psample',
         Name(station, 'raw', 'Pd1_N74'): 'PDnozzle',
-        Name(station, 'raw', 'Pd2_N74'): 'ODorifice',
+        Name(station, 'raw', 'Pd2_N74'): 'PDorifice',
         Name(station, 'raw', 'A_N74'): 'Alaser',
     }, send
 )
@@ -76,7 +76,7 @@ station_profile_data['aerosol']['realtime']['cpcstatus2'] = {
     RealtimeTranslator.Key('Qu_N74'): 'Qinlet',
     RealtimeTranslator.Key('P_N74'): 'Psample',
     RealtimeTranslator.Key('Pd1_N74'): 'PDnozzle',
-    RealtimeTranslator.Key('Pd2_N74'): 'ODorifice',
+    RealtimeTranslator.Key('Pd2_N74'): 'PDorifice',
     RealtimeTranslator.Key('A_N74'): 'Alaser',
 }
 

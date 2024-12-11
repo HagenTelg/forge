@@ -733,6 +733,40 @@ station_profile_data['aerosol']['raw']['samplepressure-pm25'] = lambda station, 
 )
 
 
+station_profile_data['aerosol']['raw']['cpcstatus'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+    start_epoch_ms, end_epoch_ms, {
+        Name(station, 'raw', 'T1_N71'): 'Tsaturator',
+        Name(station, 'raw', 'T2_N71'): 'Tcondenser',
+        Name(station, 'raw', 'T3_N71'): 'Toptics',
+        Name(station, 'raw', 'T4_N71'): 'Tcabinet',
+        Name(station, 'raw', 'T5_N71'): 'Twatertrap',
+        Name(station, 'raw', 'Q_N71'): 'Qsample',
+        Name(station, 'raw', 'Qu_N71'): 'Qinlet',
+        Name(station, 'raw', 'P_N71'): 'Psample',
+        Name(station, 'raw', 'Pd1_N71'): 'PDnozzle',
+        Name(station, 'raw', 'Pdu_N71'): 'PDinlet',
+        Name(station, 'raw', 'A_N71'): 'Alaser',
+        Name(station, 'raw', 'PCT_N71'): 'PCT',
+    }, send
+)
+station_profile_data['aerosol']['realtime']['cpcstatus'] = {
+    RealtimeTranslator.Key('T1_N71'): 'Tsaturator',
+    RealtimeTranslator.Key('T2_N71'): 'Tcondenser',
+    RealtimeTranslator.Key('T3_N71'): 'Toptics',
+    RealtimeTranslator.Key('T4_N71'): 'Tcabinet',
+    RealtimeTranslator.Key('T5_N71'): 'Twatertrap',
+    RealtimeTranslator.Key('Q_N71'): 'Qsample',
+    RealtimeTranslator.Key('Qu_N71'): 'Qinlet',
+    RealtimeTranslator.Key('P_N71'): 'Psample',
+    RealtimeTranslator.Key('Pd1_N71'): 'PDnozzle',
+    RealtimeTranslator.Key('Pd2_N71'): 'PDorifice',
+    RealtimeTranslator.Key('Pdu_N71'): 'PDinlet',
+    RealtimeTranslator.Key('A_N71'): 'Alaser',
+    RealtimeTranslator.Key('PCT_N71'): 'PCT',
+}
+
+
+
 def get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
         send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
     return data_profile_get(station, data_name, start_epoch_ms, end_epoch_ms, send, station_profile_data)

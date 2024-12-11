@@ -1,6 +1,7 @@
 import typing
 from ..default.view import detach, View, aerosol_views
 from ..default.aerosol.maap import MAAP5012Status
+from ..default.aerosol.tsi375Xcpc import TSI375xCPCStatus
 from .aethalometer import AE33, AE33Status, AE33OpticalStatus, EditingAE33
 from .maap import MAAP5012Optical, EditingMAAP5012
 from .green import Green
@@ -36,6 +37,9 @@ station_views['aerosol-avgh-green'] = Green('aerosol-avgh')
 
 station_views['aerosol-raw-pressure'] = Pressure('aerosol-raw')
 station_views['aerosol-realtime-pressure'] = Pressure('aerosol-realtime', realtime=True)
+
+station_views['aerosol-raw-cpcstatus'] = TSI375xCPCStatus('aerosol-raw')
+station_views['aerosol-realtime-cpcstatus'] = TSI375xCPCStatus('aerosol-realtime', realtime=True)
 
 
 station_views['aerosol-raw-opticalscattering2'] = OpticalScatteringSecondary('aerosol-raw')

@@ -5,14 +5,6 @@ from ..default.mode import Mode, ViewList, detach, aerosol_modes
 station_modes = detach(aerosol_modes)
 
 
-station_modes['aerosol-raw'].remove('aerosol-raw-counts')
-station_modes['aerosol-realtime'].remove('aerosol-realtime-counts')
-station_modes['aerosol-editing'].remove('aerosol-editing-counts')
-station_modes['aerosol-clean'].remove('aerosol-clean-counts')
-station_modes['aerosol-avgh'].remove('aerosol-avgh-counts')
-station_modes['aerosol-raw'].remove('aerosol-raw-cpcstatus')
-station_modes['aerosol-realtime'].remove('aerosol-realtime-cpcstatus')
-
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-maap', "MAAP"),
                                     'aerosol-raw-optical')
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-maap', "MAAP"),

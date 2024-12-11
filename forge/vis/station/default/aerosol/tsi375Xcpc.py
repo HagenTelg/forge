@@ -2,8 +2,8 @@ import typing
 from forge.vis.view.timeseries import TimeSeries
 
 
-class TSI3772CPCStatus(TimeSeries):
-    def __init__(self, mode: str, **kwargs):
+class TSI375xCPCStatus(TimeSeries):
+    def __init__(self, mode: str, use_3789: bool = False, **kwargs):
         super().__init__(**kwargs)
         self.title = "CPC Status"
 
@@ -17,13 +17,13 @@ class TSI3772CPCStatus(TimeSeries):
         temperatures.axes.append(degrees)
 
         saturator = TimeSeries.Trace(degrees)
-        saturator.legend = "Saturator"
+        saturator.legend = "Saturator" if not use_3789 else "Initiator"
         saturator.data_record = f'{mode}-cpcstatus'
         saturator.data_field = 'Tsaturator'
         temperatures.traces.append(saturator)
 
         condenser = TimeSeries.Trace(degrees)
-        condenser.legend = "Condenser"
+        condenser.legend = "Condenser" if not use_3789 else "Conditioner"
         condenser.data_record = f'{mode}-cpcstatus'
         condenser.data_field = 'Tcondenser'
         temperatures.traces.append(condenser)
@@ -39,6 +39,12 @@ class TSI3772CPCStatus(TimeSeries):
         cabinet.data_record = f'{mode}-cpcstatus'
         cabinet.data_field = 'Tcabinet'
         temperatures.traces.append(cabinet)
+
+        watertrap = TimeSeries.Trace(degrees)
+        watertrap.legend = "Water Trap"
+        watertrap.data_record = f'{mode}-Twatertrap'
+        watertrap.data_field = 'Twatertrap'
+        temperatures.traces.append(watertrap)
 
 
         cpc_flow = TimeSeries.Graph()
@@ -68,10 +74,6 @@ class TSI3772CPCStatus(TimeSeries):
         cpc_flow.traces.append(inlet)
 
 
-class TSI3775CPCStatus(TSI3772CPCStatus):
-    def __init__(self, mode: str, **kwargs):
-        super().__init__(mode, **kwargs)
-
         pressure = TimeSeries.Graph()
         pressure.title = "Absolute Pressure"
         self.graphs.append(pressure)
@@ -93,7 +95,7 @@ class TSI3775CPCStatus(TSI3772CPCStatus):
         self.graphs.append(pressure_drop)
 
         hPa_nozzle = TimeSeries.Axis()
-        hPa_nozzle.title = "Nozzle (hPa)"
+        hPa_nozzle.title = "hPa"
         hPa_nozzle.format_code = '.3f'
         pressure_drop.axes.append(hPa_nozzle)
 
@@ -106,6 +108,12 @@ class TSI3775CPCStatus(TSI3772CPCStatus):
         nozzle.legend = "Nozzle Pressure Drop"
         nozzle.data_record = f'{mode}-cpcstatus'
         nozzle.data_field = 'PDnozzle'
+        pressure_drop.traces.append(nozzle)
+
+        nozzle = TimeSeries.Trace(hPa_nozzle)
+        nozzle.legend = "Inlet Pressure Drop"
+        nozzle.data_record = f'{mode}-cpcstatus'
+        nozzle.data_field = 'PDinlet'
         pressure_drop.traces.append(nozzle)
 
         orifice = TimeSeries.Trace(hPa_orifice)
@@ -124,11 +132,21 @@ class TSI3775CPCStatus(TSI3772CPCStatus):
         mA.format_code = '.0f'
         laser.axes.append(mA)
 
+        percent = TimeSeries.Axis()
+        percent.title = "%"
+        percent.format_code = '.0f'
+        laser.axes.append(percent)
+
         sample = TimeSeries.Trace(mA)
         sample.legend = "Laser Current"
         sample.data_record = f'{mode}-cpcstatus'
         sample.data_field = 'Alaser'
         laser.traces.append(sample)
 
+        pulse = TimeSeries.Trace(mA)
+        pulse.legend = "Pulse Height"
+        pulse.data_record = f'{mode}-cpcstatus'
+        pulse.data_field = 'PCT'
+        laser.traces.append(pulse)
 
-TSI3776CPCStatus = TSI3775CPCStatus
+
