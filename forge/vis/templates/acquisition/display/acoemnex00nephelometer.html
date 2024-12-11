@@ -1,5 +1,5 @@
 <div class="display-container collapsable collapsed{% if writable %} menu{% endif %}">
-    <div class="header communication-state warning-state format-source" instrument="Ecotech Aurora"></div>
+    <div class="header communication-state warning-state format-source" instrument="Acoem NE-x00"></div>
 
     {% include 'acquisition/display/header_buttons.html' %}
 
@@ -120,14 +120,14 @@
 
     <table class="content display-data communication-state hide-false tab-scattering tab-counts">
         <tbody>
-            <tr> <td>Sample temperature (°C)</td>   <td class="value-formatted" field="Tsample" rightpad="1"></td> </tr>
-            <tr> <td>Sample RH (%)</td>             <td class="value-formatted" field="Usample" rightpad="1"></td> </tr>
-            <tr> <td>Sample pressure (hPa)</td>     <td class="value-formatted" field="Psample" rightpad="1"></td> </tr>
-            <tr> <td>Chassis temperature (°C)</td>  <td class="value-formatted" field="Tchassis" rightpad="1"></td> </tr>
-            <tr> <td>Chassis RH (%)</td>            <td class="value-formatted" field="Uchassis" rightpad="1"></td> </tr>
-            <tr> <td>Chassis pressure (hPa)</td>    <td class="value-formatted" field="Pchassis" rightpad="1"></td> </tr>
+            <tr> <td>Sample temperature (°C)</td>   <td class="value-formatted" field="Tsample"></td> </tr>
+            <tr> <td>Sample RH (%)</td>             <td class="value-formatted" field="Usample"></td> </tr>
+            <tr> <td>Sample pressure (hPa)</td>     <td class="value-formatted" field="Psample"></td> </tr>
+            <tr> <td>Chassis temperature (°C)</td>  <td class="value-formatted" field="Tchassis"></td> </tr>
+            <tr> <td>Chassis RH (%)</td>            <td class="value-formatted" field="Uchassis"></td> </tr>
+            <tr> <td>Chassis pressure (hPa)</td>    <td class="value-formatted" field="Pchassis"></td> </tr>
+            <tr> <td>Flow (lpm)</td>                <td class="value-formatted" field="Q"></td> </tr>
             <tr> <td>Dark counts (Hz)</td>          <td class="value-formatted" field="Cd" decimals="0" rightpad="2"></td> </tr>
-            <tr> <td>Flow (lpm)</td>                <td class="value-formatted" field="Q" rightpad="1"></td> </tr>
         </tbody>
     </table>
 

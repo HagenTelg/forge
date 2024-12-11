@@ -5,7 +5,7 @@ import logging
 import re
 from math import isfinite, nan, exp
 from forge.tasks import wait_cancelable
-from forge.units import mass_ng_to_ug, flow_ccm_to_lpm, pressure_Pa_to_hPa, ONE_ATM_IN_HPA
+from forge.units import mass_ng_to_ug, flow_ccm_to_lpm, pressure_Pa_to_hPa
 from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError
 from ..parse import parse_number, parse_date_and_time
 from ..variable import Input

@@ -5,7 +5,6 @@ import struct
 import time
 from math import nan
 from forge.acquisition.instrument.streaming import StreamingSimulator
-from forge.units import ZERO_C_IN_K
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -297,19 +296,19 @@ class Simulator(StreamingSimulator):
             return struct.pack('>I', len(self.data_Bn))
         elif 4004 <= parameter <= 4006:
             # Wavelength
-            return struct.pack('>f', (450, 525, 635)[parameter - 4004])
+            return struct.pack('>I', (450, 525, 635)[parameter - 4004])
         elif 4008 <= parameter <= 4027:
-            return struct.pack('>f', self.data_Bn[parameter - 4008])
+            return struct.pack('>I', int(round(self.data_Bn[parameter - 4008])))
         elif parameter == 4035:
             return struct.pack('>I', self._current_operation)
         elif parameter == 5001:
-            return struct.pack('>f', self.data_Tsample + ZERO_C_IN_K)
+            return struct.pack('>f', self.data_Tsample)
         elif parameter == 5002:
             return struct.pack('>f', self.data_Psample)
         elif parameter == 5003:
             return struct.pack('>f', self.data_Usample)
         elif parameter == 5004:
-            return struct.pack('>f', self.data_Tchassis + ZERO_C_IN_K)
+            return struct.pack('>f', self.data_Tchassis)
         elif parameter == 5005:
             return struct.pack('>f', self.data_Pchassis)
         elif parameter == 5006:

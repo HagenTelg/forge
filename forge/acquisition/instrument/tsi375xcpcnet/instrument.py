@@ -20,6 +20,7 @@ class Instrument(StreamingInstrument):
 
         self._transaction_id: int = 100
         self._concentration_subscription_id: typing.Optional[int] = None
+        self._reported_model: typing.Optional[str] = None
 
         self.data_N = self.input("N")
         self.data_C = self.input("C")
@@ -207,6 +208,8 @@ class Instrument(StreamingInstrument):
         return response.get('value')
 
     def _update_model_report(self, model: str) -> None:
+        self._reported_model = model
+
         if model != "3757" and not self.report_not_3757:
             self.report_not_3757 = self.report(
                 self.variable_delta_pressure(self.data_PDnozzle, "nozzle_pressure_drop", code="Pd1", attributes={
@@ -268,6 +271,7 @@ class Instrument(StreamingInstrument):
                 if not model.startswith("375") and model != "3789":
                     raise CommunicationsError(f"unsupported model {model}")
                 self.set_instrument_info('model', model)
+                self._update_model_report(model)
 
             serial_number = device_record.get('serialNumber')
             if serial_number:
@@ -352,6 +356,8 @@ class Instrument(StreamingInstrument):
             self.variable_saturator.data.attributes["long_name"] = "initiator temperature"
         try:
             Twatertrap = field_value('waterTrapTemp')
+            if Twatertrap == 0.0 and self._reported_model != "3757":
+                Twatertrap = None
         except ValueError:
             try:
                 Twatertrap = field_value('moderatorTemp')
@@ -382,6 +388,8 @@ class Instrument(StreamingInstrument):
         if PDorifice is not None:
             self.data_PDorifice(PDorifice)
         if PCT is not None:
+            if 0.0 < PCT <= 1.0:
+                PCT *= 100.0
             self.data_PCT(PCT)
         if Toptics is not None:
             self.data_Toptics(Toptics)

@@ -10,7 +10,7 @@ from math import isfinite, nan, floor
 from contextlib import asynccontextmanager
 from forge.tasks import wait_cancelable
 from forge.dewpoint import extrapolate_rh
-from forge.units import temperature_k_to_c, ONE_ATM_IN_HPA
+from forge.units import temperature_k_to_c
 from forge.acquisition import LayeredConfiguration
 from forge.acquisition.schedule import Schedule
 from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError, BaseBusInterface

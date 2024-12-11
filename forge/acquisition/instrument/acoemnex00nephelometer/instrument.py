@@ -7,7 +7,6 @@ import struct
 import datetime
 from math import nan, isfinite
 from forge.tasks import wait_cancelable
-from forge.units import ONE_ATM_IN_HPA, ZERO_C_IN_K
 from ..streaming import StreamingInstrument, StreamingContext, CommunicationsError, BaseBusInterface
 from ..state import Persistent, ChangeEvent
 from ..variable import Input
@@ -670,10 +669,10 @@ class Instrument(StreamingInstrument):
             await self._read_calibration()
 
         self.data_current_operation(current_operation)
-        self.data_Tsample(Tsample - ZERO_C_IN_K)
+        self.data_Tsample(Tsample)
         self.data_Psample(Psample)
         self.data_Usample(Usample)
-        self.data_Tchassis(Tchassis - ZERO_C_IN_K)
+        self.data_Tchassis(Tchassis)
         self.data_Pchassis(Pchassis)
         self.data_Uchassis(Uchassis)
         self.data_Q(Q)
@@ -819,9 +818,9 @@ class Instrument(StreamingInstrument):
         number_of_angles = await self._read_value(self._Parameter.NumberOfAngles, '>I')
         if number_of_angles < 1 or number_of_angles > 20:
             raise CommunicationsError(f"invalid number of angles {number_of_angles}")
-        angles: typing.List[float] = list(await self._read_values(*[
+        angles: typing.List[float] = [float(a) for a in await self._read_values(*[
             int(self._Parameter.AngleValuesStart) + i for i in range(number_of_angles)
-        ]))
+        ], format='I')]
         for a in angles:
             if a < 0.0 or a > 90.0:
                 raise CommunicationsError(f"invalid angle {a}")
