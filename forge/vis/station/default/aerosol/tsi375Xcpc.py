@@ -143,7 +143,7 @@ class TSI375xCPCStatus(TimeSeries):
         sample.data_field = 'Alaser'
         laser.traces.append(sample)
 
-        pulse = TimeSeries.Trace(mA)
+        pulse = TimeSeries.Trace(percent)
         pulse.legend = "Pulse Height"
         pulse.data_record = f'{mode}-cpcstatus'
         pulse.data_field = 'PCT'
