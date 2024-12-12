@@ -263,7 +263,10 @@ class Converter:
         self._record_interval: typing.Optional[float] = None
         time_coverage_resolution = getattr(self.root, "time_coverage_resolution", None)
         if time_coverage_resolution is not None:
-            self._record_interval = parse_iso8601_duration(str(time_coverage_resolution))
+            try:
+                self._record_interval = parse_iso8601_duration(str(time_coverage_resolution))
+            except ValueError:
+                pass
 
         self._file_start_time = parse_iso8601_time(str(self.root.time_coverage_start)).timestamp()
         self._file_end_time = parse_iso8601_time(str(self.root.time_coverage_end)).timestamp()

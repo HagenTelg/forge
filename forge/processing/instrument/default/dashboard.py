@@ -24,7 +24,10 @@ class Analyzer:
         self.expected_record_interval: typing.Optional[float] = None
         time_coverage_resolution = getattr(self.root, "time_coverage_resolution", None)
         if time_coverage_resolution is not None:
-            self.expected_record_interval = parse_iso8601_duration(str(time_coverage_resolution))
+            try:
+                self.expected_record_interval = parse_iso8601_duration(str(time_coverage_resolution))
+            except ValueError:
+                pass
 
         self.file_start_time: typing.Optional[float] = None
         time_coverage_start = getattr(self.root, "time_coverage_start", None)

@@ -466,7 +466,10 @@ class FileModifiedTracker(Tracker):
 
         time_coverage_resolution = getattr(root, "time_coverage_resolution", None)
         if time_coverage_resolution is not None:
-            time_coverage_resolution = int(round(parse_iso8601_duration(str(time_coverage_resolution)) * 1000))
+            try:
+                time_coverage_resolution = int(round(parse_iso8601_duration(str(time_coverage_resolution)) * 1000))
+            except ValueError:
+                time_coverage_resolution = None
 
         first_seen_data: typing.Optional[int] = None
         last_seen_data: typing.Optional[int] = None

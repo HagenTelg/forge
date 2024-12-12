@@ -423,7 +423,10 @@ class DataVariable(SelectedVariable):
 
         time_coverage_resolution = getattr(root, "time_coverage_resolution", None)
         if time_coverage_resolution is not None:
-            time_coverage_resolution = int(round(parse_iso8601_duration(str(time_coverage_resolution)) * 1000))
+            try:
+                time_coverage_resolution = int(round(parse_iso8601_duration(str(time_coverage_resolution)) * 1000))
+            except ValueError:
+                time_coverage_resolution = None
 
         if self._time_origin_indices is None:
             selection = slice(*self._time_slice(self._raw_times, int(self.times[0]), int(self.times[-1])))

@@ -156,8 +156,11 @@ class EditingAvailableDay(AvailableData):
             avg = getattr(i.root, 'time_coverage_resolution', None)
             if not avg:
                 continue
-            average_interval = parse_iso8601_duration(avg)
-            break
+            try:
+                average_interval = parse_iso8601_duration(avg)
+                break
+            except ValueError:
+                continue
 
         output_times = self._derive_output_times(
             hit_inputs, average_interval,
