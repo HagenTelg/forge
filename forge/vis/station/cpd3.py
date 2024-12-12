@@ -2201,6 +2201,38 @@ class RealtimeTranslator(NativeRealtimeTranslator):
         return cls(data, realtime_offset=realtime_offset)
 
     NATIVE_INSTRUMENTS: typing.Dict[str, typing.Type[NativeInstrument]] = {
+        "acoemnex00nephelometer": native_wavelength_instrument({
+            "Psample": "P",
+            "Tsample": "T",
+            "Usample": "U",
+            "Psample": "P",
+            "Tchassis": "Tx",
+            "Uchassis": "Ux",
+            "Pchassis": "Px",
+            # This back and forth is so the plots get the zero data removed
+            "BsB": "_",
+            "BsG": "_",
+            "BsR": "_",
+            "BbsB": "_",
+            "BbsG": "_",
+            "BbsR": "_",
+            "_BsB": "BsB",
+            "_BsG": "BsG",
+            "_BsR": "BsR",
+            "_BbsB": "BbsB",
+            "_BbsG": "BbsG",
+            "_BbsR": "BbsR",
+        }, {
+            "Bs": ["_BsB", "_BsG", "_BsR"],
+            "Bbs": ["_BbsB", "_BbsG", "_BbsR"],
+        }, persistent={
+            "BswB": "BswB",
+            "BswG": "BswG",
+            "BswR": "BswR",
+            "BbswB": "BbswB",
+            "BbswG": "BbswG",
+            "BbswR": "BbswR",
+        }),
         "admagic200cpc": native_remapped_instrument({
             "PD": "Pd",
             "Tinlet": "Tu",
@@ -2395,12 +2427,14 @@ class RealtimeTranslator(NativeRealtimeTranslator):
         "tsi375xcpc": native_remapped_instrument({
             "PDnozzle": "Pd1",
             "PDorifice": "Pd2",
+            "PDinlet": "Pdu",
             "Alaser": "A",
             "Qinlet": "Qu",
             "Tsaturator": "T1",
             "Tcondenser": "T2",
             "Toptics": "T3",
             "Tcabinet": "T4",
+            "Twatertrap": "T5",
         }),
         "tsi377xcpc": native_remapped_instrument({
             "PDnozzle": "Pd1",

@@ -124,6 +124,7 @@ class Instrument(StreamingInstrument):
 
 
             flags=[
+                self.flag(n) for n in self.device_status_notify.values()
             ],
         )
 
