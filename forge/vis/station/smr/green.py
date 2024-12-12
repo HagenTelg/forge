@@ -38,18 +38,8 @@ return new WavelengthAdjust.AdjustedDispatch(dataName, inputFields, outputFields
         for size in [("Whole", 'whole', '#0f0'), ("PM10", 'pm10', '#0f0'),
                      ("PM2.5", 'pm25', '#070'), ("PM1", 'pm1', '#070')]:
             trace = TimeSeries.Trace(Mm_1)
-            trace.legend = f"TSI Scattering ({size[0]})"
+            trace.legend = f"Scattering ({size[0]})"
             trace.data_record = f'{mode}-scattering-{size[1]}'
-            trace.data_field = 'G'
-            trace.color = size[2]
-            scattering.traces.append(trace)
-            self.processing[trace.data_record] = self.AdjustWavelength(OrderedDict([
-                ('BsB', 450), ('BsG', 550), ('BsR', 700),
-            ]))
-
-            trace = TimeSeries.Trace(Mm_1)
-            trace.legend = f"NE-300 Scattering ({size[0]})"
-            trace.data_record = f'{mode}-scattering2-{size[1]}'
             trace.data_field = 'G'
             trace.color = size[2]
             scattering.traces.append(trace)
