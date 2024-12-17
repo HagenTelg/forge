@@ -41,7 +41,7 @@ station_views['aerosol-raw-cpcstatus'] = TSI375xCPCStatus('aerosol-raw')
 station_views['aerosol-realtime-cpcstatus'] = TSI375xCPCStatus('aerosol-realtime', realtime=True)
 
 
-station_views['aerosol-raw-nephelometerzero'] = NephelometerStatus('aerosol-raw')
+station_views['aerosol-raw-nephelometerzero'] = NephelometerZero('aerosol-raw')
 station_views['aerosol-raw-nephelometerstatus'] = NephelometerStatus('aerosol-raw')
 station_views['aerosol-realtime-nephelometerzero'] = NephelometerZero('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-nephelometerstatus'] = NephelometerStatus('aerosol-realtime', realtime=True)
