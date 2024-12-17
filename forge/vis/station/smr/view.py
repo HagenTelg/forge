@@ -45,18 +45,6 @@ station_views['aerosol-raw-nephelometerzero'] = NephelometerZero('aerosol-raw')
 station_views['aerosol-raw-nephelometerstatus'] = NephelometerStatus('aerosol-raw')
 station_views['aerosol-realtime-nephelometerzero'] = NephelometerZero('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-nephelometerstatus'] = NephelometerStatus('aerosol-realtime', realtime=True)
-# station_views['aerosol-raw-opticalscattering2'] = OpticalScatteringSecondary('aerosol-raw')
-# station_views['aerosol-realtime-opticalscattering2'] = OpticalScatteringSecondary('aerosol-realtime', realtime=True)
-# station_views['aerosol-editing-scattering2'] = EditingScatteringSecondary()
-# station_views['aerosol-editing-backscattering2'] = EditingBackScatteringSecondary()
-# station_views['aerosol-clean-opticalscattering2'] = OpticalScatteringSecondary('aerosol-clean')
-# station_views['aerosol-avgh-opticalscattering2'] = OpticalScatteringSecondary('aerosol-avgh')
-# station_views['aerosol-raw-nephelometerzero2'] = NephelometerZeroSecondary('aerosol-raw')
-# station_views['aerosol-raw-nephelometerstatus2'] = NephelometerStatusSecondary('aerosol-raw')
-# station_views['aerosol-raw-nephelometerzero2'] = NephelometerZeroSecondary('aerosol-raw')
-# station_views['aerosol-raw-nephelometerstatus2'] = NephelometerStatusSecondary('aerosol-raw')
-# station_views['aerosol-realtime-nephelometerzero2'] = NephelometerZeroSecondary('aerosol-realtime', realtime=True)
-# station_views['aerosol-realtime-nephelometerstatus2'] = NephelometerStatusSecondary('aerosol-realtime', realtime=True)
 
 
 def get(station: str, view_name: str) -> typing.Optional[View]:
