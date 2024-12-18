@@ -124,8 +124,10 @@ def meteorological_climatology_limits(
         temperature_range: typing.Tuple[float, float] = None,
         dewpoint_range: typing.Tuple[float, float] = None,
         pressure_range: typing.Tuple[float, float] = None,
+        precipitation_range: typing.Tuple[float, float] = None,
         normalized_temperature_rate_of_change: typing.Tuple[float, float] = None,
         normalized_humidity_rate_of_change: typing.Tuple[float, float] = None,
+        maximum_wind_speed: float = 30.0,
         extend_before_ms: int = 0,
         extend_after_ms: int = 0,
 ) -> None:
@@ -185,6 +187,15 @@ def meteorological_climatology_limits(
                 extend_before_ms=extend_before_ms, extend_after_ms=extend_after_ms,
             )
 
+    if precipitation_range is not None:
+        for pressure in data.select_variable({"variable_id": r"WI\d*"}):
+            apply_limit(
+                pressure.values,
+                pressure.times,
+                remove_below=precipitation_range[0], remove_above=precipitation_range[1],
+                extend_before_ms=extend_before_ms, extend_after_ms=extend_after_ms,
+            )
+
     # Sanity limits
     for suffix in ("", "1", "2", "3"):
         for wind_speed, wind_direction in data.select_variable(
@@ -194,7 +205,7 @@ def meteorological_climatology_limits(
         ):
             do_remove = np.full(wind_speed.shape, False, dtype=np.bool_)
             do_remove[wind_speed.values < 0] = True
-            do_remove[wind_speed.values > 30] = True
+            do_remove[wind_speed.values > maximum_wind_speed] = True
             do_remove[wind_direction.values < 0] = True
             do_remove[wind_direction.values > 360] = True
             wind_speed[do_remove] = nan

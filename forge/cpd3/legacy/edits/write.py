@@ -141,6 +141,7 @@ class EditDirective:
                  modified: typing.Optional[float] = None,
                  allocated_uids: typing.Set[int] = None):
         self.station = identity.station
+        self._archive_priority = identity.priority
 
         self.start_epoch: typing.Optional[float] = identity.start
         self.end_epoch: typing.Optional[float] = identity.end
@@ -302,101 +303,102 @@ class EditDirective:
         result = list(reversed(result))
         return to_json(result, sort_keys=True)
 
+    def match_index_variables(self, index: EditIndex, vars: typing.List[str]) -> typing.List[typing.Dict[str, typing.Any]]:
+        matchers: typing.List[re.Pattern] = list()
+        for var in vars:
+            try:
+                matchers.append(re.compile(var))
+            except re.error as e:
+                raise EditConversionFailed(f"invalid variable match: {var}") from e
+
+        def any_match(check_variable: str) -> bool:
+            for m in matchers:
+                if m.fullmatch(check_variable):
+                    return True
+            return False
+
+        def assign_wavelength_suffixes(wavelengths: typing.List[float]) -> typing.Tuple[
+            typing.List[str], typing.List[float]]:
+            def named_suffix(wl: float) -> typing.Optional[str]:
+                if wl < 400:
+                    return None
+                elif wl < 500:
+                    return "B"
+                elif wl < 600:
+                    return "G"
+                elif wl < 750:
+                    return "R"
+                elif wl < 900:
+                    return "Q"
+                return None
+
+            unique_suffixes: typing.Set[str] = set()
+            wavelength_suffixes: typing.List[str] = list()
+            wavelength_assignments: typing.List[float] = list()
+            for wl in wavelengths:
+                s = named_suffix(float(wl))
+                if not s or s in unique_suffixes:
+                    return [str(i + 1) for i in range(len(wavelengths))], wavelengths
+                wavelength_suffixes.append(s)
+                wavelength_assignments.append(wl)
+                unique_suffixes.add(s)
+            wavelength_suffixes.extend([str(i + 1) for i in range(len(wavelengths))])
+            wavelength_assignments.extend(wavelengths)
+            return wavelength_suffixes, wavelength_assignments
+
+        result: typing.List[typing.Dict[str, typing.Any]] = list()
+        for variable_id, instrument_vars in index.variable_ids.items():
+            for instrument_id, wavelength_count in instrument_vars.items():
+                if '_' in variable_id:
+                    if not any_match(variable_id):
+                        continue
+                    result.append({
+                        "instrument_id": instrument_id,
+                        "variable_id": variable_id,
+                    })
+                    continue
+
+                check_variable = f"{variable_id}_{instrument_id}"
+                if any_match(check_variable):
+                    result.append({
+                        "instrument_id": instrument_id,
+                        "variable_id": variable_id,
+                    })
+                    continue
+
+                if wavelength_count == 0:
+                    continue
+
+                for code in ["B", "G", "R", "Q"] + [str(i + 1) for i in range(wavelength_count)]:
+                    if any_match(f"{variable_id}{code}_{instrument_id}"):
+                        break
+                else:
+                    continue
+
+                variable_wavelengths = index.variable_wavelengths(self.start_epoch, self.end_epoch,
+                                                                  instrument_id, variable_id)
+                if not variable_wavelengths:
+                    continue
+                variable_wavelengths = sorted(variable_wavelengths)
+                wavelength_codes, wavelength_assignments = assign_wavelength_suffixes(variable_wavelengths)
+
+                for idx in range(len(wavelength_codes)):
+                    check_variable = f"{variable_id}{wavelength_codes[idx]}_{instrument_id}"
+                    if not any_match(check_variable):
+                        continue
+
+                    result.append({
+                        "instrument_id": instrument_id,
+                        "variable_id": variable_id,
+                        "wavelength": wavelength_assignments[idx],
+                    })
+
+        return result
+
     def _from_cpd3_selection(
             self,
             index: EditIndex, selection: typing.Any,
     ) -> typing.List[typing.Dict[str, typing.Any]]:
-        def match_variable(vars: typing.List[str]) -> typing.List[typing.Dict[str, typing.Any]]:
-            matchers: typing.List[re.Pattern] = list()
-            for var in vars:
-                try:
-                    matchers.append(re.compile(var))
-                except re.error as e:
-                    raise EditConversionFailed(f"invalid variable match: {var}") from e
-
-            def any_match(check_variable: str) -> bool:
-                for m in matchers:
-                    if m.fullmatch(check_variable):
-                        return True
-                return False
-
-            def assign_wavelength_suffixes(wavelengths: typing.List[float]) -> typing.Tuple[typing.List[str], typing.List[float]]:
-                def named_suffix(wl: float) -> typing.Optional[str]:
-                    if wl < 400:
-                        return None
-                    elif wl < 500:
-                        return "B"
-                    elif wl < 600:
-                        return "G"
-                    elif wl < 750:
-                        return "R"
-                    elif wl < 900:
-                        return "Q"
-                    return None
-
-                unique_suffixes: typing.Set[str] = set()
-                wavelength_suffixes: typing.List[str] = list()
-                wavelength_assignments: typing.List[float] = list()
-                for wl in wavelengths:
-                    s = named_suffix(float(wl))
-                    if not s or s in unique_suffixes:
-                        return [str(i + 1) for i in range(len(wavelengths))], wavelengths
-                    wavelength_suffixes.append(s)
-                    wavelength_assignments.append(wl)
-                    unique_suffixes.add(s)
-                wavelength_suffixes.extend([str(i + 1) for i in range(len(wavelengths))])
-                wavelength_assignments.extend(wavelengths)
-                return wavelength_suffixes, wavelength_assignments
-
-            result: typing.List[typing.Dict[str, typing.Any]] = list()
-            for variable_id, instrument_vars in index.variable_ids.items():
-                for instrument_id, wavelength_count in instrument_vars.items():
-                    if '_' in variable_id:
-                        if not any_match(variable_id):
-                            continue
-                        result.append({
-                            "instrument_id": instrument_id,
-                            "variable_id": variable_id,
-                        })
-                        continue
-
-                    check_variable = f"{variable_id}_{instrument_id}"
-                    if any_match(check_variable):
-                        result.append({
-                            "instrument_id": instrument_id,
-                            "variable_id": variable_id,
-                        })
-                        continue
-
-                    if wavelength_count == 0:
-                        continue
-
-                    for code in ["B", "G", "R", "Q"] + [str(i+1) for i in range(wavelength_count)]:
-                        if any_match(f"{variable_id}{code}_{instrument_id}"):
-                            break
-                    else:
-                        continue
-
-                    variable_wavelengths = index.variable_wavelengths(self.start_epoch, self.end_epoch,
-                                                                      instrument_id, variable_id)
-                    if not variable_wavelengths:
-                        continue
-                    variable_wavelengths = sorted(variable_wavelengths)
-                    wavelength_codes, wavelength_assignments = assign_wavelength_suffixes(variable_wavelengths)
-
-                    for idx in range(len(wavelength_codes)):
-                        check_variable = f"{variable_id}{wavelength_codes[idx]}_{instrument_id}"
-                        if not any_match(check_variable):
-                            continue
-
-                        result.append({
-                            "instrument_id": instrument_id,
-                            "variable_id": variable_id,
-                            "wavelength": wavelength_assignments[idx],
-                        })
-
-            return result
-
         if selection is None:
             return []
         elif isinstance(selection, str):
@@ -406,22 +408,22 @@ class EditDirective:
             elif len(parts) == 1:
                 if len(parts[0]) == 0:
                     return []
-                return match_variable([parts[0]])
+                return self.match_index_variables(index, [parts[0]])
             elif len(parts) == 2:
-                if parts[0] != 'raw' and parts[0] != 'clean':
+                if parts[0].lower() not in ('raw', 'clean'):
                     raise EditConversionFailed("invalid selection archive")
-                return match_variable([parts[1]])
+                return self.match_index_variables(index, [parts[1]])
             elif len(parts) == 3:
-                if parts[0] != self.station:
+                if parts[0].lower() != self.station:
                     raise EditConversionFailed("invalid selection station")
-                if parts[1] != 'raw' and parts[1] != 'clean':
+                if parts[1].lower() not in ('raw', 'clean'):
                     raise EditConversionFailed("invalid selection archive")
 
-                return match_variable([parts[2]])
+                return self.match_index_variables(index, [parts[2]])
             else:
-                if parts[0] != self.station:
+                if parts[0].lower() != self.station:
                     raise EditConversionFailed("invalid selection station")
-                if parts[1] != 'raw' and parts[1] != 'clean':
+                if parts[1].lower() not in ('raw', 'clean'):
                     raise EditConversionFailed("invalid selection archive")
 
                 has_flavors: typing.Set[str] = set()
@@ -449,7 +451,7 @@ class EditDirective:
                 if has_flavors or lacks_flavors or exact_flavors:
                     raise EditConversionFailed("invalid flavor selection")
 
-                return match_variable([parts[2]])
+                return self.match_index_variables(index, [parts[2]])
         elif isinstance(selection, dict):
             return self._from_cpd3_selection(index, [selection])
 
@@ -459,10 +461,10 @@ class EditDirective:
         find_variables: typing.List[str] = list()
         for entry in selection:
             if 'Station' in entry:
-                if entry['Station'] != self.station:
+                if entry['Station'].lower() != self.station:
                     raise EditConversionFailed("invalid selection station")
             if 'Archive' in entry:
-                if entry['Archive'] != 'raw' and entry['Archive'] != 'clean':
+                if entry['Archive'].lower() not in ('raw', 'clean'):
                     raise EditConversionFailed("invalid selection archive")
             if 'Variable' not in entry:
                 raise EditConversionFailed("invalid selection variable")
@@ -493,7 +495,7 @@ class EditDirective:
         if has_flavors or lacks_flavors or exact_flavors:
             raise EditConversionFailed("invalid flavor selection")
 
-        return match_variable(find_variables)
+        return self.match_index_variables(index, find_variables)
 
     def _convert_size_selection(self, selection: typing.Any) -> typing.Optional[float]:
         if selection is None:
@@ -919,6 +921,8 @@ class EditDirective:
 
     def __str__(self) -> str:
         comment = self.comment.strip().replace('\n', ' ').replace('\r', ' ')
+        if self._archive_priority != 0:
+            return f"{format_iso8601_time(self.start_epoch) if self.start_epoch else 'UNDEF'},{format_iso8601_time(self.end_epoch) if self.end_epoch else 'UNDEF'}@{self._archive_priority} by {self.author} '{comment}'"
         return f"{format_iso8601_time(self.start_epoch) if self.start_epoch else 'UNDEF'},{format_iso8601_time(self.end_epoch) if self.end_epoch else 'UNDEF'} by {self.author} '{comment}'"
 
     def __repr__(self):
