@@ -120,6 +120,9 @@ def convert_raw(source: "RawInstrument", station: str, instrument_id: str,
     if source.source.cpd3_component == "acquire_vaisala_wxt5xx" or source.source.forge_instrument == "vaisalawxt5xx":
         from .vaisalawxt5xx import Converter
         return Converter(station, instrument_id, file_start, file_end, root).run()
+    if source.source.cpd3_component == "acquire_pms_lasair":
+        from .pmslasair import Converter
+        return Converter(station, instrument_id, file_start, file_end, root).run()
     if source.source.forge_instrument == "bmitap":
         from .bmitap import Converter
         return Converter(station, instrument_id, file_start, file_end, root).run()
