@@ -421,10 +421,10 @@ class InstrumentConverter(ABC):
             return
 
         def convert(x):
-            if x is None:
-                return None
             if isinstance(x, list):
                 x = x[0]
+            if x is None:
+                return None
             x = float(x)
             if not isfinite(x):
                 return None
