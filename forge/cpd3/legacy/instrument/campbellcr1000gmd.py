@@ -61,7 +61,7 @@ class Converter(InstrumentConverter):
         all_data = list(loaded_data.values()) + ([v for v in group_vars if v.time.shape[0] != 0] if group_vars else [])
         if not all_data:
             return None
-        if self._average_interval is None:
+        if self._average_interval is None and any([v.time.shape != 0 for v in loaded_data.values()]):
             self._average_interval = self.calculate_average_interval(np.concatenate([v.time for v in loaded_data.values()]))
 
         g, times = self.data_group(all_data, **kwargs)
