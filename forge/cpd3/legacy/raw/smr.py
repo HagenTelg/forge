@@ -62,10 +62,10 @@ C.run(STATION, {
     "N61": [ C(LegacyCPC, start='2005-06-01', end='2017-01-01'), ],
     "N71": [ C('tsi375xcpc', start='2024-12-11'), ],
     "S11": [
-        C('tsi3563nephelometer', start='2006-01-01', end='2024-12-11T15:00:00Z '),
-        C('acoemnex00nephelometer', start='2024-12-11T15:00:00Z '),
+        C('tsi3563nephelometer', start='2006-01-01', end='2024-12-11T15:00:00Z'),
+        C('acoemnex00nephelometer', start='2024-12-11T15:00:00Z'),
     ],
     "S12": [
-        C('tsi3563nephelometer+secondary', start='2020-09-28', end='2021-02-18 '),
+        C('tsi3563nephelometer+secondary', start='2020-09-28', end='2021-02-18'),
     ],
 })

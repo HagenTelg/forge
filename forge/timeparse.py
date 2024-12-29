@@ -272,10 +272,10 @@ def _parse_any_single_time(parts: typing.List[str],
                 minute = 0
             if len(parts) > 5:
                 try:
-                    second = int(parts[6])
+                    second = int(parts[5])
                     microseconds = 0
                 except ValueError:
-                    raw_seconds = float(parts[6])
+                    raw_seconds = float(parts[5])
                     second = int(raw_seconds)
                     microseconds = int((raw_seconds - second) * 1E6)
             else:
