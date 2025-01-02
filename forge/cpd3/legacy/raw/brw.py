@@ -281,7 +281,7 @@ C.run(STATION, {
     ],
     "A12": [ C('clap+secondary', start='2011-08-30', end='2014-08-22'), ],
     "A81": [
-        C(LegacyAE8, start='1988-03-24', end='1991-05-26'),
+        C(LegacyAE8, start='1988-03-24', end='2001-12-10'),
         C('mageeae31', start='2010-02-18', end='2016-08-18'),
         C('mageeae33', start='2016-08-18'),
     ],
@@ -290,7 +290,7 @@ C.run(STATION, {
     ],
     "G81": [
         C(LegacyThermo49, start='1976-05-06', end='2003-01-02'),
-        C('thermo49', start='2016-08-18', end='2020-11-05T18:34:00Z'),
+        C('thermo49', start='2003-12-17', end='2020-11-05T18:34:00Z'),
         C('thermo49iq', start='2020-11-05T18:34:00Z'),
     ],
     "G82": [ C('thermo49+secondary', start='2020-11-05', end='2022-01-21'), ],

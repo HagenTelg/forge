@@ -2,6 +2,7 @@ import typing
 import asyncio
 import logging
 import random
+import datetime
 import re
 import numpy as np
 from math import floor, ceil, isfinite, nan
@@ -133,6 +134,9 @@ class EditIndex(BaseArchiveIndex):
 
 
 class EditDirective:
+    # Catch cases where somebody put in something like "2099-01-01" for a future end time
+    INFINITE_END_THRESHOLD = datetime.datetime(2050, 1, 1, tzinfo=datetime.timezone.utc).timestamp()
+
     def __init__(self, identity: Identity, info: typing.Dict[str, typing.Any],
                  modified: typing.Optional[float] = None,
                  allocated_uids: typing.Set[int] = None):
@@ -140,6 +144,8 @@ class EditDirective:
 
         self.start_epoch: typing.Optional[float] = identity.start
         self.end_epoch: typing.Optional[float] = identity.end
+        if self.end_epoch and self.end_epoch > self.INFINITE_END_THRESHOLD:
+            self.end_epoch = None
         if self.start_epoch and self.end_epoch:
             assert self.start_epoch < self.end_epoch
 
