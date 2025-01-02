@@ -2,7 +2,7 @@
 import typing
 from forge.processing.context import AvailableData
 from forge.processing.corrections import *
-from forge.processing.station.default.editing import standard_intensives, standard_meteorological
+from forge.processing.station.default.editing import standard_corrections, standard_intensives, standard_meteorological
 
 
 def run(data: AvailableData) -> None:
