@@ -51,6 +51,9 @@ def main(station: str, edit_directive: typing.Type[EditDirective]):
     _LOGGER.debug(f"Loaded {len(cpd3_edits)} CPD3 edit directives")
     allocated_uids: typing.Set[int] = set()
     for identity, info, modified in cpd3_edits:
+        if identity.start and identity.end and identity.start >= identity.end:
+            _LOGGER.debug(f"Skipping zero length edit at {format_iso8601_time(identity.start)}")
+            continue
         converted = edit_directive(identity, info, modified, allocated_uids=allocated_uids)
         if converted.skip_conversion:
             continue
