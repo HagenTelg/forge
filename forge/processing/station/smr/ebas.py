@@ -63,3 +63,19 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
         PS_ADDR_LINE1="PO BOX 64", PS_ADDR_LINE2=None,
         PS_ADDR_ZIP="FI-00014", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
     )]
+
+
+def nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List[InstrumentSelection], str, str]]:
+    from forge.processing.station.lookup import station_data
+    from forge.product.selection import InstrumentSelection
+
+    user = station_data(gaw_station, 'ebas', 'platform')(gaw_station)
+    if user.endswith('S'):
+        user = user[:-1]
+
+    return {
+        "absorption_lev0": ("raw", [InstrumentSelection(
+            require_tags=["absorption"],
+            exclude_tags=["secondary", "aethalometer", "thermomaap"],
+        )], user, "PSAP"),
+    }

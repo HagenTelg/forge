@@ -144,8 +144,8 @@ class EditDirective:
             assert self.start_epoch < self.end_epoch
 
         self.profile: str = identity.variable
-        self.author = str(info.get("Author"))
-        self.comment = str(info.get("Comment"))
+        self.author = str(info.get("Author", ""))
+        self.comment = str(info.get("Comment", ""))
         self._history = list(info.get("History", []))
         self.modified_time: int = int(round((modified if modified else float((self.history[-1] if self.history else dict()).get("At", self.end_epoch))) * 1000))
         parameters = dict(info.get("Parameters") or dict())
@@ -252,7 +252,7 @@ class EditDirective:
                 op = entry.get("OriginalParameters") or dict()
 
                 try:
-                    updated_action_type, updated_action_parameters = self._convert_action(op.get("Action") or dict(), index)
+                    updated_action_type, updated_action_parameters = self.convert_action(op.get("Action") or dict(), index)
                     if updated_action_type != current_action_type:
                         item['changed_action_type'] = updated_action_type
                         current_action_type = updated_action_type
@@ -263,7 +263,7 @@ class EditDirective:
                     pass
 
                 try:
-                    updated_condition_type, updated_condition_parameters = self._convert_condition(op.get("Trigger") or dict(), index, silent=True)
+                    updated_condition_type, updated_condition_parameters = self.convert_condition(op.get("Trigger") or dict(), index, silent=True)
                     if updated_condition_type != current_condition_type:
                         item['changed_condition_type'] = updated_condition_type
                         current_condition_type = updated_condition_type
@@ -584,7 +584,7 @@ class EditDirective:
 
         return convert_selection(var, has_flavors, lacks_flavors, exact_flavors)
 
-    def _convert_action(self, action: typing.Dict[str, typing.Any], index: EditIndex) -> typing.Tuple[str, str]:
+    def convert_action(self, action: typing.Dict[str, typing.Any], index: EditIndex) -> typing.Tuple[str, str]:
         def convert_calibration(calibration: typing.Any) -> typing.List[float]:
             if calibration is None:
                 return []
@@ -693,9 +693,9 @@ class EditDirective:
         }, sort_keys=True)
     
     def action(self, index: EditIndex) -> typing.Tuple[str, str]:
-        return self._convert_action(self._action, index)
+        return self.convert_action(self._action, index)
 
-    def _convert_condition(self, trigger: typing.Dict[str, typing.Any], index: EditIndex, silent: bool = False) -> typing.Tuple[str, str]:
+    def convert_condition(self, trigger: typing.Dict[str, typing.Any], index: EditIndex, silent: bool = False) -> typing.Tuple[str, str]:
         if not trigger:
             return "None", ""
 
@@ -897,7 +897,7 @@ class EditDirective:
         return condition_type, to_json(condition_parameters, sort_keys=True)
     
     def condition(self, index: EditIndex) -> typing.Tuple[str, str]:
-        return self._convert_condition(self._trigger, index)
+        return self.convert_condition(self._trigger, index)
 
     def __str__(self) -> str:
         comment = self.comment.strip().replace('\n', ' ').replace('\r', ' ')
