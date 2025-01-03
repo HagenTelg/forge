@@ -241,9 +241,9 @@ def _array_poly_Nth_order(coefficients: np.ndarray, value: np.ndarray, guess: np
 
 
 def _array_polynomial(poly: np.ndarray, value: np.ndarray, guess: np.ndarray = None) -> np.ndarray:
-    value = np.array(value, copy=False)
+    value = np.asarray(value, dtype=np.float64)
 
-    poly = np.array(poly, copy=False, dtype=np.float64)
+    poly = np.asarray(poly, dtype=np.float64)
     if len(poly.shape) != 1:
         raise ValueError
     poly = np.trim_zeros(poly, "b")

@@ -58,7 +58,7 @@ class SelectedData(ABC):
         if data_group is None:
             data_group = self.root.createGroup("data")
 
-        wavelengths = np.array(wavelengths, copy=False, dtype=np.float64)
+        wavelengths = np.asarray(wavelengths, dtype=np.float64)
         assert len(wavelengths.shape) == 1
         assert wavelengths.shape[0] > 0
 

@@ -184,9 +184,9 @@ class VariableSelection:
     def matcher(cls, selections) -> typing.Callable[[netCDF4.Variable], bool]:
         selections = cls.to_selections(selections)
 
-        def m(root: netCDF4.Variable) -> bool:
+        def m(var: netCDF4.Variable) -> bool:
             for s in selections:
-                if s.matches_variable(root):
+                if s.matches_variable(var):
                     return True
             return False
 

@@ -11,8 +11,8 @@ def calculate_angstrom_exponent(
         b_value: typing.Union[np.ndarray, float],
         b_wavelength: float,
 ) -> np.ndarray:
-    a_value = np.array(a_value, copy=False)
-    b_value = np.array(b_value, copy=False)
+    a_value = np.asarray(a_value)
+    b_value = np.asarray(b_value)
     assert a_value.shape == b_value.shape
 
     result = np.full_like(a_value, nan)

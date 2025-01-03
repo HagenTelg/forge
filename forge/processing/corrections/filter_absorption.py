@@ -68,8 +68,8 @@ def correct_bond1999(
         k1: typing.Union[float, np.ndarray] = 0.02,
         k2: typing.Union[float, np.ndarray] = 1.22,
 ) -> np.ndarray:
-    k1 = np.array(k1, copy=False)
-    k2 = np.array(k2, copy=False)
+    k1 = np.asarray(k1)
+    k2 = np.asarray(k2)
     return ((absorption.T * _BOND1999_WAVELENGTH_CORRECTION_FACTOR - k1.T * scattering.T) / k2.T).T
 
 
@@ -79,8 +79,8 @@ def correct_bond1999_extinction(
         k1: typing.Union[float, np.ndarray] = 0.02,
         k2: typing.Union[float, np.ndarray] = 1.22,
 ) -> np.ndarray:
-    k1 = np.array(k1, copy=False)
-    k2 = np.array(k2, copy=False)
+    k1 = np.asarray(k1)
+    k2 = np.asarray(k2)
     return ((absorption.T * _BOND1999_WAVELENGTH_CORRECTION_FACTOR - k1.T * extinction.T) / (k2.T - k1.T)).T
 
 

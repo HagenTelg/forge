@@ -70,10 +70,10 @@ def wavelength_interpolate(
         b_wavelength: float,
         output_wavelength: float,
 ) -> np.ndarray:
-    a_value = np.array(a_value, copy=False)
+    a_value = np.asarray(a_value)
     if a_wavelength == output_wavelength:
         return np.array(a_value)
-    b_value = np.array(b_value, copy=False)
+    b_value = np.asarray(b_value)
     if b_wavelength == output_wavelength:
         return np.array(b_value)
 
@@ -102,7 +102,7 @@ def wavelength_extrapolate(
         angstrom_exponent: float,
         output_wavelength: float,
 ) -> np.ndarray:
-    input_value = np.array(input_value, copy=False)
+    input_value = np.asarray(input_value)
     if input_wavelength == output_wavelength:
         return np.array(input_value)
     if input_wavelength <= 0 or output_wavelength <= 0 or angstrom_exponent <= 0:

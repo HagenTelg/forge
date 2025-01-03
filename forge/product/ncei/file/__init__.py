@@ -307,7 +307,7 @@ class NCEIFile(ABC):
                     return None
                 return v
 
-            values = np.array(var[:].data, copy=False)[tuple(data_selector)]
+            values = np.asarray(var[:].data)[tuple(data_selector)]
             values = values.astype(np.float64, casting='unsafe', copy=False)
             if wavelength_idx is None:
                 values = values.reshape((*values.shape, 1))

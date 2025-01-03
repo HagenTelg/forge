@@ -124,7 +124,7 @@ class TableUpdate(ABC):
                 var_idx = self.variable_index(var)
                 if var_idx is None:
                     continue
-                values = np.array(var[:].data, copy=False)[tuple(var_idx)]
+                values = np.asarray(var[:].data)[tuple(var_idx)]
                 if 0 in values.shape:
                     continue
                 values = values.astype(np.float64, casting='unsafe', copy=False)
@@ -141,7 +141,7 @@ class TableUpdate(ABC):
                     values = values[np.arange(values.shape[0]),idx_valid[:, 0]]
 
                 _, time_var = find_dimension_values(var.group(), 'time')
-                times = np.array(time_var[:].data, copy=False)[var_idx[0]]
+                times = np.asarray(time_var[:].data)[var_idx[0]]
                 times = times.astype(np.int64, casting='unsafe', copy=False)
 
                 assert len(times.shape) == 1

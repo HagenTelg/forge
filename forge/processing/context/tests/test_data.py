@@ -9,7 +9,7 @@ from forge.processing.context.data import SelectedData
 
 
 def _setup_file(file: Dataset, times):
-    time_values = np.array(times, copy=False)
+    time_values = np.asarray(times)
 
     instrument_timeseries(
         file, "NIL", "X1",

@@ -14,9 +14,9 @@ def dilution_factor(
 ) -> np.ndarray:
     def make_sum(values):
         if not isinstance(values, tuple) and not isinstance(values, list):
-            values = [np.array(values, copy=False)]
+            values = [np.asarray(values)]
         else:
-            values = [np.array(v, copy=False) for v in values]
+            values = [np.asarray(v) for v in values]
 
         for v in values:
             if len(v.shape) == 0:

@@ -22,7 +22,7 @@ def _density(
     pressure[pressure < 10.0] = nan
     pressure[pressure > 2000.0] = nan
 
-    return np.array((pressure / ONE_ATM_IN_HPA) * (ZERO_C_IN_K / temperature), copy=False)
+    return np.asarray((pressure / ONE_ATM_IN_HPA) * (ZERO_C_IN_K / temperature))
 
 
 def correct_optical(

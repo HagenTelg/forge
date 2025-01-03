@@ -32,7 +32,7 @@ def bin_quantiles(
     assert len(values.shape) > 0
     assert values.shape[0] > 0
 
-    quantiles = np.array(quantiles, copy=False).flatten()
+    quantiles = np.asarray(quantiles).flatten()
     assert len(quantiles.shape) == 1
     assert quantiles.shape[0] > 0
 

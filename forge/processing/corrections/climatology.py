@@ -67,7 +67,12 @@ def _windowed_slope_and_mean(
     sxx = sxx[window:] - sxx[:-window]
     syy = syy[window:] - syy[:-window]
 
-    return (window * syy - sx * sy) / (window * sxx - sx * sx), sy / window
+    num = window * syy - sx * sy
+    div = window * sxx - sx * sx
+    valid = div != 0.0
+    result = np.full(div.shape, nan, dtype=np.float64)
+    result[valid] = num[valid] / div[valid]
+    return result, sy / window
 
 
 def apply_normalized_rate_of_change_limit(
@@ -127,7 +132,7 @@ def meteorological_climatology_limits(
     data.append_history("forge.correction.climatologylimits")
 
     if temperature_range is not None:
-        for temperature in  data.select_variable({"variable_id": "T\d*"}):
+        for temperature in  data.select_variable({"variable_id": r"T\d*"}):
             apply_limit(
                 temperature.values,
                 temperature.times,
@@ -136,7 +141,7 @@ def meteorological_climatology_limits(
             )
 
     if dewpoint_range is not None:
-        for dewpoint in  data.select_variable({"variable_id": "TD\d*"}):
+        for dewpoint in  data.select_variable({"variable_id": r"TD\d*"}):
             apply_limit(
                 dewpoint.values,
                 dewpoint.times,
@@ -146,8 +151,8 @@ def meteorological_climatology_limits(
 
     if normalized_temperature_rate_of_change is not None:
         for temperature in  data.select_variable((
-                {"variable_id": "T\d*"},
-                {"variable_id": "TD\d*"},
+                {"variable_id": r"T\d*"},
+                {"variable_id": r"TD\d*"},
         )):
             apply_normalized_rate_of_change_limit(
                 temperature.values,
@@ -159,7 +164,7 @@ def meteorological_climatology_limits(
             )
 
     if pressure_range is not None:
-        for pressure in  data.select_variable({"variable_id": "P\d*"}):
+        for pressure in  data.select_variable({"variable_id": r"P\d*"}):
             apply_limit(
                 pressure.values,
                 pressure.times,
@@ -190,8 +195,8 @@ def vaisala_hmp_limits(
     data.append_history("forge.correction.vaisalahmplimits")
 
     for dewpoint, humidity in data.select_variable(
-            {"variable_id": "TD1?"},
-            {"variable_id": "U1?"},
+            {"variable_id": r"TD1?"},
+            {"variable_id": r"U1?"},
             always_tuple=True, commit_auxiliary=True,
     ):
         do_remove = np.full(dewpoint.shape, False, dtype=np.bool_)

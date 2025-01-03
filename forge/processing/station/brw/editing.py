@@ -1,4 +1,4 @@
- #!/usr/bin/env python3
+#!/usr/bin/env python3
 import typing
 import numpy as np
 from math import nan
@@ -8,6 +8,8 @@ from forge.processing.corrections.filter_absorption import weiss_undo
 from forge.processing.corrections.climatology import vaisala_hmp_limits
 from forge.processing.station.default.editing import standard_absorption_corrections, standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
 from forge.data.flags import parse_flags
+from forge.data.flags import declare_flag
+from forge.data.merge.extend import extend_selected
 
 
 def absorption_corrections(data: AvailableData) -> None:
@@ -62,14 +64,17 @@ def absorption_corrections(data: AvailableData) -> None:
     for clap, neph in data.select_instrument((
             {"instrument_id": "A11"},
     ), {"instrument_id": "S11"}, start="2014-08-15T20:43:00Z"):
-        for absorption in data.select_variable((
+        for absorption in clap.select_variable((
                 {"variable_name": "light_absorption"},
                 {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
                 {"standard_name": "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles"},
         )):
-            source_flags = neph.get_input(absorption, {
-                "variable_name": "system_flags",
-            })
+            try:
+                source_flags = neph.get_input(absorption, {
+                    "variable_name": "system_flags",
+                })
+            except FileNotFoundError:
+                continue
             if not np.issubdtype(source_flags.values.dtype, np.integer):
                 continue
             flags = parse_flags(source_flags.variable)
@@ -93,7 +98,7 @@ def scattering_corrections(data: AvailableData) -> None:
 
 def aerosol_contamination(data: AvailableData) -> None:
     for aerosol, wind in data.select_instrument(
-            {"tags": "aerosol -met"},
+            {"tags": "aerosol -met", "instrument_id": r"(?!F).+"},
             {"instrument_id": "XM1"},
             always_tuple=True,
             start="1994-04-13", end="2011-09-23T14:20:00Z",
@@ -105,7 +110,7 @@ def aerosol_contamination(data: AvailableData) -> None:
         )
 
     for aerosol, wind_realtime, wind_met in data.select_instrument(
-            {"tags": "aerosol -met"},
+            {"tags": "aerosol -met", "instrument_id": r"(?!F).+"},
             {"instrument_id": "XM2"},
             {"instrument_id": "XM1"},
             always_tuple=True,
@@ -118,6 +123,50 @@ def aerosol_contamination(data: AvailableData) -> None:
             extend_before_ms=20 * 60 * 1000,
             extend_after_ms=20 * 60 * 1000,
         )
+
+    # Apply realtime CPC flagging to global contamination
+    for aerosol, filter_carousel in data.select_instrument((
+            {"tags": "aerosol -met", "instrument_id": r"(?!F).+"},
+    ), {"instrument_id": "F21"}, start="2016-08-18"):
+        for system_flags in aerosol.system_flags():
+            try:
+                source_flags = filter_carousel.get_input(system_flags, {
+                    "variable_name": "system_flags",
+                })
+            except FileNotFoundError:
+                continue
+            if not np.issubdtype(source_flags.values.dtype, np.integer):
+                continue
+            flags = parse_flags(source_flags.variable)
+            matched_bits = 0
+            for bits, name in flags.items():
+                if name not in ("cnc_high", "cnc_spike"):
+                    continue
+                matched_bits |= bits
+            if matched_bits == 0:
+                continue
+            apply_bits = np.bitwise_and(source_flags.values, matched_bits) != 0
+            if not np.any(apply_bits):
+                continue
+            bit = declare_flag(system_flags.variable, "data_contamination_cpc", 0x01)
+            system_flags[apply_bits] = np.bitwise_or(system_flags[apply_bits], bit)
+
+    # High CPC contamination
+    for aerosol, cpc in data.select_instrument((
+            {"tags": "aerosol -met", "instrument_id": r"(?!F).+"},
+    ), {"instrument_id": "N61"}, start="2016-08-18"):
+        for system_flags in aerosol.system_flags():
+            try:
+                cpc_values = cpc.get_input(system_flags, {"variable_id": "N1?"}).values
+            except FileNotFoundError:
+                continue
+            apply_bits = np.full(cpc_values.shape, False, dtype=np.bool_)
+            apply_bits[cpc_values > 4000.0] = True
+            if not np.any(apply_bits):
+                continue
+            apply_bits = extend_selected(apply_bits, system_flags.times, 3*60*1000, 3*60*1000)
+            bit = declare_flag(system_flags.variable, "data_contamination_cpc", 0x01)
+            system_flags[apply_bits] = np.bitwise_or(system_flags[apply_bits], bit)
 
 
 def run(data: AvailableData) -> None:

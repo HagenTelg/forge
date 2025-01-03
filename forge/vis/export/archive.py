@@ -176,7 +176,7 @@ class ExportCSV(ArchiveExportEntry):
                         if not desc:
                             raise ValueError
                         if wavelengths is not None:
-                            add_wl = np.array(wavelengths, copy=False)
+                            add_wl = np.asarray(wavelengths)
                             if add_wl.shape:
                                 add_wl = sorted(set([str(int(wl)) for wl in wavelengths]))
                             else:
