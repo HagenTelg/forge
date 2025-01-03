@@ -324,6 +324,8 @@ class EditDirective:
                         return "G"
                     elif wl < 750:
                         return "R"
+                    elif wl < 900:
+                        return "Q"
                     return None
 
                 unique_suffixes: typing.Set[str] = set()

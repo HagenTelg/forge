@@ -67,7 +67,7 @@ class GERichCounter(InstrumentConverter):
 
 class MRINeph(WavelengthConverter):
     WAVELENGTHS = [
-        (467.0, "B"),
+        (450.0, "B"),
         (550.0, "G"),
         (700.0, "R"),
         (850.0, "Q"),
