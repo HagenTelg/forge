@@ -8,8 +8,7 @@ from forge.processing.corrections.filter_absorption import weiss_undo
 from forge.processing.corrections.climatology import vaisala_hmp_limits
 from forge.processing.derived.average import hourly_median
 from forge.processing.station.default.editing import standard_absorption_corrections, standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
-from forge.data.flags import parse_flags
-from forge.data.flags import declare_flag
+from forge.data.flags import parse_flags, declare_flag
 from forge.data.merge.extend import extend_selected
 
 
@@ -88,7 +87,6 @@ def absorption_corrections(data: AvailableData) -> None:
                 continue
             is_in_zero = np.bitwise_and(source_flags.values, matched_bits) != 0
             absorption[is_in_zero, ...] = nan
-
 
 
 def scattering_corrections(data: AvailableData) -> None:
@@ -180,8 +178,37 @@ def aerosol_contamination(data: AvailableData) -> None:
             bit = declare_flag(system_flags.variable, "data_contamination_cpc", 0x01)
             system_flags[apply_bits] = np.bitwise_or(system_flags[apply_bits], bit)
 
+    def remove_contamination(start, end, flag="data_contamination_"):
+        for aerosol in data.select_instrument((
+                {"tags": "aerosol", "instrument_id": r"(?!F).+"},
+        ), start=start, end=end):
+            for system_flags in aerosol.system_flags():
+                flags = parse_flags(system_flags.variable)
+                matched_bits = 0
+                for bits, name in flags.items():
+                    if not name.startswith(flag):
+                        continue
+                    matched_bits |= bits
+                if matched_bits == 0:
+                    continue
+                mask = np.array(matched_bits, dtype=np.uint64)
+                mask = np.invert(mask)
+                system_flags[:] = system_flags[:] & mask
+
+    # remove flags related to CPC contam so not removing bap, bsp data when CPC oscillating. - EJA
+    remove_contamination("2018-10-27T15:31:00Z", "2018-10-29T12:09:00Z", "data_contamination_cpc")
+    remove_contamination("2018-11-03T06:43:00Z", "2018-11-05T00:58:00Z", "data_contamination_cpc")
+    # EJA Un-contaminate, no reason given in edit directives
+    remove_contamination("2019-11-08T07:58:00Z", "2019-11-08T23:45:00Z")
+
+
 
 def run(data: AvailableData) -> None:
+    # Ball valve stuck on PM10 second system due to config error
+    for aerosol in data.select_instrument({"instrument_id": "S91"}, start="2020-10-19", end="2020-11-02T16:20:00Z"):
+        for cut_size in aerosol.select_variable({"variable_name": "cut_size"}):
+            cut_size[:] = 10.0
+
     for met in data.select_instrument({"instrument_id": "XM1"}, start="2007-01-01"):
         meteorological_climatology_limits(
             met,
