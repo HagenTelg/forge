@@ -120,6 +120,19 @@ def fixed_interval_cover_average(
     )
 
 
+def fixed_interval_quantiles(
+        times: np.ndarray,
+        values: np.ndarray,
+        interval: typing.Union[int, float],
+        quantiles: typing.Union[np.ndarray, float, typing.Iterable[float]]
+) -> typing.Tuple[np.ndarray, np.ndarray]:
+    from forge.processing.average.statistics import bin_quantiles
+    bin_numbers, bin_start = _fixed_interval_bins(times, interval)
+    bin_quantiles = bin_quantiles(bin_start, values, quantiles)
+    bin_times = _fixed_interval_times(bin_numbers, times.dtype, interval)
+    return bin_quantiles, bin_times
+
+
 def _month_bins(times_epoch_ms: np.ndarray):
     if times_epoch_ms.shape[0] < 1:
         return np.empty_like(times_epoch_ms, dtype=np.int64), np.empty_like(times_epoch_ms, dtype=np.int64)

@@ -6,6 +6,7 @@ from forge.processing.context import AvailableData
 from forge.processing.corrections import *
 from forge.processing.corrections.filter_absorption import weiss_undo
 from forge.processing.corrections.climatology import vaisala_hmp_limits
+from forge.processing.derived.average import hourly_median
 from forge.processing.station.default.editing import standard_absorption_corrections, standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
 from forge.data.flags import parse_flags
 from forge.data.flags import declare_flag
@@ -151,17 +152,28 @@ def aerosol_contamination(data: AvailableData) -> None:
             bit = declare_flag(system_flags.variable, "data_contamination_cpc", 0x01)
             system_flags[apply_bits] = np.bitwise_or(system_flags[apply_bits], bit)
 
-    # High CPC contamination
+    # High CPC contamination and CPC spike detection
     for aerosol, cpc in data.select_instrument((
             {"tags": "aerosol -met", "instrument_id": r"(?!F).+"},
     ), {"instrument_id": "N61"}, start="2016-08-18"):
         for system_flags in aerosol.system_flags():
             try:
-                cpc_values = cpc.get_input(system_flags, {"variable_id": "N1?"}).values
+                cpc_data = cpc.get_input(system_flags, {"variable_id": "N1?"})
             except FileNotFoundError:
                 continue
-            apply_bits = np.full(cpc_values.shape, False, dtype=np.bool_)
-            apply_bits[cpc_values > 4000.0] = True
+            apply_bits = np.full(cpc_data.values.shape, False, dtype=np.bool_)
+
+            # High CPC contaminated
+            apply_bits[cpc_data.values > 4000.0] = True
+
+            # CPC spike (> 500 and > 1.5x median)
+            threshold_cpc_values = hourly_median(cpc_data)
+            threshold_cpc_values *= 1.5
+            apply_bits[np.logical_and(
+                cpc_data.values > 500.0,
+                cpc_data.values > threshold_cpc_values
+            )] = True
+
             if not np.any(apply_bits):
                 continue
             apply_bits = extend_selected(apply_bits, system_flags.times, 3*60*1000, 3*60*1000)

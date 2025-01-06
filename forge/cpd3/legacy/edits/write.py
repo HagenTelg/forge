@@ -336,7 +336,7 @@ class EditDirective:
                         return [str(i + 1) for i in range(len(wavelengths))]
                     wavelength_suffixes.append(s)
                     unique_suffixes.add(s)
-                return wavelength_suffixes
+                return wavelength_suffixes + [str(i + 1) for i in range(len(wavelengths))]
 
             result: typing.List[typing.Dict[str, typing.Any]] = list()
             for variable_id, instrument_vars in index.variable_ids.items():
@@ -1072,6 +1072,7 @@ def write_all(
                                 except FileNotFoundError:
                                     pass
 
+                            _LOGGER.debug(f"Processing edits for {year or 'UNBOUNDED'}")
                             with NamedTemporaryFile(suffix=".nc") as original_file, NamedTemporaryFile(suffix=".nc") as edits_file:
                                 try:
                                     await connection.read_file(archive_name, original_file)

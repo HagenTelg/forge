@@ -24,6 +24,27 @@ def hourly_average(source: SelectedVariable) -> np.ndarray:
     return smoothed_output
 
 
+def hourly_median(source: SelectedVariable) -> np.ndarray:
+    from forge.data.merge.timealign import incoming_before
+    from ..average.calculate import fixed_interval_quantiles
+
+    smoothed_output = np.full_like(source.values, nan)
+    for _, value_select, time_select in source.select_cut_size():
+        selected_times = source.times[time_select]
+        selected_values = source.values[value_select]
+        smoothed_values, smoothed_start = fixed_interval_quantiles(
+            selected_times,
+            selected_values,
+            60 * 60 * 1000,
+            [0.5]
+        )
+        smoothed_values = smoothed_values[..., 0]
+
+        smoothed_targets = incoming_before(selected_times, smoothed_start)
+        smoothed_output[value_select] = smoothed_values[smoothed_targets]
+    return smoothed_output
+
+
 def single_pole_low_pass_digital_filter(
         source: SelectedVariable,
         tc: float = 3 * 60 * 1000,
