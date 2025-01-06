@@ -314,7 +314,7 @@ class EditDirective:
                         return True
                 return False
 
-            def assign_wavelength_suffixes(wavelengths: typing.List[float]) -> typing.List[str]:
+            def assign_wavelength_suffixes(wavelengths: typing.List[float]) -> typing.Tuple[typing.List[str], typing.List[float]]:
                 def named_suffix(wl: float) -> typing.Optional[str]:
                     if wl < 400:
                         return None
@@ -330,13 +330,17 @@ class EditDirective:
 
                 unique_suffixes: typing.Set[str] = set()
                 wavelength_suffixes: typing.List[str] = list()
+                wavelength_assignments: typing.List[float] = list()
                 for wl in wavelengths:
                     s = named_suffix(float(wl))
                     if not s or s in unique_suffixes:
-                        return [str(i + 1) for i in range(len(wavelengths))]
+                        return [str(i + 1) for i in range(len(wavelengths))], wavelengths
                     wavelength_suffixes.append(s)
+                    wavelength_assignments.append(wl)
                     unique_suffixes.add(s)
-                return wavelength_suffixes + [str(i + 1) for i in range(len(wavelengths))]
+                wavelength_suffixes.extend([str(i + 1) for i in range(len(wavelengths))])
+                wavelength_assignments.extend(wavelengths)
+                return wavelength_suffixes, wavelength_assignments
 
             result: typing.List[typing.Dict[str, typing.Any]] = list()
             for variable_id, instrument_vars in index.variable_ids.items():
@@ -372,7 +376,7 @@ class EditDirective:
                     if not variable_wavelengths:
                         continue
                     variable_wavelengths = sorted(variable_wavelengths)
-                    wavelength_codes = assign_wavelength_suffixes(variable_wavelengths)
+                    wavelength_codes, wavelength_assignments = assign_wavelength_suffixes(variable_wavelengths)
 
                     for idx in range(len(wavelength_codes)):
                         check_variable = f"{variable_id}{wavelength_codes[idx]}_{instrument_id}"
@@ -382,7 +386,7 @@ class EditDirective:
                         result.append({
                             "instrument_id": instrument_id,
                             "variable_id": variable_id,
-                            "wavelength": variable_wavelengths[idx],
+                            "wavelength": wavelength_assignments[idx],
                         })
 
             return result
