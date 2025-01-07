@@ -309,7 +309,10 @@ class EditDirective:
         def match_variable(vars: typing.List[str]) -> typing.List[typing.Dict[str, typing.Any]]:
             matchers: typing.List[re.Pattern] = list()
             for var in vars:
-                matchers.append(re.compile(var))
+                try:
+                    matchers.append(re.compile(var))
+                except re.error as e:
+                    raise EditConversionFailed(f"invalid variable match: {var}") from e
 
             def any_match(check_variable: str) -> bool:
                 for m in matchers:
