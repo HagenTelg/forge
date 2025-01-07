@@ -293,3 +293,65 @@ def azumi_filter(
             {"standard_name": "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles"},
     )):
         absorption[...] *= factor
+
+
+def spot_area_adjustment(
+        data,
+        original: typing.Union[float, int, typing.Iterable[float]],
+        corrected: typing.Union[float, typing.Iterable[float]],
+) -> None:
+    data = SelectedData.ensure_data(data)
+
+    if not isinstance(original, float) and not isinstance(original, float):
+        original = np.array(original, dtype=np.float64)
+    else:
+        original = np.array([original], dtype=np.float64)
+    if not isinstance(corrected, float) and not isinstance(corrected, float):
+        corrected = np.array(corrected, dtype=np.float64)
+    else:
+        corrected = np.array([corrected], dtype=np.float64)
+
+    def calculate_correction_factor(spot_number) -> typing.Union[float, np.ndarray]:
+        spot_number = spot_number[:]
+
+        if corrected.shape != (1,):
+            corrected_area = np.full(spot_number.shape, nan, dtype=np.float64)
+            spot_in_range = np.logical_and(
+                np.isfinite(spot_number),
+                spot_number > 0,
+                spot_number <= corrected.shape[0],
+            )
+            spot_index = spot_number[spot_in_range].astype(np.uint32, casting='unsafe', copy=False) - 1
+            corrected_area[spot_in_range] = corrected[spot_index]
+        else:
+            corrected_area = corrected
+
+        if original.shape != (1,):
+            original_area = np.full(spot_number.shape, nan, dtype=np.float64)
+            spot_in_range = np.logical_and(
+                np.isfinite(spot_number),
+                spot_number > 0,
+                spot_number <= original.shape[0],
+            )
+            spot_index = spot_number[spot_in_range].astype(np.uint32, casting='unsafe', copy=False) - 1
+            original_area[spot_in_range] = original[spot_index]
+        else:
+            original_area = original
+
+        correction_factor = corrected_area / original_area
+        correction_factor[np.invert(np.isfinite(correction_factor))] = 1.0
+
+        return correction_factor
+
+    for value, spot_number in data.select_variable((
+            {"variable_name": "light_absorption"},
+            {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
+    ), {"variable_name": "spot_number"}):
+        correction_factor = calculate_correction_factor(spot_number)
+        value[:] = (value[:].T * correction_factor.T).T
+
+    for value, spot_number in data.select_variable((
+            {"variable_name": "path_length_change"},
+    ), {"variable_name": "spot_number"}):
+        correction_factor = calculate_correction_factor(spot_number)
+        value[:] = (value[:].T / correction_factor.T).T

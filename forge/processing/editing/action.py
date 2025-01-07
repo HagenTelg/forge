@@ -252,7 +252,6 @@ class FlowCorrection(Action):
         "volume_backwards_scattering_coefficient_in_air_due_to_dried_aerosol_particles": lambda original, ratio: original / ratio,
         "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles": lambda original, ratio: original / ratio,
         "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles": lambda original, ratio: original / ratio,
-        "path_length_change": lambda original, ratio: original * ratio,
     }
 
     def apply(self, _root: Dataset, data: Dataset, time_selection: typing.Union[slice, np.ndarray]) -> None:

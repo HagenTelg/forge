@@ -4,7 +4,7 @@ import numpy as np
 from math import nan
 from forge.processing.context import AvailableData
 from forge.processing.corrections import *
-from forge.processing.corrections.filter_absorption import weiss_undo
+from forge.processing.corrections.filter_absorption import weiss_undo, spot_area_adjustment
 from forge.processing.corrections.climatology import vaisala_hmp_limits
 from forge.processing.derived.average import hourly_median
 from forge.processing.station.default.editing import standard_absorption_corrections, standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
@@ -37,6 +37,16 @@ def absorption_corrections(data: AvailableData) -> None:
         remove_low_transmittance(absorption)
         weiss(absorption)
         bond_1999(absorption, scattering)
+
+    # Wrong configuration calibration for CLAP 10.012 initially
+    for absorption in data.select_instrument((
+            {"instrument_id": "A11"},
+    ), start="2017-04-26T17:09:00Z", end="2017-08-24T19:29:00Z"):
+        spot_area_adjustment(
+            absorption,
+            [20.41, 19.82, 19.40, 19.24, 19.07, 19.56, 19.10, 19.63],
+        [19.690, 19.830, 19.650, 19.52, 19.48, 19.650, 19.84, 19.830],
+        )
 
     # Normal CPD3 data up until building comparison
     standard_absorption_corrections(data, start="2016-08-18T17:52:00Z", end="2020-10-22")
@@ -195,7 +205,7 @@ def aerosol_contamination(data: AvailableData) -> None:
                 mask = np.invert(mask)
                 system_flags[:] = system_flags[:] & mask
 
-    # remove flags related to CPC contam so not removing bap, bsp data when CPC oscillating. - EJA
+    # "remove flags related to CPC contam so not removing bap, bsp data when CPC oscillating." - EJA
     remove_contamination("2018-10-27T15:31:00Z", "2018-10-29T12:09:00Z", "data_contamination_cpc")
     remove_contamination("2018-11-03T06:43:00Z", "2018-11-05T00:58:00Z", "data_contamination_cpc")
     # EJA Un-contaminate, no reason given in edit directives
