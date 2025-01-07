@@ -300,7 +300,7 @@ def main():
         if value >= MAX_I64:
             return "+∞"
         ts = time.gmtime(value / 1000.0)
-        return f"{ts.tm_year:04}-{ts.tm_mon:02}-{ts.tm_mday}T{ts.tm_hour:02}:{ts.tm_min:02}:{ts.tm_sec:02}"
+        return f"{ts.tm_year:04}-{ts.tm_mon:02}-{ts.tm_mday:02}T{ts.tm_hour:02}:{ts.tm_min:02}:{ts.tm_sec:02}"
 
     async def run():
         reader, writer = await asyncio.open_unix_connection(args.socket)
