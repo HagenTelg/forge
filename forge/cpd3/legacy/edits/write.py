@@ -150,6 +150,9 @@ class EditDirective:
             assert self.start_epoch < self.end_epoch
 
         self.profile: str = identity.variable
+        if self.profile == "aethalometer":
+            self.profile = "aerosol"
+
         self.author = str(info.get("Author", ""))
         self.comment = str(info.get("Comment", ""))
         self._history = list(info.get("History", []))

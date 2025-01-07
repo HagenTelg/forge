@@ -32,6 +32,9 @@ class PassedTime:
         info = info.get("Information", {})
 
         self.profile: str = identity.variable
+        if self.profile == "aethalometer":
+            self.profile = "aerosol"
+
         self.pass_time: int = int(round((modified if modified else float(info.get("At", self.end_epoch))) * 1000))
         self.auxiliary_data: str = to_json({
             "type": "cpd3",

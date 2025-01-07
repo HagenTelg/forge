@@ -321,7 +321,7 @@ C.run(STATION, {
         C(MRINeph, start='1976-05-06', end='1997-10-06'),
         C('tsi3563nephelometer', start='1997-10-06'),
     ],
-    "S12": [ C('tsi3563nephelometer+secondary', start='2006-08-12', end='2011-08-31'), ],
+    "S12": [ C('tsi3563nephelometer+secondary', start='2006-08-12', end='2013-10-18'), ],
     "S91": [ C('tsi3563nephelometer+secondary', start='2020-10-22', end='2021-09-01'), ],
 
     "X1": [
