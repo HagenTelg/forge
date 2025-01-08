@@ -8,6 +8,7 @@ from forge.const import MAX_I64
 from forge.data.state import is_state_group
 from forge.data.structure.history import append_history
 from forge.data.structure.timeseries import time_coordinate, cutsize_variable, cutsize_coordinate, variable_coordinates
+from forge.data.structure.variable import variable_cutsize as setup_cutsize
 from .variable import SelectedVariable, EmptySelectedVariable, DataVariable
 from .selection import VariableSelection
 
@@ -438,11 +439,19 @@ class FileData(SelectedData):
                 if "cut_size" in destination.variables:
                     return
 
-                source_cut = for_variable.parent.variables["cut_size"][:].data
+                source_cut_var = for_variable.parent.variables["cut_size"]
+                source_cut = source_cut_var[:].data
 
                 if "cut_size" in for_variable.variable.dimensions:
                     size_var = cutsize_coordinate(destination, source_cut.shape[0])
                     size_var[:] = source_cut[:]
+                    return
+
+                if len(source_cut_var.dimensions) == 0:
+                    size_var = destination.createVariable("cut_size", "f8", (), fill_value=nan)
+                    setup_cutsize(size_var)
+                    size_var.coverage_content_type = "referenceInformation"
+                    size_var[0] = float(source_cut)
                     return
 
                 size_var = cutsize_variable(destination)
