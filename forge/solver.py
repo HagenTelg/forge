@@ -145,17 +145,19 @@ def _array_poly_3rd_order(coefficients: np.ndarray, value: np.ndarray) -> np.nda
     b = complex(coefficients[2], 0.0)
     c = complex(coefficients[1], 0.0)
     d = np.array(coefficients[0] - value, dtype=np.complex128)
-    i1 = 2.0 * b * b * b - 9.0 * a * b * c + 27.0 * a * a * d
-    i2 = b * b - 3.0 * a * c
-    Q = np.sqrt(i1 * i1 - 4.0 * i2 * i2 * i2)
-    C = (0.5 * (Q + 2.0 * b * b * b - 9.0 * a * b * c + 27.0 * a * a * d)) ** (1.0 / 3.0)
 
-    C[np.abs(a * C) <= 1E-8] = complex(nan, nan)
-    x1 = -b / (3.0 * a) - C / (3.0 * a) - i2 / (3.0 * a * C)
-    i3 = complex(1.0, sqrt(3.0))
-    i4 = complex(1.0, -sqrt(3.0))
-    x2 = -b / (3.0 * a) + (C * i3) / (6.0 * a) + (i4 * i2) / (6.0 * a * C)
-    x3 = -b / (3.0 * a) + (C * i4) / (6.0 * a) + (i3 * i2) / (6.0 * a * C)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        i1 = 2.0 * b * b * b - 9.0 * a * b * c + 27.0 * a * a * d
+        i2 = b * b - 3.0 * a * c
+        Q = np.sqrt(i1 * i1 - 4.0 * i2 * i2 * i2)
+        C = (0.5 * (Q + 2.0 * b * b * b - 9.0 * a * b * c + 27.0 * a * a * d)) ** (1.0 / 3.0)
+
+        C[np.abs(a * C) <= 1E-8] = complex(nan, nan)
+        x1 = -b / (3.0 * a) - C / (3.0 * a) - i2 / (3.0 * a * C)
+        i3 = complex(1.0, sqrt(3.0))
+        i4 = complex(1.0, -sqrt(3.0))
+        x2 = -b / (3.0 * a) + (C * i3) / (6.0 * a) + (i4 * i2) / (6.0 * a * C)
+        x3 = -b / (3.0 * a) + (C * i4) / (6.0 * a) + (i3 * i2) / (6.0 * a * C)
 
     result = np.full((*value.shape, 3), nan, dtype=np.float64)
 
