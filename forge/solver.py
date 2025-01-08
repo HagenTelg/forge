@@ -103,7 +103,7 @@ def _array_poly_2nd_order(coefficients: np.ndarray, value: np.ndarray) -> np.nda
     return np.stack((negative, positive), axis=-1)
 
 
-def _poly_3nd_order(coefficients: typing.List[float], value: float) -> typing.List[float]:
+def _poly_3rd_order(coefficients: typing.List[float], value: float) -> typing.List[float]:
     a = complex(coefficients[3], 0.0)
     b = complex(coefficients[2], 0.0)
     c = complex(coefficients[1], 0.0)
@@ -140,7 +140,7 @@ def _poly_3nd_order(coefficients: typing.List[float], value: float) -> typing.Li
         return [x1.real, x2.real, x3.real]
 
 
-def _array_poly_3nd_order(coefficients: np.ndarray, value: np.ndarray) -> np.ndarray:
+def _array_poly_3rd_order(coefficients: np.ndarray, value: np.ndarray) -> np.ndarray:
     a = complex(coefficients[3], 0.0)
     b = complex(coefficients[2], 0.0)
     c = complex(coefficients[1], 0.0)
@@ -150,8 +150,7 @@ def _array_poly_3nd_order(coefficients: np.ndarray, value: np.ndarray) -> np.nda
     Q = np.sqrt(i1 * i1 - 4.0 * i2 * i2 * i2)
     C = (0.5 * (Q + 2.0 * b * b * b - 9.0 * a * b * c + 27.0 * a * a * d)) ** (1.0 / 3.0)
 
-    valid = np.abs(C) > 0.0
-    C = C[valid]
+    C[np.abs(C) <= 0.0] = nan
     x1 = -b / (3.0 * a) - C / (3.0 * a) - i2 / (3.0 * a * C)
     i3 = complex(1.0, sqrt(3.0))
     i4 = complex(1.0, -sqrt(3.0))
@@ -161,8 +160,7 @@ def _array_poly_3nd_order(coefficients: np.ndarray, value: np.ndarray) -> np.nda
     result = np.full((*value.shape, 3), nan, dtype=np.float64)
 
     def set_result(values: np.ndarray, index: int):
-        assign = np.array(valid)
-        assign[valid] = np.abs(np.imag(values)) < 1E-8
+        assign = np.abs(np.imag(values)) < 1E-8
         result[assign, index] = values[assign]
 
     set_result(x1, 0)
@@ -256,7 +254,7 @@ def _array_polynomial(poly: np.ndarray, value: np.ndarray, guess: np.ndarray = N
     elif poly.shape[0] == 3:
         return _array_poly_2nd_order(poly, value)
     elif poly.shape[0] == 4:
-        return _array_poly_3nd_order(poly, value)
+        return _array_poly_3rd_order(poly, value)
     else:
         if guess is None:
             guess = np.zeros_like(value, dtype=np.float64)
@@ -294,6 +292,6 @@ def polynomial(
     elif len(coefficients) == 3:
         return _poly_2nd_order(coefficients, value)
     elif len(coefficients) == 4:
-        return _poly_3nd_order(coefficients, value)
+        return _poly_3rd_order(coefficients, value)
     else:
         return _poly_Nth_order(coefficients, value, guess)
