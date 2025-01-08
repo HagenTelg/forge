@@ -232,26 +232,26 @@ class FlowCorrection(Action):
         self._flow_ratio = ratio
 
     _NAME_OP: typing.Dict[str, typing.Callable[[np.ndarray, np.ndarray], np.ndarray]] = {
-        "number_concentration": lambda original, ratio: original / ratio,
-        "scattering_coefficient": lambda original, ratio: original / ratio,
-        "backscattering_coefficient": lambda original, ratio: original / ratio,
-        "light_absorption": lambda original, ratio: original / ratio,
-        "light_extinction": lambda original, ratio: original / ratio,
-        "equivalent_black_carbon": lambda original, ratio: original / ratio,
-        "number_distribution": lambda original, ratio: original / ratio,
-        "normalized_number_distribution": lambda original, ratio: original / ratio,
-        "polar_scattering_coefficient": lambda original, ratio: original / ratio,
-        "mass_concentration": lambda original, ratio: original / ratio,
+        "number_concentration": lambda original, ratio: (original.T / ratio.T).T,
+        "scattering_coefficient": lambda original, ratio: (original.T / ratio.T).T,
+        "backscattering_coefficient": lambda original, ratio: (original.T / ratio.T).T,
+        "light_absorption": lambda original, ratio: (original.T / ratio.T).T,
+        "light_extinction": lambda original, ratio: (original.T / ratio.T).T,
+        "equivalent_black_carbon": lambda original, ratio: (original.T / ratio.T).T,
+        "number_distribution": lambda original, ratio: (original.T / ratio.T).T,
+        "normalized_number_distribution": lambda original, ratio: (original.T / ratio.T).T,
+        "polar_scattering_coefficient": lambda original, ratio: (original.T / ratio.T).T,
+        "mass_concentration": lambda original, ratio: (original.T / ratio.T).T,
 
-        "sample_flow": lambda original, ratio: original * ratio,
-        "path_length_change": lambda original, ratio: original * ratio,
+        "sample_flow": lambda original, ratio: (original.T * ratio.T).T,
+        "path_length_change": lambda original, ratio: (original.T * ratio.T).T,
     }
     _STANDARD_NAME_OP: typing.Dict[str, typing.Callable[[np.ndarray, np.ndarray], np.ndarray]] = {
-        "number_concentration_of_ambient_aerosol_particles_in_air": lambda original, ratio: original / ratio,
-        "volume_scattering_coefficient_in_air_due_to_dried_aerosol_particles": lambda original, ratio: original / ratio,
-        "volume_backwards_scattering_coefficient_in_air_due_to_dried_aerosol_particles": lambda original, ratio: original / ratio,
-        "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles": lambda original, ratio: original / ratio,
-        "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles": lambda original, ratio: original / ratio,
+        "number_concentration_of_ambient_aerosol_particles_in_air": lambda original, ratio: (original.T / ratio.T).T,
+        "volume_scattering_coefficient_in_air_due_to_dried_aerosol_particles": lambda original, ratio: (original.T / ratio.T).T,
+        "volume_backwards_scattering_coefficient_in_air_due_to_dried_aerosol_particles": lambda original, ratio: (original.T / ratio.T).T,
+        "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles": lambda original, ratio: (original.T / ratio.T).T,
+        "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles": lambda original, ratio: (original.T / ratio.T).T,
     }
 
     def apply(self, _root: Dataset, data: Dataset, time_selection: typing.Union[slice, np.ndarray]) -> None:

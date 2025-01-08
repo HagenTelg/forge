@@ -112,7 +112,7 @@ def _poly_3rd_order(coefficients: typing.List[float], value: float) -> typing.Li
     i2 = b * b - 3.0 * a * c
     Q = csqrt(i1 * i1 - 4.0 * i2 * i2 * i2)
     C = (0.5 * (Q + 2.0 * b * b * b - 9.0 * a * b * c + 27.0 * a * a * d)) ** (1.0 / 3.0)
-    if abs(C) == 0.0:
+    if abs(a * C) < 1E-8:
         return []
     x1 = -b / (3.0 * a) - C / (3.0 * a) - i2 / (3.0 * a * C)
     i3 = complex(1.0, sqrt(3.0))
@@ -150,7 +150,7 @@ def _array_poly_3rd_order(coefficients: np.ndarray, value: np.ndarray) -> np.nda
     Q = np.sqrt(i1 * i1 - 4.0 * i2 * i2 * i2)
     C = (0.5 * (Q + 2.0 * b * b * b - 9.0 * a * b * c + 27.0 * a * a * d)) ** (1.0 / 3.0)
 
-    C[np.abs(C) <= 0.0] = nan
+    C[np.abs(a * C) <= 1E-8] = complex(nan, nan)
     x1 = -b / (3.0 * a) - C / (3.0 * a) - i2 / (3.0 * a * C)
     i3 = complex(1.0, sqrt(3.0))
     i4 = complex(1.0, -sqrt(3.0))
@@ -161,7 +161,7 @@ def _array_poly_3rd_order(coefficients: np.ndarray, value: np.ndarray) -> np.nda
 
     def set_result(values: np.ndarray, index: int):
         assign = np.abs(np.imag(values)) < 1E-8
-        result[assign, index] = values[assign]
+        result[assign, index] = np.real(values[assign])
 
     set_result(x1, 0)
     set_result(x2, 1)

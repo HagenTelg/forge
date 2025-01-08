@@ -212,7 +212,6 @@ def aerosol_contamination(data: AvailableData) -> None:
     remove_contamination("2019-11-08T07:58:00Z", "2019-11-08T23:45:00Z")
 
 
-
 def run(data: AvailableData) -> None:
     # Ball valve stuck on PM10 second system due to config error
     for aerosol in data.select_instrument({"instrument_id": "S91"}, start="2020-10-19", end="2020-11-02T16:20:00Z"):
