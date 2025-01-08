@@ -62,4 +62,5 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
         PS_ORG_ACR="UHEL", PS_ORG_UNIT=None,
         PS_ADDR_LINE1="PO BOX 64", PS_ADDR_LINE2=None,
         PS_ADDR_ZIP="FI-00014", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
+        PS_ORCID=None,
     )]
