@@ -1,11 +1,14 @@
 import typing
 import os
+import logging
 from tempfile import mkstemp
 from netCDF4 import Dataset
 from forge.formattime import format_iso8601_duration
 from forge.processing.average.file import average_file
 from forge.processing.average.contamination import invalidate_contamination, copy_contaminated
 from forge.processing.average.calculate import FixedIntervalFileAverager, MonthFileAverager
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def process_avgh(station: str, input_file: str, output_file: str,
@@ -43,6 +46,10 @@ def process_avgh(station: str, input_file: str, output_file: str,
             output_file.setncattr("time_coverage_resolution", format_iso8601_duration(60 * 60))
         finally:
             output_file.close()
+    except:
+        _LOGGER.error(f"Error generating hourly averages for file %s/%s",
+                      station.upper(), input_file, exc_info=True)
+        raise
     finally:
         input_file.close()
 
@@ -59,6 +66,10 @@ def process_avgd(station: str, input_file: str, output_file: str) -> None:
             output_file.setncattr("time_coverage_resolution", format_iso8601_duration(24 * 60 * 60))
         finally:
             output_file.close()
+    except:
+        _LOGGER.error(f"Error generating daily averages for file %s/%s",
+                      station.upper(), input_file, exc_info=True)
+        raise
     finally:
         input_file.close()
 
@@ -72,5 +83,9 @@ def process_avgm(station: str, input_file: str, output_file: str) -> None:
             output_file.setncattr("time_coverage_resolution", "P1M")
         finally:
             output_file.close()
+    except:
+        _LOGGER.error(f"Error generating monthly averages for file %s/%s",
+                      station.upper(), input_file, exc_info=True)
+        raise
     finally:
         input_file.close()

@@ -200,38 +200,42 @@ def process_day(
 ) -> None:
     open_data_files: typing.List[Dataset] = list()
     try:
-        for name in data_files:
-            file = Dataset(name, 'r+')
-            open_data_files.append(file)
+        try:
+            for name in data_files:
+                file = Dataset(name, 'r+')
+                open_data_files.append(file)
 
-        _LOGGER.debug("Started %s editing day starting at %d, with %d data files",
-                      station.upper(), day_start, len(data_files))
+            _LOGGER.debug("Started %s editing day starting at %d, with %d data files",
+                          station.upper(), day_start, len(data_files))
 
-        edit_begin = time.monotonic()
-        for directives_file in edit_files:
-            directives_file = Dataset(directives_file, 'r')
-            try:
-                apply_edit_directives(
-                    directives_file, open_data_files,
-                    day_start * 1000,
-                    (day_start + 24 * 60 * 60) * 1000,
-                )
-            finally:
-                directives_file.close()
+            edit_begin = time.monotonic()
+            for directives_file in edit_files:
+                directives_file = Dataset(directives_file, 'r')
+                try:
+                    apply_edit_directives(
+                        directives_file, open_data_files,
+                        day_start * 1000,
+                        (day_start + 24 * 60 * 60) * 1000,
+                    )
+                finally:
+                    directives_file.close()
 
-        _LOGGER.debug("Applied edit directives for %s day %d from %d sources in %.3f seconds",
-                      station.upper(), day_start, len(edit_files), time.monotonic() - edit_begin)
+            _LOGGER.debug("Applied edit directives for %s day %d from %d sources in %.3f seconds",
+                          station.upper(), day_start, len(edit_files), time.monotonic() - edit_begin)
 
-        available = EditingAvailableDay(station, Path(output_directory), day_start, list(open_data_files))
-        open_data_files.clear()
-    finally:
-        for f in open_data_files:
-            f.close()
-    try:
-        runner = station_data(station, 'editing', 'run')
-        run_begin = time.monotonic()
-        runner(available)
-        _LOGGER.debug("Day correction complete for %s day %d in %.3f seconds",
-                      station.upper(), day_start, time.monotonic() - run_begin)
-    finally:
-        available.close()
+            available = EditingAvailableDay(station, Path(output_directory), day_start, list(open_data_files))
+            open_data_files.clear()
+        finally:
+            for f in open_data_files:
+                f.close()
+        try:
+            runner = station_data(station, 'editing', 'run')
+            run_begin = time.monotonic()
+            runner(available)
+            _LOGGER.debug("Day correction complete for %s day %d in %.3f seconds",
+                          station.upper(), day_start, time.monotonic() - run_begin)
+        finally:
+            available.close()
+    except:
+        _LOGGER.error(f"Error editing %s day %d", station.upper(), day_start, exc_info=True)
+        raise
