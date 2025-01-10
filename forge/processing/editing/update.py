@@ -66,6 +66,7 @@ async def _run_editing(connection: Connection, working_directory: Path, station:
                     edit_files.append(str(add_edit_file))
 
                 run_args[target_index] = (file_day_start, edit_files, list())
+                await asyncio.sleep(0)
 
             run_args[target_index][2].append(str(file))
 
@@ -113,6 +114,8 @@ async def _write_data(connection: Connection, station: str, start: int, end: int
         if not file.is_file():
             continue
         write_files.append(file)
+        if len(write_files) % 256 == 0:
+            await asyncio.sleep(0)
 
     history_time = time.time()
     for idx in range(len(write_files)):
@@ -122,7 +125,7 @@ async def _write_data(connection: Connection, station: str, start: int, end: int
         await put.replace_exact(data, archive="edited", station=station)
 
         try:
-            os.unlink(str(write_files[idx]))
+            write_files[idx].unlink(missing_ok=True)
         except OSError:
             pass
 

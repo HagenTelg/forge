@@ -27,6 +27,8 @@ async def _write_files(connection: Connection, put: ArchivePut, source: Path, st
         if not file.is_file():
             continue
         write_files.append(file)
+        if len(write_files) % 256 == 0:
+            await asyncio.sleep(0)
 
     history_time = time.time()
     for idx in range(len(write_files)):
@@ -45,7 +47,7 @@ async def _write_files(connection: Connection, put: ArchivePut, source: Path, st
             if not whole_file:
                 data.close()
             try:
-                os.unlink(str(write_files[idx]))
+                write_files[idx].unlink(missing_ok=True)
             except OSError:
                 pass
 
@@ -93,6 +95,8 @@ async def _run_avgh(connection: Connection, input_directory: Path, output_direct
             if not input_file.is_file():
                 continue
             run_args.append((str(input_file), str(output_directory / input_file.name), str(output_directory)))
+            if len(run_args) % 256 == 0:
+                await asyncio.sleep(0)
 
         await _concurrent_run(
             connection, executor, station, process_avgh, run_args,
@@ -144,6 +148,8 @@ async def _run_avgd(connection: Connection, input_directory: Path, output_direct
             if not input_file.is_file():
                 continue
             run_args.append((str(input_file), str(output_directory / input_file.name)))
+            if len(run_args) % 256 == 0:
+                await asyncio.sleep(0)
 
         await _concurrent_run(
             connection, executor, station, process_avgd, run_args,
@@ -196,6 +202,8 @@ async def _run_avgm(connection: Connection, input_directory: Path, output_direct
             if not input_file.is_file():
                 continue
             run_args.append((str(input_file), str(output_directory / input_file.name)))
+            if len(run_args) % 256 == 0:
+                await asyncio.sleep(0)
 
         await _concurrent_run(
             connection, executor, station, process_avgm, run_args,

@@ -57,6 +57,8 @@ async def _run_pass(connection: Connection, working_directory: Path, station: st
             day_files.append(set())
         day_files[target_index].add(file)
         total_file_count += 1
+        if total_file_count % 256 == 0:
+            await asyncio.sleep(0)
 
     _LOGGER.debug(f"Processing clean data {start},{end} split into {len(day_files)} days with {total_file_count} files")
 
@@ -124,6 +126,8 @@ async def _write_data(connection: Connection, station: str, start: int, end: int
         if not file.is_file():
             continue
         write_files.append(file)
+        if len(write_files) % 256 == 0:
+            await asyncio.sleep(0)
 
     for idx in range(len(write_files)):
         _LOGGER.debug("Writing clean file %s/%s", station.upper(), write_files[idx].name)
@@ -148,8 +152,8 @@ async def _write_data(connection: Connection, station: str, start: int, end: int
         await put.replace_exact(data, archive="clean", station=station, replace_existing=replace_file)
 
         try:
-            os.unlink(str(write_files[idx]))
-        except OSError:
+            write_files[idx].unlink()
+        except (OSError, FileNotFoundError):
             pass
 
         percent_done = ((idx + 1) / len(write_files)) * 100.0
