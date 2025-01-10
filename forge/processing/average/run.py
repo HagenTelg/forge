@@ -11,27 +11,26 @@ from forge.processing.average.calculate import FixedIntervalFileAverager, MonthF
 _LOGGER = logging.getLogger(__name__)
 
 
-def process_avgh(station: str, input_file: str, output_file: str,
-                 contaminated_copy_path: typing.Optional[str] = None) -> None:
+def process_avgh(station: str, input_file: str, output_file: str, output_directory: str) -> None:
     def make_averager(times_epoch_ms, averaged_time_ms, nominal_spacing_ms):
         return FixedIntervalFileAverager(60 * 60 * 1000, times_epoch_ms, averaged_time_ms, nominal_spacing_ms)
 
     _LOGGER.debug("Processing hourly average file %s:%s", station.upper(), input_file)
-    input_file = Dataset(str(input_file), 'r+')
+    input_data = Dataset(str(input_file), 'r+')
     try:
-        if contaminated_copy_path:
-            contaminated_instrument = copy_contaminated(input_file)
+        if output_directory:
+            contaminated_instrument = copy_contaminated(input_data)
             if contaminated_instrument:
                 fd, contaminated_output_file = mkstemp(
                     prefix=f"{station.upper()}-{contaminated_instrument}_",
                     suffix='.nc',
-                    dir=contaminated_copy_path,
+                    dir=output_directory,
                 )
                 os.close(fd)
                 _LOGGER.debug("Making contaminated data to %s", str(contaminated_output_file))
                 contaminated_output_file = Dataset(str(contaminated_output_file), 'w', format='NETCDF4')
                 try:
-                    average_file(input_file, contaminated_output_file, make_averager)
+                    average_file(input_data, contaminated_output_file, make_averager)
                     contaminated_output_file.setncattr("time_coverage_resolution", format_iso8601_duration(60 * 60))
                     contaminated_output_file.setncattr("instrument_id", contaminated_instrument)
                     tags = set(str(getattr(contaminated_output_file, "forge_tags", "")).split())
@@ -41,10 +40,10 @@ def process_avgh(station: str, input_file: str, output_file: str,
                 finally:
                     contaminated_output_file.close()
 
-        invalidate_contamination(input_file, station)
+        invalidate_contamination(input_data, station)
         output_file = Dataset(str(output_file), 'w', format='NETCDF4')
         try:
-            average_file(input_file, output_file, make_averager)
+            average_file(input_data, output_file, make_averager)
             output_file.setncattr("time_coverage_resolution", format_iso8601_duration(60 * 60))
         finally:
             output_file.close()
@@ -53,7 +52,11 @@ def process_avgh(station: str, input_file: str, output_file: str,
                       station.upper(), input_file, exc_info=True)
         raise
     finally:
-        input_file.close()
+        input_data.close()
+        try:
+            os.unlink(input_file)
+        except OSError:
+            pass
 
 
 def process_avgd(station: str, input_file: str, output_file: str) -> None:
@@ -61,11 +64,11 @@ def process_avgd(station: str, input_file: str, output_file: str) -> None:
         return FixedIntervalFileAverager(24 * 60 * 60 * 1000, times_epoch_ms, averaged_time_ms, nominal_spacing_ms)
 
     _LOGGER.debug("Processing daily average file %s:%s", station.upper(), input_file)
-    input_file = Dataset(str(input_file), 'r')
+    input_data = Dataset(str(input_file), 'r')
     try:
         output_file = Dataset(str(output_file), 'w', format='NETCDF4')
         try:
-            average_file(input_file, output_file, make_averager)
+            average_file(input_data, output_file, make_averager)
             output_file.setncattr("time_coverage_resolution", format_iso8601_duration(24 * 60 * 60))
         finally:
             output_file.close()
@@ -74,16 +77,20 @@ def process_avgd(station: str, input_file: str, output_file: str) -> None:
                       station.upper(), input_file, exc_info=True)
         raise
     finally:
-        input_file.close()
+        input_data.close()
+        try:
+            os.unlink(input_file)
+        except OSError:
+            pass
 
 
 def process_avgm(station: str, input_file: str, output_file: str) -> None:
     _LOGGER.debug("Processing monthly average file %s:%s", station.upper(), input_file)
-    input_file = Dataset(str(input_file), 'r')
+    input_data = Dataset(str(input_file), 'r')
     try:
         output_file = Dataset(str(output_file), 'w', format='NETCDF4')
         try:
-            average_file(input_file, output_file, MonthFileAverager)
+            average_file(input_data, output_file, MonthFileAverager)
             output_file.setncattr("time_coverage_resolution", "P1M")
         finally:
             output_file.close()
@@ -92,4 +99,8 @@ def process_avgm(station: str, input_file: str, output_file: str) -> None:
                       station.upper(), input_file, exc_info=True)
         raise
     finally:
-        input_file.close()
+        input_data.close()
+        try:
+            os.unlink(input_file)
+        except OSError:
+            pass

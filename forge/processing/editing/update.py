@@ -121,6 +121,11 @@ async def _write_data(connection: Connection, station: str, start: int, end: int
         append_history(data, "forge.editing", history_time)
         await put.replace_exact(data, archive="edited", station=station)
 
+        try:
+            os.unlink(str(write_files[idx]))
+        except OSError:
+            pass
+
         percent_done = ((idx + 1) / len(write_files)) * 100.0
         await connection.set_transaction_status(f"Writing edited data, {percent_done:.0f}% done")
 

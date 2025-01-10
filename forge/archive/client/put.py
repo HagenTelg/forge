@@ -356,6 +356,10 @@ class ArchivePut:
                         replace_existing
                     ):
                         _LOGGER.debug("File comparison rejected")
+                        try:
+                            file.close()
+                        except:
+                            pass
                         return
                     await self._replace_data_file(file, station, archive, instrument_id,
                                                   archive_file_start, archive_file_end)

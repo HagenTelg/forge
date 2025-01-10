@@ -44,6 +44,10 @@ async def _write_files(connection: Connection, put: ArchivePut, source: Path, st
         finally:
             if not whole_file:
                 data.close()
+            try:
+                os.unlink(str(write_files[idx]))
+            except OSError:
+                pass
 
         await connection.set_transaction_status(status.format(percent_done=((idx + 1) / len(write_files)) * 100.0))
 
@@ -82,7 +86,7 @@ async def _concurrent_run(connection: Connection, executor: ProcessPoolExecutor,
 async def _run_avgh(connection: Connection, input_directory: Path, output_directory: Path,
                     station: str, start: int, end: int) -> None:
     with ProcessPoolExecutor() as executor:
-        run_args: typing.List[typing.Tuple[str, str, typing.Optional[str]]] = list()
+        run_args: typing.List[typing.Tuple[str, str, str]] = list()
         for input_file in input_directory.iterdir():
             if not input_file.name.endswith('.nc'):
                 continue

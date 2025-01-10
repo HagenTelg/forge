@@ -4,6 +4,7 @@ import logging
 import time
 import datetime
 import re
+import os
 from math import floor, ceil
 from tempfile import TemporaryDirectory
 from pathlib import Path
@@ -33,7 +34,7 @@ async def _fetch_passed(connection: Connection, station: str, start: int, end: i
         await read_file_or_nothing(connection, passed_file_name(station, year_start), destination)
 
 
-async def _run_pass(connection: Connection, working_directory: Path, station: str, start: int, end: int) -> int:
+async def _run_pass(connection: Connection, working_directory: Path, station: str, start: int, end: int) -> None:
     index_offset = int(floor(start / (24 * 60 * 60)))
     total_count = int(ceil(end / (24 * 60 * 60))) - index_offset
     day_files: typing.List[typing.Set[Path]] = list()
@@ -110,23 +111,22 @@ async def _run_pass(connection: Connection, working_directory: Path, station: st
 
     if current_filter:
         current_filter.close()
-    return total_file_count
 
 
-async def _write_data(connection: Connection, station: str, start: int, end: int,
-                      source: Path, expected_count: int) -> None:
+async def _write_data(connection: Connection, station: str, start: int, end: int, source: Path) -> None:
     put = ArchivePut(connection)
     await put.preemptive_lock_range(station, "clean", start * 1000, end * 1000)
 
-    total_written = 0
-    expected_count = max(expected_count, 1)
+    write_files: typing.List[Path] = list()
     for file in source.iterdir():
         if not file.name.endswith('.nc'):
             continue
         if not file.is_file():
             continue
-        _LOGGER.debug("Writing clean file %s/%s", station.upper(), file.name)
-        await connection.set_transaction_status(f"Writing clean data, {(total_written / expected_count) * 100.0:.0f}% done")
+        write_files.append(file)
+
+    for idx in range(len(write_files)):
+        _LOGGER.debug("Writing clean file %s/%s", station.upper(), write_files[idx].name)
 
         def replace_file(original: typing.Optional[Dataset], replacement: Dataset) -> bool:
             if original is None:
@@ -144,10 +144,16 @@ async def _write_data(connection: Connection, station: str, start: int, end: int
 
             return original_pass_time < replace_pass_time
 
-        data = Dataset(str(file), 'r+')
+        data = Dataset(str(write_files[idx]), 'r+')
         await put.replace_exact(data, archive="clean", station=station, replace_existing=replace_file)
 
-        total_written += 1
+        try:
+            os.unlink(str(write_files[idx]))
+        except OSError:
+            pass
+
+        percent_done = ((idx + 1) / len(write_files)) * 100.0
+        await connection.set_transaction_status(f"Writing clean data, {percent_done:.0f}% done")
 
     await put.commit_index()
 
@@ -172,8 +178,8 @@ async def update_clean_data(connection: Connection, station: str, start: float, 
 
         _LOGGER.debug(f"Running pass filtering for {station.upper()} {start},{end}")
         await connection.set_transaction_status("Processing clean data")
-        total_files = await _run_pass(connection, working_directory, station, start, end)
+        await _run_pass(connection, working_directory, station, start, end)
 
-        _LOGGER.debug(f"Writing {total_files} clean data files for {station.upper()} {start},{end}")
+        _LOGGER.debug(f"Writing clean data for {station.upper()} {start},{end}")
         await connection.set_transaction_status("Writing clean data")
-        await _write_data(connection, station, start, end, data_directory, total_files)
+        await _write_data(connection, station, start, end, data_directory)
