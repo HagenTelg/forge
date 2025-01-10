@@ -349,8 +349,8 @@ class ArchivePut:
                     raise InvalidFile("Exact file exceeds archive file bounds")
 
                 _LOGGER.debug("Replacing day index %d for %s", start_day_index, instrument_id)
+                await self._lock_data(station, archive, archive_file_start, archive_file_end)
                 try:
-                    await self._lock_data(station, archive, archive_file_start, archive_file_end)
                     if replace_existing and not self._compare_data_file(
                         file, station, archive, instrument_id, archive_file_start, archive_file_end,
                         replace_existing

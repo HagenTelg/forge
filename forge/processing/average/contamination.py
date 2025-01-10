@@ -1,26 +1,16 @@
 import typing
-import re
 import numpy as np
 from math import floor, ceil, nan
-from pathlib import Path
-from shutil import copy
-from netCDF4 import Dataset, Variable
+from netCDF4 import Dataset
 from forge.timeparse import parse_iso8601_time
 from forge.processing.station.lookup import station_data
 from forge.data.flags import parse_flags
 
-
-class StationContamination:
-    def is_contamination_flag(self, flag_bit: int, flag_name: str) -> bool:
-        return flag_name.startswith("data_contamination_")
-
-    def variable_affected(self, variable: Variable) -> bool:
-        if variable.name == 'system_flags':
-            return False
-        return True
+if typing.TYPE_CHECKING:
+    from forge.processing.station.default.contamination import StationContamination
 
 
-def _invalidate_group(group: Dataset, apply: StationContamination) -> None:
+def _invalidate_group(group: Dataset, apply: "StationContamination") -> None:
     for g in group.groups.values():
         _invalidate_group(g, apply)
     flags = group.variables.get('system_flags')

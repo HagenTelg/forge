@@ -1,6 +1,15 @@
 import typing
 from netCDF4 import Variable
-from forge.processing.average.contamination import StationContamination
+
+
+class StationContamination:
+    def is_contamination_flag(self, flag_bit: int, flag_name: str) -> bool:
+        return flag_name.startswith("data_contamination_")
+
+    def variable_affected(self, variable: Variable) -> bool:
+        if variable.name == 'system_flags':
+            return False
+        return True
 
 
 class NoContamination(StationContamination):

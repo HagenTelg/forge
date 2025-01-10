@@ -64,44 +64,49 @@ async def _run_pass(connection: Connection, working_directory: Path, station: st
     current_year: typing.Optional[int] = None
     current_filter: typing.Optional[AcceptIntoClean] = None
     for day_index in range(len(day_files)):
-        await connection.set_transaction_status(f"Processing clean data, {(day_index / total_count) * 100.0:.0f}% done")
-
         file_start = (day_index + index_offset) * (24 * 60 * 60)
         file_end = file_start + 24 * 60 * 60
-        file_year = time.gmtime(file_start).tm_year
-        if file_year != current_year:
-            if current_filter:
-                current_filter.close()
-            current_year = file_year
-            passed_file = working_directory / f"passed/{station.upper()}-PASSED_s{current_year:04}0101.nc"
-            if not passed_file.exists():
-                current_filter = None
-            else:
-                year_start = start_of_year(current_year)
-                year_end = start_of_year(current_year + 1)
-                current_filter = AcceptIntoClean(
-                    station, str(passed_file),
-                    max(year_start, file_start),
-                    min(year_end, end),
-                )
 
-        if current_filter is None:
-            for remove_file in day_files[day_index]:
-                remove_file.unlink()
-            continue
+        try:
+            await connection.set_transaction_status(f"Processing clean data, {(day_index / total_count) * 100.0:.0f}% done")
 
-        for check_file in day_files[day_index]:
-            data = current_filter.accept_file(file_start, file_end, str(check_file))
-            if data is None:
-                check_file.unlink()
+            file_year = time.gmtime(file_start).tm_year
+            if file_year != current_year:
+                if current_filter:
+                    current_filter.close()
+                current_year = file_year
+                passed_file = working_directory / f"passed/{station.upper()}-PASSED_s{current_year:04}0101.nc"
+                if not passed_file.exists():
+                    current_filter = None
+                else:
+                    year_start = start_of_year(current_year)
+                    year_end = start_of_year(current_year + 1)
+                    current_filter = AcceptIntoClean(
+                        station, str(passed_file),
+                        max(year_start, file_start),
+                        min(year_end, end),
+                    )
+
+            if current_filter is None:
+                for remove_file in day_files[day_index]:
+                    remove_file.unlink()
                 continue
-            data, profile_pass_time = data
-            try:
-                append_history(data, "forge.pass", pass_time)
-                data.setncattr("data_pass_time", format_iso8601_time(profile_pass_time))
-            finally:
-                data.close()
-            total_file_count += 1
+
+            for check_file in day_files[day_index]:
+                data = current_filter.accept_file(file_start, file_end, str(check_file))
+                if data is None:
+                    check_file.unlink()
+                    continue
+                data, profile_pass_time = data
+                try:
+                    append_history(data, "forge.pass", pass_time)
+                    data.setncattr("data_pass_time", format_iso8601_time(profile_pass_time))
+                finally:
+                    data.close()
+                total_file_count += 1
+        except:
+            _LOGGER.error(f"Error generating clean for %s day %d", station.upper(), file_start, exc_info=True)
+            raise
 
     if current_filter:
         current_filter.close()
@@ -120,6 +125,7 @@ async def _write_data(connection: Connection, station: str, start: int, end: int
             continue
         if not file.is_file():
             continue
+        _LOGGER.debug("Writing clean file %s/%s", station.upper(), file.name)
         await connection.set_transaction_status(f"Writing clean data, {(total_written / expected_count) * 100.0:.0f}% done")
 
         def replace_file(original: typing.Optional[Dataset], replacement: Dataset) -> bool:

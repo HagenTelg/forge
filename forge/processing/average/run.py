@@ -16,6 +16,7 @@ def process_avgh(station: str, input_file: str, output_file: str,
     def make_averager(times_epoch_ms, averaged_time_ms, nominal_spacing_ms):
         return FixedIntervalFileAverager(60 * 60 * 1000, times_epoch_ms, averaged_time_ms, nominal_spacing_ms)
 
+    _LOGGER.debug("Processing hourly average file %s:%s", station.upper(), input_file)
     input_file = Dataset(str(input_file), 'r+')
     try:
         if contaminated_copy_path:
@@ -27,6 +28,7 @@ def process_avgh(station: str, input_file: str, output_file: str,
                     dir=contaminated_copy_path,
                 )
                 os.close(fd)
+                _LOGGER.debug("Making contaminated data to %s", str(contaminated_output_file))
                 contaminated_output_file = Dataset(str(contaminated_output_file), 'w', format='NETCDF4')
                 try:
                     average_file(input_file, contaminated_output_file, make_averager)
@@ -47,7 +49,7 @@ def process_avgh(station: str, input_file: str, output_file: str,
         finally:
             output_file.close()
     except:
-        _LOGGER.error(f"Error generating hourly averages for file %s/%s",
+        _LOGGER.error(f"Error generating hourly averages for file %s:%s",
                       station.upper(), input_file, exc_info=True)
         raise
     finally:
@@ -58,6 +60,7 @@ def process_avgd(station: str, input_file: str, output_file: str) -> None:
     def make_averager(times_epoch_ms, averaged_time_ms, nominal_spacing_ms):
         return FixedIntervalFileAverager(24 * 60 * 60 * 1000, times_epoch_ms, averaged_time_ms, nominal_spacing_ms)
 
+    _LOGGER.debug("Processing daily average file %s:%s", station.upper(), input_file)
     input_file = Dataset(str(input_file), 'r')
     try:
         output_file = Dataset(str(output_file), 'w', format='NETCDF4')
@@ -67,7 +70,7 @@ def process_avgd(station: str, input_file: str, output_file: str) -> None:
         finally:
             output_file.close()
     except:
-        _LOGGER.error(f"Error generating daily averages for file %s/%s",
+        _LOGGER.error(f"Error generating daily averages for file %s:%s",
                       station.upper(), input_file, exc_info=True)
         raise
     finally:
@@ -75,6 +78,7 @@ def process_avgd(station: str, input_file: str, output_file: str) -> None:
 
 
 def process_avgm(station: str, input_file: str, output_file: str) -> None:
+    _LOGGER.debug("Processing monthly average file %s:%s", station.upper(), input_file)
     input_file = Dataset(str(input_file), 'r')
     try:
         output_file = Dataset(str(output_file), 'w', format='NETCDF4')

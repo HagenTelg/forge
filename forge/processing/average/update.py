@@ -30,6 +30,7 @@ async def _write_files(connection: Connection, put: ArchivePut, source: Path, st
 
     history_time = time.time()
     for idx in range(len(write_files)):
+        _LOGGER.debug("Writing average file %s/%s", station.upper(), write_files[idx].name)
         data = Dataset(str(write_files[idx]), 'r+')
         try:
             append_history(data, history, history_time)

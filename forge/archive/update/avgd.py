@@ -4,32 +4,33 @@ import logging
 from pathlib import Path
 from forge.archive import CONFIGURATION
 from forge.archive.client.connection import Connection
-from forge.archive.client import data_lock_key, data_notification_key
+from forge.archive.client import data_lock_key, data_notification_key, passed_notification_key
 from forge.processing.average.update import update_avgd_data
 from .manager import StationsController
+from .clean import DataController as CleanController
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class DataController(StationsController):
-    class Manager(StationsController.ManagerPerDay):
+    class Manager(CleanController.Manager):
         @property
         def state_file(self) -> Path:
             return self.controller.state_path / f"{self.station.lower()}.json"
 
         @property
         def listen_keys(self) -> typing.Iterable[str]:
-            return [data_notification_key(self.station, "avgh")]
+            return [data_notification_key(self.station, "avgh"), passed_notification_key(self.station)]
 
         @property
         def intent_keys(self) -> typing.Iterable[str]:
             return [data_lock_key(self.station, "avgd")]
 
         async def get_modified(self, modified_after: float) -> typing.List[typing.Tuple[int, int]]:
-            return await self.scan_modified_files(
+            return (await self.scan_modified_files(
                 f"data/{self.station.lower()}/avgh", modified_after,
                 self.convert_day_file
-            )
+            )) + (await super().get_modified(modified_after))
 
         async def perform_update(self, start: int, end: int) -> None:
             await update_avgd_data(self.connection, self.station, start / 1000.0, end / 1000.0)

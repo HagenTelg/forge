@@ -116,6 +116,7 @@ async def _write_data(connection: Connection, station: str, start: int, end: int
 
     history_time = time.time()
     for idx in range(len(write_files)):
+        _LOGGER.debug("Writing edited file %s/%s", station.upper(), write_files[idx].name)
         data = Dataset(str(write_files[idx]), 'r+')
         append_history(data, "forge.editing", history_time)
         await put.replace_exact(data, archive="edited", station=station)

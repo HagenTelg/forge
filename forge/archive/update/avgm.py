@@ -6,32 +6,33 @@ from pathlib import Path
 from forge.logicaltime import start_of_year_ms, end_of_year_ms
 from forge.archive import CONFIGURATION
 from forge.archive.client.connection import Connection
-from forge.archive.client import data_lock_key, data_notification_key
+from forge.archive.client import data_lock_key, data_notification_key, passed_notification_key
 from forge.processing.average.update import update_avgm_data
 from .manager import StationsController
+from .clean import DataController as CleanController
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class DataController(StationsController):
-    class Manager(StationsController.Manager):
+    class Manager(CleanController.Manager):
         @property
         def state_file(self) -> Path:
             return self.controller.state_path / f"{self.station.lower()}.json"
 
         @property
         def listen_keys(self) -> typing.Iterable[str]:
-            return [data_notification_key(self.station, "avgd")]
+            return [data_notification_key(self.station, "avgd"), passed_notification_key(self.station)]
 
         @property
         def intent_keys(self) -> typing.Iterable[str]:
             return [data_lock_key(self.station, "avgm")]
 
         async def get_modified(self, modified_after: float) -> typing.List[typing.Tuple[int, int]]:
-            return await self.scan_modified_files(
+            return (await self.scan_modified_files(
                 f"data/{self.station.lower()}/avgd", modified_after,
                 self.convert_year_file
-            )
+            )) + (await super().get_modified(modified_after))
 
         def round_notification(self, key: str, start: int, end: int) -> typing.Tuple[int, int]:
             if start <= 0:
