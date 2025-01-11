@@ -242,6 +242,9 @@ class Connection:
                 if packet_begin in done:
                     try:
                         packet_type = ServerPacket(struct.unpack('<B', packet_begin.result())[0])
+                    except asyncio.TimeoutError:
+                        _LOGGER.error("Archive server timeout", extra=self.log_extra)
+                        return
                     except (IOError, EOFError, ConnectionResetError, asyncio.IncompleteReadError):
                         _LOGGER.debug("Connection closed", extra=self.log_extra)
                         return
@@ -576,6 +579,7 @@ class Connection:
                 return 1
             if packet_type == ServerPacket.READ_LOCK_DENIED:
                 return await read_string(connection.reader)
+            return None
 
         r = await self._request_response(request, response)
         if r != 1:
@@ -592,6 +596,7 @@ class Connection:
                 return 1
             if packet_type == ServerPacket.WRITE_LOCK_DENIED:
                 return await read_string(connection.reader)
+            return None
 
         r = await self._request_response(request, response)
         if r != 1:

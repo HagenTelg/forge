@@ -303,6 +303,9 @@ class Connection:
                             except OSError:
                                 pass
                             raise EOFError
+                    except asyncio.TimeoutError:
+                        self._logger.warning("Connection timeout")
+                        return
                     except (IOError, EOFError, ConnectionResetError, asyncio.IncompleteReadError):
                         self._logger.debug("Connection closed")
                         return
