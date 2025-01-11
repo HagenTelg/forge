@@ -4,7 +4,6 @@ import logging
 import time
 import datetime
 import re
-import os
 from math import floor, ceil
 from tempfile import TemporaryDirectory
 from pathlib import Path
@@ -18,6 +17,7 @@ from forge.archive.client.get import read_file_or_nothing, get_all_daily_files
 from forge.archive.client import passed_lock_key, passed_file_name
 from forge.data.structure.history import append_history
 from .filter import AcceptIntoClean
+from ..update import cleanup_working_directory
 
 _LOGGER = logging.getLogger(__name__)
 _DAY_FILE_MATCH = re.compile(
@@ -167,23 +167,26 @@ async def update_clean_data(connection: Connection, station: str, start: float, 
     end = int(ceil(end / (24 * 60 * 60))) * 24 * 60 * 60
     with TemporaryDirectory() as working_directory:
         working_directory = Path(working_directory)
-        data_directory = working_directory / "data"
-        data_directory.mkdir(exist_ok=True)
-        _LOGGER.debug(f"Fetching edited data for {station.upper()} {start},{end} into {data_directory}")
-        await connection.set_transaction_status("Loading edited data for passing")
-        await get_all_daily_files(connection, station, "edited", start, end, data_directory,
-                                  status_format="Loading edited data for passing, {percent_done:.0f}% done")
+        try:
+            data_directory = working_directory / "data"
+            data_directory.mkdir(exist_ok=True)
+            _LOGGER.debug(f"Fetching edited data for {station.upper()} {start},{end} into {data_directory}")
+            await connection.set_transaction_status("Loading edited data for passing")
+            await get_all_daily_files(connection, station, "edited", start, end, data_directory,
+                                      status_format="Loading edited data for passing, {percent_done:.0f}% done")
 
-        passed_directory = working_directory / "passed"
-        passed_directory.mkdir(exist_ok=True)
-        _LOGGER.debug(f"Fetching passed ranges for {station.upper()} {start},{end} into {passed_directory}")
-        await connection.set_transaction_status("Loading passed ranges")
-        await _fetch_passed(connection, station, start, end, passed_directory)
+            passed_directory = working_directory / "passed"
+            passed_directory.mkdir(exist_ok=True)
+            _LOGGER.debug(f"Fetching passed ranges for {station.upper()} {start},{end} into {passed_directory}")
+            await connection.set_transaction_status("Loading passed ranges")
+            await _fetch_passed(connection, station, start, end, passed_directory)
 
-        _LOGGER.debug(f"Running pass filtering for {station.upper()} {start},{end}")
-        await connection.set_transaction_status("Processing clean data")
-        await _run_pass(connection, working_directory, station, start, end)
+            _LOGGER.debug(f"Running pass filtering for {station.upper()} {start},{end}")
+            await connection.set_transaction_status("Processing clean data")
+            await _run_pass(connection, working_directory, station, start, end)
 
-        _LOGGER.debug(f"Writing clean data for {station.upper()} {start},{end}")
-        await connection.set_transaction_status("Writing clean data")
-        await _write_data(connection, station, start, end, data_directory)
+            _LOGGER.debug(f"Writing clean data for {station.upper()} {start},{end}")
+            await connection.set_transaction_status("Writing clean data")
+            await _write_data(connection, station, start, end, data_directory)
+        finally:
+            await cleanup_working_directory(working_directory)
