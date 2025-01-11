@@ -24,16 +24,22 @@ class WorkingDirectory(TemporaryDirectory):
                     os.remove(name, dir_fd=dir_fd)
 
                 for file in os.scandir(dir_fd):
-                    if file.is_dir():
-                        await asyncio.get_event_loop().run_in_executor(None, rmdir, file.name)
-                    else:
-                        await asyncio.get_event_loop().run_in_executor(None, rmfile, file.name)
+                    try:
+                        if file.is_dir():
+                            await asyncio.get_event_loop().run_in_executor(None, rmdir, file.name)
+                        else:
+                            await asyncio.get_event_loop().run_in_executor(None, rmfile, file.name)
+                    except (OSError, FileNotFoundError):
+                        pass
             finally:
                 os.close(dir_fd)
         else:
             for file in os.scandir(self.name):
                 file_path = os.path.join(self.name, file.name)
-                if file.is_dir():
-                    await asyncio.get_event_loop().run_in_executor(None, shutil.rmtree, file_path)
-                else:
-                    await asyncio.get_event_loop().run_in_executor(None, os.remove, file_path)
+                try:
+                    if file.is_dir():
+                        await asyncio.get_event_loop().run_in_executor(None, shutil.rmtree, file_path)
+                    else:
+                        await asyncio.get_event_loop().run_in_executor(None, os.remove, file_path)
+                except (OSError, FileNotFoundError):
+                    pass
