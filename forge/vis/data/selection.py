@@ -4,11 +4,12 @@ import enum
 import numpy as np
 from math import isfinite, floor, ceil, nan
 from bisect import bisect_left
-from tempfile import NamedTemporaryFile, TemporaryDirectory
+from tempfile import NamedTemporaryFile
 from netCDF4 import Dataset, Variable
 from forge.const import STATIONS, MAX_I64
 from forge.logicaltime import containing_year_range, start_of_year
 from forge.timeparse import parse_iso8601_duration, parse_iso8601_time
+from forge.temp import WorkingDirectory
 from forge.archive.client import index_lock_key, index_file_name, data_lock_key, data_file_name
 from forge.archive.client.archiveindex import ArchiveIndex
 from forge.archive.client.connection import Connection
@@ -1024,7 +1025,7 @@ class FileSequence:
             else:
                 year_file_sources.add(src)
 
-        with TemporaryDirectory() as data_dir:
+        async with WorkingDirectory() as data_dir:
             for year in range(self._year_start, self._year_end):
                 year_start = start_of_year(year)
                 year_end = start_of_year(year+1)

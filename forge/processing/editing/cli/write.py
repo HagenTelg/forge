@@ -9,11 +9,12 @@ import os
 import sys
 import numpy as np
 from math import ceil
-from tempfile import TemporaryDirectory, mkstemp
+from tempfile import mkstemp
 from pathlib import Path
 from netCDF4 import Dataset, Variable
 from forge.logicaltime import containing_year_range, start_of_year, year_bounds
 from forge.const import STATIONS, MAX_I64
+from forge.temp import WorkingDirectory
 from forge.archive.client import edit_directives_lock_key, edit_directives_file_name, edit_directives_notification_key
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
 from forge.data.enum import remap_enum
@@ -106,7 +107,7 @@ def main():
         connection = await Connection.default_connection("write edit directives")
         await connection.startup()
 
-        with TemporaryDirectory() as tmpdir:
+        async with WorkingDirectory() as tmpdir:
             tmpdir = Path(tmpdir)
 
             allocated_uids: typing.Set[int] = set(input_uid)

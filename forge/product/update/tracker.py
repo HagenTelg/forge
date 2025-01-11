@@ -6,12 +6,12 @@ import os
 from abc import ABC, abstractmethod
 from pathlib import Path
 from math import floor, ceil
-from tempfile import TemporaryDirectory
 from json import load as from_json, dump as to_json
 from forge.range import Merge as RangeMerge, intersects
 from netCDF4 import Dataset
 from forge.logicaltime import containing_year_range, year_bounds_ms, start_of_year_ms
 from forge.timeparse import parse_iso8601_time, parse_iso8601_duration
+from forge.temp import WorkingDirectory
 from forge.product.selection import InstrumentSelection
 from forge.data.state import is_state_group
 from forge.data.dimensions import find_dimension_values
@@ -520,7 +520,7 @@ class FileModifiedTracker(Tracker):
 
     async def candidate_to_updated(self, start_epoch_ms: int, end_epoch_ms: int,
                                    modified_after_epoch_ms: int) -> "typing.AsyncIterable[typing.Tuple[int, int]]":
-        with TemporaryDirectory() as working_directory:
+        async with WorkingDirectory() as working_directory:
             working_directory = Path(working_directory)
 
             backoff = LockBackoff()

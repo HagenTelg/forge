@@ -3,9 +3,10 @@ import asyncio
 import logging
 import time
 from math import floor, ceil
-from tempfile import TemporaryDirectory, NamedTemporaryFile
+from tempfile import NamedTemporaryFile
 from netCDF4 import Dataset
 from forge.logicaltime import containing_year_range, start_of_year
+from forge.temp import WorkingDirectory
 from forge.archive.client import index_lock_key, index_file_name, data_lock_key, data_file_name
 from forge.archive.client.connection import Connection
 from forge.archive.client.archiveindex import ArchiveIndex
@@ -99,7 +100,7 @@ class IndexLookup:
                 )
 
     async def files(self, connection: Connection):
-        with TemporaryDirectory() as data_directory:
+        async with WorkingDirectory() as data_directory:
             for year_index in range(len(self._year)):
                 year = year_index + self._year_start
                 year_station = self._year[year_index]

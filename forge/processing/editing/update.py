@@ -6,18 +6,17 @@ import datetime
 import re
 import os
 from math import floor, ceil
-from tempfile import TemporaryDirectory
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
 from netCDF4 import Dataset
 from forge.logicaltime import containing_year_range, start_of_year
+from forge.temp import WorkingDirectory
 from forge.archive.client.connection import Connection
 from forge.archive.client.put import ArchivePut
 from forge.archive.client.get import read_file_or_nothing, get_all_daily_files
 from forge.archive.client import edit_directives_lock_key, edit_directives_file_name
 from forge.data.structure.history import append_history
 from .run import process_day
-from ..update import cleanup_working_directory
 
 _LOGGER = logging.getLogger(__name__)
 _DAY_FILE_MATCH = re.compile(
@@ -140,30 +139,27 @@ async def update_edited_data(connection: Connection, station: str, start: float,
     start = int(floor(start / (24 * 60 * 60))) * 24 * 60 * 60
     end = int(ceil(end / (24 * 60 * 60))) * 24 * 60 * 60
     begin_time = time.monotonic()
-    with TemporaryDirectory() as working_directory:
+    async with WorkingDirectory() as working_directory:
         working_directory = Path(working_directory)
-        try:
-            data_directory = working_directory / "data"
-            data_directory.mkdir(exist_ok=True)
-            _LOGGER.debug(f"Fetching raw data for {station.upper()} {start},{end} into {data_directory}")
-            await connection.set_transaction_status("Loading raw data for editing")
-            await get_all_daily_files(connection, station, "raw", start, end, data_directory,
-                                      status_format="Loading raw data for editing, {percent_done:.0f}% done")
+        data_directory = working_directory / "data"
+        data_directory.mkdir(exist_ok=True)
+        _LOGGER.debug(f"Fetching raw data for {station.upper()} {start},{end} into {data_directory}")
+        await connection.set_transaction_status("Loading raw data for editing")
+        await get_all_daily_files(connection, station, "raw", start, end, data_directory,
+                                  status_format="Loading raw data for editing, {percent_done:.0f}% done")
 
-            edits_directory = working_directory / "edits"
-            edits_directory.mkdir(exist_ok=True)
-            _LOGGER.debug(f"Fetching edits for {station.upper()} {start},{end} into {edits_directory}")
-            await connection.set_transaction_status("Loading edit directives")
-            await _fetch_edits(connection, station, start, end, edits_directory)
+        edits_directory = working_directory / "edits"
+        edits_directory.mkdir(exist_ok=True)
+        _LOGGER.debug(f"Fetching edits for {station.upper()} {start},{end} into {edits_directory}")
+        await connection.set_transaction_status("Loading edit directives")
+        await _fetch_edits(connection, station, start, end, edits_directory)
 
-            _LOGGER.debug(f"Running editing for {station.upper()} {start},{end}")
-            await connection.set_transaction_status("Starting editing")
-            await _run_editing(connection, working_directory, station, start, end)
+        _LOGGER.debug(f"Running editing for {station.upper()} {start},{end}")
+        await connection.set_transaction_status("Starting editing")
+        await _run_editing(connection, working_directory, station, start, end)
 
-            _LOGGER.debug(f"Writing edited data for {station.upper()} {start},{end}")
-            await connection.set_transaction_status("Writing edited data")
-            await _write_data(connection, station, start, end, data_directory)
-            _LOGGER.debug(f"Edited write completed for {station.upper()} {start},{end}")
-        finally:
-            await cleanup_working_directory(working_directory)
+        _LOGGER.debug(f"Writing edited data for {station.upper()} {start},{end}")
+        await connection.set_transaction_status("Writing edited data")
+        await _write_data(connection, station, start, end, data_directory)
+        _LOGGER.debug(f"Edited write completed for {station.upper()} {start},{end}")
     _LOGGER.debug(f"Edited data update for {station.upper()} {start},{end} completed in {time.monotonic() - begin_time:.3f} seconds")

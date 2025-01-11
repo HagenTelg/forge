@@ -1,8 +1,8 @@
 import typing
 import asyncio
-from tempfile import TemporaryDirectory
 from pathlib import Path
 from forge.units import ZERO_C_IN_K
+from forge.temp import WorkingDirectory
 from forge.product.selection import InstrumentSelection
 from .spectral import SpectralFile
 from .aerosol_instrument import AerosolInstrument
@@ -38,7 +38,7 @@ class Level0File(SpectralFile, AerosolInstrument):
         return r
 
     async def __call__(self, output_directory: Path) -> None:
-        with TemporaryDirectory() as data_directory:
+        async with WorkingDirectory() as data_directory:
             data_directory = Path(data_directory)
             await self.fetch_instrument_files(self.instrument_selection, 'raw', data_directory)
 
@@ -203,7 +203,7 @@ class Level1File(SpectralFile, AerosolInstrument):
         return r
 
     async def __call__(self, output_directory: Path) -> None:
-        with TemporaryDirectory() as data_directory:
+        async with WorkingDirectory() as data_directory:
             data_directory = Path(data_directory)
             await self.fetch_instrument_files(self.instrument_selection, 'clean', data_directory)
 
@@ -353,7 +353,7 @@ class Level2File(SpectralFile, AerosolInstrument):
         return Result
 
     async def __call__(self, output_directory: Path) -> None:
-        with TemporaryDirectory() as data_directory:
+        async with WorkingDirectory() as data_directory:
             data_directory = Path(data_directory)
             await self.fetch_instrument_files(self.instrument_selection, 'avgh', data_directory)
 

@@ -6,11 +6,12 @@ import os
 from math import floor
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
-from tempfile import NamedTemporaryFile, TemporaryDirectory
+from tempfile import NamedTemporaryFile
 from zipfile import ZipFile, ZIP_DEFLATED
 from pathlib import Path
 from shutil import copyfileobj
 from forge.tasks import background_task
+from forge.temp import WorkingDirectory
 from forge.vis import CONFIGURATION
 from forge.vis.export import Export
 from forge.vis.export.assemble import export_data
@@ -112,7 +113,7 @@ class _ExportRequest:
             self._apply_result(None)
             return None
 
-        with TemporaryDirectory(dir=self._DIRECTORY) as directory:
+        async with WorkingDirectory(dir=self._DIRECTORY) as directory:
             exporter = export_data(self.station, self.mode_name, self.export_key,
                                    self.start_epoch_ms, self.end_epoch_ms, directory)
             if not exporter:

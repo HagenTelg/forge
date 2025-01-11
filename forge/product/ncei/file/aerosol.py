@@ -3,8 +3,8 @@ import logging
 import time
 import numpy as np
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from netCDF4 import Dataset, Variable
+from forge.temp import WorkingDirectory
 from forge.product.selection import InstrumentSelection, VariableSelection
 from . import NCEIFile
 
@@ -42,7 +42,7 @@ class File(NCEIFile):
         return "ESRL-GMD-AEROSOL_v1.0_HOUR"
 
     async def __call__(self, output_directory: Path) -> None:
-        with TemporaryDirectory() as data_directory:
+        async with WorkingDirectory() as data_directory:
             data_directory = Path(data_directory)
             for subdir in ("absorption", "scattering", "cpc"):
                 (data_directory / subdir).mkdir()

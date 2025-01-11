@@ -5,19 +5,18 @@ import time
 import datetime
 import re
 from math import floor, ceil
-from tempfile import TemporaryDirectory
 from pathlib import Path
 from netCDF4 import Dataset
 from forge.logicaltime import containing_year_range, start_of_year
 from forge.formattime import format_iso8601_time
 from forge.timeparse import parse_iso8601_time
+from forge.temp import WorkingDirectory
 from forge.archive.client.connection import Connection
 from forge.archive.client.put import ArchivePut
 from forge.archive.client.get import read_file_or_nothing, get_all_daily_files
 from forge.archive.client import passed_lock_key, passed_file_name
 from forge.data.structure.history import append_history
 from .filter import AcceptIntoClean
-from ..update import cleanup_working_directory
 
 _LOGGER = logging.getLogger(__name__)
 _DAY_FILE_MATCH = re.compile(
@@ -165,28 +164,25 @@ async def _write_data(connection: Connection, station: str, start: int, end: int
 async def update_clean_data(connection: Connection, station: str, start: float, end: float) -> None:
     start = int(floor(start / (24 * 60 * 60))) * 24 * 60 * 60
     end = int(ceil(end / (24 * 60 * 60))) * 24 * 60 * 60
-    with TemporaryDirectory() as working_directory:
+    async with WorkingDirectory() as working_directory:
         working_directory = Path(working_directory)
-        try:
-            data_directory = working_directory / "data"
-            data_directory.mkdir(exist_ok=True)
-            _LOGGER.debug(f"Fetching edited data for {station.upper()} {start},{end} into {data_directory}")
-            await connection.set_transaction_status("Loading edited data for passing")
-            await get_all_daily_files(connection, station, "edited", start, end, data_directory,
-                                      status_format="Loading edited data for passing, {percent_done:.0f}% done")
+        data_directory = working_directory / "data"
+        data_directory.mkdir(exist_ok=True)
+        _LOGGER.debug(f"Fetching edited data for {station.upper()} {start},{end} into {data_directory}")
+        await connection.set_transaction_status("Loading edited data for passing")
+        await get_all_daily_files(connection, station, "edited", start, end, data_directory,
+                                  status_format="Loading edited data for passing, {percent_done:.0f}% done")
 
-            passed_directory = working_directory / "passed"
-            passed_directory.mkdir(exist_ok=True)
-            _LOGGER.debug(f"Fetching passed ranges for {station.upper()} {start},{end} into {passed_directory}")
-            await connection.set_transaction_status("Loading passed ranges")
-            await _fetch_passed(connection, station, start, end, passed_directory)
+        passed_directory = working_directory / "passed"
+        passed_directory.mkdir(exist_ok=True)
+        _LOGGER.debug(f"Fetching passed ranges for {station.upper()} {start},{end} into {passed_directory}")
+        await connection.set_transaction_status("Loading passed ranges")
+        await _fetch_passed(connection, station, start, end, passed_directory)
 
-            _LOGGER.debug(f"Running pass filtering for {station.upper()} {start},{end}")
-            await connection.set_transaction_status("Processing clean data")
-            await _run_pass(connection, working_directory, station, start, end)
+        _LOGGER.debug(f"Running pass filtering for {station.upper()} {start},{end}")
+        await connection.set_transaction_status("Processing clean data")
+        await _run_pass(connection, working_directory, station, start, end)
 
-            _LOGGER.debug(f"Writing clean data for {station.upper()} {start},{end}")
-            await connection.set_transaction_status("Writing clean data")
-            await _write_data(connection, station, start, end, data_directory)
-        finally:
-            await cleanup_working_directory(working_directory)
+        _LOGGER.debug(f"Writing clean data for {station.upper()} {start},{end}")
+        await connection.set_transaction_status("Writing clean data")
+        await _write_data(connection, station, start, end, data_directory)

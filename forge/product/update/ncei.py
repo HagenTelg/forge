@@ -4,8 +4,8 @@ import asyncio
 import shutil
 import hashlib
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from abc import ABC, abstractmethod
+from forge.temp import WorkingDirectory
 from forge.archive.client.connection import Connection
 from forge.product.update.tracker import YearModifiedTracker, CommitFailure
 from forge.product.selection import InstrumentSelection
@@ -97,7 +97,7 @@ class Local(Destination):
 class Tracker(YearModifiedTracker):
     class Output(YearModifiedTracker.Output):
         async def commit(self) -> None:
-            with TemporaryDirectory() as working_directory:
+            async with WorkingDirectory() as working_directory:
                 working_directory = Path(working_directory)
                 await self.tracker.make_output_files(self.start_epoch_ms, self.end_epoch_ms, working_directory)
                 await self.tracker.perform_upload(working_directory)

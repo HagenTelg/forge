@@ -8,7 +8,7 @@ import numpy as np
 import base64
 import struct
 from math import floor, ceil, isfinite
-from tempfile import TemporaryDirectory, NamedTemporaryFile, mkstemp
+from tempfile import NamedTemporaryFile, mkstemp
 from pathlib import Path
 from json import loads as from_json, dumps as to_json
 from netCDF4 import Dataset, Variable
@@ -16,6 +16,7 @@ from starlette.requests import Request
 from forge.logicaltime import containing_year_range, start_of_year, start_of_year_ms, round_to_year, year_bounds
 from forge.formattime import format_export_time
 from forge.const import STATIONS, MAX_I64
+from forge.temp import WorkingDirectory
 from forge.vis.access import AccessUser
 from forge.vis.data.stream import DataStream, ArchiveReadStream
 from forge.archive.client import edit_directives_lock_key, edit_directives_file_name, edit_directives_notification_key, data_lock_key, data_file_name, index_lock_key, index_file_name
@@ -626,7 +627,7 @@ async def _apply_edit_save(
             var = output_root.variables[var]
             var[output_idx] = var.datatype.enum_dict[value]
 
-    with TemporaryDirectory() as tmpdir:
+    async with WorkingDirectory() as tmpdir:
         modified_files: typing.Dict[int, typing.Optional[Dataset]] = dict()
         modified_history: typing.Dict[int, str] = dict()
         allocated_unique_ids: typing.Set[int] = set()

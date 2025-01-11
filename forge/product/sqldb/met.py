@@ -1,8 +1,8 @@
 import typing
 import asyncio
 from netCDF4 import Dataset
-from tempfile import TemporaryDirectory
 from pathlib import Path
+from forge.temp import WorkingDirectory
 from . import TableUpdate, InstrumentSelection
 
 
@@ -12,7 +12,7 @@ class Update(TableUpdate):
         return [InstrumentSelection(instrument_id=["XM1"])]
 
     async def __call__(self) -> None:
-        with TemporaryDirectory() as data_directory:
+        async with WorkingDirectory() as data_directory:
             data_directory = Path(data_directory)
 
             await self.fetch_instrument_files(self.data_selection, data_directory)

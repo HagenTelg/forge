@@ -2,7 +2,7 @@ import typing
 import logging
 import asyncio
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from forge.temp import WorkingDirectory
 from forge.archive.client.connection import Connection
 from forge.product.update.tracker import NRTTracker
 from forge.product.selection import InstrumentSelection
@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 class Tracker(NRTTracker):
     class Output(NRTTracker.Output):
         async def commit(self) -> None:
-            with TemporaryDirectory() as working_directory:
+            async with WorkingDirectory() as working_directory:
                 working_directory = Path(working_directory)
                 await self.tracker.make_output_files(self.start_epoch_ms, self.end_epoch_ms, working_directory)
                 await self.tracker.perform_upload(working_directory)

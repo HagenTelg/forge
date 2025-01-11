@@ -5,13 +5,13 @@ import argparse
 import sys
 import numpy as np
 from pathlib import Path
-from tempfile import TemporaryDirectory
 from math import floor, ceil
 from netCDF4 import Dataset, Variable
 from forge.const import STATIONS
 from forge.timeparse import parse_time_bounds_arguments
 from forge.formattime import format_iso8601_time
 from forge.logicaltime import containing_year_range, start_of_year
+from forge.temp import WorkingDirectory
 from forge.archive.client import edit_directives_lock_key, edit_directives_file_name
 from forge.archive.client.get import read_file_or_nothing
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
@@ -70,7 +70,7 @@ def main():
         connection = await Connection.default_connection("read edit directives")
         await connection.startup()
 
-        with TemporaryDirectory() as tmpdir:
+        async with WorkingDirectory() as tmpdir:
             tmpdir = Path(tmpdir)
 
             backoff = LockBackoff()
