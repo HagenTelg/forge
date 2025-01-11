@@ -3,6 +3,7 @@ import asyncio
 import logging
 import struct
 import os
+import time
 from forge.tasks import wait_cancelable
 from forge.service import send_file_contents
 from ..protocol import ProtocolError, Handshake, ClientPacket, ServerPacket, read_string, write_string
@@ -279,6 +280,7 @@ class Connection:
     async def run(self) -> None:
         self._logger.debug("Connection ready")
         tasks = set()
+        heartbeat_receive_time = time.monotonic()
         try:
             packet_begin = None
             unsolicited_available = None
@@ -302,6 +304,7 @@ class Connection:
                                 self.writer.close()
                             except OSError:
                                 pass
+                            heartbeat_receive_time = time.monotonic()
                             raise EOFError
                     except asyncio.TimeoutError:
                         self._logger.warning("Connection timeout")
@@ -310,6 +313,8 @@ class Connection:
                         self._logger.debug("Connection closed")
                         return
                     packet_begin = None
+                    if packet_type == ClientPacket.HEARTBEAT:
+                        heartbeat_receive_time = time.monotonic()
                     await self._process_packet(packet_type)
 
                 if unsolicited_available in done:
@@ -317,6 +322,8 @@ class Connection:
                     unsolicited_available = None
                     await send(*args, **kwargs)
         finally:
+            if time.monotonic() - heartbeat_receive_time > 15.0:
+                self._logger.warning("Heartbeat lag detected")
             for c in tasks:
                 try:
                     c.cancel()

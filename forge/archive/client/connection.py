@@ -4,6 +4,7 @@ import logging
 import struct
 import os
 import random
+import time
 from forge.tasks import wait_cancelable, background_task
 from forge.service import send_file_contents
 from ..protocol import ProtocolError, Handshake, ServerPacket, ClientPacket, read_string, write_string
@@ -213,6 +214,7 @@ class Connection:
     async def run(self) -> None:
         _LOGGER.debug("Connection ready", extra=self.log_extra)
         tasks = set()
+        heartbeat_send_time = time.monotonic()
         try:
             packet_begin = None
             request_available = None
@@ -282,12 +284,15 @@ class Connection:
                     send_heartbeat = None
                     self.writer.write(struct.pack('<B', ClientPacket.HEARTBEAT.value))
                     await self.writer.drain()
+                    heartbeat_send_time = time.monotonic()
         except asyncio.CancelledError:
             raise
         except:
             _LOGGER.debug("Error in connection processing", extra=self.log_extra, exc_info=True)
             raise
         finally:
+            if time.monotonic() - heartbeat_send_time > 15.0:
+                _LOGGER.warning("Heartbeat lag detected", extra=self.log_extra)
             for c in tasks:
                 try:
                     c.cancel()
