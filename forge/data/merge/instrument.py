@@ -21,6 +21,10 @@ if typing.TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 
+class MergeFileError(Exception):
+    pass
+
+
 def _reduce_to_slice(indices) -> typing.Union[slice, np.ndarray]:
     for i in range(1, len(indices)):
         if indices[i] != indices[i - 1] + 1:
@@ -264,6 +268,9 @@ class _Variable:
         if 'cut_size' in ancillary_variables:
             self.ancillary_cut_size = True
 
+    def incorporate_parent(self, contents: netCDF4.Dataset, is_state: typing.Optional[bool]) -> None:
+        pass
+
     def complete_structure(self) -> None:
         pass
 
@@ -377,23 +384,27 @@ class _Variable:
                     continue
             if destination_dimension.name == 'cut_size':
                 cut_size_destination = self.variable.group().variables.get('cut_size')
-                cut_size_source = contents.group().variables.get('cut_size')
-                if cut_size_destination is not None and cut_size_source is not None:
-                    assign_mapping, dsize = _cut_size_mapping(cut_size_source, cut_size_destination)
-                    if sidx is not None:
-                        source_selection[sidx] = slice(dsize)
-                    else:
-                        assert dsize == 1
-                    source_apply[didx] = slice(dsize)
-                    destination_apply[didx] = assign_mapping
-                    continue
-                elif cut_size_destination is not None:
-                    # Not cut size in the source, assume it's whole air and assign to the last dimension
-                    # NOTE: there is no current handing for the introduction of a whole air (nan) size
-                    # into the dimension if none was already present (e.x. going from size selected to not
-                    # at a file boundary).  This would require another analysis pass to figure out if there's
-                    # a mismatch between the variables attached to the cut size dimension between all files involved
-                    # in the merge.
+                if cut_size_destination is not None:
+                    cut_size_source = contents.group().variables.get('cut_size')
+                    if cut_size_destination is not None and cut_size_source is not None:
+                        assign_mapping, dsize = _cut_size_mapping(cut_size_source, cut_size_destination)
+                        if sidx is not None:
+                            source_selection[sidx] = slice(dsize)
+                        else:
+                            if dsize != 1:
+                                # This can happen when mapping from no cut size dimension (whole air) to
+                                # size split.  The nan value for the cut size dimension should have been
+                                # introduced to the final position if required already, so we can just
+                                # put it into the final position blindly.
+                                source_apply[didx] = slice(1)
+                                destination_apply[didx] = slice(destination_dimension.size-1,
+                                                                destination_dimension.size)
+                                continue
+                            assert dsize == 1
+                        source_apply[didx] = slice(dsize)
+                        destination_apply[didx] = assign_mapping
+                        continue
+                    # As above, the mapping to nan for whole air should already exist
                     source_apply[didx] = slice(1)
                     destination_apply[didx] = slice(destination_dimension.size-1, destination_dimension.size)
                     continue
@@ -806,9 +817,30 @@ class _CutSizeVariable(_Variable):
         self.dimension_variable: typing.Optional[bool] = None
         self.constant_values: typing.Set[float] = set()
         self.constant_infinite: bool = False
+        self.variables_with_dimension: typing.Set[_Variable] = set()
+        self.variables_without_dimension: typing.Set[_Variable] = set()
 
-    def incorporate_structure(self, contents: netCDF4.Variable, is_state: typing.Optional[bool]) -> None:
-        dimensions = contents.dimensions
+    def incorporate_parent(self, contents: netCDF4.Dataset, is_state: typing.Optional[bool]) -> None:
+        cut_size_variable = contents.variables.get('cut_size')
+        if cut_size_variable is None:
+            def incorporate_siblings_missing(record: "_Record", add_root: netCDF4.Dataset):
+                cut_size_var = record.variables.get('cut_size')
+                if cut_size_var is not None and cut_size_var != self:
+                    return
+
+                for name, add_var in add_root.variables.items():
+                    record_var = record.variables[name]
+                    if record_var == self:
+                        continue
+                    self.variables_without_dimension.add(record_var)
+
+                for name, add_group in add_root.groups.items():
+                    incorporate_siblings_missing(record.groups[name], add_group)
+
+            incorporate_siblings_missing(self.record, contents)
+            return
+
+        dimensions = cut_size_variable.dimensions
 
         def incorporate_constant(cut_size):
             try:
@@ -824,8 +856,44 @@ class _CutSizeVariable(_Variable):
             else:
                 self.constant_infinite = True
 
+        def incorporate_siblings_ancillary(record: "_Record", add_root: netCDF4.Dataset):
+            cut_size_var = record.variables.get('cut_size')
+            if cut_size_var is not None and cut_size_var != self:
+                return
+
+            for name, add_var in add_root.variables.items():
+                record_var = record.variables[name]
+                if record_var == self:
+                    continue
+                ancillary_variables = getattr(add_var, 'ancillary_variables', "").split()
+                if 'cut_size' in ancillary_variables:
+                    self.variables_with_dimension.add(record_var)
+                else:
+                    self.variables_without_dimension.add(record_var)
+
+            for name, add_group in add_root.groups.items():
+                incorporate_siblings_ancillary(record.groups[name], add_group)
+
+        def incorporate_siblings_dimension(record: "_Record", add_root: netCDF4.Dataset):
+            cut_size_var = record.variables.get('cut_size')
+            if cut_size_var is not None and cut_size_var != self:
+                return
+
+            for name, add_var in add_root.variables.items():
+                record_var = record.variables[name]
+                if record_var == self:
+                    continue
+                if 'cut_size' in add_var.dimensions:
+                    self.variables_with_dimension.add(record_var)
+                else:
+                    self.variables_without_dimension.add(record_var)
+
+            for name, add_group in add_root.groups.items():
+                incorporate_siblings_dimension(record.groups[name], add_group)
+
         if not dimensions:
-            incorporate_constant(contents[:])
+            incorporate_constant(cut_size_variable[:])
+            incorporate_siblings_ancillary(self.record, contents)
         elif len(dimensions) != 1:
             raise ValueError("Invalid cut size dimensionality")
         else:
@@ -834,19 +902,23 @@ class _CutSizeVariable(_Variable):
                     raise ValueError("Unable to incorporate cut size dimension data with time dependant")
                 self.time_variable = False
                 self.dimension_variable = True
-                for v in contents[:]:
+                for v in cut_size_variable[:]:
                     incorporate_constant(v)
+                incorporate_siblings_dimension(self.record, contents)
             elif dimensions[0] == 'time':
                 if self.time_variable == False or self.dimension_variable == True:
                     raise ValueError("Unable to incorporate cut size dimension data with time dependant")
                 self.time_variable = True
                 self.dimension_variable = False
+                incorporate_siblings_ancillary(self.record, contents)
             else:
                 raise ValueError("Invalid cut size dimensionality")
 
-        super().incorporate_structure(contents, is_state)
-
     def complete_structure(self) -> None:
+        if self.dimension_variable and not self.variables_with_dimension.isdisjoint(self.variables_without_dimension):
+            # Reserve a value for whole air for when a variable switches from no cut size to size selected
+            self.constant_infinite = True
+
         if self.time_variable is None and (len(self.constant_values) + int(self.constant_infinite)) > 1:
             self.time_variable = False
             self.dimension_variable = True
@@ -938,6 +1010,22 @@ class _Record:
             return _FlagsVariable(self)
         return _DataVariable(var.name, self)
 
+    def initialize_structure(self, contents: netCDF4.Dataset, is_parent_state: typing.Optional[bool] = None) -> None:
+        is_state = is_state_group(contents)
+        if is_state is None:
+            is_state = is_parent_state
+
+        for name, var in contents.variables.items():
+            if name not in self.variables:
+                self.variables[name] = self._create_variable(var)
+
+        for name, root in contents.groups.items():
+            target = self.groups.get(name)
+            if not target:
+                target = _Record(self.root.createGroup(name))
+                self.groups[name] = target
+            target.initialize_structure(root, is_parent_state=is_state)
+
     def incorporate_structure(self, contents: netCDF4.Dataset, is_parent_state: typing.Optional[bool] = None) -> None:
         for attr in contents.ncattrs():
             if attr.startswith('_'):
@@ -967,18 +1055,13 @@ class _Record:
             is_state = is_parent_state
 
         for name, var in contents.variables.items():
-            target = self.variables.get(name)
-            if not target:
-                target = self._create_variable(var)
-                self.variables[name] = target
-            target.incorporate_structure(var, is_state=is_state)
+            self.variables[name].incorporate_structure(var, is_state=is_state)
 
         for name, root in contents.groups.items():
-            target = self.groups.get(name)
-            if not target:
-                target = _Record(self.root.createGroup(name))
-                self.groups[name] = target
-            target.incorporate_structure(root, is_parent_state=is_state)
+            self.groups[name].incorporate_structure(root, is_parent_state=is_state)
+
+        for name, var in self.variables.items():
+            var.incorporate_parent(contents, is_state=is_state)
 
     def declare_structure(self) -> None:
         for var in self.variables.values():
@@ -1092,6 +1175,9 @@ class MergeInstrument:
                 if effective_start < effective_end:
                     self.visibility.append((effective_start, effective_end))
 
+        def __str__(self) -> str:
+            return self.root.filepath().split('/')[-1]
+
     def __init__(self):
         self._layers: typing.List["MergeInstrument._Source"] = list()
 
@@ -1155,10 +1241,21 @@ class MergeInstrument:
 
         record = _Record(output)
         for layer in reversed(self._layers):
-            record.incorporate_structure(layer.root)
+            try:
+                record.initialize_structure(layer.root)
+            except Exception as e:
+                raise MergeFileError(f"Structure initialization error on {layer}") from e
+        for layer in reversed(self._layers):
+            try:
+                record.incorporate_structure(layer.root)
+            except Exception as e:
+                raise MergeFileError(f"Structure incorporation error on {layer}") from e
         record.declare_structure()
         for layer in reversed(self._layers):
-            record.incorporate_variables(layer.root)
+            try:
+                record.incorporate_variables(layer.root)
+            except Exception as e:
+                raise MergeFileError(f"Variable incorporation error on {layer}") from e
 
         visible_sources: typing.List[typing.Tuple[int, int, "MergeInstrument._Source"]] = list()
         for layer in self._layers:
@@ -1167,13 +1264,22 @@ class MergeInstrument:
         visible_sources.sort(key=lambda x: x[0])
 
         for layer in self._layers:
-            record.apply_constants(layer.root)
+            try:
+                record.apply_constants(layer.root)
+            except Exception as e:
+                raise MergeFileError(f"Constant apply error on {layer}") from e
         if visible_sources:
             for start, end, source in visible_sources:
-                record.apply_data(start, end, source.root)
+                try:
+                    record.apply_data(start, end, source.root)
+                except Exception as e:
+                    raise MergeFileError(f"Apply data error from {source} in {format_iso8601_time(start/1000.0)},{format_iso8601_time(end/1000.0)}") from e
         else:
             for layer in self._layers:
-                record.apply_empty_data(layer.root)
+                try:
+                    record.apply_empty_data(layer.root)
+                except Exception as e:
+                    raise MergeFileError(f"Apply empty data error from {layer}") from e
 
         record.finish()
 

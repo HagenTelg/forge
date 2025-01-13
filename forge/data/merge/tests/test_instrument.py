@@ -1498,16 +1498,72 @@ def test_split_cutsize_absent_merge(tmp_path):
     over = None
 
     var = output.groups["data"].variables["cut_size"]
-    assert var.shape == (2,)
-    assert list(var[:]) == [1.0, 2.0]
+    assert var.shape == (3,)
+    assert list(var[:].data[:]) == pytest.approx([1.0, 2.0, nan], nan_ok=True)
 
     var = output.groups["data"].variables["time"]
     assert var.dtype == np.int64
     assert list(var[:]) == [1696982400000, 1697004000000, 1697025600000, 1697047200000]
 
     var = output.groups["data"].variables["var1"]
-    assert var.shape == (4, 2, 3, 4)
-    merged = np.full((4, 2, 3, 4), nan, dtype=np.float64)
-    merged[:2, ...] = (np.arange(4*2*3*4).reshape(4, 2, 3, 4))[:2, ...]
-    merged[2:, 1, ...] =  ((np.arange(2*3*4) + 1000).reshape(2, 3, 4))[:2, ...]
+    assert var.shape == (4, 3, 3, 4)
+    merged = np.full((4, 3, 3, 4), nan, dtype=np.float64)
+    merged[:2, :2, ...] = (np.arange(4*2*3*4).reshape(4, 2, 3, 4))[:2, ...]
+    merged[2:, 2, ...] =  ((np.arange(2*3*4) + 1000).reshape(2, 3, 4))[:2, ...]
+    assert var[:].data.flatten().tolist() == pytest.approx(merged.flatten().tolist(), nan_ok=True)
+
+
+def test_split_cutsize_partial_absent_merge(tmp_path):
+    under = Dataset(str(tmp_path / "under.nc"), 'w', format='NETCDF4')
+    under.setncattr("time_coverage_start", "2023-10-11T00:00:00Z")
+    under.setncattr("time_coverage_end", "2023-10-12T00:00:00Z")
+    group = under.createGroup("data")
+    var = time_coordinate(group)
+    var[:] = [1696982400000, 1697004000000, 1697025600000, 1697047200000]
+    group.createDimension("cut_size", 2)
+    group.createDimension("dim1", 3)
+    group.createDimension("dim2", 4)
+    var = group.createVariable("cut_size", "f8", ("cut_size",), fill_value=nan)
+    var[:] = [1.0, 2.0]
+    var = group.createVariable("var1", "f8", ("time", "cut_size", "dim1", "dim2"), fill_value=nan)
+    var.ancillary_variables = "cut_size"
+    var[:] = np.arange(4*2*3*4).reshape(4, 2, 3, 4)
+
+    over = Dataset(str(tmp_path / "over.nc"), 'w', format='NETCDF4')
+    over.setncattr("time_coverage_start", "2023-10-11T12:00:00Z")
+    over.setncattr("time_coverage_end", "2023-10-12T00:00:00Z")
+    group = over.createGroup("data")
+    var = time_coordinate(group)
+    var[:] = [1697025600000, 1697047200000]
+    group.createDimension("cut_size", 2)
+    group.createDimension("dim1", 3)
+    group.createDimension("dim2", 4)
+    var = group.createVariable("cut_size", "f8", ("cut_size",), fill_value=nan)
+    var[:] = [1.0, 2.0]
+    var = group.createVariable("var1", "f8", ("time", "dim1", "dim2"), fill_value=nan)
+    var[:] = (np.arange(2*3*4) + 1000).reshape(2, 3, 4)
+
+    merge = MergeInstrument()
+    merge.overlay(under, not_before_ms=1696982400000, not_after_ms=1697068800000)
+    merge.overlay(over, not_before_ms=1696982400000, not_after_ms=1697068800000)
+    output = merge.execute(tmp_path / "output.nc")
+    merge = None
+    under.close()
+    under = None
+    over.close()
+    over = None
+
+    var = output.groups["data"].variables["cut_size"]
+    assert var.shape == (3,)
+    assert list(var[:].data[:]) == pytest.approx([1.0, 2.0, nan], nan_ok=True)
+
+    var = output.groups["data"].variables["time"]
+    assert var.dtype == np.int64
+    assert list(var[:]) == [1696982400000, 1697004000000, 1697025600000, 1697047200000]
+
+    var = output.groups["data"].variables["var1"]
+    assert var.shape == (4, 3, 3, 4)
+    merged = np.full((4, 3, 3, 4), nan, dtype=np.float64)
+    merged[:2, :2, ...] = (np.arange(4 * 2 * 3 * 4).reshape(4, 2, 3, 4))[:2, ...]
+    merged[2:, 2, ...] = ((np.arange(2 * 3 * 4) + 1000).reshape(2, 3, 4))[:2, ...]
     assert var[:].data.flatten().tolist() == pytest.approx(merged.flatten().tolist(), nan_ok=True)
