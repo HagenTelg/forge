@@ -200,7 +200,7 @@ def vaisala_hmp_limits(
             always_tuple=True, commit_auxiliary=True,
     ):
         do_remove = np.full(dewpoint.shape, False, dtype=np.bool_)
-        do_remove[dewpoint.values < 59.85] = True
+        do_remove[dewpoint.values < -59.85] = True
         do_remove[humidity.values > 100.0] = True
         dewpoint[do_remove] = nan
         humidity[do_remove] = nan
