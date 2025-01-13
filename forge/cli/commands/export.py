@@ -123,6 +123,10 @@ class Command(ParseCommand):
                             dest='quantiles', action='store_true',
                             help="enable quantile output when available")
 
+        parser.add_argument('--array-from-zero',
+                            dest='array_from_zero', action='store_true',
+                            help="output array indexes from zero instead of one")
+
         parser.add_argument('--join',
                             choices=['csv', 'space', 'tab'],
                             help="base output join mode")
@@ -1290,6 +1294,7 @@ class _ExportStage(ExecuteStage):
         enable_stddev = args.stddev
         enable_count = args.count
         enable_quantiles = args.quantiles
+        array_zero_header = args.array_from_zero
 
         field_quote = args.join_quote if args.join_quote is not None else field_quote
         field_quote_escape = args.join_quote_escape if args.join_quote_escape is not None else field_quote_escape
@@ -1403,7 +1408,7 @@ class _ExportStage(ExecuteStage):
                     sub_idx = list(sub_source.index_suffix)
                     sub_idx[index_number] = idx
                     sub_source.index_suffix = tuple(sub_idx)
-                    sub_source.name_suffix += str(idx + 1)
+                    sub_source.name_suffix += str(idx + 1) if not array_zero_header else str(idx)
                     result.extend(fanout_dimension(sub_source, index_number + 1, dimension_idx + 1))
                 return result
 
