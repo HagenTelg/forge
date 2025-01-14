@@ -1,5 +1,5 @@
 import typing
-from ..default.view import detach, View, aerosol_views
+from ..default.view import detach, View, aerosol_views, aerosol_public
 from ..default.aerosol.maap import MAAP5012Status
 from ..default.aerosol.tsi375Xcpc import TSI375xCPCStatus
 from ..default.aerosol.ecotechnephelometer import NephelometerZero, NephelometerStatus
@@ -9,7 +9,7 @@ from .maap import MAAP5012Optical, EditingMAAP5012
 from .green import Green
 
 
-station_views = detach(aerosol_views)
+station_views = detach(aerosol_views, aerosol_public)
 
 
 station_views['aerosol-raw-maap'] = MAAP5012Optical('aerosol-raw')

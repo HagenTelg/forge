@@ -1,6 +1,6 @@
 import typing
 from collections import OrderedDict
-from ..default.view import detach, View, aerosol_views, ozone_views, met_views, radiation_views
+from ..default.view import detach, View, aerosol_views, aerosol_public, ozone_views, met_views, radiation_views
 from ..default.aerosol.wind import Wind
 from ..default.aerosol.temperature import Temperature
 from ..default.aerosol.ccn import CCNStatus
@@ -20,7 +20,7 @@ from .counts import ParticleConcentration, EditingParticleConcentration
 from .pressure import Pressure
 
 
-station_views = detach(aerosol_views, ozone_views, met_views, radiation_views)
+station_views = detach(aerosol_views, aerosol_public, ozone_views, met_views, radiation_views)
 
 
 station_views['aerosol-raw-wind'] = Wind('aerosol-raw', measurements=OrderedDict([
