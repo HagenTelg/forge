@@ -39,6 +39,7 @@ async def _run_editing(connection: Connection, working_directory: Path, station:
         index_offset = int(floor(start / (24 * 60 * 60)))
         total_days: int = 0
         run_args: typing.List[typing.Optional[typing.Tuple[int, typing.List[str], typing.List[str]]]] = list()
+        total_file_count = 0
         for file in (working_directory / "data").iterdir():
             if not file.is_file():
                 continue
@@ -66,9 +67,11 @@ async def _run_editing(connection: Connection, working_directory: Path, station:
                     edit_files.append(str(add_edit_file))
 
                 run_args[target_index] = (file_day_start, edit_files, list())
-                await asyncio.sleep(0)
 
             run_args[target_index][2].append(str(file))
+            total_file_count += 1
+            if total_file_count % 256 == 0:
+                await asyncio.sleep(0)
 
         concurrent_limit = max(os.cpu_count()+2, 32)
         completed_days: int = 0

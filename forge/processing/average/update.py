@@ -2,7 +2,9 @@ import typing
 import asyncio
 import logging
 import time
+import datetime
 import os
+import re
 from math import floor, ceil
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
@@ -14,8 +16,13 @@ from forge.archive.client.put import ArchivePut
 from forge.archive.client.get import get_all_daily_files, get_all_yearly_files
 from forge.data.structure.history import append_history
 from .run import process_avgh, process_avgd, process_avgm
+from .merge import merge_files
 
 _LOGGER = logging.getLogger(__name__)
+_DAY_FILE_MATCH = re.compile(
+    r'[A-Z][0-9A-Z_]{0,31}-([A-Z][A-Z0-9]*)_'
+    r's((\d{4})(\d{2})(\d{2}))\.nc',
+)
 
 
 async def _write_files(connection: Connection, put: ArchivePut, source: Path, station: str, archive: str,
@@ -158,6 +165,47 @@ async def _run_avgd(connection: Connection, input_directory: Path, output_direct
         executor.shutdown(wait=True)
 
 
+async def _merge_avgd(connection: Connection, input_directory: Path, output_directory: Path,
+                    station: str, start: int, end: int) -> None:
+    with ProcessPoolExecutor() as executor:
+        merge_sets: typing.Dict[typing.Tuple[str, int], typing.List[typing.Tuple[int, Path]]] = dict()
+        total_file_count = 0
+        for input_file in input_directory.iterdir():
+            if not input_file.is_file():
+                continue
+            match = _DAY_FILE_MATCH.fullmatch(input_file.name)
+            if not match:
+                continue
+            instrument_id = match.group(1)
+            file_year = int(match.group(3))
+            file_day_start = int(floor(datetime.datetime(
+                int(match.group(3)), int(match.group(4)), int(match.group(5)),
+                tzinfo=datetime.timezone.utc
+            ).timestamp()))
+
+            target = merge_sets.get((instrument_id, file_year))
+            if not target:
+                target = list()
+                merge_sets[(instrument_id, file_year)] = target
+
+            target.append((file_day_start, input_file))
+            total_file_count += 1
+            if total_file_count % 256 == 0:
+                await asyncio.sleep(0)
+
+        run_args: typing.List[typing.Tuple[typing.List[str], str]] = list()
+        for input_files in merge_sets.values():
+            input_files.sort(key=lambda x: x[0])
+            output_file = output_directory / input_files[0][1].name
+            run_args.append((list([str(file) for _, file in input_files]), str(output_file)))
+
+        await _concurrent_run(
+            connection, executor, station, merge_files, run_args,
+            "Merging daily averages, {percent_done:.0f}% done"
+        )
+        executor.shutdown(wait=True)
+
+
 async def _write_avgd(connection: Connection, station: str, start: int, end: int,
                       source: Path) -> None:
     put = ArchivePut(connection)
@@ -180,11 +228,17 @@ async def update_avgd_data(connection: Connection, station: str, start: float, e
         await get_all_daily_files(connection, station, "avgh", start, end, input_directory,
                                   status_format="Loading hourly data for averaging, {percent_done:.0f}% done")
 
-        output_directory = working_directory / "output"
-        output_directory.mkdir(exist_ok=True)
+        average_directory = working_directory / "average"
+        average_directory.mkdir(exist_ok=True)
         _LOGGER.debug(f"Running daily averaging for {station.upper()} {start},{end}")
         await connection.set_transaction_status("Starting daily average calculation")
-        await _run_avgd(connection, input_directory, output_directory, station, start, end)
+        await _run_avgd(connection, input_directory, average_directory, station, start, end)
+
+        output_directory = working_directory / "output"
+        output_directory.mkdir(exist_ok=True)
+        _LOGGER.debug(f"Merging daily averages for {station.upper()} {start},{end}")
+        await connection.set_transaction_status("Starting daily average merging")
+        await _merge_avgd(connection, average_directory, output_directory, station, start, end)
 
         _LOGGER.debug(f"Writing daily averaged data for {station.upper()} {start},{end}")
         await connection.set_transaction_status("Writing daily averaged data")
