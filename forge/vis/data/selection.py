@@ -108,7 +108,15 @@ class VariableRootContext:
             return hit
         values = group.variables.get('cut_size')
         if values is not None:
-            values = values[:].data
+            if 'time' not in values.dimensions:
+                times = self.group_time(group)
+                if times is None:
+                    values = None
+                else:
+                    values = values[:].data
+                    values = np.full((times.shape[0], *values.shape), values, dtype=values.dtype)
+            else:
+                values = values[:].data
         self._group_cut_size_time[group] = values
         return values
     
