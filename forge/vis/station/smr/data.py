@@ -804,7 +804,7 @@ else:
 
     for archive in ("raw", "editing", "clean", "avgh"):
         for record, cut_size in STANDARD_CUT_SIZE_SPLIT:
-            aerosol_data[f"aerosol-{archive}-aethalometer-{record}"] = DataRecord(dict(
+            data_records[f"aerosol-{archive}-aethalometer-{record}"] = DataRecord(dict(
                 [(f"Ba{wl+1}", [Selection(variable_id="Bac", wavelength_number=wl, cut_size=cut_size,
                                           require_tags={"aethalometer"}, exclude_tags={"secondary"})])
                  for wl in range(7)] +
@@ -820,7 +820,7 @@ else:
                  for wl in range(7)]
             ))
     for record, cut_size in STANDARD_CUT_SIZE_SPLIT:
-        aerosol_data[f"aerosol-realtime-aethalometer-{record}"] = RealtimeRecord(dict(
+        data_records[f"aerosol-realtime-aethalometer-{record}"] = RealtimeRecord(dict(
             [(f"Ba{wl+1}", [RealtimeSelection(f"Ba{wl+1}", variable_id="Ba",
                                               wavelength_number=wl, cut_size=cut_size,
                                               require_tags={"aethalometer"}, exclude_tags={"secondary"})])
@@ -838,6 +838,51 @@ else:
                                               require_tags={"aethalometer", "mageeae33"}, exclude_tags={"secondary"})])
              for wl in range(7)]
         ))
+    data_records["aerosol-raw-aethalometerstatus"] = DataRecord(dict([
+        ("Tcontroller", [Selection(variable_name="controller_temperature",
+                                   instrument_code="mageeae33", exclude_tags={"secondary"})]),
+        ("Tsupply", [Selection(variable_name="supply_temperature",
+                               instrument_code="mageeae33", exclude_tags={"secondary"})]),
+        ("Tled", [Selection(variable_name="led_temperature",
+                            instrument_code="mageeae33", exclude_tags={"secondary"})]),
+        ("Q1", [Selection(variable_name="spot_one_flow",
+                          instrument_code="mageeae33", exclude_tags={"secondary"})]),
+        ("Q2", [Selection(variable_name="spot_two_flow",
+                          instrument_code="mageeae33", exclude_tags={"secondary"})]),
+        ("Q", [Selection(variable_name="sample_flow",
+                         require_tags={"aethalometer"}, exclude_tags={"secondary"})]),
+    ] +
+        [(f"Ir{wl+1}", [Selection(variable_id="Ir", wavelength_number=wl,
+                                  require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+             for wl in range(7)] +
+        [(f"CF{wl+1}", [Selection(variable_name="correction_factor", wavelength_number=wl,
+                                  require_tags={"aethalometer", "mageeae33"}, exclude_tags={"secondary"})])
+             for wl in range(7)]
+    ))
+    data_records["aerosol-realtime-aethalometerstatus"] = DataRecord(dict([
+        ("Tcontroller", [Selection(variable_name="controller_temperature",
+                                  instrument_code="mageeae33", exclude_tags={"secondary"})]),
+        ("Tsupply", [Selection(variable_name="supply_temperature",
+                              instrument_code="mageeae33", exclude_tags={"secondary"})]),
+        ("Tled", [Selection(variable_name="led_temperature",
+                           instrument_code="mageeae33", exclude_tags={"secondary"})]),
+        ("Q1", [Selection(variable_name="spot_one_flow",
+                         instrument_code="mageeae33", exclude_tags={"secondary"})]),
+        ("Q2", [Selection(variable_name="spot_two_flow",
+                         instrument_code="mageeae33", exclude_tags={"secondary"})]),
+        ("Q", [Selection(variable_name="sample_flow",
+                        require_tags={"aethalometer"}, exclude_tags={"secondary"})]),
+    ] +
+        [(f"Ir{wl+1}", [RealtimeSelection(f"Ir{wl+1}", variable_id="Ir",
+                                          wavelength_number=wl,
+                                          require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+             for wl in range(7)] +
+        [(f"CF{wl+1}", [RealtimeSelection(f"k{wl+1}",variable_name="correction_factor",
+                                          wavelength_number=wl,
+                                          require_tags={"aethalometer", "mageeae33"}, exclude_tags={"secondary"})])
+             for wl in range(7)]
+    ))
+
 
     data_records["aerosol-raw-cpcstatus"] = DataRecord({
         "Qsample": [Selection(variable_name="sample_flow",
