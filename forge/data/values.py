@@ -9,7 +9,7 @@ def copy_variable_values(source: Variable, destination: Variable) -> None:
         for idx in np.ndindex(source.shape):
             destination[idx] = source[idx]
     else:
-        destination[:] = source[:].data
+        destination[...] = source[...].data
 
 
 def create_and_copy_variable(source: Variable, destination: Dataset, copy_values: bool = True,

@@ -92,7 +92,7 @@ class _DataVariable:
             for idx in np.ndindex(aligned_values.shape):
                 output_var[idx] = aligned_values[idx]
         else:
-            output_var[:] = aligned_values
+            output_var[...] = aligned_values
 
 
 class MergeFlatten:

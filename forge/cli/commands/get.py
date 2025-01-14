@@ -975,7 +975,7 @@ class DataSelection:
                 for idx in np.ndindex(source_values.shape):
                     destination_var[idx] = source_values[idx]
             else:
-                destination_var[:] = source_values[:]
+                destination_var[...] = source_values[...]
 
         def filter_group(source_group: Group, path: typing.List[str]) -> None:
             for name, var in source_group.variables.items():

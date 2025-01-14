@@ -253,7 +253,7 @@ class _CutSizeSelectorContext:
                 for idx in np.ndindex(selected_data.shape):
                     var[idx] = selected_data[idx]
             else:
-                var[:] = selected_data
+                var[...] = selected_data
             return
 
         var = create_and_copy_variable(source_variable, destination, copy_values=False)
