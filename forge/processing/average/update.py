@@ -196,8 +196,12 @@ async def _merge_avgd(connection: Connection, input_directory: Path, output_dire
         run_args: typing.List[typing.Tuple[typing.List[str], str]] = list()
         for input_files in merge_sets.values():
             input_files.sort(key=lambda x: x[0])
-            output_file = output_directory / input_files[0][1].name
-            run_args.append((list([str(file) for _, file in input_files]), str(output_file)))
+            for start_idx in range(0, len(input_files), 32):
+                output_file = output_directory / input_files[start_idx][1].name
+                run_args.append((
+                    list([str(file) for _, file in input_files[start_idx:start_idx+32]]),
+                    str(output_file)
+                ))
 
         await _concurrent_run(
             connection, executor, station, merge_files, run_args,
