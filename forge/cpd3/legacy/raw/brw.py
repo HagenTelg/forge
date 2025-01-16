@@ -253,7 +253,7 @@ class LegacyFilterCarousel(InstrumentConverter):
         return None
 
     def run(self) -> bool:
-        data_Fn = self.load_variable(f"Fn_{self.instrument_id}", dtype=np.uint64)
+        data_Fn = self.load_state(f"Fn_{self.instrument_id}", dtype=np.uint64)
         if data_Fn.time.shape[0] == 0:
             return False
         if not super().run():

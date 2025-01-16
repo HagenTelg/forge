@@ -70,10 +70,10 @@ class Converter(InstrumentConverter):
                 x *= 1000
             return x
 
-        data_Fn = self.load_variable(f"Fn_{self.instrument_id}", dtype=np.uint64)
-        data_Ff = self.load_variable(f"Ff_{self.instrument_id}", dtype=np.uint64, convert=convert_Ff)
-        data_Fp = self.load_variable(f"Fp_{self.instrument_id}", dtype=np.uint64)
-        carousel = self.load_variable(f"ZTOTAL_{self.instrument_id}", dtype=dict)
+        data_Fn = self.load_state(f"Fn_{self.instrument_id}", dtype=np.uint64)
+        data_Ff = self.load_state(f"Ff_{self.instrument_id}", dtype=np.uint64, convert=convert_Ff)
+        data_Fp = self.load_state(f"Fp_{self.instrument_id}", dtype=np.uint64)
+        carousel = self.load_state(f"ZTOTAL_{self.instrument_id}", dtype=dict)
 
         g, times = self.data_group(data_Qt)
         standard_temperature(g)
