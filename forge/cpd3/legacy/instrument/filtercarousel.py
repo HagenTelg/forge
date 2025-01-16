@@ -4,7 +4,7 @@ import forge.data.structure.variable as netcdf_var
 import forge.data.structure.timeseries as netcdf_timeseries
 from math import nan
 from forge.data.structure.stp import standard_temperature, standard_pressure
-from .converter import InstrumentConverter
+from .converter import InstrumentConverter, Identity, Selection, read_archive
 
 
 class Converter(InstrumentConverter):
@@ -33,6 +33,43 @@ class Converter(InstrumentConverter):
 
     def pressure_drop_source(self, filter_idx: int) -> typing.Optional[str]:
         return f"Pd_P{self.instrument_id[1:-1]}{filter_idx}"
+
+    # Specialized since we need the time of the end of the carousel
+    def load_total(self) -> "Converter.Data":
+        def convert_loaded(values: typing.List[typing.Tuple[Identity, typing.Any, float]]):
+            convert_values = list()
+            convert_times: typing.List[int] = list()
+            for idx in range(len(values)):
+                identity = values[idx][0]
+                time_point = identity.end
+                if not time_point:
+                    continue
+                if time_point >= self.file_end:
+                    continue
+                if time_point < self.file_start:
+                    if idx + 1 >= len(values) or values[idx + 1][0].end > self.file_start:
+                        pass
+                    else:
+                        continue
+
+                converted = dict(values[idx][1])
+                convert_times.append(int(round(time_point * 1000)))
+                convert_values.append(converted)
+
+            if len(convert_times) == 0:
+                return np.empty((0,), dtype=np.int64), np.empty((0,), dtype=dict)
+            return np.array(convert_times, dtype=np.int64), np.array(convert_values, dtype=dict)
+
+        return self.Data(*convert_loaded(read_archive([Selection(
+            start=self.file_start - 9 * 48 * 60 * 60,  # Need the prior carousel, so extend by more than the max length
+            end=self.file_end,
+            stations=[self.station],
+            archives=[self.archive],
+            variables=[f"ZTOTAL_{self.instrument_id}"],
+            include_meta_archive=False,
+            include_default_station=False,
+            lacks_flavors=["cover", "stats"],
+        )])))
 
     def run(self) -> bool:
         data_Qt = [
@@ -73,7 +110,7 @@ class Converter(InstrumentConverter):
         data_Fn = self.load_state(f"Fn_{self.instrument_id}", dtype=np.uint64)
         data_Ff = self.load_state(f"Ff_{self.instrument_id}", dtype=np.uint64, convert=convert_Ff)
         data_Fp = self.load_state(f"Fp_{self.instrument_id}", dtype=np.uint64)
-        carousel = self.load_state(f"ZTOTAL_{self.instrument_id}", dtype=dict)
+        carousel = self.load_total()
 
         g, times = self.data_group(data_Qt)
         standard_temperature(g)
@@ -167,7 +204,7 @@ class Converter(InstrumentConverter):
             data_Qt = []
             data_seconds = []
             for carousel_data in carousel.value:
-                data_Ff.append(int(carousel_data.get("Ff", 0)))
+                data_Ff.append(int(carousel_data.get("Ff", 0)) * 1000)
                 add_Qt = [nan] * (self.CAROUSEL_SIZE+1)
                 add_seconds = [nan] * (self.CAROUSEL_SIZE+1)
                 for i in range(self.CAROUSEL_SIZE+1):
