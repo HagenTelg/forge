@@ -940,22 +940,33 @@ class RealtimeSelection(Selection):
             return False
         if self.cut_size:
             cut_size_min, cut_size_max = self.cut_size
-            if cut_size_max is None:
-                if cut_size is not None and cut_size < cut_size_min:
-                    return False
-            elif not isfinite(cut_size_max):
-                if cut_size is None or cut_size < cut_size_min:
-                    return False
-            elif cut_size_min != cut_size_max:
-                if cut_size is None:
-                    return False
-                if cut_size < cut_size_min or cut_size >= cut_size_max:
-                    return False
+            if cut_size_min is None or not isfinite(cut_size_min):
+                if cut_size_max is None:
+                    if cut_size is not None and isfinite(cut_size):
+                        return False
+                elif not isfinite(cut_size_max):
+                    if cut_size is None or not isfinite(cut_size):
+                        return False
+                else:
+                    if cut_size is None:
+                        return False
+                    if cut_size >= cut_size_max:
+                        return False
             else:
-                if cut_size is None:
-                    return False
-                if cut_size != cut_size_min:
-                    return False
+                if cut_size_max is None:
+                    if cut_size is not None and isfinite(cut_size) and cut_size < cut_size_min:
+                        return False
+                elif not isfinite(cut_size_max):
+                    if cut_size is None or not isfinite(cut_size) or cut_size < cut_size_min:
+                        return False
+                elif cut_size_min != cut_size_max:
+                    if cut_size is None:
+                        return False
+                    if cut_size < cut_size_min or cut_size >= cut_size_max:
+                        return False
+                else:
+                    if cut_size != cut_size_min:
+                        return False
         return True
 
     def accept_realtime_message(self) -> bool:
