@@ -75,7 +75,7 @@ class Converter(InstrumentConverter):
         var_P.long_name = "absolute pressure"
         self.apply_data(times, var_P, data_P)
 
-        var_PD = g.createVariable("pressure", "f8", ("time",), fill_value=nan)
+        var_PD = g.createVariable("orifice_pressure_drop", "f8", ("time",), fill_value=nan)
         netcdf_var.variable_delta_pressure(var_PD)
         netcdf_timeseries.variable_coordinates(g, var_PD)
         var_PD.variable_id = "P"
