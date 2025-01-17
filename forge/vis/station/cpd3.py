@@ -2654,7 +2654,7 @@ class AcquisitionTranslator(NativeAcquisitionTranslator):
             self.source = source
 
         def matches(self, interface_info: typing.Dict[str, typing.Any]) -> bool:
-            return self.interface.matches(interface_info)
+            return self.interface.matches(self.source, interface_info)
 
         def display_information(self, interface_info: typing.Dict[str, typing.Any]) -> typing.Any:
             return self.interface.display_information(interface_info)

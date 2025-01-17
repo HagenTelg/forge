@@ -362,7 +362,7 @@ class _EditReadStream(ArchiveReadStream):
         self.profile = profile.lower()
         self.start_epoch_ms = start_epoch_ms
         self.end_epoch_ms = end_epoch_ms
-        self._edit_file_storage: typing.Optional[TemporaryDirectory] = None
+        self._edit_file_storage: typing.Optional[WorkingDirectory] = None
         year_start, year_end = containing_year_range(start_epoch_ms / 1000.0, end_epoch_ms / 1000.0)
         self._year_start = year_start
         self._year_end = year_end
@@ -378,7 +378,7 @@ class _EditReadStream(ArchiveReadStream):
         await self.connection.lock_read(edit_directives_lock_key(self.station), lock_start, lock_end)
 
     async def with_locks_held(self) -> None:
-        self._edit_file_storage = TemporaryDirectory()
+        self._edit_file_storage = WorkingDirectory()
         destination = Path(self._edit_file_storage.name)
         await read_file_or_nothing(
             self.connection,
@@ -466,6 +466,7 @@ class _EditReadStream(ArchiveReadStream):
             await self._stream_edit_files()
         finally:
             if self._edit_file_storage:
+                await self._edit_file_storage.make_empty()
                 self._edit_file_storage.cleanup()
                 self._edit_file_storage = None
 
