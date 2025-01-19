@@ -110,7 +110,7 @@ class Converter(WavelengthConverter):
 
         system_flags_time = self.load_variable(f"F1?_{self.instrument_id}", convert=bool, dtype=np.bool_).time
 
-        g, times = self.data_group(var_Bs + [system_flags_time], fill_gaps=False)
+        g, times = self.data_group(data_Bs + [system_flags_time], fill_gaps=False)
         selected_idx = 0
         for wlidx in range(len(self.WAVELENGTHS)):
             if data_Bs[wlidx].time.shape[0] > data_Bs[selected_idx].time.shape[0]:
