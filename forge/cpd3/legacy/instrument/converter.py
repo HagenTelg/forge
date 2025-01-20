@@ -119,7 +119,7 @@ class InstrumentConverter(ABC):
             if np.issubdtype(dtype, np.floating):
                 convert = lambda x: float(x) if x is not None and isfinite(x) else nan
             elif np.issubdtype(dtype, np.integer):
-                convert = lambda x: int(x) if x is not None else 0
+                convert = lambda x: int(x) if x is not None and isfinite(x) and x != -9223372036854775807 else 0
             else:
                 convert = lambda x: dtype(x) if x is not None else dtype()
 
