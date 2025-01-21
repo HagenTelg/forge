@@ -43,7 +43,7 @@ class Converter(InstrumentConverter):
         )
 
         g.createDimension("diameter", n_diameters)
-        if data_Ns.value.shape[1] > 0:
+        if data_Ns.value.shape[1] > 0 and len(data_Ns.value.shape) == 2:
             var_diameter = g.createVariable("diameter", "f8", ("diameter",), fill_value=nan)
             netcdf_var.variable_size_distribution_Dp(var_diameter)
             var_diameter.variable_id = "Ns"
@@ -53,7 +53,7 @@ class Converter(InstrumentConverter):
             diameter_values = data_Ns.value[-1]
             var_diameter[:assign_diameters] = diameter_values[:assign_diameters]
 
-        if data_Nb.time.shape[0] > 0:
+        if data_Nb.time.shape[0] > 0 and len(data_Nb.value.shape) == 2:
             var_Nb = g.createVariable("number_distribution", "f8", ("time", "diameter"), fill_value=nan)
             netcdf_var.variable_size_distribution_dN(var_Nb)
             netcdf_timeseries.variable_coordinates(g, var_Nb)
@@ -66,7 +66,7 @@ class Converter(InstrumentConverter):
                 value_Nb = data_Nb.value
             self.apply_data(times, var_Nb, data_Nb.time, value_Nb)
 
-        if data_Nn.time.shape[0] > 0:
+        if data_Nn.time.shape[0] > 0 and len(data_Nn.value.shape) == 2:
             var_Nn = g.createVariable("normalized_number_distribution", "f8", ("time", "diameter"), fill_value=nan)
             netcdf_var.variable_size_distribution_dNdlogDp(var_Nn)
             netcdf_timeseries.variable_coordinates(g, var_Nn)

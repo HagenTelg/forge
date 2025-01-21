@@ -48,22 +48,29 @@ class Converter(InstrumentConverter):
         var_N.cell_methods = "time: mean"
         self.apply_data(times, var_N, data_N)
 
-        g.createDimension("diameter", data_Nb.value.shape[1])
-        var_diameter = g.createVariable("diameter", "f8", ("diameter",), fill_value=nan)
-        netcdf_var.variable_size_distribution_Dp(var_diameter)
-        var_diameter.variable_id = "Ns"
-        var_diameter.coverage_content_type = "coordinate"
-        var_diameter.cell_methods = "time: mean"
-        diameter_values = data_Ns.value[-1]
-        assign_diameters = min(diameter_values.shape[0], data_Nb.value.shape[1])
-        var_diameter[:assign_diameters] = diameter_values[:assign_diameters]
+        if data_Nb.time.shape[0] != 0 and len(data_Nb.value.shape) == 2:
+            g.createDimension("diameter", data_Nb.value.shape[1])
+            if data_Ns.time.shape[0] != 0 and len(data_Ns.value.shape) == 2:
+                var_diameter = g.createVariable("diameter", "f8", ("diameter",), fill_value=nan)
+                netcdf_var.variable_size_distribution_Dp(var_diameter)
+                var_diameter.variable_id = "Ns"
+                var_diameter.coverage_content_type = "coordinate"
+                var_diameter.cell_methods = "time: mean"
+                diameter_values = data_Ns.value[-1]
+                assign_diameters = min(diameter_values.shape[0], data_Nb.value.shape[1])
+                var_diameter[:assign_diameters] = diameter_values[:assign_diameters]
+            else:
+                var_diameter = None
 
-        var_Nb = g.createVariable("number_distribution", "f8", ("time", "diameter"), fill_value=nan)
-        netcdf_var.variable_size_distribution_dN(var_Nb)
-        netcdf_timeseries.variable_coordinates(g, var_Nb)
-        var_Nb.variable_id = "Nb"
-        var_Nb.coverage_content_Vype = "physicalMeasurement"
-        self.apply_data(times, var_Nb, data_Nb)
+            var_Nb = g.createVariable("number_distribution", "f8", ("time", "diameter"), fill_value=nan)
+            netcdf_var.variable_size_distribution_dN(var_Nb)
+            netcdf_timeseries.variable_coordinates(g, var_Nb)
+            var_Nb.variable_id = "Nb"
+            var_Nb.coverage_content_Vype = "physicalMeasurement"
+            self.apply_data(times, var_Nb, data_Nb)
+        else:
+            var_diameter = None
+            var_Nb = None
 
         var_Q = g.createVariable("sample_flow", "f8", ("time",), fill_value=nan)
         netcdf_var.variable_sample_flow(var_Q)
