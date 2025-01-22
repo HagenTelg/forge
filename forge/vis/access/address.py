@@ -3,7 +3,7 @@ import logging
 import ipaddress
 from . import BaseAccessLayer, BaseAccessController, Request
 from forge.vis.util import name_to_initials
-from forge.const import DISPLAY_STATIONS
+from forge.const import STATIONS, DISPLAY_STATIONS
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -73,6 +73,15 @@ class AccessLayer(BaseAccessLayer):
             return lower and lower[0].visible_stations(lower[1:])
         if self.controller.station == "*":
             stations = set(DISPLAY_STATIONS)
+        else:
+            stations = {self.controller.station}
+        if lower:
+            stations |= lower[0].visible_stations(lower[1:])
+        return stations
+
+    def possible_stations(self, lower: typing.Sequence[BaseAccessLayer]) -> typing.Set[str]:
+        if self.controller.station == "*":
+            stations = set(STATIONS)
         else:
             stations = {self.controller.station}
         if lower:

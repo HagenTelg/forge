@@ -47,7 +47,7 @@ async def _stations_list(request: Request) -> Response:
         check_modes = None
 
     result: typing.Dict[str, str] = OrderedDict()
-    for station in request.user.visible_stations:
+    for station in request.user.possible_stations:
         if check_modes:
             for mode_name in check_modes:
                 mode_name = mode_name.lower()

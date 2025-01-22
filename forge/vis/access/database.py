@@ -21,7 +21,7 @@ from forge.emailutil import is_valid_email, send_email, EmailMessage
 from forge.tasks import background_task
 from forge.vis.util import package_template, name_to_initials
 from forge.vis import CONFIGURATION
-from forge.const import DISPLAY_STATIONS
+from forge.const import STATIONS, DISPLAY_STATIONS
 from forge.database import Database
 from . import BaseAccessLayer, BaseAccessController, Request, wildcard_match_level
 
@@ -1342,6 +1342,16 @@ class AccessLayer(BaseAccessLayer):
             if access.station == '*':
                 return DISPLAY_STATIONS
             if str(access.station) not in DISPLAY_STATIONS:
+                continue
+            result.add(str(access.station))
+        return result
+
+    def possible_stations(self, _lower: typing.Sequence[BaseAccessLayer]) -> typing.Set[str]:
+        result: typing.Set[str] = set()
+        for access in self._access.result():
+            if access.station == '*':
+                return STATIONS
+            if str(access.station) not in STATIONS:
                 continue
             result.add(str(access.station))
         return result

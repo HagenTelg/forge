@@ -60,6 +60,12 @@ class AccessUser(BaseUser):
         stations.sort()
         return stations
 
+    @property
+    def possible_stations(self) -> typing.List[str]:
+        stations = list(self._layers[0].possible_stations(self._layers[1:]))
+        stations.sort()
+        return stations
+
     def allow_station(self, station: str) -> bool:
         return self._layers[0].allow_station(station, self._layers[1:])
 
@@ -104,6 +110,9 @@ class BaseAccessLayer(ABC):
     @abstractmethod
     def visible_stations(self, lower: typing.Sequence["BaseAccessLayer"]) -> typing.Set[str]:
         pass
+
+    def possible_stations(self, lower: typing.Sequence["BaseAccessLayer"]) -> typing.Set[str]:
+        return self.visible_stations(lower)
 
     @abstractmethod
     def allow_station(self, station: str, lower: typing.Sequence["BaseAccessLayer"]) -> bool:
