@@ -162,7 +162,7 @@ class _BaseArchiveReadStream(ABC):
         assert self.connection is None
 
         self.connection = await Connection.default_connection(self.connection_name, use_environ=False)
-        await self.connection.startup()
+        await wait_cancelable(self.connection.startup(), 300.0)
 
         backoff = LockBackoff()
         while True:
@@ -180,15 +180,17 @@ class _BaseArchiveReadStream(ABC):
     async def _stream_run(self) -> None:
         assert self.connection is not None
         try:
-            if self.MAXIMUM_LOCK_HOLD_TIME:
-                await wait_cancelable(self.with_locks_held(), self.MAXIMUM_LOCK_HOLD_TIME)
-            else:
+            async def inner():
                 await self.with_locks_held()
+                await self.connection.transaction_commit()
+                self._lock_held = False
 
-            await self.connection.transaction_commit()
-            self._lock_held = False
+            if self.MAXIMUM_LOCK_HOLD_TIME:
+                await wait_cancelable(inner(), self.MAXIMUM_LOCK_HOLD_TIME)
+            else:
+                await inner()
         finally:
-            await self.connection.shutdown()
+            await wait_cancelable(self.connection.shutdown(), 30.0)
             self.connection = None
 
 

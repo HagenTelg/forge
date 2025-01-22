@@ -141,7 +141,21 @@ class Connection:
         ))
 
         wait_closed = asyncio.ensure_future(self._closed.wait())
-        done, pending = await asyncio.wait([completed, wait_closed], return_when=asyncio.FIRST_COMPLETED)
+        try:
+            done, pending = await asyncio.wait([completed, wait_closed], return_when=asyncio.FIRST_COMPLETED)
+        except:
+            if completed.done():
+                try:
+                    completed.result()
+                except:
+                    pass
+            if wait_closed.done():
+                try:
+                    wait_closed.result()
+                except:
+                    pass
+            raise
+
         for c in pending:
             try:
                 c.cancel()
