@@ -78,6 +78,6 @@ instrument_selections = [
     ], instrument='^(S|A|E)[0-9]+'),
     InstrumentSelection("Conditions", [
        r'^(?:T|P|U)1?',
-    ], require=r'^((P1?)|(T1?)|((Bb?[sae]?|X)[BGRQ0-9]*c?))'),
+    ], require=r'^((P1?)|(T1?)|((Bb?[sae]?|X)[BGRQ0-9]*c?))', instrument=r'^(XM|(?![PVQFX]))'),
 ]
 
