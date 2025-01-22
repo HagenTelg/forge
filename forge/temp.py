@@ -1,6 +1,7 @@
 import typing
 import asyncio
 import os
+import sys
 import shutil
 from tempfile import TemporaryDirectory
 
@@ -14,14 +15,14 @@ class WorkingDirectory(TemporaryDirectory):
                                                               exc_type, exc_val, exc_tb)
 
     async def make_empty(self) -> None:
-        if os.supports_dir_fd:
+        if os.unlink in os.supports_dir_fd and sys.version_info[:2] >= (3, 11):
             dir_fd = os.open(self.name, os.O_RDONLY)
             try:
                 def rmdir(name: str) -> None:
                     shutil.rmtree(name, ignore_errors=True, dir_fd=dir_fd)
 
                 def rmfile(name: str) -> None:
-                    os.remove(name, dir_fd=dir_fd)
+                    os.unlink(name, dir_fd=dir_fd)
 
                 for file in os.scandir(dir_fd):
                     try:
@@ -40,6 +41,6 @@ class WorkingDirectory(TemporaryDirectory):
                     if file.is_dir():
                         await asyncio.get_event_loop().run_in_executor(None, shutil.rmtree, file_path)
                     else:
-                        await asyncio.get_event_loop().run_in_executor(None, os.remove, file_path)
+                        await asyncio.get_event_loop().run_in_executor(None, os.unlink, file_path)
                 except (OSError, FileNotFoundError):
                     pass
