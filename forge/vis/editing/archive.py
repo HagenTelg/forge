@@ -24,6 +24,7 @@ from forge.archive.client.get import read_file_or_nothing
 from forge.archive.client.archiveindex import ArchiveIndex
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
 from forge.data.enum import remap_enum
+from forge.data.values import copy_variable_values
 from forge.data.state import is_state_group
 from forge.data.dimensions import find_dimension_values
 from forge.data.structure import edit_directives
@@ -666,6 +667,31 @@ async def _apply_edit_save(
             edit_file_structure(output_file, sorted(profiles))
             return output_file
 
+        def insert_profile(source: Dataset, start_ms: int) -> Dataset:
+            existing_root = source.groups["edits"]
+            existing_profiles = existing_root.variables["profile"]
+            existing_profiles_lookup = existing_profiles.datatype.enum_dict
+            if profile in existing_profiles_lookup:
+                return source
+
+            all_profiles: typing.Set[str] = set()
+            all_profiles.add(profile)
+            all_profiles.update(existing_profiles_lookup.keys())
+
+            output_file = construct_modified(start_ms, all_profiles)
+            output_root = output_file.groups["edits"]
+
+            for var in ("start_time", "end_time", "modified_time", "unique_id",
+                        "action_parameters", "condition_parameters", "author", "comment", "history"):
+                copy_variable_values(existing_root.variables[var], output_root.variables[var])
+            for var in ("profile", "action_type", "condition_type", "deleted"):
+                remap_enum(existing_root.variables[var], output_root.variables[var])
+
+            filename = source.filepath()
+            source.close()
+            Path(filename).unlink()
+            return output_file
+
         def remove_existing(source: Dataset, start_ms: int) -> bool:
             nonlocal notify_start
             nonlocal notify_end
@@ -793,6 +819,7 @@ async def _apply_edit_save(
             else:
                 if file_contains_unique_id(output_file, updated_unique_id):
                     updated_unique_id = new_unique_id()
+                output_file = insert_profile(output_file, -MAX_I64)
 
             history = modified_history.get(-MAX_I64)
             if history is None:
@@ -812,6 +839,8 @@ async def _apply_edit_save(
                 if output_file is None:
                     output_file = construct_modified(file_start_ms, [profile])
                     _LOGGER.debug("Created new edits file for %s/%d", station, year)
+                else:
+                    output_file = insert_profile(output_file, file_start_ms)
 
                 history = modified_history.get(file_start_ms)
                 if history is None:
