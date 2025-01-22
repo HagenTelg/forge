@@ -123,8 +123,17 @@ def _from_archive_action(code: str, parameters: str) -> typing.Dict[str, typing.
         parameters = from_json(parameters)
         return {
             'action': 'cut_size',
-            'cutsize': parameters["cutsize"],
-            'modified_cutsize': parameters["modified_cutsize"],
+            'cutsize': ({
+                1.0: 'pm1',
+                2.5: 'pm25',
+                10.0: 'pm10',
+            }).get(parameters["cutsize"], ''),
+            'modified_cutsize': ({
+                1.0: 'pm1',
+                2.5: 'pm25',
+                10.0: 'pm10',
+                'invalidate': 'invalidate',
+            }).get(parameters["modified_cutsize"], ''),
         }
     elif code == 'abnormaldata':
         parameters = from_json(parameters)
@@ -173,19 +182,29 @@ def _to_archive_action(action: typing.Dict[str, typing.Any]) -> typing.Tuple[str
     elif code == 'cut_size':
         operate_size = action.get('cutsize')
         if operate_size is not None:
-            operate_size = float(operate_size)
-            if not isfinite(operate_size):
-                operate_size = None
+            operate_size = str(operate_size).lower()
+            try:
+                operate_size = ({
+                    'pm1': 1.0,
+                    'pm25': 2.5,
+                    'pm10': 10.0,
+                    '': None,
+                })[operate_size]
+            except KeyError as e:
+                raise ValueError from e
         output_cut = action.get('modified_cutsize')
         if output_cut is not None:
-            if isinstance(output_cut, str):
-                output_cut = str(output_cut).lower()
-                if output_cut != 'invalidate':
-                    raise ValueError
-            else:
-                output_cut = float(output_cut)
-                if not isfinite(output_cut):
-                    output_cut = None
+            output_cut = str(output_cut).lower()
+            try:
+                output_cut = ({
+                    'pm1': 1.0,
+                    'pm25': 2.5,
+                    'pm10': 10.0,
+                    'invalidate': 'invalidate',
+                    '': None,
+                })[output_cut]
+            except KeyError as e:
+                raise ValueError from e
         return 'SizeCutFix', {
             "cutsize": operate_size,
             "modified_cutsize": output_cut,
