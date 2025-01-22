@@ -92,7 +92,7 @@ class Simulator(StreamingSimulator):
                     f"{self.data_TDgrowth:4.1f},"
                     f"{self.data_Cwick:4d},"
                     f"{self.data_Tboard:5.1f},"
-                    f"{self.data_Vpwr:4.1f}V,"
+                    f"{self.data_Vpwr:4.1f}V ,"
                     f"{self.data_PDflow:5.1f},"
                     f"{self.data_P:4.0f},"
                     f"{flow_lpm_to_ccm(self.data_Q):3.0f},"
@@ -226,6 +226,7 @@ class Simulator(StreamingSimulator):
                     elif line == b'topt':
                         self._output_parameter_temperature('topt')
                     elif line == b'hdr':
+                        self.writer.write(b"0\r\n")
                         if self._unpolled_long:
                             self.writer.write(b'year time, Concentration, DewPoint,Input T, Input RH\r\n')
                             self.writer.write(b'Cond T, Init T,Mod T, Opt T, HeatSink T,  Case T,\r\n')

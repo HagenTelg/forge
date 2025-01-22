@@ -122,12 +122,14 @@ class Instrument(StreamingInstrument):
                 self.flag_bit(self.bit_flags, 0x0010000, "flash_size_error"),
                 self.flag_bit(self.bit_flags, 0x0020000, "thermistor_fault", is_warning=True),
                 self.flag(self.notify_sample_flow_out_of_range, 0x0040000),
-                # 0x080000 reserved
+                # 0x080000 wick sensor sampled
                 self.flag_bit(self.bit_flags, 0x0100000, "i2c_multiplexer_error"),
                 self.flag_bit(self.bit_flags, 0x0200000, "low_clock_battery"),
                 self.flag_bit(self.bit_flags, 0x0400000, "clock_stopped"),
                 self.flag_bit(self.bit_flags, 0x0800000, "differential_pressure_saturated", is_warning=True),
                 self.flag_bit(self.bit_flags, 0x1000000, "laser_diode_fault", is_warning=True),
+                # 0x2000000 sd card missing
+                # 0x4000000 sd card not writing
             ],
         )
 
@@ -169,6 +171,9 @@ class Instrument(StreamingInstrument):
         self._save_request: bool = False
         self.context.bus.connect_command('set_parameters', self.set_parameters)
         self.context.bus.connect_command('save_settings', self.save_settings)
+
+        from ..tcp import TCPContext
+        self._telnet_login = isinstance(context, TCPContext)
 
     async def _read_parameters(self) -> None:
         self.writer.write(b"sus\r")
@@ -217,6 +222,7 @@ class Instrument(StreamingInstrument):
                 raise CommunicationsError(f"error setting parameter {cmd}: {data}")
 
     def _parse_power_supply_voltage(self, Vpwr: bytes) -> None:
+        Vpwr = Vpwr.strip()
         if Vpwr.endswith(b'V'):
             Vpwr = Vpwr[:-1]
         self.data_Vpwr(parse_number(Vpwr))
@@ -237,6 +243,15 @@ class Instrument(StreamingInstrument):
 
     async def start_communications(self) -> None:
         if self.writer:
+            if self._telnet_login:
+                # Attempt a login
+                self.writer.write(b"root\r")
+                await self.writer.drain()
+                await self.drain_reader(0.5)
+                self.writer.write(b"\r")
+                await self.writer.drain()
+                await self.drain_reader(0.5)
+
             # Stop reports
             self.writer.write(b"\r\rlog,off\r")
             await self.writer.drain()
@@ -262,45 +277,51 @@ class Instrument(StreamingInstrument):
                 del hdr[0]
             if not hdr:
                 raise CommunicationsError("no header response")
+            if hdr[0].isdigit():  # Ignore return setting of number of headers
+                del hdr[0]
+            if not hdr:
+                raise CommunicationsError("no header response")
 
             self._record_fields.clear()
             have_concentration = False
             have_pulse_info = False
+            have_terminal_status = False
             self._have_wadc = False
             for header_line in hdr:
                 if header_line.endswith(b','):
                     header_line = header_line[:-1]
                 for field_name in header_line.split(b','):
+                    have_terminal_status = False
                     field_name = field_name.lower().strip()
-                    if field_name == b"year time" or field_name == b"timestamp":
+                    if field_name == b"year time" or field_name == b"timestamp" or field_name == b"date_____time":
                         self._record_fields.append(lambda date_time: parse_datetime_field(date_time, date_separator=b'/'))
-                    elif field_name == b"concentration":
+                    elif field_name == b"concentration" or field_name == b"conc":
                         have_concentration = True
                         self._record_fields.append(lambda N: self.data_Ninstrument(parse_number(N)))
-                    elif field_name == b"dewpoint":
+                    elif field_name == b"dewpoint" or field_name == b"dewp":
                         self._record_fields.append(lambda TDinlet: self.data_TDinlet(parse_number(TDinlet)))
-                    elif field_name == b"input t":
+                    elif field_name == b"input t" or field_name == b"tin":
                         self._record_fields.append(lambda Tinlet: self.data_Tinlet(parse_number(Tinlet)))
-                    elif field_name == b"input rh":
+                    elif field_name == b"input rh" or field_name == b"rhin":
                         self._record_fields.append(lambda Uinlet: self.data_Uinlet(parse_number(Uinlet)))
-                    elif field_name == b"cond t":
+                    elif field_name == b"cond t" or field_name == b"tcon":
                         self._record_fields.append(lambda Tconditioner: self.data_Tconditioner(parse_number(Tconditioner)))
-                    elif field_name == b"init t":
+                    elif field_name == b"init t" or field_name == b"tini":
                         self._record_fields.append(lambda Tinitiator: self.data_Tinitiator(parse_number(Tinitiator)))
-                    elif field_name == b"mod t":
+                    elif field_name == b"mod t" or field_name == b"tmod":
                         self._record_fields.append(lambda Tmoderator: self.data_Tmoderator(parse_number(Tmoderator)))
-                    elif field_name == b"opt t":
+                    elif field_name == b"opt t" or field_name == b"topt":
                         self._record_fields.append(lambda Toptics: self.data_Toptics(parse_number(Toptics)))
-                    elif field_name == b"heatsink t":
+                    elif field_name == b"heatsink t" or field_name == b"thsk":
                         self._record_fields.append(lambda Theatsink: self.data_Theatsink(parse_number(Theatsink)))
-                    elif field_name == b"case t":
+                    elif field_name == b"case t" or field_name == b"tcab":
                         self._record_fields.append(lambda Tcase: self.data_Tcase(parse_number(Tcase)))
-                    elif field_name == b"wicksensor":
+                    elif field_name == b"wicksensor" or field_name == b"wick":
                         self._record_fields.append(lambda PCTwick: self.data_PCTwick(parse_number(PCTwick)))
-                    elif field_name == b"modset":
+                    elif field_name == b"modset" or field_name == b"mset":
                         # Moderator set point
                         self._record_fields.append(None)
-                    elif field_name == b"humidifer exit dp":
+                    elif field_name == b"humidifer exit dp" or field_name == b"hdp":
                         self._record_fields.append(lambda TDgrowth: self.data_TDgrowth(parse_number(TDgrowth)))
                     elif field_name == b"wadc" or field_name == b"wickadc":
                         self._have_wadc = True
@@ -311,26 +332,35 @@ class Instrument(StreamingInstrument):
                         self._record_fields.append(self._parse_power_supply_voltage)
                     elif field_name == b"diff. press":
                         self._record_fields.append(lambda PDflow: self.data_PDflow(parse_number(PDflow)))
-                    elif field_name == b"abs. press.":
+                    elif field_name == b"abs. press." or field_name == b"pamb":
                         self._record_fields.append(lambda P: self.data_P(parse_number(P)))
                     elif field_name == b"flow (cc/min)" or field_name == b"flow":
                         self._record_fields.append(lambda Q: self.data_Qinstrument(flow_ccm_to_lpm(parse_number(Q))))
                     elif field_name == b"log interval":
                         # Interval time, number of seconds elapsed in counting interval
                         self._record_fields.append(None)
-                    elif field_name == b"corrected live time":
+                    elif field_name == b"corrected live time" or field_name == b"livet":
                         # Corrected live time, as fraction of interval * 10000
                         self._record_fields.append(None)
-                    elif field_name == b"measured dead time":
+                    elif field_name == b"measured dead time" or field_name == b"deadt":
                         # Measured dead time, as fraction of interval * 10000
                         self._record_fields.append(None)
-                    elif field_name == b"raw counts":
+                    elif field_name == b"raw counts" or field_name == b"pcnt":
                         self._record_fields.append(lambda C: self.data_C(parse_number(C)))
-                    elif field_name == b"pulseheight.thres2" or field_name == b"dhr2.pctl":
+                    elif field_name == b"pulseheight.thres2" or field_name == b"dhr2.pctl" or field_name == b"pht2.%":
                         have_pulse_info = True
                         self._record_fields.append(self._parse_pulse_info)
+                    elif field_name == b"pht3":
+                        # 84% pulse height threshold
+                        self._record_fields.append(None)
+                    elif field_name == b"pht4":
+                        # 16% pulse height threshold
+                        self._record_fields.append(None)
                     elif field_name == b"status(hex code)":
                         self._record_fields.append(self._parse_flags)
+                    elif field_name == b"status":
+                        self._record_fields.append(self._parse_flags)
+                        have_terminal_status = True
                     elif field_name == b"status(ascii)":
                         # Flags description
                         self._record_fields.append(None)
@@ -342,6 +372,9 @@ class Instrument(StreamingInstrument):
 
             if not have_concentration or not have_pulse_info:
                 raise CommunicationsError(f"header response: {b','.join(hdr)}")
+            if have_terminal_status:
+                self._record_fields.append(None)  # Flags description
+                self._record_fields.append(lambda serial_number: self.set_serial_number(serial_number) if serial_number else None)
 
             self.writer.write(b"wadc\r")
             await self.writer.drain()
