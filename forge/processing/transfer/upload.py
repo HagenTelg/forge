@@ -68,7 +68,7 @@ async def upload_to_url(url: URL, file: Path, contents: typing.BinaryIO, compres
     _LOGGER.debug(f"Uploading file to {repr(url)}")
     if url.scheme == 'ftp':
         if compression == 'zstd':
-            file = file.with_suffix('zst')
+            file = file.with_suffix(file.suffix + '.zst')
         with FTP(user=url.username or "anonymous", passwd=url.password or "anonymous", timeout=180) as ftp:
             ftp.connect(host=url.hostname, port=url.port or 21)
             ftp.login()
@@ -76,7 +76,7 @@ async def upload_to_url(url: URL, file: Path, contents: typing.BinaryIO, compres
             upload_ftp(ftp, file, contents, public_key, signature)
     elif url.scheme == 'sftp':
         if compression == 'zstd':
-            file = file.with_suffix('zst')
+            file = file.with_suffix(file.suffix + '.zst')
         params = QueryParams(url.query)
         await upload_sftp(
             url.path, file, contents, public_key, signature,
