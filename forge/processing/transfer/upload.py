@@ -69,9 +69,9 @@ async def upload_to_url(url: URL, file: Path, contents: typing.BinaryIO, compres
     if url.scheme == 'ftp':
         if compression == 'zstd':
             file = file.with_suffix(file.suffix + '.zst')
-        with FTP(user=url.username or "anonymous", passwd=url.password or "anonymous", timeout=180) as ftp:
+        with FTP(timeout=180) as ftp:
             ftp.connect(host=url.hostname, port=url.port or 21)
-            ftp.login()
+            ftp.login(user=url.username or "anonymous", passwd=url.password or "anonymous")
             ftp.cwd(url.path)
             upload_ftp(ftp, file, contents, public_key, signature)
     elif url.scheme == 'sftp':
