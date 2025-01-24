@@ -23,6 +23,9 @@ class DataStream(ABC):
     async def run(self) -> None:
         pass
 
+    async def abort(self) -> None:
+        pass
+
 
 # noinspection PyAbstractClass
 class RecordStream(DataStream):
@@ -145,6 +148,12 @@ class _BaseArchiveReadStream(ABC):
 
     def __init__(self):
         self.connection: typing.Optional[Connection] = None
+        self._shutdown_task: typing.Optional[typing.Awaitable] = None
+
+    def __del__(self):
+        if self.connection:
+            self.connection.abort()
+            self.connection = None
 
     @property
     def connection_name(self) -> str:
@@ -190,8 +199,22 @@ class _BaseArchiveReadStream(ABC):
             else:
                 await inner()
         finally:
-            await wait_cancelable(self.connection.shutdown(), 30.0)
+            self._shutdown_task = asyncio.shield(wait_cancelable(self.connection.shutdown(), 30.0))
             self.connection = None
+            await self._shutdown_task
+            self._shutdown_task = None
+
+    async def _stream_abort(self) -> None:
+        if self.connection is None:
+            return
+        if self._shutdown_task is not None:
+            await self._shutdown_task
+            self._shutdown_task = None
+            return
+        self._shutdown_task = asyncio.shield(wait_cancelable(self.connection.shutdown(), 30.0))
+        self.connection = None
+        await self._shutdown_task
+        self._shutdown_task = None
 
 
 class ArchiveReadStream(DataStream, _BaseArchiveReadStream):
@@ -205,6 +228,9 @@ class ArchiveReadStream(DataStream, _BaseArchiveReadStream):
     async def run(self) -> None:
         await self._stream_run()
 
+    async def abort(self) -> None:
+        await self._stream_abort()
+
 
 class ArchiveRecordStream(RecordStream, _BaseArchiveReadStream):
     def __init__(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]], fields: typing.List[str]):
@@ -217,3 +243,6 @@ class ArchiveRecordStream(RecordStream, _BaseArchiveReadStream):
     async def run(self) -> None:
         await self._stream_run()
         await RecordStream.flush(self)
+
+    async def abort(self) -> None:
+        await self._stream_abort()

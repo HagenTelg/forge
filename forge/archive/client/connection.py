@@ -25,6 +25,13 @@ class Connection:
         self.log_extra: typing.Dict[str, typing.Any] = {
             'client_name': name
         }
+        info = writer.get_extra_info('socket')
+        if info:
+            self.log_extra['fileno'] = info.fileno()
+        info = writer.get_extra_info('sockname')
+        if info:
+            self.log_extra['socket'] = info
+
         self._request_queue = asyncio.Queue()
         self._callback_queue = asyncio.Queue()
         self._closed = asyncio.Event()
@@ -141,17 +148,18 @@ class Connection:
         ))
 
         wait_closed = asyncio.ensure_future(self._closed.wait())
+        tasks = [completed, wait_closed]
         try:
-            done, pending = await asyncio.wait([completed, wait_closed], return_when=asyncio.FIRST_COMPLETED)
-        except:
-            if completed.done():
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+        except asyncio.CancelledError:
+            for t in tasks:
                 try:
-                    completed.result()
+                    t.cancel()
                 except:
                     pass
-            if wait_closed.done():
+            for t in tasks:
                 try:
-                    wait_closed.result()
+                    await t
                 except:
                     pass
             raise
@@ -187,13 +195,33 @@ class Connection:
         if self._response_handler:
             response, args, kwargs, completed = self._response_handler
             try:
-                data = await response(self, packet_type, *args, **kwargs)
+                fut = asyncio.ensure_future(response(self, packet_type, *args, **kwargs))
+                try:
+                    data = await fut
+                    fut = None
+                finally:
+                    if fut is not None:
+                        try:
+                            fut.cancel()
+                        except:
+                            pass
+                        try:
+                            await fut
+                        except asyncio.CancelledError:
+                            pass
+                        except:
+                            _LOGGER.debug("Exception in response cancellation", exc_info=True, extra=self.log_extra)
+                            pass
                 if data is not None:
-                    completed.set_result(data)
+                    if not completed.done():
+                        # Might have been canceled due to the caller being canceled itself
+                        completed.set_result(data)
                     self._response_handler = None
                     return
             except Exception as e:
-                completed.set_exception(e)
+                if not completed.done():
+                    # Might have been canceled due to the caller being canceled itself
+                    completed.set_exception(e)
                 _LOGGER.debug("Exception in response handler", exc_info=True, extra=self.log_extra)
                 raise
 
@@ -323,8 +351,24 @@ class Connection:
         _LOGGER.debug("Connection shutting down", extra=self.log_extra)
 
         async def request(connection: "Connection"):
-            connection.writer.write(struct.pack('<B', ClientPacket.CLOSE.value))
-            await connection.writer.drain()
+            try:
+                connection.writer.write(struct.pack('<B', ClientPacket.CLOSE.value))
+            except:
+                try:
+                    connection.writer.close()
+                except:
+                    pass
+                raise
+
+            try:
+                await connection.writer.drain()
+            except:
+                try:
+                    connection.writer.close()
+                except:
+                    pass
+                raise
+
             connection.writer.close()
             raise EOFError
 
@@ -364,6 +408,18 @@ class Connection:
             except:
                 _LOGGER.debug("Exception in run shutdown", extra=self.log_extra, exc_info=True)
             self._internal_run = None
+
+    def abort(self) -> None:
+        if self._internal_run:
+            try:
+                self._internal_run.cancel()
+            except:
+                pass
+            self._internal_run = None
+        try:
+            self.writer.close()
+        except:
+            pass
 
     async def list_files(self, path: str, modified_after: float = 0) -> typing.List[str]:
         async def request(connection: "Connection", path: str, modified_after: float):

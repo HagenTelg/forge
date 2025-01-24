@@ -29,6 +29,20 @@ class _DataSocket(WebSocketEndpoint):
             self.stalled: bool = False
             self.stall_reason: typing.Optional[str] = None
 
+        async def abort(self) -> None:
+            try:
+                self.task.cancel()
+            except:
+                pass
+            try:
+                await self.task
+            except:
+                pass
+            try:
+                await self.stream.abort()
+            except:
+                pass
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.station: str = None
@@ -120,10 +134,7 @@ class _DataSocket(WebSocketEndpoint):
                 return
 
             if stream_id in self.active_data_streams:
-                try:
-                    self.active_data_streams[stream_id].task.cancel()
-                except:
-                    pass
+                await self.active_data_streams[stream_id].abort()
 
             active_stream = self._ActiveStream(stream)
             self.active_data_streams[stream_id] = active_stream
@@ -177,6 +188,10 @@ class _DataSocket(WebSocketEndpoint):
                 await stream.task
             except asyncio.CancelledError:
                 await self._end_data_stream(websocket, stream_id)
+                try:
+                    await stream.stream.abort()
+                except:
+                    pass
 
             await self._update_stall_state(websocket)
 
@@ -188,10 +203,8 @@ class _DataSocket(WebSocketEndpoint):
     async def on_disconnect(self, websocket, close_code):
         for stream in list(self.active_data_streams.values()):
             stream.stopped = True
-            try:
-                stream.task.cancel()
-            except:
-                pass
+            await stream.abort()
+        self.active_data_streams.clear()
 
 
 sockets: typing.List[BaseRoute] = [

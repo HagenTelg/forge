@@ -327,7 +327,7 @@ def main():
                     ]
                     transaction = connection.get('transaction')
                     if transaction:
-                        rw = "W" if transaction['type'] == 'read' else "W"
+                        rw = "R" if transaction['type'] == 'read' else "W"
                         elapsed = time.time() - transaction['begin'] / 1000.0
                         status = transaction['status'] or ""
                         data.append(f"{rw}@{transaction['generation']:d}%{transaction['lock_count']:d} {elapsed:.0f}: {status}")

@@ -51,7 +51,7 @@ class Connection:
             return None
         result = {
             'status': self._transaction.status,
-            'begin': self._transaction.begin_time,
+            'begin': int(self._transaction.begin_time * 1000),
             'generation': self._transaction.generation,
             'lock_count': len(self._transaction.locks),
         }

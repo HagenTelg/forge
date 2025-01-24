@@ -358,7 +358,7 @@ class ContaminationRecord(Record):
 
         @property
         def connection_name(self) -> str:
-            return "read data"
+            return "read contamination"
 
         def _attach(self, selection: InstrumentSelection, var: VariableContext, times: np.ndarray, values: np.ndarray) -> None:
             if not np.issubdtype(var.variable.dtype, np.integer):
