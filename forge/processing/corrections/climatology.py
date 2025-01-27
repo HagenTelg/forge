@@ -125,6 +125,7 @@ def meteorological_climatology_limits(
         dewpoint_range: typing.Tuple[float, float] = None,
         pressure_range: typing.Tuple[float, float] = None,
         normalized_temperature_rate_of_change: typing.Tuple[float, float] = None,
+        normalized_humidity_rate_of_change: typing.Tuple[float, float] = None,
         extend_before_ms: int = 0,
         extend_after_ms: int = 0,
 ) -> None:
@@ -132,7 +133,7 @@ def meteorological_climatology_limits(
     data.append_history("forge.correction.climatologylimits")
 
     if temperature_range is not None:
-        for temperature in  data.select_variable({"variable_id": r"T\d*"}):
+        for temperature in data.select_variable({"variable_id": r"T\d*"}):
             apply_limit(
                 temperature.values,
                 temperature.times,
@@ -141,7 +142,7 @@ def meteorological_climatology_limits(
             )
 
     if dewpoint_range is not None:
-        for dewpoint in  data.select_variable({"variable_id": r"TD\d*"}):
+        for dewpoint in data.select_variable({"variable_id": r"TD\d*"}):
             apply_limit(
                 dewpoint.values,
                 dewpoint.times,
@@ -150,7 +151,7 @@ def meteorological_climatology_limits(
             )
 
     if normalized_temperature_rate_of_change is not None:
-        for temperature in  data.select_variable((
+        for temperature in data.select_variable((
                 {"variable_id": r"T\d*"},
                 {"variable_id": r"TD\d*"},
         )):
@@ -163,8 +164,20 @@ def meteorological_climatology_limits(
                 extend_before_ms=extend_before_ms, extend_after_ms=extend_after_ms,
             )
 
+    if normalized_humidity_rate_of_change is not None:
+        for humidity in data.select_variable((
+                {"variable_id": r"U\d*"},
+        )):
+            apply_normalized_rate_of_change_limit(
+                humidity.values,
+                humidity.times,
+                remove_below=normalized_humidity_rate_of_change[0],
+                remove_above=normalized_humidity_rate_of_change[1],
+                extend_before_ms=extend_before_ms, extend_after_ms=extend_after_ms,
+            )
+
     if pressure_range is not None:
-        for pressure in  data.select_variable({"variable_id": r"P\d*"}):
+        for pressure in data.select_variable({"variable_id": r"P\d*"}):
             apply_limit(
                 pressure.values,
                 pressure.times,
