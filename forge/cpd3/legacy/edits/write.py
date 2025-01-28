@@ -1023,7 +1023,7 @@ def write_all(
         nonlocal total
         nonlocal modified
 
-        async with (await Connection.default_connection("write legacy passed")) as connection:
+        async with (await Connection.default_connection("write legacy edits")) as connection:
             backoff = LockBackoff()
             while True:
                 total = 0
