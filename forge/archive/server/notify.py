@@ -19,7 +19,7 @@ class NotificationDispatch:
         waiting = self._awaiting_acknowledge.get(connection)
         if not waiting:
             return
-        waiting = waiting.get(uid)
+        waiting = waiting.pop(uid, None)
         if not waiting:
             return
         await waiting.acknowledged_received(connection)
