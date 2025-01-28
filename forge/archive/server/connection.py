@@ -49,6 +49,8 @@ class Connection:
     def diagnostic_transaction_status(self) -> typing.Optional[typing.Dict]:
         if not self._transaction:
             return None
+        if not self._transaction.storage_handle:
+            return None
         result = {
             'status': self._transaction.status,
             'begin': int(self._transaction.begin_time * 1000),
