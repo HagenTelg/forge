@@ -374,7 +374,7 @@ else:
         ("Fn", [Selection(variable_id="Fn", instrument_id="F21")])] + [
         (f"Pd{i+1}", [Selection(variable_id=f"Pd_P2{i+1}")])
         for i in range(8)
-    ]))
+    ]), hold_fields={"Fn"})
     data_records["aerosol-realtime-filterstatus"] = RealtimeRecord(dict([
         ("Fn", [RealtimeSelection("Fn", variable_id="Fn", instrument_id="F21")])] + [
         (f"Pd{i+1}", [RealtimeSelection(f"Pd_P2{i+1}", variable_id=f"Pd_P2{i+1}")])
@@ -385,7 +385,7 @@ else:
         ("Fn", [Selection(variable_id="Fn", instrument_id="F31")])] + [
         (f"Pd{i+1}", [Selection(variable_id=f"Pd_P3{i+1}")])
         for i in range(8)
-    ]))
+    ]), hold_fields={"Fn"})
     data_records["aerosol-realtime-filterstatus2"] = RealtimeRecord(dict([
         ("Fn", [RealtimeSelection("Fn", variable_id="Fn", instrument_id="F31")])] + [
         (f"Pd{i+1}", [RealtimeSelection(f"Pd_P3{i+1}", variable_id=f"Pd_P3{i+1}")])
