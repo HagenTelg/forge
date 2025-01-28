@@ -210,13 +210,17 @@ class Interface:
             target.events = to_json(events)
 
     def _dispatch_telemetry(self, orm_session: Session, current_time: datetime.datetime, host,
-                            telemetry: typing.Dict[str, typing.Any], merge=False) -> None:
+                            telemetry: typing.Dict[str, typing.Any],
+                            merge=False,
+                            received_time: typing.Optional[float] = None) -> None:
         telemetry.pop('sequence_number', None)
         telemetry.pop('station', None)
 
         try:
             remote_time = float(telemetry.pop('time'))
-            time_offset = round(remote_time - time.time())
+            if received_time is None:
+                received_time = time.time()
+            time_offset = round(remote_time - received_time)
 
             self._update_host_telemetry(orm_session, current_time, host, _TelemetryTimeOffset,
                                         offset=time_offset)
@@ -322,7 +326,8 @@ class Interface:
         return host
 
     async def direct_update(self, key: PublicKey, address: typing.Optional[str],
-                            telemetry: typing.Dict[str, typing.Any]) -> bool:
+                            telemetry: typing.Dict[str, typing.Any],
+                            received_time: typing.Optional[float] = None) -> bool:
         try:
             sequence_number = int(telemetry.get('sequence_number'))
         except (ValueError, TypeError):
@@ -360,7 +365,7 @@ class Interface:
                         host.station = station
 
                 _LOGGER.debug(f"Performing direct update for {key} ({station}) from {address}")
-                self._dispatch_telemetry(orm_session, current_time, host, telemetry)
+                self._dispatch_telemetry(orm_session, current_time, host, telemetry, received_time=received_time)
 
                 try:
                     orm_session.commit()

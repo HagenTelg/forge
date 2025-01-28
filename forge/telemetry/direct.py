@@ -63,7 +63,14 @@ async def update(request: Request) -> Response:
         except ValueError:
             origin = None
 
-    if not await request.scope['telemetry'].direct_update(key, origin, content):
+    received_time = request.query_params.get('receivedtime', None)
+    if received_time is not None:
+        try:
+            received_time = int(received_time) / 1000.0
+        except ValueError:
+            received_time = None
+
+    if not await request.scope['telemetry'].direct_update(key, origin, content, received_time=received_time):
         _LOGGER.debug("Direct telemetry update rejected")
         return JSONResponse({
             'status': 'rejected',
