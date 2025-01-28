@@ -61,7 +61,7 @@ class Converter(InstrumentConverter):
             return np.array(convert_times, dtype=np.int64), np.array(convert_values, dtype=dict)
 
         return self.Data(*convert_loaded(read_archive([Selection(
-            start=self.file_start - 9 * 48 * 60 * 60,  # Need the prior carousel, so extend by more than the max length
+            start=self.file_start - 9 * 4 * 24 * 60 * 60,  # Need the prior carousel, so extend by more than the max length
             end=self.file_end,
             stations=[self.station],
             archives=[self.archive],
