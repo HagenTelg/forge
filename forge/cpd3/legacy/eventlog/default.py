@@ -65,7 +65,7 @@ async def run():
                 include_meta_archive=False,
                 include_default_station=False,
         )]):
-            if not identity.start or identity.start < start_of_day:
+            if not identity.start or identity.start < start_of_day or identity.end > end_of_day:
                 continue
             converted_events.append(Event(identity, info, modified))
 
