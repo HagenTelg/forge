@@ -525,7 +525,7 @@ class _ColumnVariable(_Column):
             memo[id(self)] = y
             return y
 
-        def construct_name(self, variable: Variable, modifier_suffix: str = "") -> str:
+        def construct_name(self, variable: Variable, modifier_suffix: str = "", include_name_suffix: bool = True) -> str:
             try:
                 var_code = str(variable.variable_id)
                 if "_" in var_code:
@@ -544,7 +544,7 @@ class _ColumnVariable(_Column):
             except AttributeError:
                 archive_suffix = ""
 
-            if self.name_suffix:
+            if self.name_suffix and include_name_suffix:
                 prefix += self.name_suffix
             if modifier_suffix:
                 prefix += modifier_suffix
@@ -557,6 +557,12 @@ class _ColumnVariable(_Column):
 
         def header_name(self, modifier_suffix: str = "") -> str:
             return self.construct_name(self.variable, modifier_suffix=modifier_suffix)
+
+        def sort_name(self) -> str:
+            return self.construct_name(self.variable, include_name_suffix=False)
+
+        def sort_index(self) -> "typing.Tuple[int, ...]":
+            return self.index_suffix
 
     def __init__(self, source: "_ColumnVariable.Source"):
         super().__init__()
@@ -578,8 +584,8 @@ class _ColumnVariable(_Column):
         return desc
 
     @property
-    def sort_key(self) -> typing.Tuple[int, str, int]:
-        return 0, self.header_name, 0
+    def sort_key(self) -> "typing.Tuple[int, str, int, ...]":
+        return 0, self.source.sort_name(), 0, *self.source.index_suffix
 
     @property
     def time_sources(self) -> typing.List[typing.Tuple[Variable, bool]]:
@@ -808,8 +814,8 @@ class _ColumnVariableStatisticsCount(_ColumnVariableInteger):
         return desc + " (number of points)"
 
     @property
-    def sort_key(self) -> typing.Tuple[int, str, int]:
-        return 1000,  self.source.header_name(), 0
+    def sort_key(self) -> "typing.Tuple[int, str, int, ...]":
+        return 1000, self.source.sort_name(), 0, *self.source.index_suffix
 
 
 class _ColumnVariableStatisticsStdDev(_ColumnVariableFloat):
@@ -830,8 +836,8 @@ class _ColumnVariableStatisticsStdDev(_ColumnVariableFloat):
         return desc + " (stddev)"
 
     @property
-    def sort_key(self) -> typing.Tuple[int, str, int]:
-        return 2000, self.source.header_name(), 0
+    def sort_key(self) -> "typing.Tuple[int, str, int, ...]":
+        return 2000, self.source.sort_name(), 0, *self.source.index_suffix
 
 
 class _ColumnVariableStatisticsQuantile(_ColumnVariableFloat):
@@ -916,8 +922,8 @@ class _ColumnVariableStatisticsQuantile(_ColumnVariableFloat):
         return desc + f" ({self.q * 100:.3f} quantile)"
 
     @property
-    def sort_key(self) -> typing.Tuple[int, str, int]:
-        return 3000, self.source.header_name(), 10000 + round(self.q * 1E5)
+    def sort_key(self) -> "typing.Tuple[int, str, int, ...]":
+        return 3000, self.source.sort_name(), 10000 + round(self.q * 1E5), *self.source.index_suffix
 
 
 class _ColumnVariableMVCFlag(_ColumnVariable):
@@ -938,11 +944,11 @@ class _ColumnVariableMVCFlag(_ColumnVariable):
         return super().description + " - missing value flag"
 
     @property
-    def sort_key(self) -> typing.Tuple[int, str, int]:
+    def sort_key(self) -> "typing.Tuple[int, str, int, ...]":
         if self.at_end:
-            return 1, self.header_name, 0
+            return 1, self.source.sort_name(), 0, *self.source.index_suffix
         else:
-            return 0, self.header_name, 1
+            return 0, self.source.sort_name(), 1, *self.source.index_suffix
 
     def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
         if self.source.indexed_by_time:
@@ -963,8 +969,8 @@ class _ColumnVariableFlags(_ColumnVariable):
         self.flag_lookup = parse_flags(source.variable)
 
     @property
-    def sort_key(self) -> typing.Tuple[int, str, int]:
-        return -1, self.header_name, 0
+    def sort_key(self) -> "typing.Tuple[int, str, int, ...]":
+        return -1, self.source.sort_name(), 0, *self.source.index_suffix
 
 
 class _ColumnVariableFlagsList(_ColumnVariableFlags):
@@ -1035,8 +1041,8 @@ class _ColumnVariableFlagsBreakdown(_ColumnVariableFlags):
         return super().description + f" - bit {self.bit:X} - " + self.flag
 
     @property
-    def sort_key(self) -> typing.Tuple[int, str, int]:
-        return -1, super().header_name, self.bit
+    def sort_key(self) -> "typing.Tuple[int, str, int, ...]":
+        return -1, self.source.sort_name(), self.bit, *self.source.index_suffix
 
     def __call__(self, time_value: float, time_indices: typing.List[typing.Optional[int]]) -> str:
         if self.source.indexed_by_time:
