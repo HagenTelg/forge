@@ -258,7 +258,10 @@ def main():
         for file in upload_files:
             _LOGGER.info(f"Skipping upload of {file} due to ignored station")
             if args.completed:
-                target_file = Path(args.completed) / file.name
+                target_dir = completion_directory(args.completed, None, args.station, args.type)
+                target_dir = Path(target_dir)
+                target_dir.mkdir(parents=True, exist_ok=True)
+                target_file = target_dir / file.name
                 try:
                     shutil.move(str(file), str(target_file))
                 except IOError:
