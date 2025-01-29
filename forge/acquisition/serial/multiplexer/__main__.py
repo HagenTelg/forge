@@ -1012,6 +1012,15 @@ def main():
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
 
+    if not os.path.exists(args.upstream):
+        _LOGGER.warning(f"Device {args.upstream} not found, waiting")
+        for _ in range(50):
+            time.sleep(1)
+            if os.path.exists(args.upstream):
+                break
+        else:
+            _LOGGER.debug(f"Wait for {args.upstream} timed out, proceeding anyway")
+
     poll = select.poll()
 
     upstream = Upstream(args.upstream, poll)

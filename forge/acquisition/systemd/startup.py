@@ -46,6 +46,7 @@ def basic_service(description: str,
         ("WorkingDirectory", "/"),
         ("WatchdogUSec", dbus.types.UInt64(30_000_000)),
         ("TimeoutStopUSec", dbus.types.UInt64(30_000_000)),
+        ("TimeoutStartUSec", dbus.types.UInt64(60_000_000)),
         ("Type", "notify"),
         ("CollectMode", "inactive-or-failed"),
     ]
@@ -55,7 +56,7 @@ def basic_service(description: str,
         properties.append(("User", user))
     if restart:
         properties.append(("Restart", "on-failure"))
-        properties.append(("RestartUSec", dbus.types.UInt64(5_000_000)))
+        properties.append(("RestartUSec", dbus.types.UInt64(60_000_000)))
 
     dynaconf_env = os.environ.get("ROOT_PATH_FOR_DYNACONF")
     if dynaconf_env:

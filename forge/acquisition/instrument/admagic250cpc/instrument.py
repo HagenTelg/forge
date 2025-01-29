@@ -266,9 +266,14 @@ class Instrument(StreamingInstrument):
             self.writer.write(b"logl,1\r")
             await self.writer.drain()
             await self.drain_reader(0.25)
+
             self.writer.write(b"logl,off\r")
             await self.writer.drain()
             await self.drain_reader(self._report_interval * 2.0 + 1.0)
+
+            self.writer.write(b"hdr,0\r")
+            await self.writer.drain()
+            await self.drain_reader(0.25)
 
             self.writer.write(b"hdr\r")
             await self.writer.drain()
@@ -365,7 +370,7 @@ class Instrument(StreamingInstrument):
                         # Flags description
                         self._record_fields.append(None)
                     elif field_name == b"serial number":
-                        self._record_fields.append(lambda serial_number: self.set_serial_number(serial_number) if serial_number else None)
+                        self._record_fields.append(lambda serial_number: self.set_serial_number(serial_number) if serial_number and serial_number != b"0" else None)
                     else:
                         _LOGGER.debug(f"Unrecognized record field {field_name}")
                         self._record_fields.append(None)
@@ -383,6 +388,11 @@ class Instrument(StreamingInstrument):
                 data: bytes = await wait_cancelable(self.read_line(), 2.0)
             if b':' in data:
                 data: bytes = (data.split(b':', 1))[1].strip()
+            try:
+                wdac_start = data.index(b"adc=")
+                data = data[wdac_start+4:]
+            except ValueError:
+                pass
             wadc = parse_number(data)
             if wadc < 0 or wadc > 1023:
                 raise CommunicationsError(f"wadc read: {hdr}")
@@ -398,7 +408,9 @@ class Instrument(StreamingInstrument):
                 if line.startswith(b"ERROR"):
                     raise CommunicationsError(f"invalid rv response: {rv}")
                 elif line.startswith(b"Serial Number:"):
-                    self.set_serial_number(line[14:].strip())
+                    sn = line[14:].strip()
+                    if sn != b"0":
+                        self.set_serial_number()
                 elif line.startswith(b"FW Ver:"):
                     ver = line[7:].strip()
                     self.set_firmware_version(ver)
@@ -444,6 +456,18 @@ class Instrument(StreamingInstrument):
 
             self.writer.write(b"logl,on\r")
             await self.writer.drain()
+            try:
+                data: bytes = await wait_cancelable(self.read_line(), self._report_interval * 3 + 5)
+                if b'command not found' in data:
+                    raise ValueError
+                if data.startswith(b'logl'):
+                    data: bytes = await wait_cancelable(self.read_line(), self._report_interval * 3 + 5)
+                    if b'command not found' in data:
+                        raise ValueError
+            except (asyncio.TimeoutError, ValueError):
+                self.writer.write(f"log,{self._report_interval}\r".encode('ascii'))
+                await self.writer.drain()
+                await self.drain_reader(0.25)
 
         # Flush the first record
         await self.drain_reader(0.5)
