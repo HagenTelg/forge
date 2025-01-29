@@ -914,7 +914,7 @@ class DataSelection:
                         target_group.createDimension(dimension_name, source_dimension.size)
 
                     source_dim_var = source_group.variables.get(dimension_name)
-                    if source_dim_var is not None:
+                    if source_dim_var is not None and len(source_dim_var.dimensions) == 1 and source_dim_var.dimensions[0] == dimension_name:
                         assert dimension_name not in target_group.variables
 
                         if dimension_name != 'time' or (not_before_ms is None and not_after_ms is None):
