@@ -4,6 +4,8 @@ import logging
 import serial
 import socket
 import struct
+import errno
+from serial import SerialException
 from serial.rs485 import RS485Settings
 from forge.acquisition import LayeredConfiguration
 from forge.tasks import background_task
@@ -306,6 +308,11 @@ async def open_serial(limit: int = None,
             port.open()
         except termios.error as e:
             raise IOError from e
+        except SerialException as e:
+            # pyserial consumes the original exception, but we want to handle this specially
+            if e.errno == errno.ENOENT:
+                raise FileNotFoundError from e
+            raise
 
         # Separate step for pseudoterminals which silently ignore this on linux, but various
         # distributions patch python/glibc to report EINVAL instead.
@@ -320,7 +327,13 @@ async def open_serial(limit: int = None,
             except termios.error:
                 _LOGGER.debug("Error changing parity (probably a pseudoterminal)", exc_info=True)
     else:
-        port = serial.Serial(**kwargs)
+        try:
+            port = serial.Serial(**kwargs)
+        except SerialException as e:
+            # pyserial consumes the original exception, but we want to handle this specially
+            if e.errno == errno.ENOENT:
+                raise FileNotFoundError from e
+            raise
 
     if limit is None:
         limit = 64 * 1024
