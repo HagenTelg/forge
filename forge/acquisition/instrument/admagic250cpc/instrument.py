@@ -410,7 +410,7 @@ class Instrument(StreamingInstrument):
                 elif line.startswith(b"Serial Number:"):
                     sn = line[14:].strip()
                     if sn != b"0":
-                        self.set_serial_number()
+                        self.set_serial_number(sn)
                 elif line.startswith(b"FW Ver:"):
                     ver = line[7:].strip()
                     self.set_firmware_version(ver)
@@ -434,10 +434,10 @@ class Instrument(StreamingInstrument):
             self.writer.write(f"rtc,{ts.tm_year%100:02}/{ts.tm_mon:02}/{ts.tm_mday:02}\r".encode('ascii'))
             await self.writer.drain()
             data: bytes = await wait_cancelable(self.read_line(), 2.0)
-            if data.startswith(b"rtc,") and b':' not in data:  # Ignore the echo
+            if data.startswith(b"rtc,") and not data.endswith(b': OK'):  # Ignore the echo
                 data: bytes = await wait_cancelable(self.read_line(), 2.0)
             if b':' in data:
-                data: bytes = (data.split(b':', 1))[1].strip()
+                data: bytes = (data.split(b':'))[-1].strip()
             if data != b"OK":
                 raise CommunicationsError(f"set date response: {data}")
 
