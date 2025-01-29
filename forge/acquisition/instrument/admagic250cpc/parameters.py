@@ -101,10 +101,10 @@ class Parameters:
                     continue
                 setattr(self, name, top)
 
-        PARSE_ABSOLUTE = re.compile(rb"^([^,]+),a,(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)
-        PARSE_RELATIVE = re.compile(rb"^([^,]+),r,(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)
-        PARSE_RELATIVE_CURRENT = re.compile(rb"setTemp\s*=\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)
-        PARSE_RELATIVE_REFERENCE = re.compile(rb"refTemp\s*=\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)
+        PARSE_ABSOLUTE = re.compile(rb"^([^,]+),?a,(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)
+        PARSE_RELATIVE = re.compile(rb"^([^,]+),?r,(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)
+        PARSE_RELATIVE_CURRENT = re.compile(rb"(?:setTemp|setpoint)\s*=\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)
+        PARSE_RELATIVE_REFERENCE = re.compile(rb"(?:refTemp|reference)\s*=\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)
 
         def parse(self, name: bytes, lines: typing.List[bytes]) -> None:
             if not lines:
@@ -127,11 +127,11 @@ class Parameters:
                     raise CommunicationsError(f"invalid response for {name}: {lines}")
                 self.mode = self.Mode.RELATIVE
                 self.setpoint = float(match.group(2))
-                if len(lines) > 1:
-                    match = self.PARSE_RELATIVE_CURRENT.search(lines[1])
+                for check in lines:
+                    match = self.PARSE_RELATIVE_CURRENT.search(check)
                     if match:
                         self.current = float(match.group(1))
-                    match = self.PARSE_RELATIVE_REFERENCE.search(lines[1])
+                    match = self.PARSE_RELATIVE_REFERENCE.search(check)
                     if match:
                         self.reference = float(match.group(1))
                 return
@@ -431,37 +431,37 @@ class Parameters:
         set_temperature("topt")
 
     INTEGER_PARSE: typing.List[typing.Tuple[str, "re.Pattern"]] = [
-        ("lset",    re.compile(rb"^lset\s+(\d+)", flags=re.IGNORECASE)),
+        ("lset",    re.compile(rb"^lset(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
         ("lcur",    re.compile(rb"^lset\s+\d+\s*[^;]*;\s*current\s*=\s*(\d+)", flags=re.IGNORECASE)),
-        ("doslope", re.compile(rb"doslope\s+(\d+)", flags=re.IGNORECASE)),
-        ("doint",   re.compile(rb"doint\s+(\d+)", flags=re.IGNORECASE)),
+        ("doslope", re.compile(rb"doslope(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
+        ("doint",   re.compile(rb"doint(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
         ("doff",    re.compile(rb"doint\s+\d+[^(]*\(\s*doff\s+(\d+)", flags=re.IGNORECASE)),
-        ("doff",    re.compile(rb"^doff\s+(\d+)", flags=re.IGNORECASE)),
-        ("dvlt",    re.compile(rb"^dvlt\s+(\d+)", flags=re.IGNORECASE)),
-        ("dthr",    re.compile(rb"^dthr\s+(\d+)", flags=re.IGNORECASE)),
-        ("pht",     re.compile(rb"^pht\s+(\d+)", flags=re.IGNORECASE)),
+        ("doff",    re.compile(rb"^doff(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
+        ("dvlt",    re.compile(rb"^dvlt(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
+        ("dthr",    re.compile(rb"^dthr(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
+        ("pht",     re.compile(rb"^pht(?:,|\s+)(?:2,)?(\d+)", flags=re.IGNORECASE)),
         ("dthr2",   re.compile(rb"^pht\s+\d+[^(]*\(\s*dthr2\s+(\d+)", flags=re.IGNORECASE)),
         ("dthr2",   re.compile(rb"^dthr2\s+(\d+)", flags=re.IGNORECASE)),
-        ("qcf",     re.compile(rb"^qcf\s+(\d+)", flags=re.IGNORECASE)),
-        ("qtrg",    re.compile(rb"^qtrg\s+(\d+)", flags=re.IGNORECASE)),
-        ("wtrg",    re.compile(rb"^wTrg\s+(\d+)", flags=re.IGNORECASE)),
-        ("wwet",    re.compile(rb"^wWet\s+(\d+)", flags=re.IGNORECASE)),
-        ("wdry",    re.compile(rb"^wDry\s+(\d+)", flags=re.IGNORECASE)),
+        ("qcf",     re.compile(rb"^qcf(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
+        ("qtrg",    re.compile(rb"^qtrg(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
+        ("wtrg",    re.compile(rb"^wTrg(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
+        ("wwet",    re.compile(rb"^wWet(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
+        ("wdry",    re.compile(rb"^wDry(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
         ("wwet",    re.compile(rb"^wDry/wWet\s+\d+/(\d+)", flags=re.IGNORECASE)),
         ("wdry",    re.compile(rb"^wDry/wWet\s+(\d+)/\d+", flags=re.IGNORECASE)),
-        ("wgn",     re.compile(rb"^wgn\s+(\d+)", flags=re.IGNORECASE)),
-        ("wmax",    re.compile(rb"^wmax\s+(\d+)", flags=re.IGNORECASE)),
-        ("wmin",    re.compile(rb"^wmin\s+(\d+)", flags=re.IGNORECASE)),
+        ("wgn",     re.compile(rb"^wgn(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
+        ("wmax",    re.compile(rb"^wmax(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
+        ("wmin",    re.compile(rb"^wmin(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
         ("wmax",    re.compile(rb"^wMin/Wmax\s+\d+/(\d+)", flags=re.IGNORECASE)),
         ("wmin",    re.compile(rb"^wMin/Wmax\s+(\d+)/\d+", flags=re.IGNORECASE)),
     ]
 
     FLOAT_PARSE: typing.List[typing.Tuple[str, "re.Pattern"]] = [
         ("qset",    re.compile(rb"^qtrg\s+\d+[^(]*\(\s*qset\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
-        ("qset",    re.compile(rb"^qset\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
-        ("heff",    re.compile(rb"^heff\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
-        ("hmax",    re.compile(rb"^heff\s*-?\d+(?:\.\d*)?\S*\s+hmax\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
-        ("hmax",    re.compile(rb"^hmax\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
+        ("qset",    re.compile(rb"^qset(?:,|\s+)(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
+        ("heff",    re.compile(rb"^heff(?:,|\s+)(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
+        ("hmax",    re.compile(rb"^heff-?\d+(?:\.\d*)?\S*\s+hmax\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
+        ("hmax",    re.compile(rb"^hmax(?:,|\s+)(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
         # ("mrefint", re.compile(rb"^mrefint\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
         # ("mrefslope", re.compile(rb"^mrefslope\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
         ("lcur",    re.compile(rb"^\(?\s*lcur\s*(\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
