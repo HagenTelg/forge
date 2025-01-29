@@ -116,10 +116,15 @@ async def prepare_file(file: Path, private_key: PrivateKey, compression: str) ->
     return signature, upload_file, total_size
 
 
-def accept_file(file: Path, args) -> bool:
+def accept_file(file: Path, args, delete_empty: bool = False) -> bool:
     st = file.stat()
     if st.st_size == 0:
         _LOGGER.warning(f"File {file} is empty, skipping")
+        if delete_empty:
+            try:
+                file.unlink()
+            except (OSError, FileNotFoundError):
+                pass
         return False
     if args.modified:
         now = time.time()
@@ -231,7 +236,7 @@ def main():
                 if not file.is_file():
                     _LOGGER.debug(f"Skipping non-file {file}")
                     continue
-                if not accept_file(file, args):
+                if not accept_file(file, args, delete_empty=bool(args.completed)):
                     continue
                 upload_files.append(file)
 

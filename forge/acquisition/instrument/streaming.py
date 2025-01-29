@@ -121,6 +121,9 @@ class StreamingInstrument(IterativeCommunicationsInstrument):
             _LOGGER.debug("Resetting stream after communications start failure")
             try:
                 await self.reset_stream()
+            except FileNotFoundError:
+                _LOGGER.debug("Stream source does not exist", exc_info=True)
+                return False
             except IOError:
                 _LOGGER.warning("Error resetting stream", exc_info=True)
                 return False

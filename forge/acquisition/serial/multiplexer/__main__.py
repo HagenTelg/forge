@@ -1014,12 +1014,13 @@ def main():
 
     if not os.path.exists(args.upstream):
         _LOGGER.warning(f"Device {args.upstream} not found, waiting")
-        for _ in range(50):
+        for _ in range(30):
             time.sleep(1)
             if os.path.exists(args.upstream):
                 break
         else:
-            _LOGGER.debug(f"Wait for {args.upstream} timed out, proceeding anyway")
+            _LOGGER.error(f"Wait for {args.upstream} timed out")
+            exit(1)
 
     poll = select.poll()
 
