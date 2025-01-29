@@ -5,6 +5,7 @@ import dbus
 import os
 import sys
 import argparse
+import shutil
 from pathlib import Path
 from forge.acquisition import CONFIGURATION, LayeredConfiguration
 from forge.acquisition.cutsize import CutSize
@@ -115,6 +116,44 @@ def stop_unit(name: str) -> None:
         _LOGGER.debug(f"Unit {name} stop failed", exc_info=True)
 
 
+def wait_for_idle(name: str) -> None:
+    try:
+        while True:
+            for _, job_unit, _, job_state, _, _ in _SYSTEMD.ListJobs():
+                if job_unit != name:
+                    continue
+                if job_state not in ("waiting", "running"):
+                    continue
+                break
+            else:
+                break
+            time.sleep(0.25)
+    except dbus.exceptions.DBusException:
+        _LOGGER.debug(f"Unit {name} wait failed", exc_info=True)
+
+
+def wait_for_runtime_directory(name: str) -> None:
+    for _ in range(10):
+        if Path("/run").is_dir():
+            break
+        time.sleep(0.5)
+    runtime_dir = Path("/run") / name
+    for _ in range(10):
+        if not runtime_dir.exists():
+            break
+        time.sleep(0.5)
+    else:
+        try:
+            runtime_dir.unlink(missing_ok=True)
+        except OSError:
+            pass
+        if runtime_dir.exists():
+            try:
+                shutil.rmtree(str(runtime_dir))
+            except OSError:
+                pass
+
+
 def start_control(control_type: str) -> None:
     _LOGGER.debug(f"Starting control {control_type}")
 
@@ -200,6 +239,7 @@ def start_instrument_serial(source: str, instrument_unit_name: str) -> typing.Op
     )))
 
     release_transient_unit(serial_unit_name)
+    wait_for_runtime_directory(f"forge-serial-{source}")
     start_transient_unit(serial_unit_name, properties)
     return serial_unit_name
 
@@ -269,6 +309,7 @@ def start_instrument(source: str) -> None:
         "-exec", "mv", "--", "{}", f"{_COMPLETED_DATA_DIRECTORY}/", ";"
     )))
 
+    wait_for_runtime_directory(f"forge-instrument-{source}")
     start_transient_unit(instrument_unit_name, properties)
 
 
@@ -392,12 +433,14 @@ def main():
     global _SYSTEMD
     _SYSTEMD = dbus.Interface(pid1, dbus_interface="org.freedesktop.systemd1.Manager")
 
+    wait_for_idle("forge-acquisition-stop.target")
     stop_unit("forge-acquisition-stop.target")
     start_unit("forge-acquisition-initialize.target")
     start_all_control()
     start_unit("forge-acquisition-control.target")
     start_all_instruments()
     start_unit("forge-acquisition-start.target")
+    wait_for_idle("forge-acquisition-start.target")
 
 
 if __name__ == '__main__':
