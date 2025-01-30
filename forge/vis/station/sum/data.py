@@ -5,6 +5,7 @@ from ..cpd3 import use_cpd3
 
 if use_cpd3():
     from ..cpd3 import DataStream, DataReader, EditedReader, Name, RealtimeTranslator, data_profile_get, detach, profile_data
+
     station_profile_data = detach(profile_data)
 
     station_profile_data['aerosol']['raw']['scattering2-whole'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
