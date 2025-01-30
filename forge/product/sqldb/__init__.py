@@ -21,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def _default_connection() -> Connection:
-    return await Connection.default_connection('EBAS file generation')
+    return await Connection.default_connection('SQL database update')
 
 
 class TableUpdate(ABC):
