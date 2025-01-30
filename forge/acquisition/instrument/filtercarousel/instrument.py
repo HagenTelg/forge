@@ -354,13 +354,17 @@ class Instrument(StandardInstrument):
 
     async def _process_advance(self) -> None:
         now = time.time()
-        advance_at = self._advance_time
-        if advance_at is None:
-            return
         if self._request_advance_filter:
             self._request_advance_filter = False
+            if self.data_mode.value in (self.Mode.Complete, self.Mode.Changing):
+                _LOGGER.debug("Ignored advance request with no active filter")
+                return
             _LOGGER.debug("Advancing active filter on request")
+            advance_at = now
         else:
+            advance_at = self._advance_time
+            if advance_at is None:
+                return
             if now < advance_at:
                 return
 
@@ -389,8 +393,9 @@ class Instrument(StandardInstrument):
             minimum_time = 0
 
         next_advance = rounded_start + self._filter_time
-        while next_advance <= now + minimum_time:
-            next_advance += self._filter_time
+        if minimum_time > 0:
+            while next_advance <= now + minimum_time:
+                next_advance += self._filter_time
 
         if self.data_mode.value == self.Mode.InitialBlank:
             _LOGGER.debug(f"Exiting initial blank to filter {next_index} (advance {advance_at} to {next_advance} with {self._filter_time})")
@@ -514,8 +519,8 @@ class Instrument(StandardInstrument):
                     "carousel_size": self._carousel_size,
                 }, type=BaseBusInterface.LogType.INFO)
 
-                self.data_Qt_complete(self.data_Qt.value, oneshot=True)
-                self.data_St_complete(self.data_St.value, oneshot=True)
+                self.data_Qt_complete(list(self.data_Qt.value), oneshot=True)
+                self.data_St_complete(list(self.data_St.value), oneshot=True)
                 self.data_Ff_complete(self.data_Ff.value, oneshot=True)
 
                 self.data_Ff(round(time.time() * 1000), oneshot=True)
