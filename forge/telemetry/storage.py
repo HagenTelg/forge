@@ -220,7 +220,10 @@ class Interface:
             remote_time = float(telemetry.pop('time'))
             if received_time is None:
                 received_time = time.time()
-            time_offset = round(remote_time - received_time)
+            if received_time <= 0:
+                time_offset = 0
+            else:
+                time_offset = round(remote_time - received_time)
 
             self._update_host_telemetry(orm_session, current_time, host, _TelemetryTimeOffset,
                                         offset=time_offset)
