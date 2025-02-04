@@ -99,6 +99,14 @@ class Converter(InstrumentConverter):
             if data_Pd[-1].time.shape[0] == 0:
                 data_Pd[-1] = self.load_variable(f"Pd{idx+1}_{self.instrument_id}")
 
+        def convert_Fn(x):
+            if x is None:
+                return 0
+            x = int(x)
+            if x < 0:
+                return 0
+            return x
+
         def convert_Ff(x):
             if x is None:
                 return 0
@@ -107,7 +115,7 @@ class Converter(InstrumentConverter):
                 x *= 1000
             return x
 
-        data_Fn = self.load_state(f"Fn_{self.instrument_id}", dtype=np.uint64)
+        data_Fn = self.load_state(f"Fn_{self.instrument_id}", dtype=np.uint64, convert=convert_Fn)
         data_Ff = self.load_state(f"Ff_{self.instrument_id}", dtype=np.uint64, convert=convert_Ff)
         data_Fp = self.load_state(f"Fp_{self.instrument_id}", dtype=np.uint64)
         carousel = self.load_total()
