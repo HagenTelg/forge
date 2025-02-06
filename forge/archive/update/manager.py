@@ -572,7 +572,35 @@ class StationsController:
 
             _LOGGER.debug("Initializing station update controller")
             controller = cls.create_updater(connection, args)
+
+            if args.systemd:
+                import systemd.daemon
+                _LOGGER.debug("Started startup keepalive")
+
+                async def send_keepalive() -> None:
+                    while True:
+                        await asyncio.sleep(10)
+                        systemd.daemon.notify("EXTEND_TIMEOUT_USEC=30000000")
+                        _LOGGER.debug("Startup keepalive sent")
+
+                keepalive = loop.create_task(send_keepalive())
+            else:
+                keepalive = None
+
             await controller.initialize()
+
+            if keepalive:
+                _LOGGER.debug("Shutting down startup keepalive")
+                t = keepalive
+                keepalive = None
+                try:
+                    t.cancel()
+                except:
+                    pass
+                try:
+                    await t
+                except:
+                    pass
 
             control_socket = args.control_socket
             if control_socket:
