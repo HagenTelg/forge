@@ -118,13 +118,16 @@ class Connection:
             result['intent_release'] = release
         return result
 
+    async def _drain_writer(self) -> None:
+        await wait_cancelable(self.writer.drain(), 30.0)
+
     async def initialize(self, controller: "Controller") -> None:
         check = struct.unpack('<I', await self.reader.readexactly(4))[0]
         if check != Handshake.CLIENT_TO_SERVER.value:
             raise ProtocolError(f"Invalid handshake 0x{check:08X}")
         self.writer.write(struct.pack('<II', Handshake.SERVER_TO_CLIENT.value,
                                       Handshake.PROTOCOL_VERSION.value))
-        await self.writer.drain()
+        await self._drain_writer()
         check = struct.unpack('<I', await self.reader.readexactly(4))[0]
         if check != Handshake.PROTOCOL_VERSION.value:
             raise ProtocolError(f"Invalid protocol version {check}")
@@ -139,7 +142,7 @@ class Connection:
             raise ProtocolError(f"Invalid ready handshake 0x{check:08X}")
 
         self.writer.write(struct.pack('<I', Handshake.SERVER_READY.value))
-        await self.writer.drain()
+        await self._drain_writer()
 
         self.control = controller
 
@@ -149,7 +152,7 @@ class Connection:
     async def _process_packet(self, packet_type: ClientPacket) -> None:
         if packet_type == ClientPacket.HEARTBEAT:
             self.writer.write(struct.pack('<B', ServerPacket.HEARTBEAT.value))
-            await self.writer.drain()
+            await self._drain_writer()
         elif packet_type == ClientPacket.TRANSACTION_BEGIN and not self._transaction:
             write = struct.unpack('<B', await self.reader.readexactly(1))[0]
             self.writer.write(struct.pack('<B', ServerPacket.TRANSACTION_STARTED.value))
@@ -168,14 +171,14 @@ class Connection:
             await self._transaction.commit()
             self._transaction = None
             self.writer.write(struct.pack('<B', 1))
-            await self.writer.drain()
+            await self._drain_writer()
         elif packet_type == ClientPacket.TRANSACTION_ABORT and self._transaction:
             self._logger.debug("Aborting transaction (%d)", self._transaction.generation)
             self.writer.write(struct.pack('<B', ServerPacket.TRANSACTION_ABORTED.value))
             await self._transaction.abort()
             self._transaction = None
             self.writer.write(struct.pack('<B', 1))
-            await self.writer.drain()
+            await self._drain_writer()
         elif packet_type == ClientPacket.SET_TRANSACTION_STATUS:
             status = await read_string(self.reader)
             if not self._transaction:

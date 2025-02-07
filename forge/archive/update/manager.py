@@ -578,8 +578,7 @@ class StationsController:
                 _LOGGER.debug("Started startup keepalive")
 
                 async def send_keepalive() -> None:
-                    while True:
-                        await asyncio.sleep(10)
+                    async for _ in connection.periodic_watchdog(10):
                         systemd.daemon.notify("EXTEND_TIMEOUT_USEC=30000000")
                         _LOGGER.debug("Startup keepalive sent")
 
@@ -663,8 +662,7 @@ class StationsController:
             _LOGGER.debug("Starting systemd heartbeat")
 
             async def send_heartbeat() -> typing.NoReturn:
-                while True:
-                    await asyncio.sleep(10)
+                async for _ in connection.periodic_watchdog(10):
                     systemd.daemon.notify("WATCHDOG=1")
 
             heartbeat = loop.create_task(send_heartbeat())

@@ -5,7 +5,7 @@ import struct
 import os
 import random
 import time
-from forge.tasks import wait_cancelable, background_task
+from forge.tasks import wait_cancelable
 from forge.service import send_file_contents
 from ..protocol import ProtocolError, Handshake, ServerPacket, ClientPacket, read_string, write_string
 
@@ -21,6 +21,7 @@ class Connection:
     def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, name: str):
         self.reader = reader
         self.writer = writer
+        self.heartbeat_received = asyncio.Event()
         self.name = name
         self.log_extra: typing.Dict[str, typing.Any] = {
             'client_name': name
@@ -111,9 +112,12 @@ class Connection:
     def __repr__(self) -> str:
         return f"Connection({repr(self.name)})"
 
+    async def _drain_writer(self) -> None:
+        await wait_cancelable(self.writer.drain(), 30.0)
+
     async def _initialize(self) -> None:
         self.writer.write(struct.pack('<I', Handshake.CLIENT_TO_SERVER.value))
-        await self.writer.drain()
+        await self._drain_writer()
 
         (check, version) = struct.unpack('<II', await self.reader.readexactly(8))
         if check != Handshake.SERVER_TO_CLIENT.value:
@@ -124,7 +128,7 @@ class Connection:
         self.writer.write(struct.pack('<I', Handshake.PROTOCOL_VERSION.value))
         write_string(self.writer, self.name)
         self.writer.write(struct.pack('<I', Handshake.CLIENT_READY.value))
-        await self.writer.drain()
+        await self._drain_writer()
 
         check = struct.unpack('<I', await self.reader.readexactly(4))[0]
         if check != Handshake.SERVER_READY:
@@ -226,7 +230,7 @@ class Connection:
                 raise
 
         if packet_type == ServerPacket.HEARTBEAT:
-            pass
+            self.heartbeat_received.set()
         elif packet_type == ServerPacket.NOTIFICATION_RECEIVED:
             key = await read_string(self.reader)
             (start, end, uid) = struct.unpack('<qqQ', await self.reader.readexactly(8 * 3))
@@ -325,7 +329,7 @@ class Connection:
                 if send_heartbeat in done:
                     send_heartbeat = None
                     self.writer.write(struct.pack('<B', ClientPacket.HEARTBEAT.value))
-                    await self.writer.drain()
+                    await self._drain_writer()
                     heartbeat_send_time = time.monotonic()
         except asyncio.CancelledError:
             raise
@@ -361,7 +365,7 @@ class Connection:
                 raise
 
             try:
-                await connection.writer.drain()
+                await connection._drain_writer()
             except:
                 try:
                     connection.writer.close()
@@ -764,6 +768,46 @@ class Connection:
             target = list()
             self._intent_handlers[key] = target
         target.append((handler, args, kwargs))
+
+    async def periodic_watchdog(self, interval: float, heartbeat_timeout: float = 30,
+                                immediate: bool = False) -> typing.AsyncIterable[None]:
+        assert interval > 0.001
+        assert heartbeat_timeout > 10.0
+
+        now = time.monotonic()
+        connection_heartbeat_timeout = now + heartbeat_timeout
+        next_returned_heartbeat = now
+        if not immediate:
+            next_returned_heartbeat += interval
+        while True:
+            now = time.monotonic()
+
+            heartbeat_wait_time = connection_heartbeat_timeout - now
+            if heartbeat_wait_time < 0.001:
+                _LOGGER.warning("Watchdog heartbeat timeout, stalling for heartbeat response")
+                await self.heartbeat_received.wait()
+                self.heartbeat_received.clear()
+
+                now = time.monotonic()
+                connection_heartbeat_timeout = now + heartbeat_timeout
+                if now < next_returned_heartbeat:
+                    yield None
+                    next_returned_heartbeat = now + interval
+                continue
+
+            returned_wait_time = next_returned_heartbeat - now
+            if returned_wait_time < 0.001:
+                yield None
+                next_returned_heartbeat = now + interval
+                returned_wait_time = interval
+
+            total_wait_time = max(min(heartbeat_wait_time, returned_wait_time), 0.001)
+            try:
+                await wait_cancelable(self.heartbeat_received.wait(), total_wait_time)
+                self.heartbeat_received.clear()
+                connection_heartbeat_timeout = time.monotonic() + heartbeat_timeout
+            except asyncio.TimeoutError:
+                pass
 
 
 class LockBackoff:
