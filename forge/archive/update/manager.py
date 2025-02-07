@@ -532,6 +532,7 @@ class StationsController:
         connection: Connection = None
         controller: StationsController = None
         control_server: "asyncio.Server" = None
+        controller_run: asyncio.Task = None
 
         async def control_connection(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
             try:
@@ -552,6 +553,17 @@ class StationsController:
                 except:
                     pass
 
+        class ArchiveConnection(Connection):
+            async def run(self) -> None:
+                try:
+                    await super().run()
+                finally:
+                    if controller_run:
+                        try:
+                            controller_run.cancel()
+                        except:
+                            pass
+
         async def initialize():
             nonlocal connection
             nonlocal controller
@@ -560,13 +572,13 @@ class StationsController:
             if args.tcp_server and args.tcp_port:
                 _LOGGER.debug(f"Connecting to archive TCP socket {args.tcp_server}:{args.tcp_port}")
                 reader, writer = await asyncio.open_connection(args.tcp_server, int(args.tcp_port))
-                connection = Connection(reader, writer, cls.UPDATER_CONNECTION_NAME)
+                connection = ArchiveConnection(reader, writer, cls.UPDATER_CONNECTION_NAME)
             elif args.unix_socket:
                 _LOGGER.debug(f"Connecting to archive Unix socket {args.unix_socket}")
                 reader, writer = await asyncio.open_unix_connection(args.unix_socket)
-                connection = Connection(reader, writer, cls.UPDATER_CONNECTION_NAME)
+                connection = ArchiveConnection(reader, writer, cls.UPDATER_CONNECTION_NAME)
             else:
-                connection = await Connection.default_connection(cls.UPDATER_CONNECTION_NAME)
+                connection = await ArchiveConnection.default_connection(cls.UPDATER_CONNECTION_NAME)
 
             await connection.startup()
 
@@ -680,6 +692,8 @@ class StationsController:
             if args.dashboard:
                 loop.run_until_complete(report_failed(args.dashboard, exc_info=True))
             raise
+        finally:
+            controller_run = None
 
         if heartbeat:
             _LOGGER.debug("Shutting down heartbeat")
