@@ -472,7 +472,7 @@ class UpdateController(ABC):
                 _LOGGER.debug("Started startup keepalive")
 
                 async def send_keepalive() -> None:
-                    async for _ in connection.periodic_watchdog(10):
+                    async for _ in connection.periodic_watchdog(10, request_timeout=3600):
                         systemd.daemon.notify("EXTEND_TIMEOUT_USEC=30000000")
                         _LOGGER.debug("Startup keepalive sent")
 

@@ -267,6 +267,7 @@ class Connection:
             callback_available = None
             callback_running = None
             send_heartbeat = None
+            awaiting_heartbeat: int = 0
             while True:
                 if not packet_begin:
                     packet_begin = asyncio.ensure_future(wait_cancelable(self.reader.readexactly(1), 30.0))
@@ -298,6 +299,8 @@ class Connection:
                         return
                     packet_begin = None
                     await self._process_packet(packet_type)
+                    if packet_type == ServerPacket.HEARTBEAT:
+                        awaiting_heartbeat = 0
 
                 if request_available in done:
                     request, response, args, kwargs, completed = request_available.result()
@@ -328,9 +331,11 @@ class Connection:
 
                 if send_heartbeat in done:
                     send_heartbeat = None
-                    self.writer.write(struct.pack('<B', ClientPacket.HEARTBEAT.value))
-                    await self._drain_writer()
-                    heartbeat_send_time = time.monotonic()
+                    if awaiting_heartbeat < 10:
+                        self.writer.write(struct.pack('<B', ClientPacket.HEARTBEAT.value))
+                        await self._drain_writer()
+                        awaiting_heartbeat += 1
+                        heartbeat_send_time = time.monotonic()
         except asyncio.CancelledError:
             raise
         except:
@@ -769,18 +774,29 @@ class Connection:
             self._intent_handlers[key] = target
         target.append((handler, args, kwargs))
 
-    async def periodic_watchdog(self, interval: float, heartbeat_timeout: float = 30,
+    async def periodic_watchdog(self, interval: float,
+                                heartbeat_timeout: typing.Union[float, typing.Callable[[], float]] = 30,
+                                request_timeout: typing.Union[float, typing.Callable[[], float]] = 600,
                                 immediate: bool = False) -> typing.AsyncIterable[None]:
         assert interval > 0.001
-        assert heartbeat_timeout > 10.0
+
+        def to_timeout(t: typing.Union[float, typing.Callable[[], float]]) -> float:
+            if callable(t):
+                return t()
+            return t
 
         now = time.monotonic()
-        connection_heartbeat_timeout = now + heartbeat_timeout
+        last_connection_heartbeat = now
         next_returned_heartbeat = now
         if not immediate:
             next_returned_heartbeat += interval
         while True:
             now = time.monotonic()
+
+            if self._response_handler:
+                connection_heartbeat_timeout = last_connection_heartbeat + to_timeout(request_timeout)
+            else:
+                connection_heartbeat_timeout = last_connection_heartbeat + to_timeout(heartbeat_timeout)
 
             heartbeat_wait_time = connection_heartbeat_timeout - now
             if heartbeat_wait_time < 0.001:
@@ -789,7 +805,7 @@ class Connection:
                 self.heartbeat_received.clear()
 
                 now = time.monotonic()
-                connection_heartbeat_timeout = now + heartbeat_timeout
+                last_connection_heartbeat = now
                 if now < next_returned_heartbeat:
                     yield None
                     next_returned_heartbeat = now + interval
@@ -805,7 +821,7 @@ class Connection:
             try:
                 await wait_cancelable(self.heartbeat_received.wait(), total_wait_time)
                 self.heartbeat_received.clear()
-                connection_heartbeat_timeout = time.monotonic() + heartbeat_timeout
+                last_connection_heartbeat = time.monotonic()
             except asyncio.TimeoutError:
                 pass
 

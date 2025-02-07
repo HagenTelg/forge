@@ -379,6 +379,7 @@ class StationsController:
         self.connection = connection
         self._update_ready = asyncio.Event()
         self.stations: typing.Dict[str, "StationsController.Manager"] = OrderedDict()
+        self._in_transaction: bool = False
         self._shutdown_in_progress: bool = False
 
     async def initialize(self) -> None:
@@ -405,6 +406,7 @@ class StationsController:
         while True:
             station_busy: typing.Optional[int] = None
             try:
+                self._in_transaction = True
                 async with self.connection.transaction(True):
                     for station_idx in range(len(station_order)):
                         station = station_order[station_idx]
@@ -433,7 +435,10 @@ class StationsController:
                     station = station_order[station_busy]
                     del station_order[station_busy]
                     station_order.append(station)
+                self._in_transaction = False
                 await backoff()
+            finally:
+                self._in_transaction = False
 
     async def run(self, before_idle: typing.Optional[typing.Callable[[], typing.Awaitable]] = None) -> None:
         while True:
@@ -465,6 +470,11 @@ class StationsController:
         _LOGGER.debug(f"Flushing all data in {start if start > -MAX_I64 else '-INF'},{end if end < MAX_I64 else 'INF'}")
         for station in self.stations.values():
             await station.flush(start, end)
+
+    def request_timeout(self) -> float:
+        if self._in_transaction:
+            return 7200
+        return 600
 
     @classmethod
     def create_updater(cls, connection: Connection, args) -> "StationsController":
@@ -590,7 +600,7 @@ class StationsController:
                 _LOGGER.debug("Started startup keepalive")
 
                 async def send_keepalive() -> None:
-                    async for _ in connection.periodic_watchdog(10):
+                    async for _ in connection.periodic_watchdog(10, request_timeout=3600):
                         systemd.daemon.notify("EXTEND_TIMEOUT_USEC=30000000")
                         _LOGGER.debug("Startup keepalive sent")
 
@@ -674,7 +684,7 @@ class StationsController:
             _LOGGER.debug("Starting systemd heartbeat")
 
             async def send_heartbeat() -> typing.NoReturn:
-                async for _ in connection.periodic_watchdog(10):
+                async for _ in connection.periodic_watchdog(10, heartbeat_timeout=controller.request_timeout):
                     systemd.daemon.notify("WATCHDOG=1")
 
             heartbeat = loop.create_task(send_heartbeat())
