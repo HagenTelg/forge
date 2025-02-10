@@ -119,7 +119,7 @@ class Connection:
         return result
 
     async def _drain_writer(self) -> None:
-        await wait_cancelable(self.writer.drain(), 30.0)
+        await wait_cancelable(self.writer.drain(), 65.0)
 
     async def initialize(self, controller: "Controller") -> None:
         check = struct.unpack('<I', await self.reader.readexactly(4))[0]
@@ -291,7 +291,7 @@ class Connection:
             unsolicited_available = None
             while True:
                 if not packet_begin:
-                    packet_begin = asyncio.ensure_future(wait_cancelable(self.reader.readexactly(1), 30.0))
+                    packet_begin = asyncio.ensure_future(wait_cancelable(self.reader.readexactly(1), 65.0))
                     tasks.add(packet_begin)
 
                 if not unsolicited_available:

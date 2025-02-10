@@ -141,7 +141,7 @@ class Controller:
         connection_id = self._construct_identifier(reader, writer)
         _LOGGER.debug("Initializing connection %s", connection_id)
         connection = Connection(reader, writer, connection_id)
-        await wait_cancelable(connection.initialize(self), 30.0)
+        await wait_cancelable(connection.initialize(self), 65.0)
 
         uid = self._next_connection_uid
         self._next_connection_uid += 1

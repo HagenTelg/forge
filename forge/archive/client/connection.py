@@ -113,7 +113,7 @@ class Connection:
         return f"Connection({repr(self.name)})"
 
     async def _drain_writer(self) -> None:
-        await wait_cancelable(self.writer.drain(), 30.0)
+        await wait_cancelable(self.writer.drain(), 65.0)
 
     async def _initialize(self) -> None:
         self.writer.write(struct.pack('<I', Handshake.CLIENT_TO_SERVER.value))
@@ -270,7 +270,7 @@ class Connection:
             awaiting_heartbeat: int = 0
             while True:
                 if not packet_begin:
-                    packet_begin = asyncio.ensure_future(wait_cancelable(self.reader.readexactly(1), 30.0))
+                    packet_begin = asyncio.ensure_future(wait_cancelable(self.reader.readexactly(1), 65.0))
                     tasks.add(packet_begin)
 
                 if not request_available and not self._response_handler:
@@ -331,7 +331,7 @@ class Connection:
 
                 if send_heartbeat in done:
                     send_heartbeat = None
-                    if awaiting_heartbeat < 10:
+                    if awaiting_heartbeat < 20:
                         self.writer.write(struct.pack('<B', ClientPacket.HEARTBEAT.value))
                         await self._drain_writer()
                         awaiting_heartbeat += 1
@@ -775,7 +775,7 @@ class Connection:
         target.append((handler, args, kwargs))
 
     async def periodic_watchdog(self, interval: float,
-                                heartbeat_timeout: typing.Union[float, typing.Callable[[], float]] = 30,
+                                heartbeat_timeout: typing.Union[float, typing.Callable[[], float]] = 65,
                                 request_timeout: typing.Union[float, typing.Callable[[], float]] = 600,
                                 immediate: bool = False) -> typing.AsyncIterable[None]:
         assert interval > 0.001
