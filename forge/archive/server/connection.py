@@ -339,7 +339,7 @@ class Connection:
                 except:
                     pass
 
-    def write_notification(self, key: str, start: int, end: int, synchronous: bool) -> int:
+    async def write_notification(self, key: str, start: int, end: int, synchronous: bool) -> int:
         if synchronous:
             uid = self.next_notification_uid
             self.next_notification_uid += 1
@@ -350,7 +350,7 @@ class Connection:
         self.writer.write(struct.pack('<qqQ', start, end, uid))
         return uid
 
-    def write_intent_hit(self, key: str, start: int, end: int) -> None:
+    async def write_intent_hit(self, key: str, start: int, end: int) -> None:
         self.writer.write(struct.pack('<B', ServerPacket.INTENT_HIT.value))
         write_string(self.writer, key)
         self.writer.write(struct.pack('<qq', start, end))

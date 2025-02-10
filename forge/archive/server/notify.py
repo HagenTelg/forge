@@ -71,7 +71,7 @@ class NotificationDispatch:
                 self.dispatch._awaiting_send[connection].discard(self)
 
                 if synchronous:
-                    uid = connection.write_notification(self.key, self.start, self.end, True)
+                    uid = await connection.write_notification(self.key, self.start, self.end, True)
                     self._waiting_for.add(connection)
                     waiting = self.dispatch._awaiting_acknowledge.get(connection)
                     if waiting is None:
@@ -79,7 +79,7 @@ class NotificationDispatch:
                         self.dispatch._awaiting_acknowledge[connection] = waiting
                     waiting[uid] = self
                 else:
-                    connection.write_notification(self.key, self.start, self.end, False)
+                    await connection.write_notification(self.key, self.start, self.end, False)
                     self._wait_changed.notify_all()
 
         def send(self) -> None:

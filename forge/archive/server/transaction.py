@@ -78,7 +78,7 @@ class _BaseTransaction(ABC):
         for c in conflicting:
             if not c:
                 continue
-            c.write_intent_hit(key, start, end)
+            c.queue_unsolicited(c.write_intent_hit, key, start, end)
             message = c.intent_status
         return message
 
