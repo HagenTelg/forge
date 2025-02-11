@@ -342,7 +342,7 @@ class AcquisitionIngestRecord(FileIngestRecord):
                         acquisition_mode: typing.Optional[str] = None,
                         realtime_mode: typing.Optional[str] = None,
                         **kwargs) -> "AcquisitionIngestRecord":
-        class Override(AcquisitionIngestRecord):
+        class Override(cls):
             ACQUISITION_MODE = acquisition_mode if acquisition_mode is not None else cls.ACQUISITION_MODE
             REALTIME_MODE = realtime_mode if realtime_mode is not None else cls.REALTIME_MODE
             ENTRY = cls.ENTRY.simple_override(*args, **kwargs)
