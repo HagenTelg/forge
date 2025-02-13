@@ -1,6 +1,6 @@
 # Forge Data System
 
-This is the NOAA-GML "aerosol" data system.  It is the successor to "CPD3" and its "CPX3" subsystem.  Currently, only the visualization and interactive QA/QC (CPX3) component is implemented.  Instead of working as a local application with data made available through a synchronization process, it works as a web application [hosted on the NOAA-GML web server](https://gml.noaa.gov/aero/dataview/) or run locally with a direct attachment to the data source.
+This is the NOAA-GML "aerosol" data system.  It is the successor to "CPD3" and its "CPX3" subsystem.  It contains subsystems that implement visualization and interactive QA/QC (CPX3), data acquisition, and processing.  Instead of working as a local application with data made available through a synchronization process the interactive components work as a web application [hosted on the NOAA-GML web server](https://gml.noaa.gov/aero/dataview/) or run locally with a direct attachment to the data source.
 
 Access to data is restricted behind a request and approval system that requires an internal operator to manually grant access before any data for a station can be viewed by a user.  However, the GML hosted web server is configured to allow for unauthenticated access to a simple example that does not show real data.  This example can be viewed [here](https://gml.noaa.gov/aero/dataview/station/nil/example-basic).
 
