@@ -83,11 +83,13 @@ $(exportButton).click(function(event) {
     showExportWaiting();
 
     const key = document.getElementById("export-type").value;
+    let receivedDone = false;
     exportSocket.addEventListener('message', (event) => {
         const reply = JSON.parse(event.data);
         if (reply.type === 'ready') {
             const filename = reply.filename;
             const size = reply.size;
+            receivedDone = true;
             startExportDownload(filename, size);
         } else if (reply.type === 'error') {
             const error = reply.error;
@@ -100,7 +102,18 @@ $(exportButton).click(function(event) {
             } else {
                 text.textContent = "Error exporting data."
             }
+            receivedDone = true;
         }
+    });
+    exportSocket.addEventListener('close', (event) => {
+        if (receivedDone) {
+            return;
+        }
+        $('#export-waiting').addClass('hidden');
+        $("#export-error").removeClass('hidden');
+        $('#export-cancel').text("Close");
+        const text = document.getElementById('export-error-message');
+        text.textContent = "Error, disconnected from server."
     });
     exportSocket.send(JSON.stringify({
         action: 'wait',
