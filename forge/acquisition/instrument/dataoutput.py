@@ -2,7 +2,6 @@ import typing
 import asyncio
 import logging
 import time
-import enum
 import shutil
 import numpy as np
 import forge.data.structure.variable as netcdf_var
@@ -246,9 +245,14 @@ class DataOutput(BaseDataOutput):
         if not working_directory:
             working_directory = Path('.')
         self._working_directory: Path = working_directory
+        if not self._working_directory.is_dir():
+            raise NotADirectoryError(f"invalid working directory: {self._working_directory}")
+        assert working_directory.is_dir()
         if not completed_directory:
             completed_directory = Path('.')
         self._completed_directory: Path = completed_directory
+        if not self._completed_directory.is_dir():
+            raise NotADirectoryError(f"invalid completed directory: {self._completed_directory}")
 
     class _FileComponent:
         def write_data(self, root: Dataset) -> None:

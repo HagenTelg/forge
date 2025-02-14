@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from json import load as load_json, dump as save_json, JSONDecodeError
 from .base import BasePersistentInterface
+from forge.acquisition.util import write_replace_file
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -75,9 +76,12 @@ class PersistentInterface(BasePersistentInterface):
             state_contents['time_ms'] = round(effective_time * 1000.0)
         self._instrument_data[name] = state_contents
 
-        with self.storage_file.open('wt') as f:
-            save_json({
-                'version': self.version,
-                'state': self._instrument_data,
-            }, f)
+        def write_file(dest_file: str):
+            with open(dest_file, 'wt') as f:
+                save_json({
+                    'version': self.version,
+                    'state': self._instrument_data,
+                }, f)
+
+        write_replace_file(str(self.storage_file), str(self.storage_file.parent), write_file)
 

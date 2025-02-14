@@ -173,6 +173,8 @@ def persistent_interface(args: argparse.Namespace) -> BasePersistentInterface:
     state_file = f"{args.identifier.upper()}-{args.type.lower()}.json"
     state_location = args.state_location or CONFIGURATION.get("ACQUISITION.STATE_LOCATION", "/var/lib/forge/state")
     state_location = Path(state_location)
+    if not state_location.is_dir():
+        raise NotADirectoryError(f"invalid state location: {state_location}")
 
     return PersistentInterface(state_location / state_file)
 
