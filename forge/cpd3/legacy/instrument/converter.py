@@ -769,7 +769,7 @@ class InstrumentConverter(ABC):
 
 
 class WavelengthConverter(InstrumentConverter):
-    WAVELENGTHS: typing.List[typing.Tuple[float, str]] = dict()
+    WAVELENGTHS: typing.List[typing.Tuple[float, str]] = list()
 
     def load_wavelength_variable(
             self, prefix: str,
