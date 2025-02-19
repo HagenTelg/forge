@@ -248,7 +248,7 @@ def _array_polynomial(poly: np.ndarray, value: np.ndarray, guess: np.ndarray = N
         raise ValueError
     poly = np.trim_zeros(poly, "b")
     if poly.shape[0] < 2:
-        return np.full((1, value.shape), nan, dtype=np.float64)
+        return np.full(tuple([1, *value.shape]), nan, dtype=np.float64)
 
     elif poly.shape[0] == 2:
         root = (value - poly[0]) / poly[1]

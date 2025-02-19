@@ -22,6 +22,7 @@ def test_polynomial():
     assert polynomial([2, -3, -3, 2], 20) == [pytest.approx(3.0)]
     assert polynomial([2, -3, -3, 2]) == [pytest.approx(-1.0), pytest.approx(0.5), pytest.approx(2.0)]
     assert polynomial([2, -3, -3, 2, -1], -16.0, guess=1.0) == [pytest.approx(2.0)]
+    assert polynomial([2,], -16.0, guess=1.0) == []
 
     assert polynomial(np.array([0.0, 2.0]), np.array([60.0, 20.0])).tolist() == [[30.0], [10.0]]
     assert polynomial(np.array([5.0, 2.0]), np.array([65.0, 25.0])).tolist() == [[30.0], [10.0]]
@@ -36,5 +37,8 @@ def test_polynomial():
     ]
     assert polynomial(np.array([2, -3, -3, 2, -1]), np.array([-16.0]), guess=np.array([1.0])).tolist() == [
         pytest.approx([2.0]),
+    ]
+    assert polynomial(np.array([2]), np.array([-16.0]), guess=np.array([1.0])).tolist() == [
+        pytest.approx([nan], nan_ok=True),
     ]
 
