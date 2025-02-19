@@ -794,13 +794,14 @@ class Connection:
             now = time.monotonic()
 
             if self._response_handler:
-                connection_heartbeat_timeout = last_connection_heartbeat + to_timeout(request_timeout)
+                effective_timeout = to_timeout(request_timeout)
             else:
-                connection_heartbeat_timeout = last_connection_heartbeat + to_timeout(heartbeat_timeout)
+                effective_timeout = to_timeout(heartbeat_timeout)
+            connection_heartbeat_timeout = last_connection_heartbeat + effective_timeout
 
             heartbeat_wait_time = connection_heartbeat_timeout - now
             if heartbeat_wait_time < 0.001:
-                _LOGGER.warning("Watchdog heartbeat timeout, stalling for heartbeat response")
+                _LOGGER.warning(f"Watchdog heartbeat timeout after {effective_timeout} seconds, stalling for heartbeat response")
                 await self.heartbeat_received.wait()
                 self.heartbeat_received.clear()
 

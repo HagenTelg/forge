@@ -473,8 +473,8 @@ class StationsController:
 
     def request_timeout(self) -> float:
         if self._in_transaction:
-            return 7200
-        return 600
+            return 6 * 60 * 60
+        return 10 * 60
 
     @classmethod
     def create_updater(cls, connection: Connection, args) -> "StationsController":
