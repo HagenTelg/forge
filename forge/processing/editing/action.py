@@ -174,9 +174,10 @@ def _apply_recalibration(
     raw_roots = solve_polynomial(reverse_calibration, original, original)
     difference = np.abs(raw_roots.T - original.T).T
     valid_roots = np.invert(np.all(np.isnan(difference), axis=-1))
-    preferred = np.nanargmin(difference[valid_roots], axis=-1)
     raw = np.full_like(original, nan)
-    raw[valid_roots] = np.choose(preferred, raw_roots[valid_roots].T).T
+    if np.any(valid_roots):
+        preferred = np.nanargmin(difference[valid_roots], axis=-1)
+        raw[valid_roots] = np.choose(preferred, raw_roots[valid_roots].T).T
     return calibration(raw)
 
 
