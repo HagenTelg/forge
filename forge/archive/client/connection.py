@@ -788,6 +788,7 @@ class Connection:
         now = time.monotonic()
         last_connection_heartbeat = now
         next_returned_heartbeat = now
+        heartbeat_loss_first = True
         if not immediate:
             next_returned_heartbeat += interval
         while True:
@@ -801,9 +802,18 @@ class Connection:
 
             heartbeat_wait_time = connection_heartbeat_timeout - now
             if heartbeat_wait_time < 0.001:
-                _LOGGER.warning(f"Watchdog heartbeat timeout after {effective_timeout} seconds, stalling for heartbeat response")
-                await self.heartbeat_received.wait()
+                try:
+                    await wait_cancelable(self.heartbeat_received.wait(), interval)
+                    if heartbeat_loss_first:
+                        heartbeat_loss_first = False
+                        _LOGGER.debug(f"Watchdog heartbeat resume in loss handling during {effective_timeout} second wait")
+                except asyncio.TimeoutError:
+                    if heartbeat_loss_first:
+                        heartbeat_loss_first = False
+                        _LOGGER.warning(f"Watchdog heartbeat timeout after {effective_timeout} seconds, stalling for heartbeat response")
+                    continue
                 self.heartbeat_received.clear()
+                heartbeat_loss_first = True
 
                 now = time.monotonic()
                 last_connection_heartbeat = now
@@ -821,10 +831,11 @@ class Connection:
             total_wait_time = max(min(heartbeat_wait_time, returned_wait_time), 0.001)
             try:
                 await wait_cancelable(self.heartbeat_received.wait(), total_wait_time)
-                self.heartbeat_received.clear()
-                last_connection_heartbeat = time.monotonic()
             except asyncio.TimeoutError:
-                pass
+                continue
+            self.heartbeat_received.clear()
+            heartbeat_loss_first = True
+            last_connection_heartbeat = time.monotonic()
 
 
 class LockBackoff:
