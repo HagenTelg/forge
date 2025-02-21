@@ -13,6 +13,13 @@ STANDARD_CUT_SIZE_SPLIT: typing.Iterable[typing.Tuple[str, typing.Union[float, t
 )
 
 
+def find_key(exports: typing.List[ArchiveExportEntry], key: str) -> typing.Optional[ArchiveExportEntry]:
+    for export in exports:
+        if export.key == key:
+            return export
+    return None
+
+
 aerosol_exports: typing.Dict[str, typing.List[ArchiveExportEntry]] = dict()
 for archive in ("raw", "clean", "avgh"):
     aerosol_exports[archive] = list()
