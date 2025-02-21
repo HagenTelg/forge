@@ -318,7 +318,7 @@ else:
         "pitot": [RealtimeSelection("Pd_P01", variable_id="Pd_P01")],
     })
 
-    aerosol_data["aerosol-raw-temperature"] = DataRecord({
+    data_records["aerosol-raw-temperature"] = DataRecord({
         "Tinlet": [Selection(variable_id="T_V51")], "Uinlet": [Selection(variable_id="U_V51")],
         "Taux": [Selection(variable_id="T_V01")], "Uaux": [Selection(variable_id="U_V01")],
         "Tambient": [Selection(variable_id="T1", instrument_id="XM1")],
@@ -335,7 +335,7 @@ else:
         "Tfilter": [Selection(variable_id="T_V21")], "Ufilter": [Selection(variable_id="U_V21")],
         "Tfilterrack": [Selection(variable_id="T_V22")],
     })
-    aerosol_data["aerosol-realtime-temperature"] = RealtimeRecord({
+    data_records["aerosol-realtime-temperature"] = RealtimeRecord({
         "Tinlet": [RealtimeSelection("T_V51", variable_id="T_V51")], "Uinlet": [RealtimeSelection("U_V51", variable_id="U_V51")],
         "Taux": [RealtimeSelection("T_V01", variable_id="T_V01")], "Uaux": [RealtimeSelection("U_V01", variable_id="U_V01")],
         "Tambient": [RealtimeSelection("Tambient", variable_id="T1", instrument_id="XM1")],
