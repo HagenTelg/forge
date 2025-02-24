@@ -117,6 +117,15 @@
     </a>
   </span>
 {% endif %}
+{% if enable_logingov %}
+  <span class="external-account-button">
+    <a href="{{ request.url_for('login_logingov') }}">
+      <div class="logingov-button">
+        <span class="logingov-button-text"><b>Sign in with</b><img class="logingov-logo" src="{{ request.url_for('static', path='/images/LoginGov_Logo.svg') }}"/></span>
+      </div>
+    </a>
+  </span>
+{% endif %}
 {% if enable_microsoft %}
   <span class="external-account-button">
     <a href="{{ request.url_for('login_microsoft') }}">

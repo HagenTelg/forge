@@ -154,6 +154,30 @@ img.microsoft-signin {
   font-size: 24px;
 }
 
+.logingov-button {
+  width: 230px;
+  height: 42px;
+  background-color: white;
+  font-size: 14px;
+  color: black;
+  border: 1px solid #000;
+}
+
+.logingov-button-text {
+  width: 100%;
+  line-height: 42px;
+  white-space: nowrap;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logingov-logo {
+  display: inline-block;
+  height: 15px;
+  padding-left: 10px;
+}
+
 
 .modal {
   display: none;

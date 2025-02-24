@@ -243,6 +243,21 @@ class AccessController(BaseAccessController):
                                      name='authorize_google'))
             self.enable_google = True
 
+        self.enable_logingov = False
+        if CONFIGURATION.exists('AUTHENTICATION.LOGINGOV'):
+            self.oauth.register(
+                'logingov',
+                client_id=CONFIGURATION.AUTHENTICATION.LOGINGOV.CLIENT_ID,
+                code_challenge_method='S256',
+                server_metadata_url='https://secure.login.gov/.well-known/openid-configuration',
+                client_kwargs={'scope': 'openid profile:name email'}
+            )
+            self.routes.append(Route('/logingov/login', endpoint=self.logingov_login, methods=['GET'],
+                                     name='login_logingov'))
+            self.routes.append(Route('/logingov/authorize', endpoint=self.logingov_authorize,
+                                     name='authorize_logingov'))
+            self.enable_logingov = True
+
         self.enable_microsoft = False
         if CONFIGURATION.exists('AUTHENTICATION.MICROSOFT'):
             tenant = CONFIGURATION.get('CONFIGURATION.AUTHENTICATION.MICROSOFT.TENANT', 'consumers')
@@ -360,6 +375,7 @@ class AccessController(BaseAccessController):
             request=request,
             enable_password=self.enable_password,
             enable_google=self.enable_google,
+            enable_logingov=self.enable_logingov,
             enable_microsoft=self.enable_microsoft,
             enable_yahoo=self.enable_yahoo,
             enable_apple=self.enable_apple,
@@ -386,10 +402,11 @@ class AccessController(BaseAccessController):
 
     @staticmethod
     def _check_gov_login(email: str) -> None:
-        if email.endswith(".gov") or email.endswith(".mil"):
+        # if email.endswith(".gov") or email.endswith(".mil"):
+        if email.endswith("noaa.gov"):
             raise HTTPException(
                 starlette.status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS,
-                detail="Government logins must use Google authentication"
+                detail="Government logins must use Google or Login.gov authentication"
             )
 
     async def password_login(self, request: Request) -> Response:
@@ -633,12 +650,12 @@ class AccessController(BaseAccessController):
 
         return RedirectResponse(request.url_for('root'), status_code=starlette.status.HTTP_302_FOUND)
 
-    async def oidc_login_generic(self, request: Request, client_name: str, redirect_name: str):
+    async def oidc_login_generic(self, request: Request, client_name: str, redirect_name: str, **kwargs):
         self._purge_sessions()
 
         client = self.oauth.create_client(client_name)
         redirect_uri = request.url_for(redirect_name)
-        return await client.authorize_redirect(request, redirect_uri)
+        return await client.authorize_redirect(request, redirect_uri, **kwargs)
 
     async def oidc_authorize_generic(self, request: Request, client_name: str) -> Response:
         self._purge_sessions()
@@ -667,7 +684,7 @@ class AccessController(BaseAccessController):
                 if auth is None:
                     email = oidc_user.get('email')
                     email = email[0:255] if email else ''
-                    if client_name not in ('google', ):
+                    if client_name not in ('google', 'logingov'):
                         self._check_gov_login(email)
                     name = oidc_user.get('name')
                     name = strip_noaa_suffixes(email, name)
@@ -686,7 +703,7 @@ class AccessController(BaseAccessController):
                     user = orm_session.query(_User).filter_by(id=auth.user).one_or_none()
                     if user is None:
                         raise HTTPException(starlette.status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No user found")
-                    if client_name not in ('google', ):
+                    if client_name not in ('google', 'logingov'):
                         self._check_gov_login(user.email)
                     user.last_seen = datetime.datetime.now(tz=datetime.timezone.utc)
 
@@ -708,6 +725,18 @@ class AccessController(BaseAccessController):
 
     async def google_authorize(self, request: Request) -> Response:
         return await self.oidc_authorize_generic(request, 'google')
+
+    async def logingov_login(self, request: Request) -> Response:
+        return await self.oidc_login_generic(
+            request, 'logingov', 'authorize_logingov',
+            nonce=token_urlsafe(32),
+            code_verifier=token_urlsafe(32),
+            response_type='code',
+            acr_values='urn:acr.login.gov:auth-only',
+        )
+
+    async def logingov_authorize(self, request: Request) -> Response:
+        return await self.oidc_authorize_generic(request, 'logingov')
 
     async def microsoft_login(self, request: Request) -> Response:
         return await self.oidc_login_generic(request, 'microsoft', 'authorize_microsoft')
