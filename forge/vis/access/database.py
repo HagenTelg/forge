@@ -374,6 +374,14 @@ class AccessController(BaseAccessController):
         await self._clear_session(request)
         return RedirectResponse(request.url_for('root'))
 
+    @staticmethod
+    def _check_gov_login(email: str) -> None:
+        if email.endswith(".gov") or email.endswith(".mil"):
+            raise HTTPException(
+                starlette.status.HTTP_451_UNAVAILABLE_FOR_LEGAL_REASONS,
+                detail="Government logins must use Google authentication"
+            )
+
     async def password_login(self, request: Request) -> Response:
         self._purge_sessions()
 
@@ -381,6 +389,7 @@ class AccessController(BaseAccessController):
         email = str(data.get('email', '')).lower()
         if not is_valid_email(email):
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Invalid email address")
+        self._check_gov_login(email)
         password = str(data.get('password', ''))
         if password is None or len(password) < 8:
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Invalid password")
@@ -647,6 +656,8 @@ class AccessController(BaseAccessController):
                 if auth is None:
                     email = oidc_user.get('email')
                     email = email[0:255] if email else ''
+                    if client_name not in ('google', ):
+                        self._check_gov_login(email)
                     name = oidc_user.get('name')
                     name = strip_noaa_suffixes(email, name)
                     name = name[0:255] if name else None
@@ -664,6 +675,8 @@ class AccessController(BaseAccessController):
                     user = orm_session.query(_User).filter_by(id=auth.user).one_or_none()
                     if user is None:
                         raise HTTPException(starlette.status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No user found")
+                    if client_name not in ('google', ):
+                        self._check_gov_login(user.email)
                     user.last_seen = datetime.datetime.now(tz=datetime.timezone.utc)
 
                     _LOGGER.info(f"Logged in user '{user.name}' {user.email} ({user.id}) via {client_name} authentication ({auth.sub})")
