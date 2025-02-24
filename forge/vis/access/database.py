@@ -210,12 +210,21 @@ class AccessController(BaseAccessController):
             Route('/change_info', endpoint=self.info_change, methods=['GET', 'POST'], name='change_user_info'),
             Route('/request', endpoint=self.request_access, methods=['GET', 'POST'], name='request_access'),
             Route('/confirm', endpoint=self.confirm_access, methods=['GET', 'HEAD', 'POST'], name='confirm_access'),
-            Route('/password/login', endpoint=self.password_login, methods=['POST'], name='login_password'),
-            Route('/password/change', endpoint=self.password_change, methods=['POST'], name='change_password'),
-            Route('/password/reset_issue', endpoint=self.password_reset_challenge, methods=['POST'], name='reset_password_send'),
-            Route('/password/reset', endpoint=self.password_reset_response, methods=['GET', 'HEAD', 'POST'], name='reset_password'),
-            Route('/password/create', endpoint=self.password_create_user, methods=['POST'], name='create_password'),
         ]
+
+        self.enable_password = False
+        if CONFIGURATION.get('AUTHENTICATION.PASSWORD.ENABLE', True):
+            self.routes.append(Route('/password/login', endpoint=self.password_login,
+                                     methods=['POST'], name='login_password'))
+            self.routes.append(Route('/password/change', endpoint=self.password_change,
+                                     methods=['POST'], name='change_password'))
+            self.routes.append(Route('/password/reset_issue', endpoint=self.password_reset_challenge,
+                                     methods=['POST'], name='reset_password_send'))
+            self.routes.append(Route('/password/reset', endpoint=self.password_reset_response,
+                                     methods=['GET', 'HEAD', 'POST'], name='reset_password'))
+            self.routes.append(Route('/password/create', endpoint=self.password_create_user,
+                                     methods=['POST'], name='create_password'))
+            self.enable_password = True
 
         self.oauth = OAuth()
 
@@ -349,6 +358,7 @@ class AccessController(BaseAccessController):
 
         return HTMLResponse(await package_template('access', 'login.html').render_async(
             request=request,
+            enable_password=self.enable_password,
             enable_google=self.enable_google,
             enable_microsoft=self.enable_microsoft,
             enable_yahoo=self.enable_yahoo,
@@ -586,6 +596,7 @@ class AccessController(BaseAccessController):
         email = str(data.get('email', '')).lower()
         if not is_valid_email(email):
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Invalid email address")
+        self._check_gov_login(email)
         password = str(data.get('password', ''))
         if password is None or len(password) < 8:
             raise HTTPException(starlette.status.HTTP_400_BAD_REQUEST, detail="Invalid password")
@@ -731,7 +742,10 @@ class AccessController(BaseAccessController):
                         return True
                 return False
 
-            enable_password_change = self.db.execute(execute)
+            if self.enable_password:
+                enable_password_change = await self.db.execute(execute)
+            else:
+                enable_password_change = False
 
             return HTMLResponse(await package_template('access', 'user_info.html').render_async(
                 request=request,
