@@ -48,7 +48,7 @@ class Converter(WavelengthConverter):
 
     def run(self) -> bool:
         data_X = self.load_wavelength_variable("X")
-        if not any([v.time.shape != 0 for v in data_X]):
+        if not any([v.time.shape[0] != 0 for v in data_X]):
             return False
         self._average_interval = self.calculate_average_interval(np.concatenate([v.time for v in data_X]))
         if not super().run():
@@ -60,10 +60,10 @@ class Converter(WavelengthConverter):
         data_If = self.load_wavelength_variable("If")
         data_Ip = self.load_wavelength_variable("Ip")
         data_Is1 = self.load_wavelength_variable("Is1")
-        if not any([v.time.shape != 0 for v in data_Is1]):
+        if not any([v.time.shape[0] != 0 for v in data_Is1]):
             data_Is1 = [self.load_variable(f"Is1_{self.instrument_id}")]
         data_Is2 = self.load_wavelength_variable("Is2")
-        if not any([v.time.shape != 0 for v in data_Is2]):
+        if not any([v.time.shape[0] != 0 for v in data_Is2]):
             data_Is2 = [self.load_variable(f"Is2_{self.instrument_id}")]
         data_ZSSA = self.load_wavelength_variable("ZSSA")
         data_Q = self.load_variable(f"Q_{self.instrument_id}")

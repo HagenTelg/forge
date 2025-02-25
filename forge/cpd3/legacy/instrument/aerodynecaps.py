@@ -83,7 +83,7 @@ class Converter(WavelengthConverter):
 
     def run(self) -> bool:
         data_Be = self.load_wavelength_variable("Be")
-        if not any([v.time.shape != 0 for v in data_Be]):
+        if not any([v.time.shape[0] != 0 for v in data_Be]):
             return False
         self._average_interval = self.calculate_average_interval(np.concatenate([v.time for v in data_Be]))
         if not super().run():
@@ -137,7 +137,7 @@ class Converter(WavelengthConverter):
         if not split_monitor:
             mon_g = g
             mon_times = times
-        elif data_V.time.shape[0] > 0 or any([v.time.shape != 0 for v in data_ZBel]):
+        elif data_V.time.shape[0] > 0 or any([v.time.shape[0] != 0 for v in data_ZBel]):
             mon_g, mon_times = self.data_group([data_V] + data_ZBel, name='status', fill_gaps=False)
         else:
             mon_g, mon_times = None, None
@@ -157,7 +157,7 @@ class Converter(WavelengthConverter):
             else:
                 var_V = None
 
-            if any([v.time.shape != 0 for v in data_ZBel]):
+            if any([v.time.shape[0] != 0 for v in data_ZBel]):
                 var_ZBel = mon_g.createVariable("loss", "f8", ("time", "wavelength"), fill_value=nan)
                 netcdf_timeseries.variable_coordinates(mon_g, var_ZBel)
                 var_ZBel.variable_id = "ZBel"
@@ -196,7 +196,7 @@ class Converter(WavelengthConverter):
                 selected_idx = wlidx
         self.apply_coverage(g, times,f"Be{self.WAVELENGTHS[selected_idx][1]}_{self.instrument_id}")
 
-        if any([v.time.shape != 0 for v in data_Bez]):
+        if any([v.time.shape[0] != 0 for v in data_Bez]):
             g, times = self.state_group(data_Bez, name="zero")
 
             if data_Tz.time.shape[0] > 0:

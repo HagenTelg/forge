@@ -41,7 +41,7 @@ class Converter(WavelengthConverter):
 
     def run(self) -> bool:
         data_Ba = self.load_wavelength_variable("Ba")
-        if not any([v.time.shape != 0 for v in data_Ba]):
+        if not any([v.time.shape[0] != 0 for v in data_Ba]):
             return False
         self._average_interval = self.calculate_average_interval(np.concatenate([v.time for v in data_Ba]))
         if not super().run():
@@ -77,7 +77,7 @@ class Converter(WavelengthConverter):
         if not split_transmittance:
             mon_g = g
             mon_times = times
-        elif any([v.time.shape != 0 for v in data_Ir]):
+        elif any([v.time.shape[0] != 0 for v in data_Ir]):
             mon_g, mon_times = self.data_group(data_Ir, name='status', fill_gaps=False)
         else:
             mon_g, mon_times = None, None

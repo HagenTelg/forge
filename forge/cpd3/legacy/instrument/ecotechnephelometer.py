@@ -74,7 +74,7 @@ class Converter(WavelengthConverter):
 
     def run(self) -> bool:
         data_Bs = self.load_wavelength_variable("Bs")
-        if not any([v.time.shape != 0 for v in data_Bs]):
+        if not any([v.time.shape[0] != 0 for v in data_Bs]):
             return False
         self._average_interval = self.calculate_average_interval(np.concatenate([v.time for v in data_Bs]))
         if not super().run():
@@ -322,7 +322,7 @@ class Converter(WavelengthConverter):
         var_Cbc.ancillary_variables = "standard_temperature standard_pressure"
         self.apply_wavelength_state(times, var_Cbc, data_Cbc)
 
-        if any([v.time.shape != 0 for v in data_Bsn]) and data_Bn.value.shape[0] > 0 and data_Bn.value.shape[1] > 0:
+        if any([v.time.shape[0] != 0 for v in data_Bsn]) and data_Bn.value.shape[0] > 0 and data_Bn.value.shape[1] > 0:
             angles = data_Bn.value[-1,:]
 
             def declare_angle_dimension(g):

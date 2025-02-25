@@ -117,7 +117,7 @@ class Converter(WavelengthConverter):
 
     def run(self) -> bool:
         data_Bs = self.load_wavelength_variable("Bs")
-        if not any([v.time.shape != 0 for v in data_Bs]):
+        if not any([v.time.shape[0] != 0 for v in data_Bs]):
             return False
         self._average_interval = self.calculate_average_interval(np.concatenate([v.time for v in data_Bs]))
         if not super().run():
@@ -165,7 +165,7 @@ class Converter(WavelengthConverter):
         var_Bs.cell_methods = "time: mean"
         self.apply_wavelength_data(times, var_Bs, data_Bs)
 
-        if any([v.time.shape != 0 for v in data_Bbs]):
+        if any([v.time.shape[0] != 0 for v in data_Bbs]):
             var_Bbs = g.createVariable("backscattering_coefficient", "f8", ("time", "wavelength"), fill_value=nan)
             netcdf_var.variable_back_scattering(var_Bbs)
             netcdf_timeseries.variable_coordinates(g, var_Bbs)
@@ -221,7 +221,7 @@ class Converter(WavelengthConverter):
         var_Uu.long_name = "calculated inlet humidity"
         self.apply_data(times, var_Uu, data_Uu)
 
-        if any([v.time.shape != 0 for v in data_Cs]):
+        if any([v.time.shape[0] != 0 for v in data_Cs]):
             var_Cs = g.createVariable("scattering_counts", "f8", ("time", "wavelength"), fill_value=nan)
             netcdf_timeseries.variable_coordinates(g, var_Cs)
             var_Cs.variable_id = "Cs"
@@ -234,7 +234,7 @@ class Converter(WavelengthConverter):
         else:
             var_Cs = None
 
-        if any([v.time.shape != 0 for v in data_Cbs]):
+        if any([v.time.shape[0] != 0 for v in data_Cbs]):
             var_Cbs = g.createVariable("backscattering_counts", "f8", ("time", "wavelength"), fill_value=nan)
             netcdf_timeseries.variable_coordinates(g, var_Cbs)
             var_Cbs.variable_id = "Cbs"
@@ -247,7 +247,7 @@ class Converter(WavelengthConverter):
         else:
             var_Cbs = None
 
-        if any([v.time.shape != 0 for v in data_Cd]):
+        if any([v.time.shape[0] != 0 for v in data_Cd]):
             var_Cd = g.createVariable("scattering_dark_counts", "f8", ("time", "wavelength"), fill_value=nan)
             netcdf_timeseries.variable_coordinates(g, var_Cd)
             var_Cd.variable_id = "Cs"
@@ -260,7 +260,7 @@ class Converter(WavelengthConverter):
         else:
             var_Cd = None
 
-        if any([v.time.shape != 0 for v in data_Cbd]):
+        if any([v.time.shape[0] != 0 for v in data_Cbd]):
             var_Cbd = g.createVariable("backscattering_dark_counts", "f8", ("time", "wavelength"), fill_value=nan)
             netcdf_timeseries.variable_coordinates(g, var_Cbd)
             var_Cbd.variable_id = "Cbs"
@@ -279,7 +279,7 @@ class Converter(WavelengthConverter):
         if not split_monitor:
             mon_g = g
             mon_times = times
-        elif data_Vl.time.shape[0] > 0 or data_Al.time.shape[0] > 0 or any([v.time.shape != 0 for v in data_Cs]):
+        elif data_Vl.time.shape[0] > 0 or data_Al.time.shape[0] > 0 or any([v.time.shape[0] != 0 for v in data_Cs]):
             mon_g, mon_times = self.data_group([data_Al], name='status', fill_gaps=False)
         else:
             mon_g, mon_times = None, None
@@ -306,7 +306,7 @@ class Converter(WavelengthConverter):
             var_Al.C_format = "%4.1f"
             self.apply_data(mon_times, var_Al, data_Al)
 
-            if any([v.time.shape != 0 for v in data_Cf]):
+            if any([v.time.shape[0] != 0 for v in data_Cf]):
                 var_Cf = mon_g.createVariable("reference_counts", "f8", ("time", "wavelength"), fill_value=nan)
                 netcdf_timeseries.variable_coordinates(mon_g, var_Cf)
                 var_Cf.variable_id = "Cf"

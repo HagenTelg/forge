@@ -65,12 +65,12 @@ class Converter(InstrumentConverter):
         data_Vx = self.load_variable(f"Vx_{self.instrument_id}")
 
         if not any(
-                [v.time.shape != 0 for v in data_temperatures.values()] +
-                [v.time.shape != 0 for v in data_rh.values()] +
-                [v.time.shape != 0 for v in data_dewpoint.values()] +
-                [v.time.shape != 0 for v in data_wind_speed.values()] +
-                [v.time.shape != 0 for v in data_wind_direction.values()] +
-                [v.time.shape != 0 for v in data_wind_speed_gust.values()] +
+                [v.time.shape[0] != 0 for v in data_temperatures.values()] +
+                [v.time.shape[0] != 0 for v in data_rh.values()] +
+                [v.time.shape[0] != 0 for v in data_dewpoint.values()] +
+                [v.time.shape[0] != 0 for v in data_wind_speed.values()] +
+                [v.time.shape[0] != 0 for v in data_wind_direction.values()] +
+                [v.time.shape[0] != 0 for v in data_wind_speed_gust.values()] +
                 [data_WI, data_P]
         ):
             return False

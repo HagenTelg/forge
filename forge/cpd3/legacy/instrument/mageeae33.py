@@ -62,7 +62,7 @@ class Converter(WavelengthConverter):
 
     def run(self) -> bool:
         data_X = self.load_wavelength_variable("X")
-        if not any([v.time.shape != 0 for v in data_X]):
+        if not any([v.time.shape[0] != 0 for v in data_X]):
             return False
         self._average_interval = self.calculate_average_interval(np.concatenate([v.time for v in data_X]))
         if not super().run():

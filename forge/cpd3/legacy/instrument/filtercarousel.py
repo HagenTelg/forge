@@ -75,7 +75,7 @@ class Converter(InstrumentConverter):
         data_Qt = [
             self.load_variable(f"Qt{i}_{self.instrument_id}") for i in range(self.CAROUSEL_SIZE+1)
         ]
-        if not any([v.time.shape != 0 for v in data_Qt]):
+        if not any([v.time.shape[0] != 0 for v in data_Qt]):
             return False
         self._average_interval = self.calculate_average_interval(np.concatenate([v.time for v in data_Qt]))
         if not super().run():
