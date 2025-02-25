@@ -1,29 +1,24 @@
 import typing
-from forge.product.selection import InstrumentSelection
 
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI0050R"
+    return "ES0020U"
 
 
 def platform(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI0050S"
+    return "ES0020S"
 
 
 def lab_code(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI03L"
+    return "ES08L"
 
 
 def land_use(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "Forest"
+    return "Residential"
 
 
 def setting(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "Rural"
-
-
-def other_identifiers(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "1(SMEARII)"
+    return "Suburban"
 
 
 def wmo_region(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[int]:
@@ -31,7 +26,7 @@ def wmo_region(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
 
 
 def gaw_type(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "R"
+    return "C"
 
 
 def projects(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.List[str]:
@@ -44,11 +39,11 @@ def organization(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None
     from nilutility.datatypes import DataObject
 
     return DataObject(
-        OR_CODE="FI03L",
-        OR_NAME="University of Helsinki",
-        OR_ACRONYM="UHEL", OR_UNIT=None,
-        OR_ADDR_LINE1="PO BOX 64", OR_ADDR_LINE2=None,
-        OR_ADDR_ZIP="FI-00014", OR_ADDR_CITY="Helsinki", OR_ADDR_COUNTRY="Finland"
+        OR_CODE="ES08L",
+        OR_NAME="University of Granada",
+        OR_ACRONYM=None, OR_UNIT="Atmospheric Physics Group - Andalusian Center for Environmental Studies - Dept. Applied Physics",
+        OR_ADDR_LINE1="Avda. del Mediterráneo s/n", OR_ADDR_LINE2=None,
+        OR_ADDR_ZIP="18006", OR_ADDR_CITY="Granada", OR_ADDR_COUNTRY="Spain"
     )
 
 
@@ -56,11 +51,12 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
     from nilutility.datatypes import DataObject
 
     return [DataObject(
-        PS_LAST_NAME="Banerji", PS_FIRST_NAME='Sujai',
-        PS_EMAIL="sujai.banerji@helsinki.fi",
-        PS_ORG_NAME="University of Helsinki",
-        PS_ORG_ACR="UHEL", PS_ORG_UNIT=None,
-        PS_ADDR_LINE1="PO BOX 64", PS_ADDR_LINE2=None,
-        PS_ADDR_ZIP="FI-00014", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
+        PS_LAST_NAME="Alados-Arboledas", PS_FIRST_NAME="Lucas",
+        PS_EMAIL="alados@ugr.es",
+        PS_ORG_NAME="University of Granada",
+        PS_ORG_ACR=None, PS_ORG_UNIT="Atmospheric Physics Group - Andalusian Center for Environmental Studies - Dept. Applied Physics",
+        PS_ADDR_LINE1="Avda. del Mediterráneo s/n", PS_ADDR_LINE2=None,
+        PS_ADDR_ZIP="18006", PS_ADDR_CITY="Granada",
+        PS_ADDR_COUNTRY="Spain",
         PS_ORCID=None,
     )]

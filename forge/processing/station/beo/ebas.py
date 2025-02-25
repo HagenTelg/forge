@@ -1,29 +1,24 @@
 import typing
-from forge.product.selection import InstrumentSelection
 
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI0050R"
+    return "BG0001R"
 
 
 def platform(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI0050S"
+    return "BG0001S"
 
 
 def lab_code(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI03L"
+    return "BG02L"
 
 
 def land_use(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "Forest"
+    return "Remote Park"
 
 
 def setting(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "Rural"
-
-
-def other_identifiers(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "1(SMEARII)"
+    return "Mountain"
 
 
 def wmo_region(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[int]:
@@ -44,11 +39,11 @@ def organization(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None
     from nilutility.datatypes import DataObject
 
     return DataObject(
-        OR_CODE="FI03L",
-        OR_NAME="University of Helsinki",
-        OR_ACRONYM="UHEL", OR_UNIT=None,
-        OR_ADDR_LINE1="PO BOX 64", OR_ADDR_LINE2=None,
-        OR_ADDR_ZIP="FI-00014", OR_ADDR_CITY="Helsinki", OR_ADDR_COUNTRY="Finland"
+        OR_CODE="BG02L",
+        OR_NAME="Institut of Nuclear Research and Nuclear Energy",
+        OR_ACRONYM=None, OR_UNIT=None,
+        OR_ADDR_LINE1="Tsarigradsko chaussee Blvd.", OR_ADDR_LINE2=None,
+        OR_ADDR_ZIP="1784", OR_ADDR_CITY="Sofia", OR_ADDR_COUNTRY="Bulgaria"
     )
 
 
@@ -56,11 +51,12 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
     from nilutility.datatypes import DataObject
 
     return [DataObject(
-        PS_LAST_NAME="Banerji", PS_FIRST_NAME='Sujai',
-        PS_EMAIL="sujai.banerji@helsinki.fi",
-        PS_ORG_NAME="University of Helsinki",
-        PS_ORG_ACR="UHEL", PS_ORG_UNIT=None,
-        PS_ADDR_LINE1="PO BOX 64", PS_ADDR_LINE2=None,
-        PS_ADDR_ZIP="FI-00014", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
+        PS_LAST_NAME="Arsov", PS_FIRST_NAME="Todor Petkov",
+        PS_EMAIL="arsoff@inrne.bas.bg",
+        PS_ORG_NAME="Institut of Nuclear Research and Nuclear Energy",
+        PS_ORG_ACR=None, PS_ORG_UNIT=None,
+        PS_ADDR_LINE1="Tsarigradsko chaussee Blvd.", PS_ADDR_LINE2=None,
+        PS_ADDR_ZIP="1784", PS_ADDR_CITY="Sofia",
+        PS_ADDR_COUNTRY="Bulgaria",
         PS_ORCID=None,
     )]

@@ -1,29 +1,24 @@
 import typing
-from forge.product.selection import InstrumentSelection
 
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI0050R"
+    return "DE0054R"
 
 
 def platform(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI0050S"
+    return "DE0054S"
 
 
 def lab_code(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI03L"
+    return "DE08L"
 
 
 def land_use(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "Forest"
+    return "Not available"
 
 
 def setting(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "Rural"
-
-
-def other_identifiers(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "1(SMEARII)"
+    return "Mountain"
 
 
 def wmo_region(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[int]:
@@ -31,7 +26,7 @@ def wmo_region(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
 
 
 def gaw_type(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "R"
+    return "G"
 
 
 def projects(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.List[str]:
@@ -44,11 +39,11 @@ def organization(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None
     from nilutility.datatypes import DataObject
 
     return DataObject(
-        OR_CODE="FI03L",
-        OR_NAME="University of Helsinki",
-        OR_ACRONYM="UHEL", OR_UNIT=None,
-        OR_ADDR_LINE1="PO BOX 64", OR_ADDR_LINE2=None,
-        OR_ADDR_ZIP="FI-00014", OR_ADDR_CITY="Helsinki", OR_ADDR_COUNTRY="Finland"
+        OR_CODE="DE08L",
+        OR_NAME="German Environment Agency",
+        OR_ACRONYM="UBA", OR_UNIT=None,
+        OR_ADDR_LINE1="Zugspitze 5", OR_ADDR_LINE2=None,
+        OR_ADDR_ZIP="D-82475", OR_ADDR_CITY="Schneefernerhaus", OR_ADDR_COUNTRY="Germany"
     )
 
 
@@ -56,11 +51,12 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
     from nilutility.datatypes import DataObject
 
     return [DataObject(
-        PS_LAST_NAME="Banerji", PS_FIRST_NAME='Sujai',
-        PS_EMAIL="sujai.banerji@helsinki.fi",
-        PS_ORG_NAME="University of Helsinki",
-        PS_ORG_ACR="UHEL", PS_ORG_UNIT=None,
-        PS_ADDR_LINE1="PO BOX 64", PS_ADDR_LINE2=None,
-        PS_ADDR_ZIP="FI-00014", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
+        PS_LAST_NAME="Couric", PS_FIRST_NAME="Cedric",
+        PS_EMAIL="cedric.couric@uba.de",
+        PS_ORG_NAME="German Environment Agency",
+        PS_ORG_ACR="UBA", PS_ORG_UNIT=None,
+        PS_ADDR_LINE1="Zugspitze 5", PS_ADDR_LINE2=None,
+        PS_ADDR_ZIP="D-82475", PS_ADDR_CITY="Schneefernerhaus",
+        PS_ADDR_COUNTRY="Germany",
         PS_ORCID=None,
     )]

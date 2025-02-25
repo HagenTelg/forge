@@ -10,7 +10,7 @@ def platform(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) ->
     return "FI0023S"
 
 
-def platform(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
+def lab_code(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     return "FI03L"
 
 

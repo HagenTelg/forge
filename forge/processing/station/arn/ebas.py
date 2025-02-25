@@ -1,17 +1,16 @@
 import typing
-from forge.product.selection import InstrumentSelection
 
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI0050R"
+    return "ES0100R"
 
 
 def platform(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI0050S"
+    return "ES0100S"
 
 
 def lab_code(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI03L"
+    return "ES06L"
 
 
 def land_use(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
@@ -20,10 +19,6 @@ def land_use(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) ->
 
 def setting(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     return "Rural"
-
-
-def other_identifiers(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "1(SMEARII)"
 
 
 def wmo_region(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[int]:
@@ -44,11 +39,12 @@ def organization(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None
     from nilutility.datatypes import DataObject
 
     return DataObject(
-        OR_CODE="FI03L",
-        OR_NAME="University of Helsinki",
-        OR_ACRONYM="UHEL", OR_UNIT=None,
-        OR_ADDR_LINE1="PO BOX 64", OR_ADDR_LINE2=None,
-        OR_ADDR_ZIP="FI-00014", OR_ADDR_CITY="Helsinki", OR_ADDR_COUNTRY="Finland"
+        OR_CODE="ES06L",
+        OR_NAME="National Institute for Aerospace Technology",
+        OR_ACRONYM=None, OR_UNIT=None,
+        OR_ADDR_LINE1="Atmospheric Sounding Station \"El Arenosillo\"",
+        OR_ADDR_LINE2="San Juan del Puerto - Matalacañas Road, Km 33",
+        OR_ADDR_ZIP="21130", OR_ADDR_CITY="Mazagon, Huelva", OR_ADDR_COUNTRY="Spain"
     )
 
 
@@ -56,11 +52,13 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
     from nilutility.datatypes import DataObject
 
     return [DataObject(
-        PS_LAST_NAME="Banerji", PS_FIRST_NAME='Sujai',
-        PS_EMAIL="sujai.banerji@helsinki.fi",
-        PS_ORG_NAME="University of Helsinki",
-        PS_ORG_ACR="UHEL", PS_ORG_UNIT=None,
-        PS_ADDR_LINE1="PO BOX 64", PS_ADDR_LINE2=None,
-        PS_ADDR_ZIP="FI-00014", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
+        PS_LAST_NAME="Sorribas Panero", PS_FIRST_NAME="Maria del Mar",
+        PS_EMAIL="sorribasm@inta.es",
+        PS_ORG_NAME="National Institute for Aerospace Technology",
+        PS_ORG_ACR=None, PS_ORG_UNIT=None,
+        PS_ADDR_LINE1="Atmospheric Sounding Station \"El Arenosillo\"",
+        PS_ADDR_LINE2="San Juan del Puerto - Matalacañas Road, Km 33",
+        PS_ADDR_ZIP="21130", PS_ADDR_CITY="Mazagon, Huelva",
+        PS_ADDR_COUNTRY="Spain",
         PS_ORCID=None,
     )]
