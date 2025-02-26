@@ -772,28 +772,28 @@ class WavelengthConverter(InstrumentConverter):
     WAVELENGTHS: typing.List[typing.Tuple[float, str]] = list()
 
     def load_wavelength_variable(
-            self, prefix: str,
+            self, prefix: str, suffix: str = "",
             convert: typing.Callable[[typing.Any], typing.Any] = None,
             dtype: typing.Type = np.float64
     ) -> typing.List["WavelengthConverter.Data"]:
         result: typing.List[WavelengthConverter.Data] = list()
         for _, code in self.WAVELENGTHS:
             result.append(self.load_variable(
-                f"{prefix}{code}_{self.instrument_id}",
+                f"{prefix}{code}{suffix}_{self.instrument_id}",
                 convert=convert,
                 dtype=dtype,
             ))
         return result
 
     def load_wavelength_state(
-            self, prefix: str,
+            self, prefix: str, suffix: str = "",
             convert: typing.Callable[[typing.Any], typing.Any] = None,
             dtype: typing.Type = np.float64
     ) -> typing.List["WavelengthConverter.Data"]:
         result: typing.List[WavelengthConverter.Data] = list()
         for _, code in self.WAVELENGTHS:
             result.append(self.load_state(
-                f"{prefix}{code}_{self.instrument_id}",
+                f"{prefix}{code}{suffix}_{self.instrument_id}",
                 convert=convert,
                 dtype=dtype,
             ))
