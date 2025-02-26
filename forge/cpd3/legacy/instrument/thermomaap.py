@@ -75,7 +75,7 @@ class Converter(WavelengthConverter):
         data_Pd1 = self.load_variable(f"Pd1_{self.instrument_id}")
         data_Pd2 = self.load_variable(f"Pd2_{self.instrument_id}")
 
-        parameters = self.load_state(f"ZPARAMETERS_{self.instrument_id}", dtype=dict)
+        parameters = self.load_state(f"ZPARAMETERS_{self.instrument_id}", dtype=list)
 
         g, times = self.data_group(data_X)
         standard_temperature(g)
