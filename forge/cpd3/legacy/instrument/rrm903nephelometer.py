@@ -97,8 +97,8 @@ class Converter(WavelengthConverter):
             data_Cf = self.load_wavelength_variable("Cr")
         data_Bsf = self.load_wavelength_variable("Bsf")
         data_Cd = self.load_variable(f"Cd_{self.instrument_id}")
-        data_Cp = self.load_wavelength_variable(f"Cp_{self.instrument_id}")
-        data_Cpf = self.load_wavelength_variable(f"Cpf_{self.instrument_id}")
+        data_Cp = self.load_wavelength_variable(f"Cp")
+        data_Cpf = self.load_wavelength_variable(f"Cpf")
 
         data_Tz = self.load_state(f"Tz_{self.instrument_id}")
         data_Pz = self.load_state(f"Pz_{self.instrument_id}")
