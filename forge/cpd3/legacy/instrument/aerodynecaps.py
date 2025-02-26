@@ -105,7 +105,7 @@ class Converter(WavelengthConverter):
         g, times = self.data_group(data_Be + [system_flags_time], fill_gaps=False)
         data_system_flags, system_flags_bits = self.declare_system_flags(g, times)
 
-        var_Be = g.createVariable("scattering_coefficient", "f8", ("time", "wavelength"), fill_value=nan)
+        var_Be = g.createVariable("light_extinction", "f8", ("time", "wavelength"), fill_value=nan)
         netcdf_var.variable_extinction(var_Be, is_stp=False, is_dried=False)
         netcdf_timeseries.variable_coordinates(g, var_Be)
         var_Be.variable_id = "Be"
