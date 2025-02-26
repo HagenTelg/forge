@@ -10,7 +10,7 @@ def longitude(station: str, tags: typing.Optional[typing.Set[str]] = None) -> ty
 
 
 def altitude(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[float]:
-    return 77
+    return 77.0
 
 
 def country_code(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:

@@ -2,20 +2,24 @@ import typing
 
 
 def latitude(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[float]:
-    return 37.104000
+    return 18.381065
 
 
 def longitude(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[float]:
-    return -6.734200
+    return -65.617752
 
 
 def altitude(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[float]:
-    return 41
+    return 65.0
 
 
 def country_code(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "ES"
+    return "US"
+
+
+def subdivision(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
+    return "PR"
 
 
 def name(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "El Arenosillo"
+    return "Cape San Juan"
