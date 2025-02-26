@@ -36,22 +36,6 @@ station_profile_export['aerosol']['raw'].insert(
     ))
 )
 
-station_profile_export['aerosol']['raw'].insert(
-    DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
-        start_epoch_ms, end_epoch_ms, directory, station, 'raw',
-    ))
-)
-station_profile_export['aerosol']['clean'].insert(
-    DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
-        start_epoch_ms, end_epoch_ms, directory, station, 'clean',
-    ))
-)
-station_profile_export['aerosol']['avgh'].insert(
-    DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
-        start_epoch_ms, end_epoch_ms, directory, station, 'avgh',
-    ), time_limit_days=None)
-)
-
 
 def get(station: str, mode_name: str, export_key: str,
         start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:

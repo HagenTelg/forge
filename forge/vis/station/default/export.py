@@ -55,7 +55,7 @@ for archive in ("raw",):
                          default_header="P", always_present=True),
     ]))
 for archive in ("clean",):
-    aerosol_exports[archive].append(ExportCSV("extensive", "Extensive", [
+    aerosol_exports[archive].append(ExportCSV("intensive", "Intensive", [
         ExportCSV.Column([Selection(variable_name="number_concentration",
                                     instrument_id="XI")],
                          header="N_XI", always_present=True),
@@ -149,7 +149,7 @@ for archive in ("raw", "clean",):
         for wl in range(7)
     ]))
 for archive in ("avgh",):
-    aerosol_exports[archive].append(ExportCSV("extensive", "Extensive", [
+    aerosol_exports[archive].append(ExportCSV("intensive", "Intensive", [
         ExportCSV.Column([Selection(variable_name="number_concentration", cut_size=cut_size,
                                     instrument_id="XI")],
                          header="N" + record + "_XI")

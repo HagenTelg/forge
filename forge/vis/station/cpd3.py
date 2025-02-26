@@ -25,6 +25,7 @@ from forge.cpd3.identity import Name, Identity
 from forge.cpd3.variant import serialize as variant_serialize, deserialize as variant_deserialize
 from forge.cpd3.datareader import StandardDataInput, RecordInput
 from forge.cpd3.timeinterval import TimeUnit, TimeInterval
+from forge.vis.export.archive import ExportNetCDF
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -3438,6 +3439,12 @@ aerosol_export: typing.Dict[str, DataExportList] = {
                 [Name(station, 'raw', f'Ir{i + 1}_A81') for i in range(7)]
             ),
         )),
+        DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
+            start_epoch_ms, end_epoch_ms, directory, station, 'raw',
+        )),
+        DataExportList.Entry('netcdf', "NetCDF4 Archive", lambda station, start_epoch_ms, end_epoch_ms, directory: ExportNetCDF()(
+            station, 'aerosol-raw', 'netcdf', start_epoch_ms, end_epoch_ms, directory
+        )),
     ]),
     'clean': DataExportList([
         DataExportList.Entry('intensive', "Intensive", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
@@ -3496,6 +3503,9 @@ aerosol_export: typing.Dict[str, DataExportList] = {
                 [Name(station, 'clean', f'Ir{i + 1}_A81') for i in range(7)]
             ),
         )),
+        DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
+            start_epoch_ms, end_epoch_ms, directory, station, 'clean',
+        )),
     ]),
     'avgh': DataExportList([
         DataExportList.Entry('intensive', "Intensive", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
@@ -3553,6 +3563,9 @@ aerosol_export: typing.Dict[str, DataExportList] = {
                 [Name(station, 'avgh', f'ZFACTOR{i + 1}_A81') for i in range(7)] +
                 [Name(station, 'avgh', f'Ir{i + 1}_A81') for i in range(7)]
             ),
+        ), time_limit_days=None),
+        DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
+            start_epoch_ms, end_epoch_ms, directory, station, 'avgh',
         ), time_limit_days=None),
     ]),
 }
