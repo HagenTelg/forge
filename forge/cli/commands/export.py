@@ -143,13 +143,17 @@ class Command(ParseCommand):
                             help="output join quote escape sequence")
         parser.set_defaults(join_quote_escape=None)
 
-        parser.add_argument('--mvc',
-                            dest='mvc',
-                            help="string used for missing values")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('--mvc',
+                           dest='mvc',
+                           help="string used for missing values")
+        group.add_argument('--mvc-default',
+                           dest='mvc_default', action='store_true',
+                           help="use default (usually all 9) missing values")
         parser.add_argument('--mvc-flag',
                             dest='mvc_flag',
                             choices=['none', 'end', 'follow'],
-                            help="string used for missing values")
+                            help="missing value flag column position")
 
         parser.add_argument('--flags',
                             choices=['hex', '0x', 'breakdown', 'list'],
@@ -1333,6 +1337,8 @@ class _ExportStage(ExecuteStage):
         self._field_quote = field_quote
         self._field_quote_escape = field_quote_escape
 
+        if args.mvc_default:
+            mvc = None
         mvc = args.mvc if args.mvc is not None else mvc
         mvc_flag = args.mvc_flag if args.mvc_flag is not None else mvc_flag
         flags = args.flags
