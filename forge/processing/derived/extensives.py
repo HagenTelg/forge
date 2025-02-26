@@ -252,7 +252,7 @@ def write_extensives(
             wavelength=True
         ).take()
         netcdf_var.variable_extinction(extinction_out.variable, is_stp=is_stp)
-        extinction_out.variable.variable_id = "Ba"
+        extinction_out.variable.variable_id = "Be"
         extinction_out.variable.coverage_content_type = "physicalMeasurement"
         setup_variable(extinction_out)
         extinction_out[:] = calculate_extinction(scattering_in.values, absorption_in.values)
