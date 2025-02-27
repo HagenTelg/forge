@@ -306,6 +306,9 @@ class InstrumentConverter(ABC):
                 model = source.get("Model")
             if not serial_number:
                 serial_number = source.get("SerialNumber")
+                if len(str(serial_number)) > 32:
+                    # Bad queries sometimes result in a garbled response
+                    serial_number = None
             if not firmware_version:
                 firmware_version = source.get("FirmwareVersion")
             if not calibration:
