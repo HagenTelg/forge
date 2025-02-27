@@ -202,6 +202,17 @@ class Converter(WavelengthConverter):
         var_Ux.long_name = "chassis internal relative humidity"
         self.apply_data(times, var_Ux, data_Ux)
 
+        var_Q = g.createVariable("sample_flow", "f8", ("time",), fill_value=nan)
+        netcdf_var.variable_sample_flow(var_Q)
+        netcdf_timeseries.variable_coordinates(g, var_Q)
+        var_Q.variable_id = "Q"
+        var_Q.coverage_content_type = "physicalMeasurement"
+        var_Q.cell_methods = "time: mean"
+        var_Q.C_format = "%5.3f"
+        if stp_vars:
+            var_Q.ancillary_variables = stp_vars
+        self.apply_data(times, var_Q, data_Q)
+
         var_Cd = g.createVariable("dark_counts", "f8", ("time",), fill_value=nan)
         netcdf_timeseries.variable_coordinates(g, var_Cd)
         var_Cd.variable_id = "Cd"
@@ -249,6 +260,7 @@ class Converter(WavelengthConverter):
             (var_Tx, data_Tx),
             (var_U, data_U),
             (var_Ux, data_Ux),
+            (var_Q, data_Q),
             (var_Cd, data_Cd),
         ], [
             (var_Bs, data_Bs),
