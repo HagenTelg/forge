@@ -25,7 +25,6 @@ from forge.cpd3.identity import Name, Identity
 from forge.cpd3.variant import serialize as variant_serialize, deserialize as variant_deserialize
 from forge.cpd3.datareader import StandardDataInput, RecordInput
 from forge.cpd3.timeinterval import TimeUnit, TimeInterval
-from forge.vis.export.archive import ExportNetCDF
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -3279,7 +3278,7 @@ class DataExport(Export):
 
 class DataExportList(ExportList):
     class Entry(ExportList.Entry):
-        def __init__(self, key: str, display: str, data: typing.Callable[[str, int, int], Export],
+        def __init__(self, key: str, display: str, data: typing.Callable[[str, int, int, str], Export],
                      time_limit_days: typing.Optional[int] = 366):
             super().__init__(key, display)
             self.data = data
@@ -3442,9 +3441,6 @@ aerosol_export: typing.Dict[str, DataExportList] = {
         DataExportList.Entry('cpd3native', "CPD3 Native Format", lambda station, start_epoch_ms, end_epoch_ms, directory: NativeExport(
             start_epoch_ms, end_epoch_ms, directory, station, 'raw',
         )),
-        DataExportList.Entry('netcdf', "NetCDF4 Archive", lambda station, start_epoch_ms, end_epoch_ms, directory: ExportNetCDF()(
-            station, 'aerosol-raw', 'netcdf', start_epoch_ms, end_epoch_ms, directory
-        )),
     ]),
     'clean': DataExportList([
         DataExportList.Entry('intensive', "Intensive", lambda station, start_epoch_ms, end_epoch_ms, directory: DataExport(
@@ -3569,6 +3565,14 @@ aerosol_export: typing.Dict[str, DataExportList] = {
         ), time_limit_days=None),
     ]),
 }
+
+if _enable_forge_archive:
+    def export_netcdf(station, start_epoch_ms, end_epoch_ms, directory):
+        from forge.vis.export.archive import ExportNetCDF
+        return ExportNetCDF()(
+            station, 'aerosol-raw', 'netcdf', start_epoch_ms, end_epoch_ms, directory
+        )
+    aerosol_export['raw'].insert(DataExportList.Entry('netcdf', "NetCDF4 Archive", export_netcdf))
 
 ozone_export: typing.Dict[str, DataExportList] = {
     'raw': DataExportList([
