@@ -224,6 +224,10 @@ class Instrument(StreamingInstrument):
 
             def configure(var):
                 variable_flags(var, state_flags)
+                try:
+                    var.delncattr("valid_range")
+                except (AttributeError, RuntimeError):
+                    pass
 
             digital_state.data.configure_variable = configure
 
@@ -268,9 +272,20 @@ class Instrument(StreamingInstrument):
         await self._update_all_analog_out(force=True)
         self._sleep_time = 0.0
 
-    async def _write_digital_state(self, update_state: int) -> int:
+    async def _write_digital_state(self, update_state: int, send_multiple: bool = True) -> int:
+        if send_multiple:
+            # Looks like a problem where sometimes the actual state doesn't get changed on the CR1000 outputs,
+            # but does in the echo, so just brute force it
+            for _ in range(5):
+                self.writer.write(f"SDO,{update_state:08x}\r".encode('ascii'))
+                try:
+                    await wait_cancelable(self.read_line(), 2.0)
+                except asyncio.TimeoutError:
+                    pass
+            await self.drain_reader(0.5)
+
         self.writer.write(f"SDO,{update_state:08x}\r".encode('ascii'))
-        line: bytes = await self.read_line()
+        line: bytes = await wait_cancelable(self.read_line(), 2.0)
         if line[:4] != b'SDA,':
             raise CommunicationsError(f"invalid digital set response {line}")
 
@@ -328,7 +343,7 @@ class Instrument(StreamingInstrument):
                 update_state &= ~out.bit
 
         if force or update_state != self._digital_state:
-            update_state = await wait_cancelable(self._write_digital_state(update_state), 2.0)
+            update_state = await self._write_digital_state(update_state)
             self._digital_state = update_state
 
         self._apply_digital_state = None
@@ -457,7 +472,7 @@ class Instrument(StreamingInstrument):
             else:
                 updated_digital_state &= ~out.bit
         if updated_digital_state is not None:
-            await wait_cancelable(self._write_digital_state(updated_digital_state), 2.0)
+            await self._write_digital_state(updated_digital_state, send_multiple=False)
 
     async def run(self) -> typing.NoReturn:
         self._output_changed = asyncio.Event()

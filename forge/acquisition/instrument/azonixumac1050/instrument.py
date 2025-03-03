@@ -253,6 +253,10 @@ class Instrument(StreamingInstrument):
 
             def configure(var):
                 variable_flags(var, state_flags)
+                try:
+                    var.delncattr("valid_range")
+                except (AttributeError, RuntimeError):
+                    pass
 
             digital_state.data.configure_variable = configure
 
