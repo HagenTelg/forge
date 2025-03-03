@@ -12,6 +12,14 @@ def copy_variable_values(source: Variable, destination: Variable) -> None:
         destination[...] = source[...].data
 
 
+def append_variable_values(source: Variable, destination: Variable, begin_index: int) -> None:
+    if isinstance(destination.datatype, VLType):
+        for idx in np.ndindex(source.shape):
+            destination[(idx[0] + begin_index, *idx[1:])] = source[idx]
+    else:
+        destination[begin_index:] = source[...].data
+
+
 def create_and_copy_variable(source: Variable, destination: Dataset, copy_values: bool = True,
                              dimensions: typing.List[str] = None) -> Variable:
     if isinstance(source.datatype, EnumType):

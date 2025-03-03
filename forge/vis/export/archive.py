@@ -4,20 +4,31 @@ import asyncio
 import time
 import re
 import numpy as np
+import forge.data.structure.eventlog as netcdf_eventlog
 from pathlib import Path
 from math import floor, ceil, isfinite, nan
 from copy import deepcopy
 from abc import ABC, abstractmethod
-from netCDF4 import Dataset
+from tempfile import NamedTemporaryFile
+from netCDF4 import Dataset, VLType
 from forge.const import MAX_I64
 from forge.logicaltime import containing_year_range, start_of_year
+from forge.timeparse import parse_iso8601_time
+from forge.temp import WorkingDirectory
+from forge.data.values import append_variable_values
+from forge.data.enum import remap_enum, remap_enum_assignment
 from forge.data.merge.timealign import peer_output_time, incoming_before
 from forge.data.structure.variable import get_display_units
+from forge.data.structure import event_log, edit_directives, passed_data
+from forge.data.structure.history import append_history
+from forge.data.structure.editdirectives import edit_file_structure
+from forge.data.structure.passed import passed_structure
 from forge.vis.data.selection import InstrumentSelection, Selection, FileSource, FileContext, FileSequence, VariableContext
 from forge.vis.data.archive import FieldStream, walk_selectable
+from forge.archive.client import index_lock_key, index_file_name, data_lock_key, data_file_name, event_log_lock_key, event_log_file_name, edit_directives_lock_key, edit_directives_file_name, passed_file_name, passed_lock_key
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
 from forge.archive.client.archiveindex import ArchiveIndex
-from forge.archive.client import index_lock_key, index_file_name, data_lock_key, data_file_name
+from forge.archive.client.get import read_file_or_nothing
 from . import Export, ExportList
 
 _LOGGER = logging.getLogger(__name__)
@@ -526,7 +537,7 @@ class ExportCSV(ArchiveExportEntry):
 
 
 class ExportNetCDF(ArchiveExportEntry):
-    class _RunExport(Export):
+    class RunExport(Export):
         def __init__(
                 self,
                 station: str, archive: str, start_epoch_ms: int, end_epoch_ms: int,
@@ -623,6 +634,21 @@ class ExportNetCDF(ArchiveExportEntry):
                     await self._fetch_instrument_file(connection, source, instrument_id,
                                                       day_start, active_selections)
 
+        async def fetch_data(self, connection: Connection,
+                             sources: typing.Dict[FileSource, typing.List[InstrumentSelection]]) -> None:
+            for year in range(*containing_year_range(self.start_epoch_ms / 1000.0, self.end_epoch_ms / 1000.0)):
+                _LOGGER.debug("Exporting NetCDF data %s/%s/%d", self.station, self.archive, year)
+                for source, selections in sources.items():
+                    backoff = LockBackoff()
+                    while True:
+                        try:
+                            async with connection.transaction():
+                                await self._fetch_year(connection, year, source, selections)
+                            break
+                        except LockDenied as ld:
+                            _LOGGER.debug("Export archive busy: %s", ld.status)
+                            await backoff()
+
         async def __call__(self) -> typing.Optional[Export.Result]:
             sources: typing.Dict[FileSource, typing.List[InstrumentSelection]] = dict()
             for add_selection in self.selections:
@@ -640,18 +666,8 @@ class ExportNetCDF(ArchiveExportEntry):
                 return None
 
             async with await Connection.default_connection("export archive data", use_environ=False) as connection:
-                for year in range(*containing_year_range(self.start_epoch_ms / 1000.0, self.end_epoch_ms / 1000.0)):
-                    _LOGGER.debug("Exporting NetCDF %s/%s/%d", self.station, self.archive, year)
-                    for source, selections in sources.items():
-                        backoff = LockBackoff()
-                        while True:
-                            try:
-                                async with connection.transaction():
-                                    await self._fetch_year(connection, year, source, selections)
-                                break
-                            except LockDenied as ld:
-                                _LOGGER.debug("Export archive busy: %s", ld.status)
-                                await backoff()
+                await self.fetch_data(connection, sources)
+
             return Export.Result()
 
     def __init__(self, key: str = None, display: str = None,
@@ -672,7 +688,127 @@ class ExportNetCDF(ArchiveExportEntry):
             archive = components[1]
             if archive == "editing":
                 archive = "edited"
-        return self._RunExport(station, archive, start_epoch_ms, end_epoch_ms, Path(directory), self.selections)
+        return self.RunExport(station, archive, start_epoch_ms, end_epoch_ms, Path(directory), self.selections)
+
+
+class ExportCompleteRawNetCDF(ArchiveExportEntry):
+    class RunExport(ExportNetCDF.RunExport):
+        def __init__(
+                self,
+                station: str, start_epoch_ms: int, end_epoch_ms: int,
+                destination: Path,
+        ):
+            super().__init__(station, "raw", start_epoch_ms, end_epoch_ms, destination)
+
+        async def _fetch_eventlog(self, connection: Connection) -> None:
+            output_directory = self.destination / "eventlog"
+            output_directory.mkdir(exist_ok=True)
+
+            async def fetch_year(year: int) -> None:
+                year_start_time = start_of_year(year)
+                year_end_time = start_of_year(year + 1)
+                lock_start = max(int(floor(year_start_time * 1000)), self.start_epoch_ms)
+                lock_end = min(int(ceil(year_end_time * 1000)), self.end_epoch_ms)
+                await connection.lock_read(event_log_lock_key(self.station), lock_start, lock_end)
+
+                day_start_range = int(floor(self.start_epoch_ms / (24 * 60 * 60 * 1000))) * 24 * 60 * 60
+                day_start_range = max(day_start_range, year_start_time)
+                day_end_range = int(ceil(self.end_epoch_ms / (24 * 60 * 60 * 1000))) * 24 * 60 * 60
+                day_end_range = min(day_end_range, year_end_time)
+
+                for day_start in range(day_start_range, day_end_range, 24 * 60 * 60):
+                    await read_file_or_nothing(
+                        connection,
+                        event_log_file_name(self.station, day_start),
+                        output_directory,
+                    )
+
+            for year in range(*containing_year_range(self.start_epoch_ms / 1000.0, self.end_epoch_ms / 1000.0)):
+                backoff = LockBackoff()
+                while True:
+                    try:
+                        async with connection.transaction():
+                            await fetch_year(year)
+                        break
+                    except LockDenied as ld:
+                        _LOGGER.debug("Export archive busy: %s", ld.status)
+                        await backoff()
+
+        async def _fetch_edits(self, connection: Connection) -> None:
+            output_directory = self.destination / "edits"
+            output_directory.mkdir(exist_ok=True)
+
+            backoff = LockBackoff()
+            while True:
+                try:
+                    async with connection.transaction():
+                        await connection.lock_read(
+                            edit_directives_lock_key(self.station),
+                            self.start_epoch_ms,
+                            self.end_epoch_ms,
+                        )
+
+                        await read_file_or_nothing(
+                            connection,
+                            edit_directives_file_name(self.station, None),
+                            output_directory,
+                        )
+                        for year in range(*containing_year_range(
+                                self.start_epoch_ms / 1000.0,
+                                self.end_epoch_ms / 1000.0
+                        )):
+                            await read_file_or_nothing(
+                                connection,
+                                edit_directives_file_name(self.station, start_of_year(year)),
+                                output_directory,
+                            )
+
+                    break
+                except LockDenied as ld:
+                    _LOGGER.debug("Export archive busy: %s", ld.status)
+                    await backoff()
+
+        async def _fetch_passed(self, connection: Connection) -> None:
+            output_directory = self.destination / "passed"
+            output_directory.mkdir(exist_ok=True)
+
+            backoff = LockBackoff()
+            while True:
+                try:
+                    async with connection.transaction():
+                        await connection.lock_read(
+                            passed_lock_key(self.station),
+                            self.start_epoch_ms,
+                            self.end_epoch_ms,
+                        )
+
+                        for year in range(*containing_year_range(
+                                self.start_epoch_ms / 1000.0,
+                                self.end_epoch_ms / 1000.0
+                        )):
+                            await read_file_or_nothing(
+                                connection,
+                                passed_file_name(self.station, start_of_year(year)),
+                                output_directory,
+                            )
+                    break
+                except LockDenied as ld:
+                    _LOGGER.debug("Export archive busy: %s", ld.status)
+                    await backoff()
+
+        async def fetch_data(self, connection: Connection,
+                             sources: typing.Dict[FileSource, typing.List[InstrumentSelection]]) -> None:
+            await super().fetch_data(connection, sources)
+            await self._fetch_eventlog(connection)
+            await self._fetch_edits(connection)
+            await self._fetch_passed(connection)
+
+    def __init__(self, key: str = None, display: str = None):
+        super().__init__(key or "netcdf", display or "NetCDF4 Archive")
+
+    def __call__(self, station: str, mode_name: str, export_key: str,
+                 start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
+        return self.RunExport(station, start_epoch_ms, end_epoch_ms, Path(directory))
 
 
 class ExportEBAS(ArchiveExportEntry):
@@ -724,3 +860,439 @@ class ExportEBAS(ArchiveExportEntry):
     def __call__(self, station: str, mode_name: str, export_key: str,
                  start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
         return self._RunExport(station, start_epoch_ms, end_epoch_ms, Path(directory), self.ebas)
+
+
+class ExportEventLogNetCDF(ArchiveExportEntry):
+    class RunExport(Export):
+        def __init__(
+                self,
+                station: str, start_epoch_ms: int, end_epoch_ms: int,
+                destination: Path,
+        ):
+            self.station = station.lower()
+            self.start_epoch_ms = start_epoch_ms
+            self.end_epoch_ms = end_epoch_ms
+            self.destination = destination
+
+        @staticmethod
+        async def _merge_file(connection: Connection, output_root: Dataset, archive_file: str) -> None:
+            with NamedTemporaryFile(suffix=".nc") as source_file:
+                try:
+                    await connection.read_file(archive_file, source_file)
+                except FileNotFoundError:
+                    return
+                source_file.flush()
+                source_file = Dataset(source_file.name, 'r')
+                try:
+                    source_root = source_file.groups.get("log")
+                    if source_root is None:
+                        return
+
+                    output_begin_index = output_root.variables["time"].shape[0]
+                    for var in ("time", "source", "message", "auxiliary_data"):
+                        source_var = source_root.variables[var]
+                        dest_var = output_root.variables[var]
+                        append_variable_values(source_var, dest_var, output_begin_index)
+                    for var in ("type", ):
+                        source_var = source_root.variables[var]
+                        dest_var = output_root.variables[var]
+                        remap_enum(source_var, dest_var, begin_index=output_begin_index)
+                finally:
+                    source_file.close()
+
+        async def _fetch_year(self, connection: Connection, year: int, output_root: Dataset) -> None:
+            year_start_time = start_of_year(year)
+            year_end_time = start_of_year(year + 1)
+            lock_start = max(int(floor(year_start_time * 1000)), self.start_epoch_ms)
+            lock_end = min(int(ceil(year_end_time * 1000)), self.end_epoch_ms)
+
+            await connection.lock_read(event_log_lock_key(self.station), lock_start, lock_end)
+
+            day_start_range = int(floor(self.start_epoch_ms / (24 * 60 * 60 * 1000))) * 24 * 60 * 60
+            day_start_range = max(day_start_range, year_start_time)
+            day_end_range = int(ceil(self.end_epoch_ms / (24 * 60 * 60 * 1000))) * 24 * 60 * 60
+            day_end_range = min(day_end_range, year_end_time)
+
+            for day_start in range(day_start_range, day_end_range, 24 * 60 * 60):
+                await self._merge_file(connection, output_root, event_log_file_name(self.station, day_start))
+
+        async def __call__(self) -> typing.Optional[Export.Result]:
+            async with await Connection.default_connection("export event log", use_environ=False) as connection:
+                output_file = self.destination / f"{self.station.upper()}-LOG.nc"
+                output_file = Dataset(str(output_file), 'w', format='NETCDF4')
+                try:
+                    event_log(output_file, self.station, self.start_epoch_ms / 1000.0, self.end_epoch_ms / 1000.0)
+                    append_history(output_file, "forge.vis.export")
+
+                    root = output_file.createGroup("log")
+                    type_enum = root.createEnumType(np.uint8, "event_t", {
+                        "User": 0,
+                        "Info": 1,
+                        "CommunicationsEstablished": 2,
+                        "CommunicationsLost": 3,
+                        "Error": 4
+                    })
+                    netcdf_eventlog.event_time(root)
+                    netcdf_eventlog.event_type(root, type_enum)
+                    netcdf_eventlog.event_source(root)
+                    netcdf_eventlog.event_message(root)
+                    netcdf_eventlog.event_auxiliary(root)
+
+                    for year in range(*containing_year_range(self.start_epoch_ms / 1000.0, self.end_epoch_ms / 1000.0)):
+                        _LOGGER.debug("Exporting NetCDF eventlog %s/%d", self.station, year)
+                        backoff = LockBackoff()
+                        while True:
+                            try:
+                                async with connection.transaction():
+                                    await self._fetch_year(connection, year, root)
+                                break
+                            except LockDenied as ld:
+                                _LOGGER.debug("Export archive busy: %s", ld.status)
+                                await backoff()
+                finally:
+                    output_file.close()
+            return Export.Result()
+
+    def __init__(self, key: str = None, display: str = None):
+        super().__init__(key or "messagelog", display or "NetCDF4 Message Log")
+
+    def __deepcopy__(self, memo):
+        y = type(self)(self.key, self.display)
+        memo[id(self)] = y
+        return y
+
+    def __call__(self, station: str, mode_name: str, export_key: str,
+                 start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
+        return self.RunExport(station, start_epoch_ms, end_epoch_ms, Path(directory))
+
+
+class ExportEditsNetCDF(ArchiveExportEntry):
+    class RunExport(Export):
+        def __init__(
+                self,
+                station: str, start_epoch_ms: int, end_epoch_ms: int,
+                destination: Path,
+                include_profiles: typing.Optional[typing.Set[str]] = None,
+                include_deleted: bool = True,
+        ):
+            self.station = station.lower()
+            self.start_epoch_ms = start_epoch_ms
+            self.end_epoch_ms = end_epoch_ms
+            self.destination = destination
+            self.include_profiles = include_profiles
+            self.include_deleted = include_deleted
+
+        @staticmethod
+        def _iter_edits(edits_directory: Path) -> typing.Iterator[Dataset]:
+            for file in edits_directory.iterdir():
+                if not file.name.endswith('.nc'):
+                    continue
+                if not file.is_file():
+                    continue
+                file = Dataset(str(file), 'r')
+                try:
+                    yield file
+                finally:
+                    file.close()
+
+        def _scan_profiles(self, edits_directory: Path) -> typing.Set[str]:
+            result: typing.Set[str] = set()
+            for file in self._iter_edits(edits_directory):
+                root = file.groups.get("edits")
+                if root is None:
+                    continue
+                profile = root.variables["profile"]
+                result.update(profile.datatype.enum_dict.keys())
+            return result
+
+        def _merge_edits(self, output_root: Dataset, edits_directory: Path, include_profiles: typing.Set[str]) -> None:
+            for file in self._iter_edits(edits_directory):
+                source_root = file.groups.get("edits")
+                if source_root is None:
+                    continue
+
+                time_coverage_start = getattr(file, 'time_coverage_start', None)
+                if time_coverage_start is not None:
+                    time_coverage_start = int(floor(parse_iso8601_time(str(time_coverage_start)).timestamp() * 1000.0))
+                else:
+                    time_coverage_start = -MAX_I64
+
+                source_profiles = source_root.variables['profile']
+                source_profile_values = source_profiles.datatype.enum_dict
+                if set(source_profile_values.keys()).issubset(include_profiles):
+                    include_edits = np.full((source_profiles.shape[0],), True, dtype=np.bool_)
+                else:
+                    include_edits = np.full((source_profiles.shape[0], ), False, dtype=np.bool_)
+                    source_profiles = source_profiles[...].data
+                    for profile in include_profiles:
+                        pid = source_profile_values.get(profile)
+                        if pid is None:
+                            continue
+                        include_edits[source_profiles == pid] = True
+
+                include_edits[source_root.variables['end_time'][...].data <= self.start_epoch_ms] = False
+                source_start = source_root.variables['start_time'][...].data
+                include_edits[source_start >= self.end_epoch_ms] = False
+                # For spanning edits, only include the first occurrence
+                include_edits[source_start < time_coverage_start] = False
+                if not self.include_deleted:
+                    include_edits[source_root.variables['deleted'][...].data != 0] = False
+
+                if not np.any(include_edits):
+                    continue
+
+                begin_index = output_root.dimensions["index"].size
+                for var in ("start_time", "end_time", "modified_time", "unique_id",
+                            "action_parameters", "condition_parameters", "author", "comment", "history"):
+                    source_values = np.array(source_root.variables[var][...].data, copy=False)[include_edits]
+                    dest_var = output_root.variables[var]
+
+                    if isinstance(dest_var.datatype, VLType):
+                        for idx in np.ndindex(source_values.shape):
+                            dest_var[(idx[0] + begin_index, *idx[1:])] = source_values[idx]
+                    else:
+                        dest_var[begin_index:] = source_values[...]
+
+                for var in ("profile", "action_type", "condition_type", "deleted"):
+                    dest_var = output_root.variables[var]
+                    source_values = remap_enum_assignment(source_root.variables[var], dest_var)
+                    dest_var[begin_index:] = source_values[include_edits]
+
+        async def __call__(self) -> typing.Optional[Export.Result]:
+            merge_directory = WorkingDirectory()
+            try:
+                edits_directory = Path(merge_directory.name)
+
+                _LOGGER.debug("Exporting NetCDF edits %s", self.station)
+                async with await Connection.default_connection("export edits", use_environ=False) as connection:
+                    backoff = LockBackoff()
+                    while True:
+                        try:
+                            async with connection.transaction():
+                                await connection.lock_read(
+                                    edit_directives_lock_key(self.station),
+                                    self.start_epoch_ms, self.end_epoch_ms
+                                )
+
+                                await read_file_or_nothing(
+                                    connection,
+                                    edit_directives_file_name(self.station, None),
+                                    edits_directory,
+                                )
+                                for year in range(*containing_year_range(self.start_epoch_ms / 1000.0,
+                                                                         self.end_epoch_ms / 1000.0)):
+                                    await read_file_or_nothing(
+                                        connection,
+                                        edit_directives_file_name(self.station, start_of_year(year)),
+                                        edits_directory,
+                                    )
+                            break
+                        except LockDenied as ld:
+                            _LOGGER.debug("Export archive busy: %s", ld.status)
+                            await merge_directory.make_empty()
+                            await backoff()
+
+                output_file = self.destination / f"{self.station.upper()}-EDITS.nc"
+                output_file = Dataset(str(output_file), 'w', format='NETCDF4')
+                try:
+                    if self.include_profiles:
+                        include_profiles = self.include_profiles
+                    else:
+                        include_profiles = self._scan_profiles(edits_directory)
+
+                    edit_directives(output_file, self.station, self.start_epoch_ms / 1000.0, self.end_epoch_ms / 1000.0)
+                    edit_file_structure(output_file, sorted(include_profiles))
+                    output_root = output_file.groups["edits"]
+                    self._merge_edits(output_root, edits_directory, include_profiles)
+                finally:
+                    output_file.close()
+            finally:
+                await merge_directory.make_empty()
+                merge_directory.cleanup()
+
+            return Export.Result()
+
+    def __init__(self, key: str = None, display: str = None,
+                 profiles: typing.Optional[typing.Set[str]] = None,
+                 include_deleted: bool = False):
+        super().__init__(key or "edits", display or "NetCDF4 Edit Directives")
+        self.include_profiles = profiles
+        self.include_deleted = include_deleted
+
+    def __deepcopy__(self, memo):
+        y = type(self)(self.key, self.display, profiles=self.profiles,
+                       include_deleted=self.include_deleted)
+        memo[id(self)] = y
+        return y
+
+    def __call__(self, station: str, mode_name: str, export_key: str,
+                 start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
+        components = mode_name.split('-', 2)
+        if self.include_profiles is not None:
+            profiles = self.include_profiles
+        else:
+            profile = "aerosol"
+            if len(components) >= 1:
+                profile = profile[0]
+            profiles = {profile}
+        return self.RunExport(station, start_epoch_ms, end_epoch_ms, Path(directory),
+                              include_profiles=profiles,
+                              include_deleted=self.include_deleted)
+
+
+class ExportPassedNetCDF(ArchiveExportEntry):
+    class RunExport(Export):
+        def __init__(
+                self,
+                station: str, start_epoch_ms: int, end_epoch_ms: int,
+                destination: Path,
+                include_profiles: typing.Optional[typing.Set[str]] = None
+        ):
+            self.station = station.lower()
+            self.start_epoch_ms = start_epoch_ms
+            self.end_epoch_ms = end_epoch_ms
+            self.destination = destination
+            self.include_profiles = include_profiles
+
+        @staticmethod
+        def _iter_passed(passed_directory: Path) -> typing.Iterator[Dataset]:
+            for file in passed_directory.iterdir():
+                if not file.name.endswith('.nc'):
+                    continue
+                if not file.is_file():
+                    continue
+                file = Dataset(str(file), 'r')
+                try:
+                    yield file
+                finally:
+                    file.close()
+
+        def _scan_profiles(self, passed_directory: Path) -> typing.Set[str]:
+            result: typing.Set[str] = set()
+            for file in self._iter_passed(passed_directory):
+                root = file.groups.get("passed")
+                if root is None:
+                    continue
+                profile = root.variables["profile"]
+                result.update(profile.datatype.enum_dict.keys())
+            return result
+
+        def _merge_passed(self, output_root: Dataset, passed_directory: Path, include_profiles: typing.Set[str]) -> None:
+            for file in self._iter_passed(passed_directory):
+                source_root = file.groups.get("passed")
+                if source_root is None:
+                    continue
+
+                time_coverage_start = getattr(file, 'time_coverage_start', None)
+                if time_coverage_start is not None:
+                    time_coverage_start = int(floor(parse_iso8601_time(str(time_coverage_start)).timestamp() * 1000.0))
+                else:
+                    time_coverage_start = -MAX_I64
+
+                source_profiles = source_root.variables['profile']
+                source_profile_values = source_profiles.datatype.enum_dict
+                if set(source_profile_values.keys()).issubset(include_profiles):
+                    include_passed = np.full((source_profiles.shape[0],), True, dtype=np.bool_)
+                else:
+                    include_passed = np.full((source_profiles.shape[0], ), False, dtype=np.bool_)
+                    source_profiles = source_profiles[...].data
+                    for profile in include_profiles:
+                        pid = source_profile_values.get(profile)
+                        if pid is None:
+                            continue
+                        include_passed[source_profiles == pid] = True
+
+                include_passed[source_root.variables['end_time'][...].data <= self.start_epoch_ms] = False
+                source_start = source_root.variables['start_time'][...].data
+                include_passed[source_start >= self.end_epoch_ms] = False
+                # For spanning times, only include the first occurrence
+                include_passed[source_start < time_coverage_start] = False
+
+                if not np.any(include_passed):
+                    continue
+
+                begin_index = output_root.dimensions["index"].size
+                for var in ("start_time", "end_time", "pass_time", "comment", "auxiliary_data"):
+                    source_values = np.array(source_root.variables[var][...].data, copy=False)[include_passed]
+                    dest_var = output_root.variables[var]
+
+                    if isinstance(dest_var.datatype, VLType):
+                        for idx in np.ndindex(source_values.shape):
+                            dest_var[(idx[0] + begin_index, *idx[1:])] = source_values[idx]
+                    else:
+                        dest_var[begin_index:] = source_values[...]
+
+                for var in ("profile", ):
+                    dest_var = output_root.variables[var]
+                    source_values = remap_enum_assignment(source_root.variables[var], dest_var)
+                    dest_var[begin_index:] = source_values[include_passed]
+
+        async def __call__(self) -> typing.Optional[Export.Result]:
+            merge_directory = WorkingDirectory()
+            try:
+                passed_directory = Path(merge_directory.name)
+
+                _LOGGER.debug("Exporting NetCDF passed %s", self.station)
+                async with await Connection.default_connection("export passed", use_environ=False) as connection:
+                    backoff = LockBackoff()
+                    while True:
+                        try:
+                            async with connection.transaction():
+                                await connection.lock_read(
+                                    passed_lock_key(self.station),
+                                    self.start_epoch_ms, self.end_epoch_ms
+                                )
+
+                                for year in range(*containing_year_range(self.start_epoch_ms / 1000.0,
+                                                                         self.end_epoch_ms / 1000.0)):
+                                    await read_file_or_nothing(
+                                        connection,
+                                        passed_file_name(self.station, start_of_year(year)),
+                                        passed_directory,
+                                    )
+                            break
+                        except LockDenied as ld:
+                            _LOGGER.debug("Export archive busy: %s", ld.status)
+                            await merge_directory.make_empty()
+                            await backoff()
+
+                output_file = self.destination / f"{self.station.upper()}-PASSED.nc"
+                output_file = Dataset(str(output_file), 'w', format='NETCDF4')
+                try:
+                    if self.include_profiles:
+                        include_profiles = self.include_profiles
+                    else:
+                        include_profiles = self._scan_profiles(passed_directory)
+
+                    passed_data(output_file, self.station, self.start_epoch_ms / 1000.0, self.end_epoch_ms / 1000.0)
+                    passed_structure(output_file, sorted(include_profiles))
+                    output_root = output_file.groups["passed"]
+                    self._merge_passed(output_root, passed_directory, include_profiles)
+                finally:
+                    output_file.close()
+            finally:
+                await merge_directory.make_empty()
+                merge_directory.cleanup()
+
+            return Export.Result()
+
+    def __init__(self, key: str = None, display: str = None, profiles: typing.Optional[typing.Set[str]] = None):
+        super().__init__(key or "passed", display or "NetCDF4 Passed Information")
+        self.include_profiles = profiles
+
+    def __deepcopy__(self, memo):
+        y = type(self)(self.key, self.display)
+        memo[id(self)] = y
+        return y
+
+    def __call__(self, station: str, mode_name: str, export_key: str,
+                 start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
+        components = mode_name.split('-', 2)
+        if self.include_profiles is not None:
+            profiles = self.include_profiles
+        else:
+            profile = "aerosol"
+            if len(components) >= 1:
+                profile = profile[0]
+            profiles = {profile}
+        return self.RunExport(station, start_epoch_ms, end_epoch_ms, Path(directory), profiles)

@@ -3,6 +3,7 @@ import asyncio
 import time
 import logging
 import os
+import sys
 from math import floor
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
@@ -70,10 +71,22 @@ class _ExportRequest:
     @staticmethod
     def _create_zip(directory: str, target_zip: str) -> None:
         with ZipFile(target_zip, mode='w', compression=ZIP_DEFLATED) as target:
-            for file in Path(directory).iterdir():
-                if not file.is_file():
-                    continue
-                target.write(str(file), arcname=file.name)
+            def walk_directory(root: Path, prefix: str) -> None:
+                sub_dirs = []
+                for file in root.iterdir():
+                    if file.name.startswith("."):
+                        continue
+                    if file.is_dir():
+                        sub_dirs.append(file)
+                        continue
+                    if not file.is_file():
+                        continue
+                    target.write(str(file), arcname=prefix + file.name)
+                for dir in sub_dirs:
+                    walk_directory(dir, prefix + dir.name + "/")
+
+            walk_directory(Path(directory), "")
+
 
     def _export_zip_name(self):
         station = self.station.upper()

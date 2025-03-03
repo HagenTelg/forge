@@ -3568,8 +3568,8 @@ aerosol_export: typing.Dict[str, DataExportList] = {
 
 if _enable_forge_archive:
     def export_netcdf(station, start_epoch_ms, end_epoch_ms, directory):
-        from forge.vis.export.archive import ExportNetCDF
-        return ExportNetCDF()(
+        from forge.vis.export.archive import ExportCompleteRawNetCDF
+        return ExportCompleteRawNetCDF()(
             station, 'aerosol-raw', 'netcdf', start_epoch_ms, end_epoch_ms, directory
         )
     aerosol_export['raw'].insert(DataExportList.Entry('netcdf', "NetCDF4 Archive", export_netcdf))
