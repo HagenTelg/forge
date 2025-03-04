@@ -1,0 +1,35 @@
+import typing
+from ..default.flags import CPD3Flag
+
+
+lookup: typing.Dict[str, CPD3Flag] = {
+    'instrument_calibration': CPD3Flag("InstrumentCalibration", "Instrument calibration active"),
+    'instrument_verification': CPD3Flag("InstrumentVerification", "Instrument verification active"),
+    'change_quartz': CPD3Flag("ChangeQuartz", "Change quartz medium"),
+    'initializing': CPD3Flag("Initializing", "Instrument initializing"),
+    'safety_stop': CPD3Flag("SafetyStop", "Instrument in safety stop mode"),
+    'critical_stop': CPD3Flag("CriticalStop", "Instrument in critical stop mode"),
+    'chamber_1_voltage_timeout': CPD3Flag("Chamber1VoltageTimeout", "Chamber 1 voltage driver on for too long"),
+    'chamber_1_leakage': CPD3Flag("Chamber1Leakage", "Chamber 1 leakage detected"),
+    'chamber_1_filter_integrity_failed': CPD3Flag("Chamber1FilterIntegrityFailed", "Chamber 1 filter integrity failed"),
+    'chamber_1_heater_error': CPD3Flag("Chamber1HeaterError", "Chamber 1 heater disconnected"),
+    'chamber_1_over_current': CPD3Flag("Chamber1OverCurrent", "Chamber 1 heater current too high"),
+    'chamber_1_voltage_set_error': CPD3Flag("Chamber1VoltageSetError", "Chamber 1 target voltage too high"),
+    'chamber_1_temperature_disconnected': CPD3Flag("Chamber1TemperatureDisconnected", "Chamber 1 temperature sensor disconnected"),
+    'chamber_1_ball_valve_error': CPD3Flag("Chamber1BallValveError", "Chamber 1 ball valve error"),
+    'chamber_2_voltage_timeout': CPD3Flag("Chamber2VoltageTimeout", "Chamber 2 voltage driver on for too long"),
+    'chamber_2_leakage': CPD3Flag("Chamber2Leakage", "Chamber 2 leakage detected"),
+    'chamber_2_filter_integrity_failed': CPD3Flag("Chamber2FilterIntegrityFailed", "Chamber 2 filter integrity failed"),
+    'chamber_2_heater_error': CPD3Flag("Chamber2HeaterError", "Chamber 2 heater disconnected"),
+    'chamber_2_over_current': CPD3Flag("Chamber2OverCurrent", "Chamber 2 heater current too high"),
+    'chamber_2_voltage_set_error': CPD3Flag("Chamber2VoltageSetError", "Chamber 2 target voltage too high"),
+    'chamber_2_temperature_disconnected': CPD3Flag("Chamber2TemperatureDisconnected", "Chamber 2 temperature sensor disconnected"),
+    'chamber_2_ball_valve_error': CPD3Flag("Chamber2BallValveError", "Chamber 2 ball valve error"),
+    'door_open': CPD3Flag("DoorOpen", "Instrument door open"),
+    'co2_error': CPD3Flag("CO2Error", "CO2 sensor error"),
+    'database_error': CPD3Flag("DatabaseError", "Database error"),
+    'setup_error': CPD3Flag("SetupError", "Setup error"),
+    'external_device_error': CPD3Flag("ExternalDeviceError", "External device error"),
+    'storage_error': CPD3Flag("StorageError", "Problem accessing instrument internal storage"),
+    'internal_communication_error': CPD3Flag("InternalCommunicationError", "Internal instrument communication error"),
+}
