@@ -7,7 +7,7 @@ def visible(station: str, mode_name: typing.Optional[str] = None) -> bool:
     return True
 
 
-if use_cpd3():
+if use_cpd3("spl"):
     from ..cpd3 import RealtimeTranslator
     from .data import station_profile_data
     station_translator = RealtimeTranslator.assemble_translator(station_profile_data)

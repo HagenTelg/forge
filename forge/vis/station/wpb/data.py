@@ -3,7 +3,7 @@ from math import nan
 from ..cpd3 import use_cpd3
 
 
-if use_cpd3():
+if use_cpd3("wpb"):
     from ..cpd3 import DataStream, DataReader, EditedReader, Name, RealtimeTranslator, data_profile_get, detach, profile_data
 
     station_profile_data = detach(profile_data)
