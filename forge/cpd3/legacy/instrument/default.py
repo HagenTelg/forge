@@ -150,6 +150,9 @@ def convert_raw(source: "RawInstrument", station: str, instrument_id: str,
     if source.source.cpd3_component == "acquire_magee_tca08":
         from .mageetca08 import Converter
         return Converter(station, instrument_id, file_start, file_end, root).run()
+    if source.source.cpd3_component == "acquire_dmt_bcp":
+        from .dmtbcp import Converter
+        return Converter(station, instrument_id, file_start, file_end, root).run()
     if source.source.cpd3_component == "acquire_azonix_umac1050" or source.source.forge_instrument == "azonixumac1050":
         from .azonixumac1050 import Converter
         cut_split, unsplit = _default_variable_definitions(source)
