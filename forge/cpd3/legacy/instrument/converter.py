@@ -230,7 +230,7 @@ class InstrumentConverter(ABC):
 
         return data, convert
 
-    def load_array_variable(self,variable: str) -> "InstrumentConverter.Data":
+    def load_array_variable(self, variable: str) -> "InstrumentConverter.Data":
         data, convert = self._array_data_convert(variable)
         return self.Data(*self.convert_loaded(data, convert=convert, is_state=False, dtype=np.float64, return_cut_size=True))
 
