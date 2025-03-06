@@ -15,12 +15,12 @@ from .permissions import is_available
 
 
 def _get_export_bounds(request: Request):
-    start_epoch_ms = None
+    start_epoch_ms = 1000
     try:
         start_epoch_ms = int(request.query_params.get('start'))
     except (ValueError, TypeError):
         pass
-    end_epoch_ms = None
+    end_epoch_ms =  int(time.time() * 1000)
     try:
         end_epoch_ms = int(request.query_params.get('end'))
     except (ValueError, TypeError):
