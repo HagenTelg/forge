@@ -16,13 +16,13 @@ from forge.archive.client.connection import Connection
 from forge.cpd3.convert.station.lookup import station_data
 from forge.cpd3.legacy.raw.analyze import Instrument as AnalyzeInstrument
 from forge.cpd3.legacy.raw.write import write_day
-from forge.cpd3.legacy.instrument.default import convert_raw
+from forge.cpd3.legacy.instrument.default import convert_clean
 
 _LOGGER = logging.getLogger(__name__)
 
 STATION = os.path.basename(__file__).split('.', 1)[0].lower()
 assert STATION in VALID_STATIONS
-parser = argparse.ArgumentParser(description=f"CPD3 legacy conversion for {STATION.upper()} raw data")
+parser = argparse.ArgumentParser(description=f"CPD3 legacy conversion for {STATION.upper()} clean data")
 parser.add_argument('--debug',
                     dest='debug', action='store_true',
                     help="enable debug output")
@@ -40,9 +40,14 @@ DATA_START_TIME = parse_time_argument(args.start).timestamp() if args.start else
 DATA_END_TIME = parse_time_argument(args.end).timestamp() if args.end else station_data(STATION, 'legacy', 'DATA_END_TIME')
 assert DATA_START_TIME < DATA_END_TIME
 begin_time = time.monotonic()
-_LOGGER.info(f"Starting raw data conversion for {STATION.upper()} in {format_iso8601_time(DATA_START_TIME)} to {format_iso8601_time(DATA_END_TIME)}")
+_LOGGER.info(f"Starting clean data conversion for {STATION.upper()} in {format_iso8601_time(DATA_START_TIME)} to {format_iso8601_time(DATA_END_TIME)}")
 
-legacy_instruments = AnalyzeInstrument.scan_station(STATION, DATA_START_TIME, DATA_END_TIME)
+
+class CleanAnalyze(AnalyzeInstrument):
+    ARCHIVE = "clean"
+
+
+legacy_instruments = CleanAnalyze.scan_station(STATION, DATA_START_TIME, DATA_END_TIME)
 total_files = 0
 
 async def run():
@@ -70,14 +75,15 @@ async def run():
                 with NamedTemporaryFile(suffix=".nc") as output_file:
                     root = Dataset(output_file.name, 'w', format='NETCDF4')
                     try:
-                        if not convert_raw(legacy_instrument, STATION, instrument_id,
-                                           start_of_day, end_of_day, root):
+                        if not convert_clean(legacy_instrument, STATION, instrument_id,
+                                             start_of_day, end_of_day, root):
                             continue
                     finally:
                         root.close()
 
-                    async with (await Connection.default_connection("write legacy raw")) as connection:
-                        await write_day(connection, output_file.name, STATION, start_of_day, end_of_day, incomplete_day)
+                    async with (await Connection.default_connection("write legacy clean")) as connection:
+                        await write_day(connection, output_file.name, STATION, start_of_day, end_of_day,
+                                        incomplete_day, archive="clean")
                     total_files += 1
                     any_converted = True
             if not any_converted:

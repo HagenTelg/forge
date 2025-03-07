@@ -17,6 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Instrument:
+    ARCHIVE = "raw"
+
     class Identifier:
         def __init__(self):
             self.cpd3_component: typing.Optional[str] = None
@@ -88,7 +90,7 @@ class Instrument:
                     start=scan_start,
                     end=scan_end,
                     stations=[station],
-                    archives=["raw_meta"],
+                    archives=[cls.ARCHIVE + "_meta"],
                     include_meta_archive=False,
                     include_default_station=False,
                     **({'variables': [".*_" + instrument_limit]} if instrument_limit else {})
