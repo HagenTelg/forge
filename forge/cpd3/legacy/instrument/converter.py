@@ -722,9 +722,9 @@ class InstrumentConverter(ABC):
             cpd3_to_bit[cpd3_flag] = bit
 
         # Remove contamination flags when they're not actually used
-        remove_bits = flag_to_bit["data_contamination_legacy_automatic"] | \
-                      flag_to_bit["data_contamination_legacy_wind"] | \
-                      flag_to_bit["data_contamination_legacy_manual"]
+        remove_bits = flag_to_bit.get("data_contamination_legacy_automatic", 0) | \
+                      flag_to_bit.get("data_contamination_legacy_wind", 0) | \
+                      flag_to_bit.get("data_contamination_legacy_manual", 0)
         def convert(val: typing.Any) -> int:
             nonlocal remove_bits
             if not isinstance(val, set):
