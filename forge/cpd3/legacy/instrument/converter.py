@@ -667,30 +667,29 @@ class InstrumentConverter(ABC):
             ancillary_variables.add('cut_size')
             cut_var.ancillary_variables = " ".join(sorted(ancillary_variables))
 
-    def declare_system_flags(
-            self,
-            g: Group,
-            group_times: np.ndarray,
-            variable: str = None,
-            flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
-            bit_shift: int = 16,
-    ) -> typing.Tuple["InstrumentConverter.Data", typing.Dict[str, int]]:
-        if flags_map is None:
-            flags_map = dict()
-            for forge_flag, cpd3_flag in instrument_data(self.instrument_type, 'flags', 'lookup').items():
-                bit = (cpd3_flag.bit or 0) >> bit_shift
-                if bit:
-                    flags_map[cpd3_flag.code] = (forge_flag, bit)
-                else:
-                    flags_map[cpd3_flag.code] = forge_flag
-            flags_map["ContaminationAutomatic"] = "data_contamination_legacy_automatic"
-            flags_map["ContaminationManual"] = "data_contamination_legacy_manual"
-            flags_map["ContaminationWindRuntime"] = "data_contamination_legacy_wind"
-            flags_map["ContaminationWindPost"] = "data_contamination_legacy_wind"
+    def default_flags_map(self, bit_shift: int = 16) -> typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]]:
+        flags_map = dict()
+        for forge_flag, cpd3_flag in instrument_data(self.instrument_type, 'flags', 'lookup').items():
+            bit = (cpd3_flag.bit or 0) >> bit_shift
+            if bit:
+                flags_map[cpd3_flag.code] = (forge_flag, bit)
+            else:
+                flags_map[cpd3_flag.code] = forge_flag
+        flags_map["ContaminationAutomatic"] = "data_contamination_legacy_automatic"
+        flags_map["ContaminationManual"] = "data_contamination_legacy_manual"
+        flags_map["ContaminationWindRuntime"] = "data_contamination_legacy_wind"
+        flags_map["ContaminationWindPost"] = "data_contamination_legacy_wind"
+        return flags_map
+
+    @staticmethod
+    def _assign_system_flags(
+            flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]]
+    ) -> typing.Tuple[typing.Dict[int, str], typing.Dict[str, int], typing.Dict[str, int], typing.Set[str]]:
         bit_to_flag: typing.Dict[int, str] = dict()
         flag_to_bit: typing.Dict[str, int] = dict()
         cpd3_to_bit: typing.Dict[str, int] = dict()
         unassigned_flags: typing.Set[str] = set(flags_map.keys())
+        bits_allocated: typing.Set[str] = set()
         for cpd3_flag, flag in flags_map.items():
             if isinstance(flag, str):
                 continue
@@ -710,6 +709,7 @@ class InstrumentConverter(ABC):
             if bit:
                 cpd3_to_bit[cpd3_flag] = bit
                 continue
+            bits_allocated.add(cpd3_flag)
             for i in range(64):
                 check_bit = 1 << i
                 if not bit_to_flag.get(check_bit):
@@ -721,12 +721,27 @@ class InstrumentConverter(ABC):
             flag_to_bit[flag] = bit
             cpd3_to_bit[cpd3_flag] = bit
 
+        return bit_to_flag, flag_to_bit, cpd3_to_bit, bits_allocated
+
+    def _convert_system_flags(
+            self,
+            bit_to_flag: typing.Dict[int, str],
+            flag_to_bit: typing.Dict[str, int],
+            cpd3_to_bit: typing.Dict[str, int],
+            variable: str = None,
+            check_allocated: typing.Set[str] = None,
+    ) -> typing.Tuple["InstrumentConverter.Data", bool]:
+        if check_allocated is None:
+            check_allocated = set()
+
         # Remove contamination flags when they're not actually used
         remove_bits = flag_to_bit.get("data_contamination_legacy_automatic", 0) | \
                       flag_to_bit.get("data_contamination_legacy_wind", 0) | \
                       flag_to_bit.get("data_contamination_legacy_manual", 0)
+        allocated_present = False
         def convert(val: typing.Any) -> int:
             nonlocal remove_bits
+            nonlocal allocated_present
             if not isinstance(val, set):
                 return 0
             bits = 0
@@ -734,9 +749,36 @@ class InstrumentConverter(ABC):
                 add_bit = cpd3_to_bit.get(flag, 0)
                 bits |= add_bit
                 remove_bits &= ~add_bit
+            if not check_allocated.isdisjoint(val):
+                allocated_present = True
             return bits
 
         flags_data = self.load_variable(variable or f"F1?_{self.instrument_id}", convert=convert, dtype=np.uint64)
+
+        for check_bit in list(bit_to_flag.keys()):
+            if (remove_bits & check_bit) != 0:
+                del bit_to_flag[check_bit]
+
+        return flags_data, allocated_present
+
+    def declare_system_flags(
+            self,
+            g: Group,
+            group_times: np.ndarray,
+            variable: str = None,
+            flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
+            bit_shift: int = 16,
+    ) -> typing.Tuple["InstrumentConverter.Data", typing.Dict[str, int]]:
+        if flags_map is None:
+            flags_map = self.default_flags_map(bit_shift)
+        bit_to_flag, flag_to_bit, cpd3_to_bit, _ = self._assign_system_flags(flags_map)
+
+        flags_data, _ = self._convert_system_flags(
+            bit_to_flag,
+            flag_to_bit,
+            cpd3_to_bit,
+            variable=variable,
+        )
 
         system_flags = g.createVariable("system_flags", "u8", ("time",), fill_value=False)
         variable_coordinates(g, system_flags)
@@ -746,12 +788,57 @@ class InstrumentConverter(ABC):
             system_flags[:] = 0
         else:
             self.apply_data(group_times, system_flags, flags_data, skip_gaps=False)
-        for check_bit in list(bit_to_flag.keys()):
-            if (remove_bits & check_bit) != 0:
-                del bit_to_flag[check_bit]
         variable_flags(system_flags, bit_to_flag)
 
         return flags_data, flag_to_bit
+
+    def analyze_flags_mapping_bug(
+            self,
+            variable: str = None,
+            flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
+            bit_shift: int = 16,
+    ) -> typing.Optional[typing.Tuple["InstrumentConverter.Data", typing.Dict[int, str]]]:
+        if flags_map is None:
+            flags_map = self.default_flags_map(bit_shift)
+        bit_to_flag, flag_to_bit, cpd3_to_bit, bits_allocated = self._assign_system_flags(flags_map)
+
+        # No unassigned flags means we're always ok
+        if len(bits_allocated) == 0:
+            return None
+        # Exactly one unassigned flag and the first bit free (it would always go there), also always ok
+        if len(bits_allocated) == 1 and not bit_to_flag.get(1 << 0):
+            return None
+
+        flags_data, allocated_present = self._convert_system_flags(
+            bit_to_flag,
+            flag_to_bit,
+            cpd3_to_bit,
+            variable=variable,
+            check_allocated=bits_allocated,
+        )
+        # Affected flags never came up, so ignore
+        if not allocated_present:
+            return None
+
+        return flags_data, bit_to_flag
+
+    def reapply_system_flags(
+            self,
+            flags_data: "InstrumentConverter.Data",
+            bit_to_flag: typing.Dict[int, str],
+            g: typing.Optional[Group] = None,
+    ) -> None:
+        if g is None:
+            g = self.root.groups["data"]
+
+        group_times = g.variables["time"][...].data
+        system_flags = g.variables["system_flags"]
+
+        if flags_data.time.shape[0] == 0:
+            system_flags[:] = 0
+        else:
+            self.apply_data(group_times, system_flags, flags_data, skip_gaps=False)
+        variable_flags(system_flags, bit_to_flag)
 
     def run(self) -> bool:
         instrument_timeseries(self.root, self.station, self.instrument_id,

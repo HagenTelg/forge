@@ -137,3 +137,13 @@ class Converter(InstrumentConverter):
         self.apply_instrument_metadata(f"X1_{self.instrument_id}", manufacturer="Magee", model="TC08")
 
         return True
+
+    def reapply_system_flags(
+            self,
+            flags_data: "InstrumentConverter.Data",
+            bit_to_flag: typing.Dict[int, str],
+            g=None,
+    ) -> None:
+        if g is None:
+            g = self.root.groups["status"]
+        return super().reapply_system_flags(flags_data, bit_to_flag, g)

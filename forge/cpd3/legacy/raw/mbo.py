@@ -818,15 +818,21 @@ class C(BaseConverter):
                     bit_shift: int = 16,
             ) -> typing.Tuple["InstrumentConverter.Data", typing.Dict[str, int]]:
                 if flags_map is None:
-                    flags_map = dict()
-                    for forge_flag, cpd3_flag in instrument_data(self.instrument_type, 'flags', 'lookup').items():
-                        bit = (cpd3_flag.bit or 0) >> bit_shift
-                        if bit:
-                            flags_map[cpd3_flag.code] = (forge_flag, bit)
-                        else:
-                            flags_map[cpd3_flag.code] = forge_flag
+                    flags_map = self.default_flags_map(bit_shift)
                 flags_map["ContaminateThermodenuder"] = "data_contamination_thermodenuder"
                 return super().declare_system_flags(g, group_times, variable=variable, flags_map=flags_map)
+
+            def analyze_flags_mapping_bug(
+                    self,
+                    variable: str = None,
+                    flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
+                    bit_shift: int = 16,
+            ) -> bool:
+                if flags_map is None:
+                    flags_map = self.default_flags_map(bit_shift)
+                flags_map["ContaminateThermodenuder"] = "data_contamination_thermodenuder"
+                return super().analyze_flags_mapping_bug(variable=variable, flags_map=flags_map)
+
 
         seg.converter = WithTDFlags
         return seg

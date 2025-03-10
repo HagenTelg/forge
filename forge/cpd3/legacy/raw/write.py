@@ -61,9 +61,13 @@ class InstrumentTimeConversion:
         parser.add_argument('--end',
                             dest='end',
                             help="override end time")
-        parser.add_argument('--show-missing',
-                            dest='show_missing', action='store_true',
-                            help="show missing conversions instead of converting data")
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument('--show-missing',
+                           dest='show_missing', action='store_true',
+                           help="show missing conversions instead of converting data")
+        group.add_argument('--flags-bug-fix',
+                           dest='flags_bug_fix', action='store_true',
+                           help="fix and report the system flags bit assignment bug")
         parser.add_argument('--instrument',
                             dest='instrument',
                             help="instrument ID restriction")
@@ -222,6 +226,130 @@ class InstrumentTimeConversion:
                     for segment in defined_converters:
                         print(f"    {format_iso8601_time(segment.start)} {format_iso8601_time(segment.end)}")
 
+            return
+
+        if args.flags_bug_fix:
+            begin_time = time.monotonic()
+            _LOGGER.debug(f"Starting flags bug fix for {station.upper()} in {format_iso8601_time(start)} to {format_iso8601_time(end)}")
+
+            total_days = 0
+            bug_hit: typing.Dict[str, typing.List[typing.Tuple[int, int]]] = dict()
+
+            async def run():
+                from forge.archive.client import data_file_name, data_lock_key, data_notification_key
+
+                nonlocal total_days
+                for instrument_id, segments in converters.items():
+                    if args.instrument and instrument_id != args.instrument:
+                        continue
+                    for conversion in segments:
+                        assert conversion.start < conversion.end
+                        start_day = int(floor(conversion.start / (24 * 60 * 60))) * 24 * 60 * 60
+                        end_day = int(ceil(conversion.end / (24 * 60 * 60))) * 24 * 60 * 60
+                        if end_day <= conversion.end:
+                            end_day += 24 * 60 * 60
+                        assert start_day < end_day
+
+                        for start_of_day in range(start_day, end_day, 24 * 60 * 60):
+                            end_of_day = start_of_day + 24 * 60 * 60
+                            incomplete_day = False
+
+                            if start_of_day < start:
+                                incomplete_day = True
+                                start_of_day = start
+                            if end_of_day > end:
+                                incomplete_day = True
+                                end_of_day = end
+                            if start_of_day >= end_of_day:
+                                continue
+
+                            total_days += 1
+                            _LOGGER.debug(f"Checking {instrument_id} day {format_iso8601_time(start_of_day)}")
+
+                            result = conversion.converter(
+                                station, instrument_id, start_of_day, end_of_day, None
+                            ).analyze_flags_mapping_bug()
+                            if not result:
+                                continue
+                            flags_data, bit_to_flag = result
+
+                            if incomplete_day:
+                                # Partial day, just re-convert the whole file
+                                _LOGGER.debug(f"Re-ingest {instrument_id} partial day {format_iso8601_time(start_of_day)}")
+                                with NamedTemporaryFile(suffix=".nc") as fix_file:
+                                    root = Dataset(fix_file.name, 'w', format='NETCDF4')
+                                    try:
+                                        if not conversion.converter(station, instrument_id, start_of_day, end_of_day,
+                                                                    root).run():
+                                            continue
+                                    finally:
+                                        root.close()
+
+                                    async with (await Connection.default_connection("modify legacy raw")) as connection:
+                                        await write_day(connection, fix_file.name, station, start_of_day, end_of_day,
+                                                        incomplete_day)
+                            else:
+                                # Full day, we can fix the flags specifically
+                                _LOGGER.debug(f"Modify flags for {instrument_id} day {format_iso8601_time(start_of_day)}")
+                                async with (await Connection.default_connection("modify legacy raw")) as connection:
+                                    backoff = LockBackoff()
+                                    start_of_day_ms = int(floor(start_of_day * 1000))
+                                    end_of_day_ms = int(ceil(end_of_day * 1000))
+                                    while True:
+                                        try:
+                                            async with connection.transaction(True):
+                                                await connection.lock_write(
+                                                    data_lock_key(station, "raw"),
+                                                    start_of_day_ms,
+                                                    end_of_day_ms,
+                                                )
+                                                archive_file_name = data_file_name(
+                                                    station, "raw", instrument_id, start_of_day
+                                                )
+                                                with NamedTemporaryFile(suffix=".nc") as fix_file:
+                                                    try:
+                                                        await connection.read_file(archive_file_name, fix_file)
+                                                        fix_file.flush()
+                                                        root = Dataset(fix_file.name, 'r+')
+                                                    except FileNotFoundError:
+                                                        _LOGGER.debug(f"Skipped missing file {archive_file_name}")
+                                                        continue
+                                                    try:
+                                                        conversion.converter(
+                                                            station, instrument_id, start_of_day, end_of_day, root
+                                                        ).reapply_system_flags(flags_data, bit_to_flag)
+                                                    finally:
+                                                        root.close()
+                                                    fix_file.seek(0)
+                                                    await connection.write_file(archive_file_name, fix_file)
+                                                    await connection.send_notification(
+                                                        data_notification_key(station, "raw"),
+                                                        start_of_day_ms, end_of_day_ms
+                                                    )
+                                            break
+                                        except LockDenied as ld:
+                                            _LOGGER.debug("Archive busy: %s", ld.status)
+                                            await backoff()
+
+                            target_hit = bug_hit.get(instrument_id)
+                            if not target_hit:
+                                target_hit = []
+                                bug_hit[instrument_id] = target_hit
+                            if target_hit and target_hit[-1][1] >= start_of_day:
+                                target_hit[-1] = (target_hit[-1][0], end_of_day)
+                            else:
+                                target_hit.append((start_of_day, end_of_day))
+
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            loop.run_until_complete(run())
+            loop.close()
+
+            end_time = time.monotonic()
+            _LOGGER.info(f"Fix of {len(converters)} instruments in {total_days} days completed in {(end_time - begin_time):.2f} seconds")
+            for instrument_id in sorted(bug_hit.keys()):
+                for segment in bug_hit[instrument_id]:
+                    print(f"{station.upper()},{instrument_id},{format_iso8601_time(segment[0])},{format_iso8601_time(segment[1])}")
             return
 
         begin_time = time.monotonic()
