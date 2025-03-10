@@ -478,7 +478,7 @@ class EditDirective:
                 if 'HasFlavors' in entry:
                     add_has_flavors = set(entry['HasFlavors'])
                 if 'LacksFlavors' in entry:
-                    add_exact_flavors = set(entry['LacksFlavors'])
+                    add_lacks_flavors = set(entry['LacksFlavors'])
             if has_flavors and add_has_flavors != has_flavors:
                 raise EditConversionFailed("invalid mixed flavor selection")
             if lacks_flavors and add_lacks_flavors != lacks_flavors:
@@ -591,7 +591,7 @@ class EditDirective:
                 if 'HasFlavors' in entry:
                     add_has_flavors = set(entry['HasFlavors'])
                 if 'LacksFlavors' in entry:
-                    add_exact_flavors = set(entry['LacksFlavors'])
+                    add_lacks_flavors = set(entry['LacksFlavors'])
             if has_flavors and add_has_flavors != has_flavors:
                 return None
             if lacks_flavors and add_lacks_flavors != lacks_flavors:
