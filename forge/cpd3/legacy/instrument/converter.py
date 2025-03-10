@@ -712,7 +712,7 @@ class InstrumentConverter(ABC):
                 continue
             for i in range(64):
                 check_bit = 1 << i
-                if not bit_to_flag.get(bit):
+                if not bit_to_flag.get(check_bit):
                     bit = check_bit
                     break
             else:
