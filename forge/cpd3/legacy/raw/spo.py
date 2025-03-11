@@ -186,6 +186,10 @@ class LegacyThermo49(InstrumentConverter):
 
 
 class DMPS(BaseSizeDistribution):
+    @property
+    def average_interval(self) -> typing.Optional[float]:
+        return None
+
     def add_other_data(self, times, g) -> None:
         data_P1 = self.load_variable(f"P1_{self.instrument_id}")
         data_P2 = self.load_variable(f"P2_{self.instrument_id}")
