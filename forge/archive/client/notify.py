@@ -6,7 +6,7 @@ from math import floor, ceil
 from forge.const import STATIONS
 from forge.timeparse import parse_time_bounds_arguments
 from forge.archive import CONFIGURATION
-from forge.archive.client import data_notification_key
+from forge.archive.client import data_notification_key, passed_notification_key, edit_directives_notification_key
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ def main():
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--archive',
                        dest='archive',
-                       choices=["raw", "edited", "clean", "avgh", "avgd", "avgm"],
+                       choices=["raw", "edited", "clean", "avgh", "avgd", "avgm", "passed_flag", "edit_directives"],
                        default="raw",
                        help="archive to send the notification for")
     group.add_argument('--key',
@@ -62,7 +62,12 @@ def main():
 
     notify_key = args.key
     if not notify_key:
-        notify_key = data_notification_key(station, args.archive)
+        if args.archive == "passed_flag":
+            notify_key = passed_notification_key(args.station)
+        elif args.archive == "edit_directives":
+            notify_key = edit_directives_notification_key(args.station)
+        else:
+            notify_key = data_notification_key(station, args.archive)
 
     loop = asyncio.new_event_loop()
 
