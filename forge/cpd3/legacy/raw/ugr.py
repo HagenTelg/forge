@@ -82,8 +82,7 @@ class CCNFixedName(InstrumentConverter):
         if n_diameters > 0:
             g.createDimension("diameter", n_diameters)
 
-        if n_diameters > 0 and data_Nb.time.shape[0] > 0 and len(data_Nb.value.shape) == 2 and data_Nb.value.shape[
-            1] > 0:
+        if n_diameters > 0 and data_Nb.time.shape[0] > 0 and len(data_Nb.value.shape) == 2 and data_Nb.value.shape[1] > 0:
             var_Nb = g.createVariable("number_distribution", "f8", ("time", "diameter"), fill_value=nan)
             netcdf_var.variable_size_distribution_dN(var_Nb)
             netcdf_timeseries.variable_coordinates(g, var_Nb)

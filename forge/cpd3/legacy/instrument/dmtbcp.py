@@ -104,7 +104,7 @@ class Converter(InstrumentConverter):
         if n_diameters > 0:
             g.createDimension("diameter", n_diameters)
 
-        if n_diameters > 0 and data_Ns.value.shape[1] > 0 and len(data_Ns.value.shape) == 2:
+        if n_diameters > 0 and len(data_Ns.value.shape) == 2 and data_Ns.value.shape[0] > 0 and data_Ns.value.shape[1] > 0:
             var_diameter = g.createVariable("diameter", "f8", ("diameter",), fill_value=nan)
             netcdf_var.variable_size_distribution_Dp(var_diameter)
             var_diameter.variable_id = "Ns"
