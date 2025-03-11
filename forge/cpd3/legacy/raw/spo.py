@@ -421,7 +421,7 @@ C.run(STATION, {
         C('tsi3760cpc', start='1989-01-01', end='2007-11-11'),
         C('tsi3760cpc+secondary', start='2007-11-11', end='2009-02-07'),
     ],
-    "N41": [ C('tsi3760cpc', start='2007-11-11', end='2007-11-11'), ],
+    "N41": [ C('tsi3760cpc', start='2007-11-11'), ],
     "N42": [
         C('tsi3781cpc+secondary', start='2008-01-04', end='2013-01-22'),
         C('bmi1710cpc+secondary', start='2013-01-22', end='2015-11-19'),
