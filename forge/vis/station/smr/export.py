@@ -105,7 +105,7 @@ else:
     export_entries["aerosol"] = deepcopy(aerosol_exports)
 
     for archive in ("raw", "clean",):
-        aerosol_exports[archive].append(ExportCSV("maap", "MAAP", [
+        export_entries["aerosol"][archive].append(ExportCSV("maap", "MAAP", [
             ExportCSV.Column([Selection(variable_id="X", instrument_code="thermomaap", wavelength_number=0)]),
             ExportCSV.Column([Selection(variable_id="P", instrument_code="thermomaap")]),
             ExportCSV.Column([Selection(variable_id="Q", instrument_code="thermomaap")]),
@@ -122,7 +122,7 @@ else:
             ExportCSV.Column([Selection(variable_id="Is2", instrument_code="thermomaap", wavelength_number=0)]),
         ]))
     for archive in ("avgh",):
-        aerosol_exports[archive].append(ExportCSV("maap", "MAAP", [
+        export_entries["aerosol"][archive].append(ExportCSV("maap", "MAAP", [
             ExportCSV.Column([Selection(variable_id="X", cut_size=cut_size,
                                         instrument_code="thermomaap", wavelength_number=0)],
                              header="X" + record + "_{instrument_id}")
@@ -195,7 +195,7 @@ else:
         ]))
 
     for archive in ("raw",):
-        aerosol_exports[archive].append(ExportCSV("nephzero", "Nephelometer Zero", [
+        export_entries["aerosol"][archive].append(ExportCSV("nephzero", "Nephelometer Zero", [
             ExportCSV.Column([Selection(variable_name="wall_scattering_coefficient", wavelength=wavelength,
                                         require_tags={"scattering"}, exclude_tags={"secondary"})],
                              header="Bs" + code + "_{instrument_id}", default_header=f"Bsw{code}", always_present=True)

@@ -386,7 +386,7 @@ else:
         ])
 
     for archive in ("raw", "clean", "avgh"):
-        aerosol_exports[archive].append(ExportCSV("ccn", "CCN", [
+        export_entries["aerosol"][archive].append(ExportCSV("ccn", "CCN", [
             ExportCSV.Column([Selection(variable_name="number_concentration", instrument_code="dmtccn")]),
             ExportCSV.Column([Selection(variable_id="Tu", instrument_code="dmtccn")]),
             ExportCSV.Column([Selection(variable_id="T1", instrument_code="dmtccn")]),
