@@ -154,8 +154,16 @@ class EditDirective:
         if self.profile == "aethalometer":
             self.profile = "aerosol"
 
-        self.author = str(info.get("Author", ""))
-        self.comment = str(info.get("Comment", ""))
+        def strip_quotes(s) -> str:
+            s = str(s)
+            while s and s[-1:] in ('"', "'"):
+                s = s[:-1]
+            while s and s[:1] in ('"', "'"):
+                s = s[1:]
+            return s
+
+        self.author = strip_quotes(info.get("Author", ""))
+        self.comment = strip_quotes(info.get("Comment", ""))
         self._history = list(info.get("History", []))
         self.modified_time: int = int(round((modified if modified else float((self.history[-1] if self.history else dict()).get("At", self.end_epoch))) * 1000))
         parameters = dict(info.get("Parameters") or dict())

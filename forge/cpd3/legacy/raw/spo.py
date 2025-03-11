@@ -418,7 +418,7 @@ C.run(STATION, {
     "A81": [
         C(LegacyAE16, start='1987-01-01', end='1997-11-15'),
         C('mageeae31', start='2006-02-07', end='2013-02-02'),
-        C('mageeae31+secondary', start='2013-02-02', end='2017-07-07'),
+        C('mageeae31+secondary', start='2013-02-02', end='2017-12-07'),
     ],
     "A82": [
         C('mageeae33', start='2013-02-02'),
