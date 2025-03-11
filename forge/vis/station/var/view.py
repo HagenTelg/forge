@@ -1,6 +1,6 @@
 import typing
 from collections import OrderedDict
-from ..default.view import detach, View, aerosol_views
+from ..default.view import detach, View, aerosol_views, aerosol_public
 from ..default.aerosol.temperature import Temperature
 from ..default.aerosol.pressure import BasicPressure
 from ..default.aerosol.ecotechnephelometer import NephelometerStatus
@@ -9,7 +9,7 @@ from .optical import OpticalPSAP, EditingPSAP
 from .green import Green
 
 
-station_views = detach(aerosol_views)
+station_views = detach(aerosol_views, aerosol_public)
 
 
 station_views['aerosol-raw-opticalpsap'] = OpticalPSAP('aerosol-raw')
