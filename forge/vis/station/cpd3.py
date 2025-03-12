@@ -39,6 +39,7 @@ _forge_translated_stations = frozenset({
     "mlo",
     "smr",
     "sum",
+    "tun",
     "var",
 })
 
