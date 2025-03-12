@@ -4,8 +4,28 @@ import numpy as np
 from forge.processing.context import AvailableData
 from forge.processing.corrections import *
 from forge.processing.corrections.climatology import vaisala_hmp_limits
-from forge.processing.station.default.editing import standard_corrections, standard_intensives, standard_meteorological
+from forge.processing.station.default.editing import standard_absorption_corrections, standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
 from forge.data.flags import parse_flags
+
+
+def absorption_corrections(data: AvailableData) -> None:
+    # CPD1/2 data: already has Weiss applied for PSAPs
+    for absorption, scattering in data.select_instrument((
+            {"instrument": "psap1w"},
+            {"instrument": "psap3w"},
+    ), {"tags": "scattering -secondary"}, end="2015-08-17T17:57:00Z"):
+        remove_low_transmittance(absorption)
+        bond_1999(absorption, scattering)
+    for absorption, scattering in data.select_instrument((
+            {"instrument": "bmitap"},
+            {"instrument": "clap"},
+    ), {"tags": "scattering -secondary"}, end="2015-08-17T17:57:00Z"):
+        remove_low_transmittance(absorption)
+        weiss(absorption)
+        bond_1999(absorption, scattering)
+
+    # Normal corrections now
+    standard_absorption_corrections(data, start="2015-08-17T17:57:00Z")
 
 
 def aerosol_contamination(data: AvailableData) -> None:
@@ -86,7 +106,10 @@ def run(data: AvailableData) -> None:
 
     aerosol_contamination(data)
 
-    standard_corrections(data)
+    standard_stp_corrections(data)
+    absorption_corrections(data)
+    standard_scattering_corrections(data)
+
     standard_intensives(data)
     standard_meteorological(data)
 
