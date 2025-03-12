@@ -204,3 +204,11 @@ class Converter(InstrumentConverter):
 
         self.apply_coverage(g, times, f"ZINPUTS_{self.instrument_id}")
         return True
+
+    def analyze_flags_mapping_bug(
+            self,
+            variable: str = None,
+            flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
+            bit_shift: int = 16,
+    ) -> None:
+        return None

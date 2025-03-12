@@ -832,10 +832,18 @@ class InstrumentConverter(ABC):
             g: typing.Optional[Group] = None,
     ) -> None:
         if g is None:
-            g = self.root.groups["data"]
+            g = self.root.groups.get("data")
+            if g is None:
+                return
 
-        group_times = g.variables["time"][...].data
-        system_flags = g.variables["system_flags"]
+        group_times = g.variables.get("time")
+        if group_times is None:
+            return
+        group_times = group_times[...].data
+
+        system_flags = g.variables.get("system_flags")
+        if system_flags is None:
+            return
 
         if flags_data.time.shape[0] == 0:
             system_flags[:] = 0

@@ -53,6 +53,14 @@ class LegacyCPC(InstrumentConverter):
 
         return True
 
+    def analyze_flags_mapping_bug(
+            self,
+            variable: str = None,
+            flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
+            bit_shift: int = 16,
+    ) -> None:
+        return None
+
 
 C.run(STATION, {
     "A11": [ C('clap', start='2015-01-01'), ],

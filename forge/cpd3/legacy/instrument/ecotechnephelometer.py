@@ -273,6 +273,8 @@ class Converter(WavelengthConverter):
         if stp_vars:
             var_Bbsw.ancillary_variables = stp_vars
         self.apply_wavelength_state(times, var_Bbsw, data_Bbsw)
+        data_group = g
+        data_times = times
 
         g, times = self.state_group(data_PCTc, name="spancheck")
         standard_temperature(g)
@@ -335,12 +337,11 @@ class Converter(WavelengthConverter):
                 var_angle.C_format = "%2.0f"
                 var_angle[:] = angles
 
-            g, times = self.data_group(data_Bsn + [system_flags_time], fill_gaps=False)
             selected_idx = 0
             for wlidx in range(len(self.WAVELENGTHS)):
                 if data_Bsn[wlidx].time.shape[0] > data_Bsn[selected_idx].time.shape[0]:
                     selected_idx = wlidx
-            stp_vars = self._instrument_stp(g, f"Bsn{self.WAVELENGTHS[selected_idx][1]}_{self.instrument_id}")
+            stp_vars = self._instrument_stp(data_group, f"Bsn{self.WAVELENGTHS[selected_idx][1]}_{self.instrument_id}")
             declare_angle_dimension(g)
 
             var_Bsn = g.createVariable("polar_scattering_coefficient", "f8", ("time", "angle", "wavelength"), fill_value=nan)

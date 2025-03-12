@@ -531,6 +531,14 @@ class LegacyAuxCPC(InstrumentConverter):
 
         return True
 
+    def analyze_flags_mapping_bug(
+            self,
+            variable: str = None,
+            flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
+            bit_shift: int = 16,
+    ) -> None:
+        return None
+
 
 class Met(InstrumentConverter):
     def __init__(self, *args, **kwargs):
@@ -755,6 +763,14 @@ class Met(InstrumentConverter):
 
         return True
 
+    def analyze_flags_mapping_bug(
+            self,
+            variable: str = None,
+            flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
+            bit_shift: int = 16,
+    ) -> None:
+        return None
+
 
 class CCGG(InstrumentConverter):
     def __init__(self, *args, **kwargs):
@@ -799,6 +815,14 @@ class CCGG(InstrumentConverter):
         self.apply_data(times, var_X2, data_X2)
 
         return True
+
+    def analyze_flags_mapping_bug(
+            self,
+            variable: str = None,
+            flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
+            bit_shift: int = 16,
+    ) -> None:
+        return None
 
 
 class C(BaseConverter):

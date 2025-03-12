@@ -270,6 +270,8 @@ class Converter(WavelengthConverter):
             (var_Cf, data_Cf),
         ], extra_sources=[data_system_flags])
         self.apply_coverage(g, times,f"Bs{self.WAVELENGTHS[selected_idx][1]}_{self.instrument_id}")
+        data_group = g
+        data_times = times
 
         g, times = self.state_group(data_Bsw, name="zero")
         selected_idx = 0
@@ -311,17 +313,16 @@ class Converter(WavelengthConverter):
                 var_angle.C_format = "%2.0f"
                 var_angle[:] = angles
 
-            g, times = self.data_group(data_Bsn + [system_flags_time], fill_gaps=False)
             selected_idx = 0
             for wlidx in range(len(self.WAVELENGTHS)):
                 if data_Bsn[wlidx].time.shape[0] > data_Bsn[selected_idx].time.shape[0]:
                     selected_idx = wlidx
-            stp_vars = self._instrument_stp(g, f"Bsn{self.WAVELENGTHS[selected_idx][1]}_{self.instrument_id}")
-            declare_angle_dimension(g)
+            stp_vars = self._instrument_stp(data_group, f"Bsn{self.WAVELENGTHS[selected_idx][1]}_{self.instrument_id}")
+            declare_angle_dimension(data_group)
 
-            var_Bsn = g.createVariable("polar_scattering_coefficient", "f8", ("time", "angle", "wavelength"), fill_value=nan)
+            var_Bsn = data_group.createVariable("polar_scattering_coefficient", "f8", ("time", "angle", "wavelength"), fill_value=nan)
             netcdf_var.variable_total_scattering(var_Bsn)
-            netcdf_timeseries.variable_coordinates(g, var_Bsn)
+            netcdf_timeseries.variable_coordinates(data_group, var_Bsn)
             var_Bsn.variable_id = "Bsn"
             var_Bsn.long_name = "polar light scattering coefficient"
             var_Bsn.coverage_content_type = "physicalMeasurement"
@@ -330,11 +331,11 @@ class Converter(WavelengthConverter):
                 var_Bsn.ancillary_variables = stp_vars
             for wlidx in range(len(self.WAVELENGTHS)):
                 self.apply_data(
-                    times, var_Bsn, data_Bsn[wlidx].time, data_Bsn[wlidx].value, (slice(None), wlidx,),
+                    data_times, var_Bsn, data_Bsn[wlidx].time, data_Bsn[wlidx].value, (slice(None), wlidx,),
                 )
 
-            var_Csn = g.createVariable("polar_scattering_counts", "f8", ("time", "angle", "wavelength"), fill_value=nan)
-            netcdf_timeseries.variable_coordinates(g, var_Csn)
+            var_Csn = data_group.createVariable("polar_scattering_counts", "f8", ("time", "angle", "wavelength"), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(data_group, var_Csn)
             var_Csn.variable_id = "Csn"
             var_Csn.long_name = "polar scattering photon count rate"
             var_Csn.units = "Hz"
@@ -345,7 +346,7 @@ class Converter(WavelengthConverter):
                 var_Csn.ancillary_variables = stp_vars
             for wlidx in range(len(self.WAVELENGTHS)):
                 self.apply_data(
-                    times, var_Csn, data_Csn[wlidx].time, data_Csn[wlidx].value, (slice(None), wlidx,),
+                    data_times, var_Csn, data_Csn[wlidx].time, data_Csn[wlidx].value, (slice(None), wlidx,),
                 )
 
             g, times = self.state_group(data_Bsw, name="polar_zero")
@@ -354,10 +355,10 @@ class Converter(WavelengthConverter):
                 if data_Bsnw[wlidx].time.shape[0] > data_Bsnw[selected_idx].time.shape[0]:
                     selected_idx = wlidx
             stp_vars = self._instrument_stp(g, f"Bsnw{self.WAVELENGTHS[selected_idx][1]}_{self.instrument_id}")
-            declare_angle_dimension(g)
+            declare_angle_dimension(data_group)
 
-            var_Bsnw = g.createVariable("polar_wall_scattering_coefficient", "f8", ("time", "angle", "wavelength"), fill_value=nan)
-            netcdf_timeseries.variable_coordinates(g, var_Bsnw)
+            var_Bsnw = data_group.createVariable("polar_wall_scattering_coefficient", "f8", ("time", "angle", "wavelength"), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(data_group, var_Bsnw)
             var_Bsnw.variable_id = "Bsnw"
             var_Bsnw.coverage_content_type = "physicalMeasurement"
             var_Bsnw.cell_methods = "time: point"
@@ -368,7 +369,7 @@ class Converter(WavelengthConverter):
                 var_Bsnw.ancillary_variables = stp_vars
             for wlidx in range(len(self.WAVELENGTHS)):
                 self.apply_state(
-                    times, var_Bsnw, data_Bsnw[wlidx].time, data_Bsnw[wlidx].value, (slice(None), wlidx,),
+                    data_times, var_Bsnw, data_Bsnw[wlidx].time, data_Bsnw[wlidx].value, (slice(None), wlidx,),
                 )
 
         if parameters.value.shape[0] > 0:

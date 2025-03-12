@@ -142,3 +142,11 @@ class Converter(InstrumentConverter):
         self.apply_instrument_metadata(f"ZINPUTS_{self.instrument_id}", manufacturer="Brooks", model="0254")
 
         return True
+
+    def analyze_flags_mapping_bug(
+            self,
+            variable: str = None,
+            flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
+            bit_shift: int = 16,
+    ) -> None:
+        return None
