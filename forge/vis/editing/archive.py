@@ -793,7 +793,7 @@ async def _apply_edit_save(
 
         def new_unique_id() -> int:
             while True:
-                uid = random.randint(1, 1 << 64)
+                uid = random.randint(1, (1 << 64) - 1)
                 if uid in allocated_unique_ids:
                     continue
                 for file in modified_files.values():

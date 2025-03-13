@@ -167,7 +167,7 @@ class EditDirective:
 
         # Since this import is usually only done once, don't worry about collisions with existing
         while True:
-            self.unique_id = random.randint(1, 1 << 64)
+            self.unique_id = random.randint(1, (1 << 64) - 1)
             if allocated_uids is not None:
                 if self.unique_id in allocated_uids:
                     continue

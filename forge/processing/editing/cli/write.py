@@ -114,7 +114,7 @@ def main():
 
             def new_uid() -> int:
                 while True:
-                    uid = random.randint(1, 1 << 64)
+                    uid = random.randint(1, (1 << 64) - 1)
                     if uid in allocated_uids:
                         continue
                     allocated_uids.add(uid)
