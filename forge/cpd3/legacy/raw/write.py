@@ -233,7 +233,6 @@ class InstrumentTimeConversion:
             _LOGGER.debug(f"Starting flags bug fix for {station.upper()} in {format_iso8601_time(start)} to {format_iso8601_time(end)}")
 
             total_days = 0
-            bug_hit: typing.Dict[str, typing.List[typing.Tuple[int, int]]] = dict()
 
             async def run():
                 from forge.archive.client import data_file_name, data_lock_key, data_notification_key
@@ -242,6 +241,7 @@ class InstrumentTimeConversion:
                 for instrument_id, segments in converters.items():
                     if args.instrument and instrument_id != args.instrument:
                         continue
+                    bug_segments:  typing.List[typing.Tuple[int, int]] = list()
                     for conversion in segments:
                         assert conversion.start < conversion.end
                         start_day = int(floor(conversion.start / (24 * 60 * 60))) * 24 * 60 * 60
@@ -313,7 +313,7 @@ class InstrumentTimeConversion:
                                                         root = Dataset(fix_file.name, 'r+')
                                                     except FileNotFoundError:
                                                         _LOGGER.debug(f"Skipped missing file {archive_file_name}")
-                                                        continue
+                                                        break
                                                     try:
                                                         conversion.converter(
                                                             station, instrument_id, start_of_day, end_of_day, root
@@ -331,14 +331,13 @@ class InstrumentTimeConversion:
                                             _LOGGER.debug("Archive busy: %s", ld.status)
                                             await backoff()
 
-                            target_hit = bug_hit.get(instrument_id)
-                            if not target_hit:
-                                target_hit = []
-                                bug_hit[instrument_id] = target_hit
-                            if target_hit and target_hit[-1][1] >= start_of_day:
-                                target_hit[-1] = (target_hit[-1][0], end_of_day)
+                            if bug_segments and bug_segments[-1][1] >= start_of_day:
+                                bug_segments[-1] = (bug_segments[-1][0], end_of_day)
                             else:
-                                target_hit.append((start_of_day, end_of_day))
+                                bug_segments.append((start_of_day, end_of_day))
+
+                    for output_segment in bug_segments:
+                        print(f"{station.upper()},{instrument_id},{format_iso8601_time(output_segment[0])},{format_iso8601_time(output_segment[1])}")
 
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -347,9 +346,6 @@ class InstrumentTimeConversion:
 
             end_time = time.monotonic()
             _LOGGER.info(f"Fix of {len(converters)} instruments in {total_days} days completed in {(end_time - begin_time):.2f} seconds")
-            for instrument_id in sorted(bug_hit.keys()):
-                for segment in bug_hit[instrument_id]:
-                    print(f"{station.upper()},{instrument_id},{format_iso8601_time(segment[0])},{format_iso8601_time(segment[1])}")
             return
 
         begin_time = time.monotonic()
