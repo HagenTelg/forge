@@ -33,6 +33,7 @@ _read_timeout = CONFIGURATION.get('CPD3.READTIMEOUT', 2 * 60 * 60)
 _enable_forge_archive = bool(CONFIGURATION.get('ARCHIVE.ENABLE_FORGE', False))
 _forge_translated_stations = frozenset({
     "arh",
+    "bmw",
     "bos",
     "brw",
     "mbo",
