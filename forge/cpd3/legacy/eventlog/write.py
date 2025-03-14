@@ -182,6 +182,7 @@ async def write_day(
                         result = None
 
                         merged_file.seek(0)
+                        merged_file.flush()
                         await connection.write_file(archive_file_name, merged_file)
                         _LOGGER.debug("Sent updated file %s", archive_file_name)
                 break
