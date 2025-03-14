@@ -143,29 +143,59 @@ class MergeEventLog:
         log_group: netCDF4.Group = output.createGroup("log")
         event_t.declare_structure(log_group)
 
-        events_record = np.rec.fromarrays((
-            np.concatenate([
-                s[1].time.astype(np.int64, casting='unsafe', copy=False) for s in streams
-            ]),
-            np.concatenate([
-                event_t
+        def concat_if_needed(converted):
+            if len(converted) == 1:
+                return converted[0]
+            return np.concatenate(converted)
+
+        # First pass, just try fast unique time comparison
+        combined_times = concat_if_needed([
+            s[1].time.astype(np.int64, casting='unsafe', copy=False) for s in streams
+        ])
+        unique_times, time_indexed = np.unique(combined_times, return_index=True)
+        if unique_times.shape[0] > 0 and unique_times.shape[0] == combined_times.shape[0]:
+            # Common case, all times are unique, so we don't need a full comparison
+            events_record = np.rec.fromarrays((
+                unique_times,
+                concat_if_needed([
+                    event_t
                     .apply(s[0].root.groups["log"].variables["type"], s[1].event_type, copy=False)
                     .astype(event_t.storage_dtype, casting='unsafe', copy=False)
-                for s in streams
-            ]),
-            np.concatenate([
-                s[1].source.astype(str, casting='unsafe', copy=False) for s in streams
-            ]),
-            np.concatenate([
-                s[1].message.astype(str, casting='unsafe', copy=False) for s in streams
-            ]),
-            np.concatenate([
-                s[1].auxiliary.astype(str, casting='unsafe', copy=False) for s in streams
-            ]),
-        ), names=("time", "type", "source", "message", "auxiliary"))
+                    for s in streams
+                ])[time_indexed],
+                concat_if_needed([
+                    s[1].source.astype(str, casting='unsafe', copy=False) for s in streams
+                ])[time_indexed],
+                concat_if_needed([
+                    s[1].message.astype(str, casting='unsafe', copy=False) for s in streams
+                ])[time_indexed],
+                concat_if_needed([
+                    s[1].auxiliary.astype(str, casting='unsafe', copy=False) for s in streams
+                ])[time_indexed],
+            ), names=("time", "type", "source", "message", "auxiliary"))
+        else:
+            # Full deduplication
+            events_record = np.rec.fromarrays((
+                combined_times,
+                concat_if_needed([
+                    event_t
+                        .apply(s[0].root.groups["log"].variables["type"], s[1].event_type, copy=False)
+                        .astype(event_t.storage_dtype, casting='unsafe', copy=False)
+                    for s in streams
+                ]),
+                concat_if_needed([
+                    s[1].source.astype(str, casting='unsafe', copy=False) for s in streams
+                ]),
+                concat_if_needed([
+                    s[1].message.astype(str, casting='unsafe', copy=False) for s in streams
+                ]),
+                concat_if_needed([
+                    s[1].auxiliary.astype(str, casting='unsafe', copy=False) for s in streams
+                ]),
+            ), names=("time", "type", "source", "message", "auxiliary"))
 
-        # De-duplicate and sort
-        events_record = np.unique(events_record)
+            # De-duplicate and sort
+            events_record = np.unique(events_record)
 
         time_var = netcdf_eventlog.event_time(log_group)
         time_var[:] = events_record.time
