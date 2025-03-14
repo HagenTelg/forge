@@ -220,8 +220,12 @@ class Connection:
             name = await read_string(self.reader)
             self._logger.debug("Removing file %s", name)
             self.writer.write(struct.pack('<B', ServerPacket.REMOVE_FILE_OK.value))
-            await self._transaction.remove_file(name)
-            self.writer.write(struct.pack('<B', 1))
+            removed = await self._transaction.remove_file(name)
+            if not removed:
+                self._logger.debug("File %s not found for removal", name)
+                self.writer.write(struct.pack('<B', 0))
+            else:
+                self.writer.write(struct.pack('<B', 1))
         elif packet_type == ClientPacket.LOCK_READ and self._transaction:
             key = await read_string(self.reader)
             (start, end) = struct.unpack('<qq', await self.reader.readexactly(16))

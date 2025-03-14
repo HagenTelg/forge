@@ -436,7 +436,10 @@ class ArchivePut:
 
                 if result is None:
                     _LOGGER.debug("Removing empty event log %s", archive_file_name)
-                    await self._connection.remove_file(archive_file_name)
+                    try:
+                        await self._connection.remove_file(archive_file_name)
+                    except FileNotFoundError:
+                        pass
                     continue
 
                 now = time.time()

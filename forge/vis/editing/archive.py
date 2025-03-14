@@ -872,7 +872,10 @@ async def _apply_edit_save(
                 file_start_ms / 1000.0 if file_start_ms != -MAX_I64 else None
             )
             if output_file is None:
-                await connection.remove_file(archive_name)
+                try:
+                    await connection.remove_file(archive_name)
+                except FileNotFoundError:
+                    pass
             else:
                 filename = output_file.filepath()
                 output_file.close()

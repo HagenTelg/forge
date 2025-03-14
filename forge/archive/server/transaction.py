@@ -66,7 +66,7 @@ class _BaseTransaction(ABC):
     async def write_file(self, name: str) -> typing.BinaryIO:
         raise NotImplementedError
 
-    def remove_file(self, name: str) -> None:
+    def remove_file(self, name: str) -> bool:
         raise NotImplementedError
 
     def _check_intent_conflict(self, key: str, start: int, end: int) -> typing.Optional[str]:
@@ -199,7 +199,7 @@ class WriteTransaction(_BaseTransaction):
         async with self.storage_handle as handle:
             return handle.write_file(name)
 
-    async def remove_file(self, name: str) -> None:
+    async def remove_file(self, name: str) -> bool:
         async with self.storage_handle as handle:
             return handle.remove_file(name)
 

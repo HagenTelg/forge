@@ -163,7 +163,10 @@ async def write_day(
 
                         if result is None:
                             _LOGGER.debug("Removing empty event log %s", archive_file_name)
-                            await connection.remove_file(archive_file_name)
+                            try:
+                                await connection.remove_file(archive_file_name)
+                            except FileNotFoundError:
+                                pass
                             break
 
                         now = time.time()

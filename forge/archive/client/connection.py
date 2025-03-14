@@ -649,7 +649,10 @@ class Connection:
                 return None
             return struct.unpack('<B', await connection.reader.readexactly(1))[0]
 
-        if await self._request_response(request, response) != 1:
+        status = await self._request_response(request, response)
+        if status == 0:
+            raise FileNotFoundError
+        elif status != 1:
             raise IOError
 
     async def lock_read(self, key: str, start: int, end: int) -> None:

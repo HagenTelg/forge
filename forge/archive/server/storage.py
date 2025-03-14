@@ -79,6 +79,10 @@ class _ActionWriteFile:
     def discard(self) -> None:
         self.contents.unlink(missing_ok=True)
 
+    @property
+    def removable(self) -> bool:
+        return True
+
     def journal(self, destination: typing.BinaryIO) -> None:
         raw = str(self.contents.name).encode('utf-8')
         destination.write(struct.pack('<H', len(raw)))
@@ -116,6 +120,10 @@ class _ActionRemoveFile:
 
     def discard(self) -> None:
         pass
+
+    @property
+    def removable(self) -> bool:
+        return False
 
     def journal(self, destination: typing.BinaryIO) -> None:
         destination.write(struct.pack('<H', 0))
@@ -407,20 +415,25 @@ class Storage:
                 _LOGGER.error("Unable to write file (%s) in transaction (%d)", name, self.generation, exc_info=True)
                 exit(1)
 
-        def remove_file(self, name: str) -> None:
+        def remove_file(self, name: str) -> bool:
             name = self.storage.normalize_filename(name)
 
             changed = self._actions.pop(name, None)
+            removed = True
             if changed:
                 _LOGGER.debug("Removing transaction (%d) write file %s", self.generation, name)
+                removed = changed.removable
                 changed.discard()
             elif name in self.storage._pending_changes:
                 raise FileExistsError(f"Duplicate transaction write to {name}: probable locking failure")
+            elif not self.storage.check_file_exists(name, self.generation):
+                return False
             if (self.storage._root / name).is_dir():
                 raise IsADirectoryError(f"Directory exists as {name}")
 
             self.storage._pending_changes.add(name)
             self._actions[name] = _ActionRemoveFile()
+            return removed
 
     def begin_write(self) -> "Storage.WriteHandle":
         h = self.WriteHandle(self)
@@ -464,6 +477,19 @@ class Storage:
             return source.open('rb')
         except (FileNotFoundError, IsADirectoryError):
             return None
+
+    def check_file_exists(self, name: str, generation: int) -> bool:
+        try:
+            name = self.normalize_filename(name)
+        except ValueError:
+            return False
+
+        consider_index = bisect_right(self._redirection_generation, generation)
+        for redirection in self._redirections[consider_index:]:
+            if not name not in redirection.contents:
+                continue
+            return True
+        return (self._root / name).exists()
 
     @staticmethod
     def _write_journal(journal_file: Path,

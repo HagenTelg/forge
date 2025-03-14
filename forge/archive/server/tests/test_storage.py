@@ -64,10 +64,12 @@ def test_read_write(storage):
                 f.write(b"TestData2")
             with w.write_file("test/file2") as f:
                 f.write(b"TestData3")
-            w.remove_file("test/rem")
+            assert w.remove_file("test/rem")
             with w.read_file("test/file") as f:
                 assert f.read() == b"TestData2"
             assert w.read_file("test/rem") is None
+            assert not w.remove_file("test/rem")
+            assert not w.remove_file("test/never_existed")
 
         with storage.begin_read() as r:
             with r.read_file("test/file") as f:
@@ -94,7 +96,7 @@ def test_cleanup_directory(tmp_path, storage):
         assert (tmp_path / "storage" / "test" / "sub").is_dir()
 
         with storage.begin_write() as w:
-            w.remove_file("test/sub/file")
+            assert w.remove_file("test/sub/file")
 
         assert not (tmp_path / "storage" / "test" / "sub").exists()
         assert not (tmp_path / "storage" / "test").exists()
@@ -114,7 +116,7 @@ def test_read_old_generation(tmp_path, storage):
         with storage.begin_write() as w:
             with w.write_file("test/file") as f:
                 f.write(b"SecondGen")
-            w.remove_file("test/rem")
+            assert w.remove_file("test/rem")
 
         with r.read_file("test/file") as f:
             assert f.read() == b"FirstGen1"
@@ -143,7 +145,7 @@ def test_transaction_replay(tmp_path, storage):
     w = storage.begin_write()
     with w.write_file("test/file") as f:
         f.write(b"SecondGen")
-    w.remove_file("test/rem")
+    assert w.remove_file("test/rem")
 
     journal_file = w._transaction_root / ".journal"
     storage._write_journal(journal_file, w._actions)

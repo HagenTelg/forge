@@ -129,6 +129,11 @@ async def test_storage(control, control_connection):
 
         await connection.write_bytes("test/file1", b"Updated")
         await connection.remove_file("test/file3")
+        try:
+            await connection.remove_file("test/missing")
+            assert False
+        except FileNotFoundError:
+            pass
 
         assert await connection.read_bytes("test/file1") == b"Updated"
         try:

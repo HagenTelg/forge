@@ -370,7 +370,10 @@ def main():
 
                         for year, (source_path, edit_file, modified) in year_files.items():
                             if modified and edit_file is None:
-                                await connection.remove_file(edit_directives_file_name(station, start_of_year(year) if year != 0 else None))
+                                try:
+                                    await connection.remove_file(edit_directives_file_name(station, start_of_year(year) if year != 0 else None))
+                                except FileNotFoundError:
+                                    pass
                                 continue
                             edit_file.close()
                             if not modified:
