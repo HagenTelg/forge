@@ -7,6 +7,7 @@ import logging
 import argparse
 import time
 from math import floor, ceil
+from concurrent.futures import ThreadPoolExecutor
 from forge.const import STATIONS as VALID_STATIONS
 from forge.formattime import format_iso8601_time
 from forge.timeparse import parse_time_argument
@@ -40,6 +41,7 @@ begin_time = time.monotonic()
 _LOGGER.info(f"Starting event log conversion for {STATION.upper()} in {format_iso8601_time(DATA_START_TIME)} to {format_iso8601_time(DATA_END_TIME)}")
 
 total_events: int = 0
+netcdf_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="NetCDFWorker")
 
 async def run():
     global total_events
@@ -75,7 +77,8 @@ async def run():
 
         _LOGGER.debug(f"Writing {len(converted_events)} events")
         async with (await Connection.default_connection("write legacy eventlog")) as connection:
-            await write_day(connection, converted_events, STATION, start_of_day, end_of_day, incomplete_day)
+            await write_day(connection, converted_events, STATION, start_of_day, end_of_day, incomplete_day,
+                            netcdf_executor=netcdf_executor)
         total_events += len(converted_events)
 
 

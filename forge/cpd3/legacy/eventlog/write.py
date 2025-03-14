@@ -7,6 +7,7 @@ import time
 import numpy as np
 import forge.data.structure.eventlog as netcdf_eventlog
 from math import floor
+from concurrent.futures import Executor
 from netCDF4 import Dataset
 from tempfile import NamedTemporaryFile
 from forge.cpd3.identity import Identity
@@ -118,13 +119,20 @@ async def write_day(
         start_of_day: float,
         end_of_day: float,
         incomplete_day: bool = False,
+        netcdf_executor: Executor = None,
 ) -> None:
     assert int(floor(start_of_day / (24 * 60 * 60))) * 24 * 60 * 60 == start_of_day
     assert end_of_day > start_of_day
     assert (end_of_day - start_of_day) <= 24 * 60 * 60
 
     with NamedTemporaryFile(suffix=".nc") as incoming_events:
-        make_file(converted_events, incoming_events.name, station, start_of_day, end_of_day)
+        if netcdf_executor is not None:
+            await asyncio.get_event_loop().run_in_executor(
+                netcdf_executor, make_file,
+                converted_events, incoming_events.name, station, start_of_day, end_of_day
+            )
+        else:
+            make_file(converted_events, incoming_events.name, station, start_of_day, end_of_day)
 
         backoff = LockBackoff()
         while True:
@@ -155,7 +163,12 @@ async def write_day(
 
                         merge.overlay(file, archive_file_start, archive_file_end)
 
-                        result = merge.execute(merged_file.name)
+                        if netcdf_executor is not None:
+                            result = await asyncio.get_event_loop().run_in_executor(
+                                netcdf_executor, merge.execute, merged_file.name
+                            )
+                        else:
+                            result = merge.execute(merged_file.name)
                         if existing_data is not None:
                             existing_data.close()
                             existing_data = None
