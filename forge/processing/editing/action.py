@@ -293,7 +293,7 @@ class SizeCutFix(Action):
         self.output_cut = self.parameters["modified_cutsize"]
         if self.output_cut == "invalidate":
             self.output_cut: typing.Optional[float] = None
-        elif self.operate_size is not None:
+        elif self.output_cut is not None:
             self.output_cut: typing.Optional[float] = float(self.output_cut)
         else:
             self.output_cut: typing.Optional[float] = nan

@@ -676,10 +676,8 @@ class EditDirective:
                 out_cs = None
 
             result = dict()
-            if in_cs is not None:
-                result['cutsize'] = in_cs
-            if out_cs is not None:
-                result['modified_cutsize'] = out_cs
+            result['cutsize'] = in_cs
+            result['modified_cutsize'] = out_cs
 
             return "SizeCutFix", to_json(result, sort_keys=True)
         elif op == 'abnormaldataepisode':
