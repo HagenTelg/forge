@@ -217,6 +217,10 @@ def process_day(
                         day_start * 1000,
                         (day_start + 24 * 60 * 60) * 1000,
                     )
+                except:
+                    _LOGGER.error("Error applying edit directives for %s day %s",
+                                  station.upper(), day_start, exc_info=True)
+                    raise
                 finally:
                     directives_file.close()
 

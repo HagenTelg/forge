@@ -1,4 +1,5 @@
 import typing
+import logging
 import numpy as np
 from math import floor, ceil
 from netCDF4 import Dataset, Group, Variable
@@ -7,6 +8,8 @@ from forge.data.state import is_state_group
 from forge.processing.clean.filter import StationFileFilter
 from .action import Action
 from .condition import Condition
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _walk_data(file: Dataset) -> typing.Iterator[Dataset]:
@@ -96,12 +99,16 @@ def apply_edit_directives(
         edit_start = int(start_time[idx])
         edit_end = int(end_time[idx])
         edit_profile = profile_lookup[int(profiles[idx])]
-        edit_action = action_lookup[int(actions[idx])](str(action_parameters[idx]))
-        if edit_action.needs_prepare:
-            any_action_prepare = True
-        edit_condition = condition_lookup[int(conditions[idx])](str(condition_parameters[idx]))
-        if edit_condition.needs_prepare:
-            any_condition_prepare = True
+        try:
+            edit_action = action_lookup[int(actions[idx])](str(action_parameters[idx]))
+            if edit_action.needs_prepare:
+                any_action_prepare = True
+            edit_condition = condition_lookup[int(conditions[idx])](str(condition_parameters[idx]))
+            if edit_condition.needs_prepare:
+                any_condition_prepare = True
+        except:
+            _LOGGER.error(f"Error instantiating edit {edit_start},{edit_end}/{edit_profile}", exc_info=True)
+            raise
         instantiated_edits.append((edit_start, edit_end, edit_profile, edit_condition, edit_action))
 
     if any_condition_prepare:
