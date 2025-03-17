@@ -271,7 +271,7 @@ def visible(station: str, mode_name: typing.Optional[str] = None) -> VisibleMode
         'ozone-realtime',
         'acquisition',
     ])
-    _assemble_mode("Metrological", [
+    _assemble_mode("Meteorological", [
         'met-raw',
         'met-editing',
         'met-clean',
