@@ -20,7 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class Command(ParseCommand):
     COMMANDS: typing.List[str] = ["avg", "average"]
-    HELP: str = "invalidate contaminated data"
+    HELP: str = "average data"
 
     @classmethod
     def available(cls, cmd: ParseArguments.SubCommand, execute: "Execute") -> bool:
