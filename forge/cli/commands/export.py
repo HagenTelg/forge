@@ -176,7 +176,7 @@ class Command(ParseCommand):
         parser.set_defaults(header_stderr=None)
         parser.add_argument('--no-header-names',
                             dest='header_names', action='store_false',
-                            help="output a header with column names")
+                            help="do not output a header with column names")
         parser.set_defaults(header_names=True)
         parser.add_argument('--header-description',
                             dest='header_description', action='store_true',
