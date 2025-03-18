@@ -1,11 +1,13 @@
 import typing
-import time
+import logging
 import numpy as np
 import netCDF4
 import forge.data.structure.timeseries as netcdf_timeseries
 from math import nan
 from forge.data.structure.stp import standard_temperature, standard_pressure
 from .converter import InstrumentConverter, read_archive, Selection, variant
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Converter(InstrumentConverter):
@@ -48,7 +50,13 @@ class Converter(InstrumentConverter):
     ) -> typing.Optional[typing.Tuple[netCDF4.Group, np.ndarray, typing.List[typing.Tuple[netCDF4.Variable, "Converter.Data"]]]]:
         loaded_data: typing.Dict[str, Converter.Data] = dict()
         for cpd3_name, attributes in variables.items():
-            data = self.load_variable(cpd3_name)
+            if cpd3_name.startswith("F"):
+                continue
+            try:
+                data = self.load_variable(cpd3_name)
+            except TypeError:
+                _LOGGER.warning("Invalid conversion on variable %s", cpd3_name, exc_info=True)
+                continue
             if data.time.shape[0] == 0:
                 continue
             loaded_data[cpd3_name] = data

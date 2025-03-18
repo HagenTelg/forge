@@ -1,10 +1,8 @@
 import typing
-from select import select
-
 import numpy as np
 import forge.cpd3.variant as variant
 from netCDF4 import Dataset, Group, Variable, VLType
-from abc import ABC, abstractmethod
+from abc import ABC
 from math import isfinite, nan, floor
 from forge.const import __short_version__
 from forge.formattime import format_iso8601_time
