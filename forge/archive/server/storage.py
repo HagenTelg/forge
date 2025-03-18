@@ -566,21 +566,21 @@ class Storage:
         def recurse(path: Path):
             descend: typing.Set[Path] = set()
             try:
-                for file in path.iterdir():
+                for file in os.scandir(path):
                     if file.name.startswith('.'):
                         continue
                     try:
-                        st = file.lstat()
+                        if file.is_dir(follow_symlinks=False):
+                            descend.add(Path(file.path))
+                            continue
+                        st = file.stat(follow_symlinks=False)
                     except FileNotFoundError:
-                        continue
-                    if stat.S_ISDIR(st.st_mode):
-                        descend.add(file)
                         continue
                     if not stat.S_ISREG(st.st_mode):
                         continue
                     if st.st_mtime <= modified_after:
                         continue
-                    result.append(str(file.relative_to(self._root)))
+                    result.append(str(Path(file.path).relative_to(self._root)))
             except (FileNotFoundError, IsADirectoryError, NotADirectoryError):
                 pass
             for d in descend:
