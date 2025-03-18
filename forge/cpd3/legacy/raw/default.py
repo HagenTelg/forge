@@ -47,7 +47,8 @@ total_files = 0
 
 async def run():
     global total_files
-    for instrument_id, segments in legacy_instruments.items():
+    for instrument_id in sorted(legacy_instruments.keys()):
+        segments = legacy_instruments[instrument_id]
         for legacy_instrument in segments:
             assert legacy_instrument.start < legacy_instrument.end
             start_day = int(floor(max(DATA_START_TIME, legacy_instrument.start) / (24 * 60 * 60))) * 24 * 60 * 60
