@@ -28,7 +28,7 @@ async def add_external_address(telemetry: typing.Dict[str, typing.Any]) -> None:
     except:
         pass
 
-    for target in ('https://ifconfig.me/ip', 'https://myip.dnsomatic.com/'):
+    for target in ('https://ifconfig.me/ip', 'https://myip.dnsomatic.com/', 'https://api64.ipify.org'):
         try:
             timeout = aiohttp.ClientTimeout(total=30)
             async with aiohttp.ClientSession(timeout=timeout) as session:
