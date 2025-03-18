@@ -115,9 +115,24 @@ class InstrumentConverter(ABC):
     ):
         if convert is None:
             if np.issubdtype(dtype, np.floating):
-                convert = lambda x: float(x) if x is not None and isfinite(x) else nan
+                def convert(x):
+                    if x is None:
+                        return nan
+                    try:
+                        x = dtype(float(x))
+                    except (ValueError, TypeError, OverflowError):
+                        return nan
+                    if not isfinite(x):
+                        return nan
+                    return x
             elif np.issubdtype(dtype, np.integer):
-                convert = lambda x: int(x) if x is not None and isfinite(x) and x not in (-9223372036854775807, -9223372036854775808) else 0
+                def convert(x):
+                    if x is None:
+                        return 0
+                    try:
+                        return dtype(int(x))
+                    except (ValueError, TypeError, OverflowError):
+                        return 0
             else:
                 convert = lambda x: dtype(x) if x is not None else dtype()
 

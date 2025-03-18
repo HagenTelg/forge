@@ -60,6 +60,10 @@ class Converter(WavelengthConverter):
             value = parameters.get(name)
             if value is None:
                 continue
+            try:
+                value = np.uint64(int(value))
+            except (OverflowError, TypeError, ValueError):
+                continue
 
             var = g.createVariable(name, "u8", (), fill_value=False)
             var.coverage_content_type = "referenceInformation"
@@ -67,7 +71,7 @@ class Converter(WavelengthConverter):
             if units:
                 var.units = units
             var.C_format = C_format
-            var[:] = int(value)
+            var[:] = value
 
         for name, long_name, units, C_format in (
                 ("SV", "photomultiplier tube voltage", "V", "%4.0f"),
