@@ -1,8 +1,8 @@
 import typing
-from ..default.mode import Mode, ViewList, detach, aerosol_modes, ozone_modes, met_modes, radiation_modes
+from ..default.mode import Mode, ViewList, detach, aerosol_modes, aerosol_public, ozone_modes, met_modes, radiation_modes
 
 
-station_modes = detach(aerosol_modes, ozone_modes, met_modes, radiation_modes)
+station_modes = detach(aerosol_modes, aerosol_public, ozone_modes, met_modes, radiation_modes)
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-cpcstatus2', "MAGIC CPC Status"),
                                     'aerosol-raw-cpcstatus')
