@@ -72,6 +72,26 @@ class Converter(WavelengthConverter):
             a_vars.append("standard_pressure")
         return " ".join(a_vars)
 
+    def load_array_wavelength_variable(
+            self, prefix: str, suffix: str = "",
+    ) -> typing.List["WavelengthConverter.Data"]:
+        result: typing.List[WavelengthConverter.Data] = list()
+        for _, code in self.WAVELENGTHS:
+            result.append(self.load_array_variable(
+                f"{prefix}{code}{suffix}_{self.instrument_id}",
+            ))
+        return result
+
+    def load_array_wavelength_state(
+            self, prefix: str, suffix: str = "",
+    ) -> typing.List["WavelengthConverter.Data"]:
+        result: typing.List[WavelengthConverter.Data] = list()
+        for _, code in self.WAVELENGTHS:
+            result.append(self.load_array_state(
+                f"{prefix}{code}{suffix}_{self.instrument_id}",
+            ))
+        return result
+
     def run(self) -> bool:
         data_Bs = self.load_wavelength_variable("Bs")
         if not any([v.time.shape[0] != 0 for v in data_Bs]):
@@ -102,9 +122,9 @@ class Converter(WavelengthConverter):
         data_Cbc = self.load_wavelength_state("Cbc")
 
         data_Bn = self.load_array_state(f"Bn_{self.instrument_id}")
-        data_Bsn = self.load_wavelength_variable("Bsn")
-        data_Bsnw = self.load_wavelength_variable("Bsnw")
-        data_PCTnc = self.load_wavelength_variable("PCTnc")
+        data_Bsn = self.load_array_wavelength_variable("Bsn")
+        data_Bsnw = self.load_array_wavelength_state("Bsnw")
+        data_PCTnc = self.load_array_wavelength_state("PCTnc")
 
         parameters = self.load_state(f"ZEE_{self.instrument_id}", dtype=dict)
 
@@ -357,7 +377,7 @@ class Converter(WavelengthConverter):
                     times, var_Bsn, data_Bsn[wlidx].time, data_Bsn[wlidx].value, (slice(None), wlidx,),
                 )
 
-            g, times = self.state_group(data_Bsw, name="polar_zero")
+            g, times = self.state_group(data_Bsnw, name="polar_zero")
             selected_idx = 0
             for wlidx in range(len(self.WAVELENGTHS)):
                 if data_Bsnw[wlidx].time.shape[0] > data_Bsnw[selected_idx].time.shape[0]:
