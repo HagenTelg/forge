@@ -224,7 +224,7 @@ class InstrumentConverter(ABC):
             array_size = max(array_size, len(value))
 
         def convert(v: typing.List) -> np.ndarray:
-            if not isinstance(value, list):
+            if not isinstance(v, list):
                 return np.full(array_size, nan, dtype=np.float64)
             return np.array(v + [nan] * (array_size - len(v)), dtype=np.float64)
 
