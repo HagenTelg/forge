@@ -1,6 +1,6 @@
 import typing
 from collections import OrderedDict
-from ..default.view import detach, View, aerosol_views, ozone_views, met_views, radiation_views
+from ..default.view import detach, View, aerosol_views, aerosol_public, ozone_views, met_views, radiation_views
 from ..default.aerosol.admagiccpc import ADMagicCPC200Status
 from ..default.met.wind import Wind as MetWind
 from ..default.met.editing.wind import EditingWindSpeed as MetEditingWindSpeed
@@ -11,7 +11,7 @@ from .ecotechnephelometer import NephelometerStatusSecondary, NephelometerZeroSe
 from .optical import OpticalScatteringSecondary, EditingScatteringSecondary, EditingBackScatteringSecondary
 
 
-station_views = detach(aerosol_views, ozone_views, met_views, radiation_views)
+station_views = detach(aerosol_views, aerosol_public, ozone_views, met_views, radiation_views)
 
 
 station_views['aerosol-raw-pressure'] = Pressure('aerosol-raw')
