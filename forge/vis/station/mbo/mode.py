@@ -1,8 +1,8 @@
 import typing
-from ..default.mode import Mode, ViewList, detach, aerosol_modes, aerosol_public, ozone_modes
+from ..default.mode import Mode, ViewList, detach, aerosol_modes, aerosol_public, ozone_modes, ozone_public
 
 
-station_modes = detach(aerosol_modes, aerosol_public, ozone_modes)
+station_modes = detach(aerosol_modes, aerosol_public, ozone_modes, ozone_public)
 
 station_modes['aerosol-raw'].remove('aerosol-raw-aethalometer')
 station_modes['aerosol-raw'].remove('aerosol-raw-aethalometerstatus')

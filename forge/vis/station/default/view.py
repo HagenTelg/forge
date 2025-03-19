@@ -44,6 +44,10 @@ from .ozone.thermo49 import Thermo49Status, Thermo49Cells
 from .ozone.wind import Wind as OzoneWind
 from .ozone.editing.concentration import EditingOzoneConcentration
 
+from .ozone.public.concentration import PublicConcentrationShort as PublicOzoneConcentrationShort, PublicConcentrationLong as PublicOzoneConcentrationLong
+from .ozone.public.housekeeping import PublicHousekeepingShort as PublicOzoneHousekeepingShort, PublicHousekeepingLong as PublicOzoneHousekeepingLong
+from .ozone.statistics.concentration import StatisticsOzoneConcentration
+
 from .radiation.shortwave import Shortwave, ShortwaveSimplified
 from .radiation.longwave import Longwave, LongwaveSimplified, PyrgeometerTemperature
 from .radiation.ratio import Ratios as RadiationRatios
@@ -225,6 +229,15 @@ aerosol_public: typing.Dict[str, View] = {
     'public-aerosolstats-baf-blue': StatisticsSubumFraction.with_title('baf-b', "Absorption Sub-μm Fraction 450nm"),
     'public-aerosolstats-baf-green': StatisticsSubumFraction.with_title('baf-g', "Absorption Sub-μm Fraction 550nm"),
     'public-aerosolstats-baf-red': StatisticsSubumFraction.with_title('baf-r', "Absorption Sub-μm Fraction 700nm"),
+}
+ozone_public: typing.Dict[str, View] = {
+    'public-ozoneshort-concentration': PublicOzoneConcentrationShort(),
+    'public-ozoneshort-housekeeping': PublicOzoneHousekeepingShort(),
+
+    'public-ozonelong-concentration': PublicOzoneConcentrationLong(),
+    'public-ozonelong-housekeeping': PublicOzoneHousekeepingLong(),
+
+    'public-ozonestats-concentration': StatisticsOzoneConcentration(),
 }
 
 

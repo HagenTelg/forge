@@ -1,5 +1,4 @@
 import typing
-from collections import OrderedDict
 from forge.vis.view.timeseries import PublicTimeSeries
 from ...met.wind import Wind as BaseWind
 from ...met.temperature import Temperature as BaseTemperature

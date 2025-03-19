@@ -652,6 +652,42 @@ ozone_data["ozone-realtime-cells"] = RealtimeRecord({
 })
 
 
+ozone_public: typing.Dict[str, Record] = dict()
+ozone_public["public-ozoneweb-ozone"] = RealtimeRecord({
+    "ozone": [RealtimeSelection("X", standard_name="mole_fraction_of_ozone_in_air",
+                                require_tags={"ozone"}, exclude_tags={"secondary"})],
+}, past_limit_ms=31 * 24 * 60 * 60 * 1000)
+ozone_public["public-ozoneweb-ozonestatus"] = RealtimeRecord({
+    "Tsample": [RealtimeSelection("Tsample", variable_name="sample_temperature",
+                                  require_tags={"ozone"}, exclude_tags={"secondary"})],
+    "Tlamp": [RealtimeSelection("Tlamp", variable_name="lamp_temperature",
+                                require_tags={"ozone"}, exclude_tags={"secondary"})],
+    "Psample": [RealtimeSelection("Psample", variable_name="sample_pressure",
+                                  require_tags={"ozone"}, exclude_tags={"secondary"})],
+    "Q": [RealtimeSelection("Q", variable_name="cell_a_flow",
+                            instrument_code="thermo49iq", require_tags={"ozone"}, exclude_tags={"secondary"}),
+          RealtimeSelection("Qa", variable_name="cell_a_flow",
+                            instrument_code="thermo49", require_tags={"ozone"}, exclude_tags={"secondary"})],
+    "Ca": [RealtimeSelection("Ca", variable_name="cell_a_count_rate",
+                             require_tags={"ozone"}, exclude_tags={"secondary"})],
+    "Cb": [RealtimeSelection("Cb", variable_name="cell_b_count_rate",
+                             require_tags={"ozone"}, exclude_tags={"secondary"})],
+}, past_limit_ms=31 * 24 * 60 * 60 * 1000)
+ozone_public["public-ozoneweb-wind"] = RealtimeRecord({
+    "WS": [RealtimeSelection("WS", variable_name="wind_speed", exclude_tags={"secondary"})],
+    "WD": [RealtimeSelection("WD", variable_name="wind_direction", exclude_tags={"secondary"})],
+}, past_limit_ms=31 * 24 * 60 * 60 * 1000)
+
+ozone_public[f"public-ozonestats-ozone-bins"] = DataRecord({
+    "value": [Selection(standard_name="mole_fraction_of_ozone_in_air",
+                        require_tags={"ozone"}, exclude_tags={"secondary"})],
+}, archive="avgd")
+ozone_public[f"public-ozonestats-ozone-series"] = DataRecord({
+    "value": [Selection(standard_name="mole_fraction_of_ozone_in_air",
+                        require_tags={"ozone"}, exclude_tags={"secondary"})],
+}, archive="avgm")
+
+
 met_data: typing.Dict[str, Record] = dict()
 for archive in ("raw", "editing", "clean", "avgh"):
     met_data[f"met-{archive}-wind"] = DataRecord({

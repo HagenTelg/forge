@@ -1,8 +1,8 @@
 import typing
-from ..default.mode import Mode, ViewList, detach, aerosol_modes, aerosol_public, ozone_modes, met_modes, radiation_modes
+from ..default.mode import Mode, ViewList, detach, aerosol_modes, aerosol_public, ozone_modes, ozone_public, met_modes, radiation_modes
 
 
-station_modes = detach(aerosol_modes, aerosol_public, ozone_modes, met_modes, radiation_modes)
+station_modes = detach(aerosol_modes, aerosol_public, ozone_modes, ozone_public, met_modes, radiation_modes)
 
 
 station_modes['aerosol-raw'].remove('aerosol-raw-umacstatus')

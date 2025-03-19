@@ -155,6 +155,19 @@ ozone_modes: typing.Dict[str, Mode] = _construct_modes([
     ]),
     DefaultAcquisition(),
 ])
+ozone_public: typing.Dict[str, Mode] = _construct_modes([
+    Public('public-ozoneshort', "Short-Term Status (last 5 days)", [
+        Public.Entry('public-ozoneshort-concentration', "Concentration"),
+        Public.Entry('public-ozoneshort-housekeeping', "Housekeeping"),
+    ]),
+    Public('public-ozonelong', "Long-Term Averaged Plots (last 30 days)", [
+        Public.Entry('public-ozonelong-concentration', "Concentration"),
+        Public.Entry('public-ozonelong-housekeeping', "Housekeeping"),
+    ]),
+    Public('public-ozonestats', "Statistical Summary", [
+        Public.Entry('public-ozonestats-concentration', "Concentration"),
+    ]),
+])
 met_modes: typing.Dict[str, Mode] = _construct_modes([
     ViewList('met-raw', "Raw", [
         ViewList.Entry('met-raw-wind', "Wind"),

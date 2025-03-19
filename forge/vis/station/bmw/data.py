@@ -2,14 +2,13 @@ import typing
 from ..cpd3 import use_cpd3
 
 
-if not use_cpd3("rpb"):
-    from ..default.data import aerosol_data, aerosol_public, ozone_data, ozone_public, data_get, DataStream
+if not use_cpd3("arh"):
+    from ..default.data import ozone_data, ozone_public, radiation_data, data_get, DataStream
 
     data_records = dict()
-    data_records.update(aerosol_data)
-    data_records.update(aerosol_public)
     data_records.update(ozone_data)
     data_records.update(ozone_public)
+    data_records.update(radiation_data)
 
 
     def get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,

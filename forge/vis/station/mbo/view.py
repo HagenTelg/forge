@@ -1,5 +1,5 @@
 import typing
-from ..default.view import detach, View, aerosol_views, aerosol_public, ozone_views
+from ..default.view import detach, View, aerosol_views, aerosol_public, ozone_views, ozone_public
 from ..default.aerosol.tsi3010cpc import TSI3010CPCStatus
 from .counts import ParticleConcentration, EditingParticleConcentration, EditingGrimm
 from .optical import OpticalCLAPSecondary, EditingCLAPSecondary, OpticalScatteringSecondary, EditingScatteringSecondary, EditingBackScatteringSecondary
@@ -13,7 +13,7 @@ from .temperature import Temperature, Ambient
 from .summary import Summary
 
 
-station_views = detach(aerosol_views, aerosol_public, ozone_views)
+station_views = detach(aerosol_views, aerosol_public, ozone_views, ozone_public)
 
 station_views['aerosol-raw-counts'] = ParticleConcentration('aerosol-raw')
 station_views['aerosol-realtime-counts'] = ParticleConcentration('aerosol-realtime', realtime=True)
