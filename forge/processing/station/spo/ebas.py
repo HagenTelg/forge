@@ -49,11 +49,11 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
     return result
 
 
-# def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List[InstrumentSelection]]]:
-#     from ..default.ebas import standard_submit
-#     return standard_submit(gaw_station)
-#
-#
-# def nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List[InstrumentSelection], str, str]]:
-#     from ..default.ebas import standard_nrt
-#     return standard_nrt(gaw_station)
+def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List[InstrumentSelection]]]:
+    from ..default.ebas import standard_submit
+    return standard_submit(gaw_station)
+
+
+def nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List[InstrumentSelection], str, str]]:
+    from ..default.ebas import standard_nrt
+    return standard_nrt(gaw_station)
