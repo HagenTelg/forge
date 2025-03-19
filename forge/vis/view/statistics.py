@@ -5,7 +5,7 @@ from . import View, Request, Response
 
 
 class Statistics(View):
-    def __init__(self, record: str):
+    def __init__(self, record: str, profile: str = 'aerosolstats'):
         super().__init__()
 
         self.title: typing.Optional[str] = None
@@ -13,8 +13,8 @@ class Statistics(View):
         self.logarithmic: bool = False
         self.range: typing.Optional[typing.Union[int, typing.Tuple[float, float]]] = None
 
-        self.bins_record: str = f"public-aerosolstats-{record}-bins"
-        self.timeseries_record: str = f"public-aerosolstats-{record}-series"
+        self.bins_record: str = f"public-{profile}-{record}-bins"
+        self.timeseries_record: str = f"public-{profile}-{record}-series"
         self.sub_um_fraction: bool = False
 
     async def __call__(self, request: Request, **kwargs) -> Response:
