@@ -345,7 +345,7 @@ def main():
             writer.write(struct.pack('<B', ServerDiagnosticRequest.LIST_INTENTS.value))
             response = await read_all_json()
             if args.uid:
-                response = response.get(args.uid, [])
+                response = response.get(str(args.uid), [])
                 if args.json:
                     print(to_json(response))
                 else:
@@ -389,7 +389,7 @@ def main():
             writer.write(struct.pack('<B', ServerDiagnosticRequest.LIST_LOCKS.value))
             response = await read_all_json()
             if args.uid:
-                response = response.get(args.uid, [])
+                response = response.get(str(args.uid), [])
                 if args.json:
                     print(to_json(response))
                 else:
@@ -436,7 +436,7 @@ def main():
             writer.write(struct.pack('<B', ServerDiagnosticRequest.LIST_NOTIFICATION_LISTENERS.value))
             response = await read_all_json()
             if args.uid:
-                response = response.get(args.uid, [])
+                response = response.get(str(args.uid), [])
                 if args.json:
                     print(to_json(response))
                 else:
@@ -468,7 +468,7 @@ def main():
             writer.write(struct.pack('<B', ServerDiagnosticRequest.LIST_NOTIFICATION_WAIT.value))
             response = await read_all_json()
             if args.uid:
-                response = response.get(args.uid, [])
+                response = response.get(str(args.uid), [])
                 if args.json:
                     print(to_json(response))
                 else:
