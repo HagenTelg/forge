@@ -36,13 +36,16 @@ def dilution_factor(
 
     if len(total_sample.shape) > 0:
         result = np.full(total_sample.shape, nan)
+        if len(total_dilution.shape) == 0:
+            total_dilution = np.full(total_sample.shape, total_dilution)
     else:
         result = np.full(total_dilution.shape, nan)
+        total_sample = np.full(total_dilution.shape, total_sample)
 
-    dilution_valid = np.all((
+    dilution_valid = np.logical_and(
         total_sample > 0.0,
         total_sample > total_dilution,
-    ), axis=0)
+    )
     result[dilution_valid] = total_sample[dilution_valid] / (total_sample[dilution_valid] - total_dilution[dilution_valid])
     return result
 
