@@ -1,11 +1,11 @@
 import typing
-from ..default.view import detach, View, aerosol_views, ozone_views, met_views, radiation_views
+from ..default.view import detach, View, aerosol_views, ozone_views, ozone_public, met_views, radiation_views
 from ..default.ozone.teledynen500 import NOxConcentration, TeledyneN500Status
 from ..default.ozone.editing.teledynen500 import EditingNOxConcentration
 from .ozonepublic import PublicOzoneConcentration
 
 
-station_views = detach(aerosol_views, ozone_views, met_views, radiation_views)
+station_views = detach(aerosol_views, ozone_views, ozone_public, met_views, radiation_views)
 
 station_views['public-realtime-ozone-concentration'] = PublicOzoneConcentration()
 

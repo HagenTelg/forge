@@ -1,8 +1,8 @@
 import typing
-from ..default.mode import detach, Mode, ozone_modes, radiation_modes, ViewList
+from ..default.mode import detach, Mode, ozone_modes, ozone_public, radiation_modes, ViewList
 
 
-station_modes = detach(radiation_modes, ozone_modes)
+station_modes = detach(radiation_modes, ozone_modes, ozone_public)
 
 
 station_modes['ozone-raw'].insert(ViewList.Entry('ozone-raw-nox', "NOₓ"),
