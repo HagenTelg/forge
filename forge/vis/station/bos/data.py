@@ -497,12 +497,13 @@ if use_cpd3():
         return data_profile_get(station, data_name, start_epoch_ms, end_epoch_ms, send, station_profile_data)
 
 else:
-    from ..default.data import aerosol_data, aerosol_public, ozone_data, met_data, radiation_data, data_get, DataStream, DataRecord, RealtimeRecord, Selection, RealtimeSelection, STANDARD_THREE_WAVELENGTHS, STANDARD_CUT_SIZE_SPLIT
+    from ..default.data import aerosol_data, aerosol_public, ozone_data, ozone_public, met_data, radiation_data, data_get, DataStream, DataRecord, RealtimeRecord, Selection, RealtimeSelection, STANDARD_THREE_WAVELENGTHS, STANDARD_CUT_SIZE_SPLIT
 
     data_records = dict()
     data_records.update(aerosol_data)
     data_records.update(aerosol_public)
     data_records.update(ozone_data)
+    data_records.update(ozone_public)
     data_records.update(met_data)
     data_records.update(radiation_data)
 

@@ -1,8 +1,8 @@
 import typing
-from ..default.mode import Mode, ViewList, Public, detach, aerosol_modes, aerosol_public, ozone_modes
+from ..default.mode import Mode, ViewList, Public, detach, aerosol_modes, aerosol_public, ozone_modes, ozone_public
 
 
-station_modes = detach(aerosol_modes, ozone_modes, aerosol_public)
+station_modes = detach(aerosol_modes, ozone_modes, aerosol_public, ozone_public)
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-mass', "Mass"),
                                     'aerosol-raw-aethalometer')
