@@ -35,6 +35,7 @@ _forge_translated_stations = frozenset({
     "arh",
     "bld",
     "bmw",
+    "bnd",
     "bos",
     "brw",
     "hmc",

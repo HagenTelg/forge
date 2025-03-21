@@ -7,10 +7,13 @@ import forge.data.structure.timeseries as netcdf_timeseries
 import numpy as np
 from math import nan
 from forge.const import STATIONS as VALID_STATIONS
+from forge.data.merge.timealign import incoming_before
 from forge.cpd3.legacy.raw.write import InstrumentTimeConversion as C
 from forge.cpd3.legacy.instrument.converter import InstrumentConverter, WavelengthConverter
 from forge.cpd3.legacy.instrument.azonixumac1050 import Converter as UMAC
 from forge.cpd3.legacy.instrument.lovepid import Converter as LovePID
+from forge.cpd3.legacy.instrument.tsi3563nephelometer import Converter as TSINeph
+from forge.cpd3.legacy.instrument.tsi3760cpc import Converter as TSI3760CPC
 
 STATION = os.path.basename(__file__).split('.', 1)[0].lower()
 assert STATION in VALID_STATIONS
@@ -60,6 +63,17 @@ class MRINeph(WavelengthConverter):
         var_Bs.cell_methods = "time: mean"
         self.apply_wavelength_data(times, var_Bs, data_Bs)
 
+        self.apply_cut_size(g, times, [], [
+            (var_Bs, data_Bs),
+        ], extra_sources=[data_system_flags])
+        selected_idx = 0
+        for wlidx in range(len(self.WAVELENGTHS)):
+            if data_Bs[wlidx].time.shape[0] > data_Bs[selected_idx].time.shape[0]:
+                selected_idx = wlidx
+        self.apply_coverage(g, times, f"Bs{self.WAVELENGTHS[selected_idx][1]}_{self.instrument_id}")
+
+        t, times = self.data_group([data_P, data_T], name='status', fill_gaps=False)
+
         var_P = g.createVariable("sample_pressure", "f8", ("time",), fill_value=nan)
         netcdf_var.variable_air_pressure(var_P)
         netcdf_timeseries.variable_coordinates(g, var_P)
@@ -78,22 +92,126 @@ class MRINeph(WavelengthConverter):
         var_T.long_name = "measurement cell temperature"
         self.apply_data(times, var_T, data_T)
 
-        self.apply_cut_size(g, times, [
-            (var_P, data_P),
-            (var_T, data_T),
-        ], [
-            (var_Bs, data_Bs),
-        ], extra_sources=[data_system_flags])
-        selected_idx = 0
-        for wlidx in range(len(self.WAVELENGTHS)):
-            if data_Bs[wlidx].time.shape[0] > data_Bs[selected_idx].time.shape[0]:
-                selected_idx = wlidx
-        self.apply_coverage(g, times, f"Bs{self.WAVELENGTHS[selected_idx][1]}_{self.instrument_id}")
-
         self.apply_instrument_metadata(
             [f"Bs{code}_{self.instrument_id}" for _, code in self.WAVELENGTHS],
             manufacturer="MRI", model="1550"
         )
+        return True
+
+
+class MRINephCutSizeFix(MRINeph):
+    def apply_cut_size(self, g, group_times, variables, wavelength_variables=None, extra_sources=None) -> None:
+        if wavelength_variables:
+            for var, data in wavelength_variables:
+                if var is None:
+                    continue
+                selected_data = data[0]
+                for check_data in data:
+                    if check_data.time.shape[0] > selected_data.time.shape[0]:
+                        selected_data = check_data
+                variables.append((var, selected_data))
+
+        if len(group_times.shape) == 0 or group_times.shape[0] == 0:
+            return
+        # InstrumentConverter.Data | times, cut_size
+        if extra_sources is None:
+            extra_sources = list()
+
+        all_cut_sizes = np.concatenate([
+            (var[1].cut_size if isinstance(var[1], InstrumentConverter.Data) else var[2])
+            for var in variables if var[0] is not None
+        ] + [
+            (e.cut_size if isinstance(e, InstrumentConverter.Data) else e[1])
+            for e in extra_sources
+        ])
+        all_cut_sizes = np.unique(all_cut_sizes[np.isfinite(all_cut_sizes)])
+        all_cut_sizes = list(all_cut_sizes)
+        if len(all_cut_sizes) == 0:
+            # Everything is whole air, so no cut size variable
+            return
+        all_cut_sizes.sort()
+
+        cut_data = np.full(group_times.shape, nan, dtype=np.float64)
+        for select_size in all_cut_sizes:
+            effective_times = np.concatenate([
+                var[1].time[var[1].cut_size == select_size] if isinstance(var[1], InstrumentConverter.Data)
+                else var[1][var[2] == select_size]
+                for var in variables if var[0] is not None
+            ] + [
+                e.time[e.cut_size == select_size] if isinstance(e, InstrumentConverter.Data)
+                else e[0][e[1] == select_size]
+                for e in extra_sources
+            ])
+            if len(effective_times.shape) == 0 or effective_times.shape[0] == 0:
+                continue
+            set_indices = np.searchsorted(group_times, effective_times, side='right') - 1
+            set_indices[set_indices < 0] = 0
+            cut_data[set_indices] = select_size
+
+        # Bad flags merging: remove the first PM1 value and any that run >= 7 minutes
+        cut_changes = np.concatenate(([True], cut_data[1:] != cut_data[:-1]))
+        cut_count = np.arange(1, cut_data.shape[0]+1, dtype=np.uint32)
+        cut_count = cut_count - np.maximum.accumulate(np.where(cut_changes, cut_count, 0))
+        invalidate_data = np.logical_and(
+            cut_data == 1.0,
+            np.logical_or(cut_count == 1, cut_count >= 7),
+        )
+
+        var = netcdf_timeseries.cutsize_variable(g)
+        netcdf_timeseries.variable_coordinates(g, var)
+        var[:] = cut_data
+
+        for var in variables:
+            cut_var = var[0]
+            if cut_var is None:
+                continue
+            ancillary_variables = set(getattr(cut_var, 'ancillary_variables', "").split())
+            ancillary_variables.add('cut_size')
+            cut_var.ancillary_variables = " ".join(sorted(ancillary_variables))
+
+            fix_data = np.array(cut_var[...].data, copy=True)
+            fix_data[invalidate_data] = nan
+            cut_var[:] = fix_data
+
+
+class CPD3NephZeroFix(TSINeph):
+    """
+    From a raw mode edit:
+
+    # Originally CPD3 didn't correctly reset the accumulators for the T/P during zeros, so we copy the last
+    reported T/P into the zero T/P instead (low variablity means this is good enough).
+
+    This has no effect on the actual background numbers (the reported Rayleigh scattering is already STP adjusted),
+    we just need them for recalculating the Rayleigh scattering for EBAS submissions.
+    """
+    def run(self) -> bool:
+        if not super().run():
+            return False
+
+        data = self.root.groups.get('data')
+        zero = self.root.groups.get('zero')
+        if data is None or zero is None:
+            return True
+
+        sample_temperature = data.variables.get('sample_temperature')
+        sample_pressure = data.variables.get('sample_pressure')
+        if sample_temperature is None or sample_pressure is None:
+            return True
+
+        zero_temperature = zero.variables.get('zero_temperature')
+        zero_pressure = zero.variables.get('zero_pressure')
+        if zero_temperature is None or zero_pressure is None:
+            return True
+
+        zero_times = data.variables['time']
+        data_times = data.variables['time']
+        if zero_times.shape[0] == 0 or data_times.shape[0] == 0:
+            return True
+
+        set_indices = incoming_before(zero_times[:].data, data_times[:].data)
+        zero_temperature[:] = sample_temperature[:].data[set_indices]
+        zero_pressure[:] = sample_pressure[:].data[set_indices]
+
         return True
 
 
@@ -105,7 +223,11 @@ C.run(STATION, {
     ],
     "A12": [ C('clap+secondary', start='2010-12-02', end='2012-03-26'), ],
     "F21": [ C("filtercarousel", start='1994-07-14', end='2010-12-02'), ],
-    "N61": [ C('tsi3760cpc', start='1994-07-14'), ],
+    "N61": [
+        C('tsi3760cpc', start='1994-07-14', end='2017-03-22T18:00:00Z'),
+        C(TSI3760CPC.with_instrument_override(serial_number="388"), start='2017-03-22T18:00:00Z', end='2017-05-05T16:48:00Z'),
+        C('tsi3760cpc', start='2017-05-05T16:48:00Z'),
+    ],
     "N62": [
         C('bmi1710cpc+secondary', start='2012-10-12', end='2015-08-04'),
         C('bmi1720cpc+secondary', start='2015-09-29', end='2019-07-26'),
@@ -116,8 +238,12 @@ C.run(STATION, {
     "N12": [ C('tsi3760cpc+secondary', start='2019-11-19', end='2019-11-20'), ],
     "N51": [ C('tsi3760cpc+secondary', start='2019-11-19', end='2019-11-22'), ],
     "S11": [
-        C(MRINeph, start='1994-07-14', end='1996-06-14'),
-        C('tsi3563nephelometer', start='1996-06-14'),
+        C(MRINeph, start='1994-07-14', end='1995-07-04'),
+        C(MRINephCutSizeFix, start='1995-07-04', end='1996-03-15'),
+        C(MRINeph, start='1996-03-15', end='1996-06-14'),
+        C('tsi3563nephelometer', start='1996-06-14', end='2015-03-19T20:18:00Z'),
+        C(CPD3NephZeroFix, start='2015-03-19T20:18:00Z', end='2015-09-02T20:00:00Z'),
+        C('tsi3563nephelometer', start='2015-09-02T20:00:00Z'),
     ],
     "S12": [
         C('tsi3563nephelometer+secondary', start='2022-08-02', end='2022-10-07'),
