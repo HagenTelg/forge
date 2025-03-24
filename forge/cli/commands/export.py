@@ -502,7 +502,6 @@ class _ColumnVariable(_Column):
         def __init__(self, file: Dataset, variable: Variable):
             self.file = file
             self.variable = variable
-            self._data = self.variable[:].data
             self.indexed_by_time: bool = len(variable.dimensions) > 0 and variable.dimensions[0] == 'time'
             if self.indexed_by_time:
                 self.index_suffix: "typing.Tuple[int, ...]" = tuple([0] * (len(variable.dimensions) - 1))
@@ -512,11 +511,25 @@ class _ColumnVariable(_Column):
             self.identifier_suffix: str = ""
             self.wavelength: typing.Optional[float] = None
             self.cut_size: typing.Optional[float] = None
+            self._data_cache = None
 
-        def __call__(self, time_idx: int) -> typing.Any:
+        def __call__(self, time_idx: int, index_suffix: typing.Optional[typing.Tuple[int, ...]] = None) -> typing.Any:
+            if index_suffix is None:
+                index_suffix = self.index_suffix
+
+            # The complicated caching here is used because loading multiple years for a large number of variables
+            # from NetCDF results in OOM, while integer indexing per-row is slow.  So we compromise and chunk up
+            # the NetCDF indexing.
+
             if not self.indexed_by_time:
-                return self._data[self.index_suffix]
-            return self._data[(time_idx, *self.index_suffix)]
+                if self._data_cache is None:
+                    self._data_cache = self.variable[:].data[index_suffix]
+                return self._data_cache
+
+            if self._data_cache is None or time_idx not in self._data_cache[0]:
+                cache_range = range(time_idx, min(time_idx + 8192, self.variable.shape[0]))
+                self._data_cache = (cache_range, self.variable[cache_range, ...].data)
+            return self._data_cache[1][(time_idx - self._data_cache[0].start, *index_suffix)]
 
         def __deepcopy__(self, memo):
             y = type(self)(self.file, self.variable)
@@ -856,10 +869,10 @@ class _ColumnVariableStatisticsQuantile(_ColumnVariableFloat):
             if not self.indexed_by_time:
                 idx = list(self.index_suffix)
                 idx[self.quantile_index] = quantile_idx
-                return self._data[tuple(idx)]
+                return super().__call__(time_idx, index_suffix=idx)
             idx = list(self.index_suffix)
             idx[self.quantile_index - 1] = quantile_idx
-            return self._data[(time_idx, *idx)]
+            return super().__call__(time_idx, index_suffix=idx)
 
         def __deepcopy__(self, memo):
             y = super().__deepcopy__(memo)
