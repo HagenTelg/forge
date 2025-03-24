@@ -155,7 +155,7 @@ class Connection:
         tasks = [completed, wait_closed]
         try:
             done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
-        except asyncio.CancelledError:
+        except asyncio.CancelledError as e:
             for t in tasks:
                 try:
                     t.cancel()
@@ -166,7 +166,7 @@ class Connection:
                     await t
                 except:
                     pass
-            raise
+            raise e
 
         for c in pending:
             try:
