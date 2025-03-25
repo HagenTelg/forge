@@ -119,7 +119,9 @@ class Converter(InstrumentConverter):
     def run(self) -> bool:
         data_raw_inputs = self.load_array_variable(f"ZINPUTS_{self.instrument_id}")
         if data_raw_inputs.time.shape[0] == 0:
-            return False
+            system_flags_time = self.load_variable(f"F1?_{self.instrument_id}", convert=bool, dtype=np.bool_).time
+            if system_flags_time.shape[0] == 0:
+                return False
         self._average_interval = self.calculate_average_interval(data_raw_inputs.time)
         if not super().run():
             return False
@@ -136,18 +138,23 @@ class Converter(InstrumentConverter):
             name="upstream"
         )
 
-        g.createDimension("process_value", data_raw_inputs.value.shape[1])
-        var_raw_inputs = g.createVariable("process_value", "f8", ("time", "process_value"), fill_value=nan)
-        netcdf_timeseries.variable_coordinates(g, var_raw_inputs)
-        var_raw_inputs.variable_id = "ZINPUTS"
-        var_raw_inputs.coverage_content_type = "physicalMeasurement"
-        var_raw_inputs.long_name = "raw process values"
-        var_raw_inputs.C_format = "%5.3f"
-        self.apply_data(times, var_raw_inputs, data_raw_inputs)
+        if data_raw_inputs.time.shape[0] > 0:
+            g.createDimension("process_value", data_raw_inputs.value.shape[1])
+            var_raw_inputs = g.createVariable("process_value", "f8", ("time", "process_value"), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(g, var_raw_inputs)
+            var_raw_inputs.variable_id = "ZINPUTS"
+            var_raw_inputs.coverage_content_type = "physicalMeasurement"
+            var_raw_inputs.long_name = "raw process values"
+            var_raw_inputs.C_format = "%5.3f"
+            self.apply_data(times, var_raw_inputs, data_raw_inputs)
 
-        self.apply_coverage(g, times, f"ZINPUTS_{self.instrument_id}")
+            self.apply_coverage(g, times, f"ZINPUTS_{self.instrument_id}")
 
-        self.apply_instrument_metadata(f"ZINPUTS_{self.instrument_id}", manufacturer="Brooks", model="0254")
+            self.apply_instrument_metadata(f"ZINPUTS_{self.instrument_id}", manufacturer="Brooks", model="0254")
+        else:
+            self.apply_coverage(g, times, f"F1?_{self.instrument_id}")
+
+            self.apply_instrument_metadata(f"F1?_{self.instrument_id}", manufacturer="Brooks", model="0254")
 
         return True
 
