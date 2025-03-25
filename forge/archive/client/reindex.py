@@ -7,9 +7,10 @@ from netCDF4 import Dataset
 from pathlib import Path
 from forge.const import STATIONS
 from forge.logicaltime import year_bounds_ms
-from forge.archive.client import data_lock_key, data_file_name, index_lock_key, index_file_name
+from forge.archive.client import data_lock_key, data_file_name, index_lock_key, index_file_name, index_instrument_history_file_name
 from forge.archive.client.connection import Connection
 from forge.archive.client.archiveindex import ArchiveIndex
+from forge.archive.client.instrumenthistory import InstrumentHistory
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ async def reindex(connection: Connection, station: str, archive: str, year: int)
     available_instruments: typing.Set[str] = set()
     for file in await connection.list_files(f"data/{station.lower()}/{archive.lower()}/{ts.tm_year:04}/"):
         file = Path(file).name
-        if file == '_index.json':
+        if file == '_index.json' or file == '_history.json':
             continue
         if not file.startswith(file_prefix):
             continue
@@ -31,15 +32,6 @@ async def reindex(connection: Connection, station: str, archive: str, year: int)
         if not instrument:
             continue
         available_instruments.add(instrument)
-
-    index_file = index_file_name(station, archive, year_start / 1000.0)
-    try:
-        index_contents = await connection.read_bytes(index_file)
-        existing_index = ArchiveIndex()
-        existing_index.integrate_existing(index_contents)
-        available_instruments.update(existing_index.known_instrument_ids)
-    except FileNotFoundError:
-        pass
 
     if not available_instruments:
         _LOGGER.debug("No available instruments for %s/%s/%d, removing index", station, archive, year)
@@ -52,6 +44,10 @@ async def reindex(connection: Connection, station: str, archive: str, year: int)
     _LOGGER.debug("Found %d instruments for %s/%s/%d", len(available_instruments), station, archive, year)
 
     index = ArchiveIndex()
+    if archive == "raw":
+        history = InstrumentHistory()
+    else:
+        history = None
 
     async def integrate_file(name: str) -> bool:
         with NamedTemporaryFile(suffix=".nc") as data_file:
@@ -60,6 +56,8 @@ async def reindex(connection: Connection, station: str, archive: str, year: int)
                 data_file.flush()
                 existing_data = Dataset(data_file.name, 'r')
                 index.integrate_file(existing_data)
+                if history:
+                    history.update_file(existing_data)
                 existing_data.close()
                 return True
             except FileNotFoundError:
@@ -83,14 +81,20 @@ async def reindex(connection: Connection, station: str, archive: str, year: int)
     if not any_valid:
         _LOGGER.debug("No valid data found, removing index")
         try:
-            await connection.remove_file(index_file_name(station, archive, year_start))
+            await connection.remove_file(index_file_name(station, archive, year_start / 1000.0))
+            if archive == "raw":
+                await connection.remove_file(index_instrument_history_file_name(station, archive, year_start / 1000.0))
         except FileNotFoundError:
             pass
         return
 
     index_contents = index.commit()
     _LOGGER.debug("Final index size %d bytes", len(index_contents))
-    await connection.write_bytes(index_file, index_contents)
+    await connection.write_bytes(index_file_name(station, archive, year_start / 1000.0), index_contents)
+    if history:
+        history_contents = history.commit()
+        _LOGGER.debug("Final history size %d bytes", len(history_contents))
+        await connection.write_bytes(index_instrument_history_file_name(station, archive, year_start / 1000.0), history_contents)
 
 
 def main():
@@ -155,7 +159,7 @@ def main():
         reindex_years = range(year, year+1)
     else:
         ts = time.gmtime()
-        reindex_years = range(1971, ts.tm_year)
+        reindex_years = range(1971, ts.tm_year+1)
 
     if args.debug:
         from forge.log import set_debug_logger

@@ -10,9 +10,10 @@ from forge.timeparse import parse_iso8601_time
 from forge.formattime import format_iso8601_time
 from forge.logicaltime import year_bounds_ms, start_of_year_ms, containing_year_range
 from forge.const import STATIONS
-from forge.archive.client import data_lock_key, data_file_name, data_notification_key, index_lock_key, index_file_name, event_log_lock_key, event_log_file_name
+from forge.archive.client import data_lock_key, data_file_name, data_notification_key, index_lock_key, index_file_name, index_instrument_history_file_name, event_log_lock_key, event_log_file_name
 from forge.archive.client.connection import Connection
 from forge.archive.client.archiveindex import ArchiveIndex
+from forge.archive.client.instrumenthistory import InstrumentHistory
 from forge.data.merge.instrument import MergeInstrument
 from forge.data.merge.eventlog import MergeEventLog
 from forge.data.structure.timeseries import file_id, date_created
@@ -29,6 +30,7 @@ class ArchivePut:
     def __init__(self, connection: Connection):
         self._connection = connection
         self._index: typing.Dict[str, typing.Dict[str, typing.Dict[int, ArchiveIndex]]] = dict()
+        self._history: typing.Dict[str, typing.Dict[int, InstrumentHistory]] = dict()
         self._data_locks: typing.Dict[str, typing.Dict[str, typing.Set[int]]] = dict()
         self._eventlog_locks: typing.Dict[str, typing.Set[int]] = dict()
 
@@ -100,6 +102,20 @@ class ArchivePut:
             archive_index[year_number] = year_index
         return year_index
 
+    def _get_history(self, station: str, file_start_time: int) -> InstrumentHistory:
+        station_history = self._history.get(station)
+        if not station_history:
+            station_history = dict()
+            self._history[station] = station_history
+
+        ts = time.gmtime(int(file_start_time / 1000))
+        year_number = ts.tm_year
+        year_history = station_history.get(year_number)
+        if not year_history:
+            year_history = InstrumentHistory()
+            station_history[year_number] = year_history
+        return year_history
+
     async def _lock_data(self, station: str, archive: str, lock_start: int, lock_end: int) -> None:
         station_locks = self._data_locks.get(station)
         if not station_locks:
@@ -158,23 +174,6 @@ class ArchivePut:
             for lock_day in range(lock_start_ms, lock_end_ms, 24 * 60 * 60 * 1000):
                 archive_locks.add(lock_day)
 
-    async def _write_data_file(self, file: Dataset, station: str, archive: str, instrument_id: str,
-                               archive_file_start: int, archive_file_end: int,
-                               temp_file: typing.Optional[NamedTemporaryFile] = None) -> None:
-        now = time.time()
-        date_created(file, now)
-        file_id(file, instrument_id, archive_file_start / 1000.0, archive_file_end / 1000.0, now)
-        file.time_coverage_start = format_iso8601_time(archive_file_start / 1000.0)
-        file.time_coverage_end = format_iso8601_time(archive_file_end / 1000.0)
-
-        self._get_index(station, archive, archive_file_start).integrate_file(file)
-
-        source_file = temp_file
-        if not temp_file:
-            source_file = open(file.filepath(), "rb")
-        file.close()
-        source_file.seek(0)
-
     def _prepare_data_file(self, file: Dataset, station: str, archive: str, instrument_id: str,
                            archive_file_start: int, archive_file_end: int) -> None:
         now = time.time()
@@ -210,6 +209,10 @@ class ArchivePut:
                 self._prepare_data_file(result, station, archive, instrument_id,
                                         archive_file_start, archive_file_end)
                 self._get_index(station, archive, archive_file_start).integrate_file(result)
+                if archive == "raw":
+                    self._get_history(station, archive_file_start).update_file(
+                        result, archive_file_start, archive_file_end
+                    )
                 result.close()
                 result = None
             finally:
@@ -275,6 +278,10 @@ class ArchivePut:
             self._prepare_data_file(file, station, archive, instrument_id,
                                     archive_file_start, archive_file_end)
             self._get_index(station, archive, archive_file_start).integrate_file(file)
+            if archive == "raw":
+                self._get_history(station, archive_file_start).update_file(
+                    file, archive_file_start, archive_file_end
+                )
             source_file_name = file.filepath()
             file.close()
             file = None
@@ -476,6 +483,21 @@ class ArchivePut:
                         _LOGGER.debug("No index for year found")
                     index_contents = index.commit()
                     await self._connection.write_bytes(index_file, index_contents)
+
+                    if archive == "raw":
+                        station_history = self._history.get(station)
+                        if station_history:
+                            history = station_history.get(year)
+                            if history:
+                                _LOGGER.debug("Updating history for %s year %d", station, year)
+                                history_file = index_instrument_history_file_name(station, archive, year_start / 1000.0)
+                                try:
+                                    history_contents = await self._connection.read_bytes(history_file)
+                                    history.integrate_existing(history_contents)
+                                except FileNotFoundError:
+                                    _LOGGER.debug("No history for year found")
+                                history_contents = history.commit()
+                                await self._connection.write_bytes(history_file, history_contents)
 
 
 def cli():

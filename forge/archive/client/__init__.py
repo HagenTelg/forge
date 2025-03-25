@@ -24,6 +24,12 @@ def index_file_name(station: str, archive: str, year_start: float) -> str:
     return f"data/{station.lower()}/{archive.lower()}/{ts.tm_year:04}/_index.json"
 
 
+def index_instrument_history_file_name(station: str, archive: str, year_start: float) -> str:
+    assert archive == "raw"
+    ts = time.gmtime(int(year_start))
+    return f"data/{station.lower()}/raw/{ts.tm_year:04}/_history.json"
+
+
 def event_log_lock_key(station: str) -> str:
     return f"eventlog/{station.lower()}"
 
