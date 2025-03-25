@@ -42,6 +42,10 @@ _MATCH_FRACTIONAL_YEAR = re.compile(
     r'\s*(\d{4})\.(\d+)\s*',
     flags=re.IGNORECASE
 )
+_MATCH_EPOCH = re.compile(
+    r'\s*E(M?)\s*:\s*(\d+)\s*',
+    flags=re.IGNORECASE
+)
 _TIME_PART_SPLIT = re.compile(
     r'\s+|[:TZ-]',
     flags=re.IGNORECASE
@@ -84,7 +88,8 @@ def parse_iso8601_time(s: str) -> datetime.datetime:
 
 def _parse_unambiguous_absolute(
         s: str,
-        year: typing.Optional[int] = None
+        year: typing.Optional[int] = None,
+        only_year: bool = False,
 ) -> typing.Tuple[datetime.datetime, datetime.datetime]:
     m = _MATCH_WEEK.fullmatch(s)
     if m:
@@ -143,6 +148,14 @@ def _parse_unambiguous_absolute(
             elif m.group(3):
                 end += datetime.timedelta(days=1)
         return start, end
+
+    m = _MATCH_EPOCH.fullmatch(s)
+    if m:
+        epoch = int(m.group(2))
+        if m.group(1) or epoch > 31536000000:
+            epoch /= 1000.0
+        start = datetime.datetime.fromtimestamp(epoch, tz=datetime.timezone.utc)
+        return start, start
 
     raise ValueError("invalid time format")
 
@@ -401,10 +414,26 @@ def parse_time_bounds_arguments(args: typing.List[str]) -> typing.Tuple[datetime
                 end = _apply_offset(start, end_offset * 1)
             else:
                 parts = _fragment_remaining()
-                start = _parse_any_single_time(parts)
-                end = _parse_any_single_time(parts, is_end=True)
-                if start >= end:
-                    raise ValueError("no time selected")
+                try:
+                    start = _parse_any_single_time(parts)
+                    end = _parse_any_single_time(parts, is_end=True)
+                    if start >= end:
+                        raise ValueError("no time selected")
+                except ValueError as e:
+                    try:
+                        # Special handling for single year specifications (e.x. "2003 2004", which should be all of
+                        # 2003 only; an alias for 2003-01-01 2004-01-01)
+                        if len(parts) != 2:
+                            raise ValueError
+                        start_year = int(parts[0].strip())
+                        end_year = int(parts[1].strip())
+                        if 1970 <= start_year <= 2999 and 1970 <= end_year <= 2999 and start_year < end_year:
+                            start = datetime.datetime(start_year, 1, 1, tzinfo=datetime.timezone.utc)
+                            end = datetime.datetime(end_year, 1, 1, tzinfo=datetime.timezone.utc)
+                            return start, end
+                    except (ValueError, TypeError, OverflowError):
+                        pass
+                    raise e
                 remaining.clear()
 
     if not start:
