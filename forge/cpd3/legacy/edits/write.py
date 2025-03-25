@@ -374,6 +374,16 @@ class EditDirective:
                     })
                     continue
 
+                if wavelength_count == 0 and variable_id in ("Nb", "Nn"):
+                    # Old (CPD2) size distribution edits, do the whole array if the first bin matches
+                    check_variable = f"{variable_id}1_{instrument_id}"
+                    if any_match(check_variable):
+                        result.append({
+                            "instrument_id": instrument_id,
+                            "variable_id": variable_id,
+                        })
+                        continue
+
                 if wavelength_count == 0:
                     continue
 

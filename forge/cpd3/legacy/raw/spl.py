@@ -62,7 +62,7 @@ C.run(STATION, {
     "N11": [ C('grimm110xopc', start='2013-08-20', end='2013-11-09T'), ],
     "N71": [
         C('tsi3010cpc+secondary', start='2011-01-24', end='2011-08-10'),
-        C('tsi3010cpc', start='2011-08-10', end='2019-09-29'),
+        C('tsi3010cpc', start='2011-08-10'),
     ],
     "N72": [
         C('tsi302xcpc+secondary', start='2012-08-26', end='2016-10-06'),
