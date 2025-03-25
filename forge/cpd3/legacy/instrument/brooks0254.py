@@ -137,7 +137,7 @@ class Converter(InstrumentConverter):
         )
 
         g.createDimension("process_value", data_raw_inputs.value.shape[1])
-        var_raw_inputs = g.createVariable("process_value", "f8", ("time", "controller_value"), fill_value=nan)
+        var_raw_inputs = g.createVariable("process_value", "f8", ("time", "process_value"), fill_value=nan)
         netcdf_timeseries.variable_coordinates(g, var_raw_inputs)
         var_raw_inputs.variable_id = "ZINPUTS"
         var_raw_inputs.coverage_content_type = "physicalMeasurement"
