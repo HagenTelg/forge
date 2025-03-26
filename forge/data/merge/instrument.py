@@ -206,6 +206,18 @@ class _HistoryAttribute:
             self.history[start] = self.format_history(self.prior)
         self.prior = value
 
+    def apply_empty_data(self, contents: typing.Union[netCDF4.Dataset, netCDF4.Variable]):
+        value = getattr(contents, self.name, None)
+        if value is None:
+            return
+        self.latest = value
+
+        self.history.update(parse_history(
+            getattr(contents, self.name + '_history', None),
+        ))
+
+        self.prior = self.to_history(value)
+
     def finish(self, target: typing.Union[netCDF4.Dataset, netCDF4.Variable]) -> None:
         if self.latest is None:
             try:
@@ -1105,6 +1117,8 @@ class _Record:
             self.groups[name].apply_constants(root)
 
     def apply_empty_data(self, contents: netCDF4.Dataset) -> None:
+        for attr in self.history_attrs:
+            attr.apply_empty_data(contents)
         for name, var in contents.variables.items():
             self.variables[name].apply_time(None, None, var)
         for name, root in contents.groups.items():
