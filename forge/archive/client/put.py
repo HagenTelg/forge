@@ -601,10 +601,12 @@ def cli():
                         if not backoff.has_failed:
                             sys.stdout.write("\n")
                         sys.stdout.write(f"\x1B[2K\rBusy: {ld.status}")
+                        sys.stdout.flush()
                     await backoff()
         finally:
             if backoff.has_failed and sys.stdout.isatty():
                 sys.stdout.write("\n")
+                sys.stdout.flush()
 
         await connection.shutdown()
 

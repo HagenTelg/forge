@@ -74,23 +74,27 @@ def main():
             tmpdir = Path(tmpdir)
 
             backoff = LockBackoff()
-            while True:
-                try:
-                    async with connection.transaction():
-                        await connection.lock_read(edit_directives_lock_key(station), start_ms, end_ms)
-                        await read_file_or_nothing(connection, edit_directives_file_name(station, None), tmpdir)
-                        for year in range(*containing_year_range(start, end)):
-                            year_start = start_of_year(year)
-                            await read_file_or_nothing(connection, edit_directives_file_name(station, year_start), tmpdir)
-                except LockDenied as ld:
-                    _LOGGER.debug("Archive busy: %s", ld.status)
-                    if sys.stdout.isatty():
-                        if not backoff.has_failed:
-                            sys.stdout.write("\n")
-                        sys.stdout.write(f"\x1B[2K\rBusy: {ld.status}")
-                    await backoff()
-                    continue
-                break
+            try:
+                while True:
+                    try:
+                        async with connection.transaction():
+                            await connection.lock_read(edit_directives_lock_key(station), start_ms, end_ms)
+                            await read_file_or_nothing(connection, edit_directives_file_name(station, None), tmpdir)
+                            for year in range(*containing_year_range(start, end)):
+                                year_start = start_of_year(year)
+                                await read_file_or_nothing(connection, edit_directives_file_name(station, year_start), tmpdir)
+                    except LockDenied as ld:
+                        _LOGGER.debug("Archive busy: %s", ld.status)
+                        if sys.stdout.isatty():
+                            if not backoff.has_failed:
+                                sys.stdout.write("\n")
+                            sys.stdout.write(f"\x1B[2K\rBusy: {ld.status}")
+                        await backoff()
+                        continue
+                    break
+            finally:
+                if backoff.has_failed and sys.stdout.isatty():
+                    sys.stdout.write("\n")
 
             def get_output() -> Dataset:
                 nonlocal output_file

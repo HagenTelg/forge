@@ -859,7 +859,7 @@ class LockBackoff:
 
     @property
     def has_failed(self) -> bool:
-        return self.failure_count == 0
+        return self.failure_count != 0
 
     def failed(self) -> None:
         self.failure_count += 1

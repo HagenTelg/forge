@@ -296,112 +296,118 @@ def main():
                 return existing_start, existing_end
 
             backoff = LockBackoff()
-            while True:
-                modified_edit_count = 0
-                try:
-                    async with connection.transaction(True):
-                        await connection.lock_write(edit_directives_lock_key(station), -MAX_I64, MAX_I64)
+            try:
+                while True:
+                    modified_edit_count = 0
+                    try:
+                        async with connection.transaction(True):
+                            await connection.lock_write(edit_directives_lock_key(station), -MAX_I64, MAX_I64)
 
-                        await connection.set_transaction_status("Loading edit directives for modification")
-                        for archive_path in await connection.list_files(f"edits/{station.lower()}"):
-                            output_file = tmpdir / Path(archive_path).name
-                            with output_file.open("wb") as f:
-                                try:
-                                    await connection.read_file(archive_path, f)
-                                except FileNotFoundError:
-                                    output_file.unlink()
-                                    continue
-                            match = edit_file_match.fullmatch(Path(archive_path).name)
-                            if not match:
-                                destination_year = 0
-                            else:
-                                destination_year = int(match.group(1))
-
-                            edit_file = Dataset(str(output_file), 'r+')
-                            year_files[destination_year] = (output_file, edit_file, False)
-
-                        for input_idx in range(input_start_time.shape[0]):
-                            edit_start = int(input_start_time[input_idx])
-                            edit_end = int(input_end_time[input_idx])
-                            edit_uid = int(input_uid[input_idx])
-                            if edit_uid == 0:
-                                input_uid[input_idx] = new_uid()
-
-                            notify_start = edit_start
-                            notify_end = edit_end
-
-                            if edit_start == -MAX_I64 or edit_end == MAX_I64:
-                                for year in year_files.keys():
-                                    if edit_uid == 0:
-                                        make_unique_uid(year, input_idx)
+                            await connection.set_transaction_status("Loading edit directives for modification")
+                            for archive_path in await connection.list_files(f"edits/{station.lower()}"):
+                                output_file = tmpdir / Path(archive_path).name
+                                with output_file.open("wb") as f:
+                                    try:
+                                        await connection.read_file(archive_path, f)
+                                    except FileNotFoundError:
+                                        output_file.unlink()
                                         continue
-                                    if year == 0:
-                                        continue
-                                    updated = remove_uid(year, edit_uid, input_idx)
-                                    if updated is not None:
-                                        notify_start = min(notify_start, updated[0])
-                                        notify_end = max(notify_end, updated[1])
+                                match = edit_file_match.fullmatch(Path(archive_path).name)
+                                if not match:
+                                    destination_year = 0
+                                else:
+                                    destination_year = int(match.group(1))
 
-                                update_start, update_end = modify_edit(0, edit_uid, input_idx)
-                                notify_start = min(notify_start, update_start)
-                                notify_end = max(notify_end, update_end)
-                            else:
-                                affected_years = range(*containing_year_range(edit_start / 1000.0, edit_end / 1000.0))
-                                for year in year_files.keys():
-                                    if edit_uid == 0:
-                                        make_unique_uid(year, input_idx)
-                                        continue
-                                    if year in affected_years:
-                                        continue
-                                    updated = remove_uid(year, edit_uid, input_idx)
-                                    if updated is not None:
-                                        notify_start = min(notify_start, updated[0])
-                                        notify_end = max(notify_end, updated[1])
-                                for year in affected_years:
-                                    update_start, update_end = modify_edit(year, edit_uid, input_idx)
+                                edit_file = Dataset(str(output_file), 'r+')
+                                year_files[destination_year] = (output_file, edit_file, False)
+
+                            for input_idx in range(input_start_time.shape[0]):
+                                edit_start = int(input_start_time[input_idx])
+                                edit_end = int(input_end_time[input_idx])
+                                edit_uid = int(input_uid[input_idx])
+                                if edit_uid == 0:
+                                    input_uid[input_idx] = new_uid()
+
+                                notify_start = edit_start
+                                notify_end = edit_end
+
+                                if edit_start == -MAX_I64 or edit_end == MAX_I64:
+                                    for year in year_files.keys():
+                                        if edit_uid == 0:
+                                            make_unique_uid(year, input_idx)
+                                            continue
+                                        if year == 0:
+                                            continue
+                                        updated = remove_uid(year, edit_uid, input_idx)
+                                        if updated is not None:
+                                            notify_start = min(notify_start, updated[0])
+                                            notify_end = max(notify_end, updated[1])
+
+                                    update_start, update_end = modify_edit(0, edit_uid, input_idx)
                                     notify_start = min(notify_start, update_start)
                                     notify_end = max(notify_end, update_end)
+                                else:
+                                    affected_years = range(*containing_year_range(edit_start / 1000.0, edit_end / 1000.0))
+                                    for year in year_files.keys():
+                                        if edit_uid == 0:
+                                            make_unique_uid(year, input_idx)
+                                            continue
+                                        if year in affected_years:
+                                            continue
+                                        updated = remove_uid(year, edit_uid, input_idx)
+                                        if updated is not None:
+                                            notify_start = min(notify_start, updated[0])
+                                            notify_end = max(notify_end, updated[1])
+                                    for year in affected_years:
+                                        update_start, update_end = modify_edit(year, edit_uid, input_idx)
+                                        notify_start = min(notify_start, update_start)
+                                        notify_end = max(notify_end, update_end)
 
-                            await connection.send_notification(edit_directives_notification_key(station),
-                                                               notify_start, notify_end)
-                            modified_edit_count += 1
+                                await connection.send_notification(edit_directives_notification_key(station),
+                                                                   notify_start, notify_end)
+                                modified_edit_count += 1
 
-                            await connection.set_transaction_status(f"Writing modified edit directives, {(input_idx / input_start_time.shape[0]) * 100.0:.0f}% done")
+                                await connection.set_transaction_status(f"Writing modified edit directives, {(input_idx / input_start_time.shape[0]) * 100.0:.0f}% done")
 
-                        for year, (source_path, edit_file, modified) in year_files.items():
-                            if modified and edit_file is None:
-                                try:
-                                    await connection.remove_file(edit_directives_file_name(station, start_of_year(year) if year != 0 else None))
-                                except FileNotFoundError:
-                                    pass
-                                continue
-                            edit_file.close()
-                            if not modified:
-                                continue
-                            with open(source_path, "rb") as f:
-                                await connection.write_file(edit_directives_file_name(station, start_of_year(year) if year != 0 else None), f)
+                            for year, (source_path, edit_file, modified) in year_files.items():
+                                if modified and edit_file is None:
+                                    try:
+                                        await connection.remove_file(edit_directives_file_name(station, start_of_year(year) if year != 0 else None))
+                                    except FileNotFoundError:
+                                        pass
+                                    continue
+                                edit_file.close()
+                                if not modified:
+                                    continue
+                                with open(source_path, "rb") as f:
+                                    await connection.write_file(edit_directives_file_name(station, start_of_year(year) if year != 0 else None), f)
+                            year_files.clear()
+                            break
+                    except LockDenied as ld:
+                        _LOGGER.debug("Archive busy: %s", ld.status)
+                        if sys.stdout.isatty():
+                            if not backoff.has_failed:
+                                sys.stdout.write("\n")
+                            sys.stdout.write(f"\x1B[2K\rBusy: {ld.status}")
+                            sys.stdout.flush()
+                        await backoff()
+                        continue
+                    finally:
+                        for source_path, edit_file, _ in year_files.values():
+                            try:
+                                edit_file.close()
+                            except:
+                                pass
+                            try:
+                                source_path.unlink()
+                            except:
+                                pass
                         year_files.clear()
-                        break
-                except LockDenied as ld:
-                    _LOGGER.debug("Archive busy: %s", ld.status)
-                    if sys.stdout.isatty():
-                        if not backoff.has_failed:
-                            sys.stdout.write("\n")
-                        sys.stdout.write(f"\x1B[2K\rBusy: {ld.status}")
-                    await backoff()
-                    continue
-                finally:
-                    for source_path, edit_file, _ in year_files.values():
-                        try:
-                            edit_file.close()
-                        except:
-                            pass
-                        try:
-                            source_path.unlink()
-                        except:
-                            pass
-                    year_files.clear()
-                    allocated_uids.clear()
+                        allocated_uids.clear()
+            finally:
+                if backoff.has_failed and sys.stdout.isatty():
+                    sys.stdout.write("\n")
+                    sys.stdout.flush()
 
         await connection.shutdown()
 

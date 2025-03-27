@@ -82,23 +82,28 @@ def main():
     async def run():
         async with await Connection.default_connection("pass data command") as connection:
             backoff = LockBackoff()
-            while True:
-                try:
-                    async with connection.transaction(True):
-                        await apply_pass(
-                            connection, station, profile,
-                            start, end,
-                            comment, auxiliary,
-                        )
-                    break
-                except LockDenied as ld:
-                    _LOGGER.debug("Archive busy: %s", ld.status)
-                    if sys.stdout.isatty():
-                        if not backoff.has_failed:
-                            sys.stdout.write("\n")
-                        sys.stdout.write(f"\x1B[2K\rBusy: {ld.status}")
-                    await backoff()
-                    continue
+            try:
+                while True:
+                    try:
+                        async with connection.transaction(True):
+                            await apply_pass(
+                                connection, station, profile,
+                                start, end,
+                                comment, auxiliary,
+                            )
+                        break
+                    except LockDenied as ld:
+                        _LOGGER.debug("Archive busy: %s", ld.status)
+                        if sys.stdout.isatty():
+                            if not backoff.has_failed:
+                                sys.stdout.write("\n")
+                            sys.stdout.write(f"\x1B[2K\rBusy: {ld.status}")
+                        await backoff()
+                        continue
+            finally:
+                if backoff.has_failed and sys.stdout.isatty():
+                    sys.stdout.write("\n")
+                    sys.stdout.flush()
 
     loop.run_until_complete(run())
     loop.close()

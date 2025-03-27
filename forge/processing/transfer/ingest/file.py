@@ -92,6 +92,7 @@ async def process_file(connection: Connection, file_name: Path, station: str = N
                     if not backoff.has_failed:
                         sys.stdout.write("\n")
                     sys.stdout.write(f"\x1B[2K\rBusy: {ld.status}")
+                    sys.stdout.flush()
                 await backoff()
 
         if not station:
@@ -114,6 +115,7 @@ async def process_file(connection: Connection, file_name: Path, station: str = N
     finally:
         if backoff.has_failed and sys.stdout.isatty():
             sys.stdout.write("\n")
+            sys.stdout.flush()
         file_data.close()
 
 
