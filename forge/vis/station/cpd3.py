@@ -47,6 +47,7 @@ _forge_translated_stations = frozenset({
     "sum",
     "tun",
     "var",
+    "wpa",
     "zsf",
 })
 
