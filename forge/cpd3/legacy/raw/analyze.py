@@ -130,6 +130,8 @@ class Instrument:
 
                 effective_start = max(scan_start, identity.start) if identity.start else scan_start
                 effective_end = min(scan_end, identity.end) if identity.end else scan_end
+                if effective_start >= effective_end:
+                    continue
 
                 def can_merge(target: Instrument) -> bool:
                     if target.source != source_identifier:
@@ -146,6 +148,8 @@ class Instrument:
                 if len(instrument_segments) == 0 or not can_merge(instrument_segments[-1]):
                     if len(instrument_segments) >= 1:
                         instrument_segments[-1].end = min(instrument_segments[-1].end, effective_start)
+                        if instrument_segments[-1].end <= instrument_segments[-1].start:
+                            del instrument_segments[-1]
 
                     instrument_data = cls()
                     instrument_data.start = effective_start
