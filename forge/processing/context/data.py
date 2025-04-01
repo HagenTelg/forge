@@ -262,16 +262,17 @@ class FileData(SelectedData):
                     if g is not None:
                         v = g.variables.get("time")
                         if v is not None:
-                            return v[:]
+                            return v
                 return None
 
             raw = find_time_variable()
             if raw is None or raw.shape[0] == 0:
                 self._times = np.empty(0, dtype=np.int64)
             else:
-                first = np.searchsorted(raw, self._time_start, side='left')
-                last = np.searchsorted(raw, self._time_end, side='right')
-                self._times = raw[first:last]
+                unmasked = raw[:].data
+                first = np.searchsorted(unmasked, self._time_start, side='left')
+                last = np.searchsorted(unmasked, self._time_end, side='right')
+                self._times = raw[first:last].data
 
         return self._times
 
