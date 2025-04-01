@@ -2,7 +2,7 @@ import typing
 from ..cpd3 import use_cpd3
 
 
-if use_cpd3():
+if use_cpd3("smr"):
     from ..cpd3 import DataStream, DataReader, EditedReader, RealtimeTranslator, Name, data_profile_get, detach, profile_data
     station_profile_data = detach(profile_data)
 

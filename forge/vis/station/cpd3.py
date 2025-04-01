@@ -31,25 +31,9 @@ _LOGGER = logging.getLogger(__name__)
 _interface = CONFIGURATION.get('CPD3.INTERFACE', 'cpd3_forge_interface')
 _read_timeout = CONFIGURATION.get('CPD3.READTIMEOUT', 2 * 60 * 60)
 _enable_forge_archive = bool(CONFIGURATION.get('ARCHIVE.ENABLE_FORGE', False))
-_forge_translated_stations = frozenset({
-    "arh",
-    "bld",
-    "bmw",
-    "bnd",
-    "bos",
-    "brw",
-    "hmc",
-    "mbo",
-    "mlo",
-    "nwr",
-    "smr",
-    "spl",
-    "spo",
-    "sum",
-    "tun",
-    "var",
-    "wpa",
-    "zsf",
+_forge_untranslated_stations = frozenset({
+    "app", "cpr", "etl", "euk", "wvr", "lln", "alt", "arn", "egb", "gsn", "lau", "sns", "ugr", "wpb", "zep", "hac",
+    "smo", "thd", "wpb", "wpc", "air", "csu", "lju", "nrlm", "pde", "beo", "amy",
 })
 
 
@@ -58,7 +42,7 @@ def use_cpd3(station: typing.Optional[str] = None) -> bool:
         return True
     if not station:
         return False
-    return station not in _forge_translated_stations
+    return station in _forge_untranslated_stations
 
 
 def _to_cpd3_selection(selection: typing.List[typing.Dict[str, str]]) -> typing.List[typing.Any]:

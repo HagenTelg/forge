@@ -3,7 +3,7 @@ from forge.vis.export import Export, ExportList
 from ..cpd3 import use_cpd3
 
 
-if use_cpd3():
+if use_cpd3("var"):
     from ..cpd3 import Name, DataExport, DataExportList, detach, profile_export, export_profile_get, export_profile_lookup
     station_profile_export = detach(profile_export)
 

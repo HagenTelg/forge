@@ -3,7 +3,7 @@ from math import nan
 from ..cpd3 import use_cpd3
 
 
-if use_cpd3():
+if use_cpd3("clamps4"):
     from ..cpd3 import DataStream, DataReader, Name, RealtimeTranslator, data_profile_get
 
     station_profile_data = {
