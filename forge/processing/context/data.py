@@ -266,7 +266,7 @@ class FileData(SelectedData):
                 return None
 
             raw = find_time_variable()
-            if raw is None or raw.shape[0] == 0:
+            if raw is None or len(raw.shape) != 1 or raw.shape[0] == 0:
                 self._times = np.empty(0, dtype=np.int64)
             else:
                 unmasked = raw[:].data
