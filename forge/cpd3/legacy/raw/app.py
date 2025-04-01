@@ -2,6 +2,7 @@
 
 import typing
 import os
+import numpy as np
 from math import nan
 import forge.data.structure.variable as netcdf_var
 import forge.data.structure.timeseries as netcdf_timeseries
@@ -36,6 +37,44 @@ class Met(BaseMet):
             self.apply_data(times, var_Tx, data_Tx)
 
         return True
+
+
+class CutSizeFixUMAC(UMAC):
+    def apply_cut_size(
+            self,
+            g,
+            group_times,
+            variables,
+            extra_sources = None,
+    ) -> None:
+        for i in range(len(variables)):
+            var = variables[i]
+            if var[0] is None:
+                continue
+            if not isinstance(var[1], UMAC.Data):
+                continue
+            if var[0].name == "T_V12":
+                var[1].cut_size = np.empty((0,), dtype=np.float64)
+        return super().apply_cut_size(g, group_times, variables, extra_sources)
+
+    def data_group(
+            self,
+            variable_times,
+            name: str = "data",
+            fill_gaps: typing.Union[bool, float] = True,
+    ):
+        if name == "data":
+            original_variables = variable_times
+            variable_times = list(variable_times)
+            for i in reversed(range(len(variable_times))):
+                var = variable_times[i]
+                if not isinstance(var, UMAC.Data):
+                    continue
+                if np.all(np.invert(np.isfinite(var.cut_size))):
+                    del variable_times[i]
+            if not variable_times:
+                variable_times = original_variables
+        return super().data_group(variable_times, name=name, fill_gaps=fill_gaps)
 
 
 C.run(STATION, {
@@ -150,7 +189,101 @@ C.run(STATION, {
             "C_format": "%5.1f",
             "long_name": "splitter temperature",
         },
-    }), start='2010-09-20') ],
+    }), start='2010-09-20', end='2017-06-05T18:04:00Z') , C(CutSizeFixUMAC.with_variables({
+        "Pd_P11": {
+            "units": "hPa",
+            "C_format": "%5.1f",
+            "long_name": "impactor pressure drop",
+        },
+        "T_V11": {
+            "units": "degC",
+            "C_format": "%5.1f",
+            "long_name": "impactor box inlet temperature",
+        },
+        "T_V12": {
+            "units": "degC",
+            "C_format": "%5.1f",
+            "long_name": "humdified neph downstream temperature",
+        },
+        "Pd_P12": {
+            "units": "hPa",
+            "C_format": "%5.1f",
+            "long_name": "pump vacuum",
+        },
+        "Q_Q12": {
+            "units": "lpm",
+            "C_format": "%6.2f",
+            "long_name": "humdified neph flow",
+        },
+    }, {
+        "Pd_P01": {
+            "units": "hPa",
+            "C_format": "%5.1f",
+            "long_name": "stack pitot tube",
+        },
+        "Q_Q71": {
+            "units": "lpm",
+            "C_format": "%6.2f",
+            "long_name": "CPC flow",
+        },
+        "Q_Q72": {
+            "units": "lpm",
+            "C_format": "%6.2f",
+            "long_name": "CPC drier flow",
+        },
+        "T_V51": {
+            "units": "degC",
+            "C_format": "%5.1f",
+            "long_name": "splitter temperature",
+        },
+    }), start='2017-06-05T18:04:00Z', end='2019-03-15T16:08:00Z'), C(UMAC.with_variables({
+        "Pd_P11": {
+            "units": "hPa",
+            "C_format": "%5.1f",
+            "long_name": "impactor pressure drop",
+        },
+        "T_V11": {
+            "units": "degC",
+            "C_format": "%5.1f",
+            "long_name": "impactor box inlet temperature",
+        },
+        "T_V12": {
+            "units": "degC",
+            "C_format": "%5.1f",
+            "long_name": "humdified neph downstream temperature",
+        },
+        "Pd_P12": {
+            "units": "hPa",
+            "C_format": "%5.1f",
+            "long_name": "pump vacuum",
+        },
+        "Q_Q12": {
+            "units": "lpm",
+            "C_format": "%6.2f",
+            "long_name": "humdified neph flow",
+        },
+    }, {
+        "Pd_P01": {
+            "units": "hPa",
+            "C_format": "%5.1f",
+            "long_name": "stack pitot tube",
+        },
+        "Q_Q71": {
+            "units": "lpm",
+            "C_format": "%6.2f",
+            "long_name": "CPC flow",
+        },
+        "Q_Q72": {
+            "units": "lpm",
+            "C_format": "%6.2f",
+            "long_name": "CPC drier flow",
+        },
+        "T_V51": {
+            "units": "degC",
+            "C_format": "%5.1f",
+            "long_name": "splitter temperature",
+        },
+    }), start='2019-03-15T16:08:00Z') ],
     "X2": [ C(LovePID.with_variables({
         "U_V11": {
             "units": "%",
