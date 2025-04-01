@@ -6,10 +6,10 @@ def organization(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None
 
     return DataObject(
         OR_CODE="US06L",
-        OR_NAME="University of Puerto Rico",
-        OR_ACRONYM="UPR/ITES", OR_UNIT="Institute for Tropical Ecosystem Studies",
-        OR_ADDR_LINE1="PO Box 21910", OR_ADDR_LINE2=None,
-        OR_ADDR_ZIP="00931-1910", OR_ADDR_CITY="San Juan, PR", OR_ADDR_COUNTRY="USA"
+        OR_NAME="University of Puerto Rico - Rio Piedras",
+        OR_ACRONYM="ACAR", OR_UNIT="Department of Environmental Science/Atmospheric Chemistry and Aerosols Research",
+        OR_ADDR_LINE1="University of Puerto Rico - Rio Piedras", OR_ADDR_LINE2=None,
+        OR_ADDR_ZIP="00925-2537", OR_ADDR_CITY="San Juan, PR", OR_ADDR_COUNTRY="USA"
     )
 
 
@@ -17,12 +17,12 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
     from nilutility.datatypes import DataObject
 
     return [DataObject(
-        PS_LAST_NAME="Torres", PS_FIRST_NAME="Elvis",
-        PS_EMAIL="elvis.torres810@gmail.com",
+        PS_LAST_NAME="Sarangi", PS_FIRST_NAME="Bighnaraj",
+        PS_EMAIL="bighnarajsarangi1986@gmail.com",
         PS_ORG_NAME="University of Puerto Rico",
-        PS_ORG_ACR="UPR/ITES", PS_ORG_UNIT="Institute for Tropical Ecosystem Studies",
-        PS_ADDR_LINE1="PO Box 21910", PS_ADDR_LINE2=None,
-        PS_ADDR_ZIP="00931-1910", PS_ADDR_CITY="San Juan, PR",
+        PS_ORG_ACR="ACAR", PS_ORG_UNIT="Department of Environmental Science/Atmospheric Chemistry and Aerosols Research",
+        PS_ADDR_LINE1="University of Puerto Rico - Rio Piedras", PS_ADDR_LINE2=None,
+        PS_ADDR_ZIP="00925-2537", PS_ADDR_CITY="San Juan, PR",
         PS_ADDR_COUNTRY="USA",
         PS_ORCID=None,
     )]
