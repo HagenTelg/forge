@@ -56,7 +56,7 @@ def svp_over_water(t_kelvin: typing.Union[float, np.ndarray]) -> typing.Union[fl
 
     if not isinstance(t_kelvin, (int, float)):
         result = np.full_like(t_kelvin, np.nan, dtype=np.float64)
-        valid = t_kelvin > 0.0
+        valid = np.logical_and(t_kelvin > 0.0, t_kelvin <= 678.0)
         t_kelvin = t_kelvin[valid]
 
         th = t_kelvin - 0.23855557567849 / (t_kelvin - 0.65017534844798e3)
@@ -70,7 +70,7 @@ def svp_over_water(t_kelvin: typing.Union[float, np.ndarray]) -> typing.Union[fl
         result[valid] = p * 1e6
         return result
     else:
-        if not isfinite(t_kelvin) or t_kelvin <= 0.0:
+        if not isfinite(t_kelvin) or t_kelvin <= 0.0 or t_kelvin > 678.0:
             return nan
 
         th = t_kelvin - 0.23855557567849 / (t_kelvin - 0.65017534844798e3)
