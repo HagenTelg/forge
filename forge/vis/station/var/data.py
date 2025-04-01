@@ -259,10 +259,10 @@ else:
         "Uneph": [Selection(variable_name="sample_humidity", require_tags={"scattering"}, exclude_tags={"secondary"})],
     })
     data_records["aerosol-raw-temperature"] = RealtimeRecord({
-        "Tnephcell": [RealtimeSelection(variable_name="cell_temperature", require_tags={"scattering"}, exclude_tags={"secondary"})],
-        "Unephcell": [RealtimeSelection(variable_name="cell_humidity", require_tags={"scattering"}, exclude_tags={"secondary"})],
-        "Tneph": [RealtimeSelection(variable_name="sample_temperature", require_tags={"scattering"}, exclude_tags={"secondary"})],
-        "Uneph": [RealtimeSelection(variable_name="sample_humidity", require_tags={"scattering"}, exclude_tags={"secondary"})],
+        "Tnephcell": [RealtimeSelection("Tcell", variable_name="cell_temperature", require_tags={"scattering"}, exclude_tags={"secondary"})],
+        "Unephcell": [RealtimeSelection("Ucell", variable_name="cell_humidity", require_tags={"scattering"}, exclude_tags={"secondary"})],
+        "Tneph": [RealtimeSelection("Tsample", variable_name="sample_temperature", require_tags={"scattering"}, exclude_tags={"secondary"})],
+        "Uneph": [RealtimeSelection("Usample", variable_name="sample_humidity", require_tags={"scattering"}, exclude_tags={"secondary"})],
     })
 
     def get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
