@@ -817,7 +817,7 @@ def _convert_directive(profile: str, identity: Identity,
         result['reverse_calibration'] = _from_cpd3_calibration(action.get('Original'))
     elif op == 'flowcorrection' or op == 'flowcalibration':
         result['action'] = 'flow_correction'
-        result['instrument'] = str(action.get('Instrument'), '')
+        result['instrument'] = str(action.get('Instrument', ''))
         result['calibration'] = _from_cpd3_calibration(action.get('Calibration'))
         result['reverse_calibration'] = _from_cpd3_calibration(action.get('Original'))
     elif op == 'setcut' or op == 'cut':
