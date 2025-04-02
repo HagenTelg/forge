@@ -214,6 +214,8 @@ def meteorological_climatology_limits(
 
 def vaisala_hmp_limits(
     data,
+    minimum_dewpoint: typing.Optional[float] = -59.85,
+    maximum_humidity: typing.Optional[float] = 100.0,
 ) -> None:
     data = SelectedData.ensure_data(data)
     data.append_history("forge.correction.vaisalahmplimits")
@@ -224,7 +226,9 @@ def vaisala_hmp_limits(
             always_tuple=True, commit_auxiliary=True,
     ):
         do_remove = np.full(dewpoint.shape, False, dtype=np.bool_)
-        do_remove[dewpoint.values < -59.85] = True
-        do_remove[humidity.values > 100.0] = True
+        if minimum_dewpoint is not None:
+            do_remove[dewpoint.values < minimum_dewpoint] = True
+        if maximum_humidity is not None:
+            do_remove[humidity.values > maximum_humidity] = True
         dewpoint[do_remove] = nan
         humidity[do_remove] = nan

@@ -100,8 +100,10 @@ def run(data: AvailableData) -> None:
     standard_intensives(data)
     standard_meteorological(data)
 
-    for met in data.select_instrument({"instrument_id": "XM1"}, start="2016-12-20"):
+    for met in data.select_instrument({"instrument_id": "XM1"}, start="2016-12-20", end="2025-03-29T00:00:00Z"):
         vaisala_hmp_limits(met)
+    for met in data.select_instrument({"instrument_id": "XM1"}, start="2025-03-29T00:00:00Z"):
+        vaisala_hmp_limits(met, minimum_dewpoint=None)
 
 
 if __name__ == '__main__':
