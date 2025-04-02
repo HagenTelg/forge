@@ -1,12 +1,12 @@
 import typing
-from ..default.view import detach, View, aerosol_views
+from ..default.view import detach, View, aerosol_views, aerosol_public
 from ..default.aerosol.flow import BasicFlow
 from ..default.aerosol.tsi3010cpc import TSI3010CPCStatus
 from ..default.aerosol.ccn import CCNStatus
 from .counts import ParticleConcentration, EditingParticleConcentration, TSI3776CPCStatus
 
 
-station_views = detach(aerosol_views)
+station_views = detach(aerosol_views, aerosol_public)
 
 station_views['aerosol-raw-counts'] = ParticleConcentration('aerosol-raw')
 station_views['aerosol-realtime-counts'] = ParticleConcentration('aerosol-realtime', realtime=True)
