@@ -895,7 +895,7 @@ def _display_directive(raw: typing.Dict[str, typing.Any]) -> bool:
         elif _matches("Uncontaminate", "ClearContam"):
             return False
         elif _matches("FlowCorrection", "FlowCalibration"):
-            if len(raw.get('Instrument', '')) > 0:
+            if len(parameters.get('Instrument', '')) > 0:
                 return True
             return False
         elif _matches("Spot", "SpotSize"):
