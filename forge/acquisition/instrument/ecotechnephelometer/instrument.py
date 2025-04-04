@@ -1155,7 +1155,7 @@ class Instrument(StreamingInstrument):
                         continue
                     rayleigh = zero_adj_x[angle][wavelength]
                     wall = cal_wall[angle][wavelength]
-                    if wall <= 1.0:
+                    if wall <= 1.0 or wall >= 100.0:
                         continue
                     wall /= 100.0
                     Bsnw[angle][wavelength] = (wall * rayleigh) / (1.0 - wall)
