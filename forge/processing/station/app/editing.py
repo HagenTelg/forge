@@ -19,8 +19,7 @@ def rr_zero_correction(data: AvailableData) -> None:
 
     for rr_neph, tsi_neph in data.select_instrument((
             {"instrument": "rrm903nephelometer"},
-            {"instrument_id": "S11"},
-    ), start="2010-09-20", end="2012-05-09T14:12:00Z"):
+    ),{"instrument_id": "S11"}, start="2010-09-20", end="2012-05-09T14:12:00Z"):
         for scattering in rr_neph.select_variable((
                 {"variable_name": "scattering_coefficient"},
                 {"standard_name": "volume_scattering_coefficient_in_air_due_to_dried_aerosol_particles"},
