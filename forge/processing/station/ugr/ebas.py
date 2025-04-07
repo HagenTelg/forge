@@ -85,3 +85,40 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
             (-25, None),
         )
     return result
+
+
+
+def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
+    from ..default.ebas import standard_submit
+    from forge.product.selection import InstrumentSelection
+    result = standard_submit(gaw_station)
+    result.update({
+        "maap_lev0": ("clean", [InstrumentSelection(
+            instrument_id=["A31"],
+        )]),
+        "maap_lev1": ("clean", [InstrumentSelection(
+            instrument_id=["A31"],
+        )]),
+        "maap_lev2": ("avgh", [InstrumentSelection(
+            instrument_id=["A31"],
+        )]),
+    })
+    return result
+
+
+def nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"], str, str]]:
+    from ..default.ebas import standard_nrt
+    from forge.product.selection import InstrumentSelection
+    from forge.processing.station.lookup import station_data
+
+    user = station_data(gaw_station, 'ebas', 'platform')(gaw_station)
+    if user.endswith('S'):
+        user = user[:-1]
+
+    result = standard_nrt(gaw_station)
+    result.update({
+        "maap_lev0": ("raw", [InstrumentSelection(
+            instrument_id=["A31"],
+        )], user, ""),
+    })
+    return result

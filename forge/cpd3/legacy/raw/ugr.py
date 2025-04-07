@@ -10,6 +10,7 @@ from forge.const import STATIONS as VALID_STATIONS
 from forge.cpd3.legacy.raw.write import InstrumentTimeConversion as C
 from forge.cpd3.legacy.instrument.converter import InstrumentConverter
 from forge.cpd3.legacy.instrument.campbellcr1000gmd import Converter as CR1000
+from forge.cpd3.legacy.instrument.tsi3563nephelometer import Converter as TSI3563
 
 STATION = os.path.basename(__file__).split('.', 1)[0].lower()
 assert STATION in VALID_STATIONS
@@ -336,7 +337,11 @@ C.run(STATION, {
     "A52": [ C('mageeae31+secondary', start='2018-02-21', end='2018-02-24'), ],
     "N21": [ C('dmtccn', start='2018-10-10', end='2022-07-08'), ],
     "N22": [ C(CCNFixedName, start='2021-01-19', end='2021-04-08'), ],
-    "S11": [ C('tsi3563nephelometer', start='2005-11-01'), ],
+    "S11": [
+        C('tsi3563nephelometer', start='2005-11-01', end='2015-10-28T17:00:00Z'),
+        C(TSI3563.with_instrument_override(serial_number="3563153801"), start='2015-10-28T17:00:00Z', end='2017-08-07'),
+        C('tsi3563nephelometer', start='2017-08-07'),
+    ],
     "S12": [ C('tsi3563nephelometer+secondary', start='2013-01-10', end='2024-07-31'), ],
     "S13": [ C('tsi3563nephelometer+secondary', start='2018-02-09', end='2018-02-16'), ],
     "X1": [ C(CR1000.with_variables({}, {
