@@ -3,6 +3,7 @@ import logging
 import asyncio
 import time
 import os
+import re
 from abc import ABC, abstractmethod
 from pathlib import Path
 from math import floor, ceil
@@ -15,7 +16,7 @@ from forge.temp import WorkingDirectory
 from forge.product.selection import InstrumentSelection
 from forge.data.state import is_state_group
 from forge.data.dimensions import find_dimension_values
-from forge.archive.client import data_lock_key, index_lock_key
+from forge.archive.client import data_lock_key, index_lock_key, data_notification_key
 from forge.archive.client.connection import Connection, LockDenied, LockBackoff
 
 _LOGGER = logging.getLogger(__name__)
@@ -137,6 +138,19 @@ class Tracker(ABC):
 
     @abstractmethod
     def updated_to_outputs(self, start_epoch_ms: int, end_epoch_ms: int) -> typing.Iterable[typing.Tuple[int, int]]:
+        pass
+
+    @property
+    def listen_notifications(self) -> typing.Iterable[str]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def matches_selection(
+            self,
+            station: typing.Optional[str] = None,
+            archive: typing.Optional[str] = None,
+            key: typing.Optional[re.Pattern] = None,
+    ) -> bool:
         pass
 
     @property
@@ -422,6 +436,26 @@ class FileModifiedTracker(Tracker):
         self.station = station
         self.archive = archive
         self.selections = selections
+
+    def matches_selection(
+            self,
+            station: typing.Optional[str] = None,
+            archive: typing.Optional[str] = None,
+            key: typing.Optional[re.Pattern] = None,
+    ) -> bool:
+        if station and self.station != station:
+            return False
+        if archive and self.archive != archive:
+            return False
+        if key and not key.fullmatch(self.update_key or ""):
+            return False
+        return True
+
+    @property
+    def listen_notifications(self) -> typing.Iterable[str]:
+        return [
+            data_notification_key(self.station, self.archive),
+        ]
 
     @property
     def update_key(self) -> typing.Optional[str]:

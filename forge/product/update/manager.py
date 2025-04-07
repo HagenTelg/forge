@@ -7,10 +7,9 @@ import os
 from abc import ABC, abstractmethod
 from forge.tasks import wait_cancelable
 from forge.range import intersects
-from forge.archive.client import data_notification_key
 from forge.archive.client.connection import Connection
 from forge.dashboard.report import report_ok, report_failed
-from .tracker import FileModifiedTracker
+from .tracker import Tracker
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,23 +27,23 @@ class UpdateController(ABC):
         self.connection = connection
         self._lock: asyncio.Lock = None
         self._updated: asyncio.Event = None
-        self._trackers: typing.List[FileModifiedTracker] = list()
+        self._trackers: typing.List[Tracker] = list()
 
-        self._notification_queue: typing.List[typing.Tuple[FileModifiedTracker, int, int]] = list()
+        self._notification_queue: typing.List[typing.Tuple[Tracker, int, int]] = list()
         self._next_candidate_process: typing.Optional[float] = time.monotonic() + self.CANDIDATE_PROCESS_DELAY
 
-        self._external_update_queue: typing.List[typing.Tuple[FileModifiedTracker, int, int]] = list()
-        self._external_commit_queue: typing.List[typing.Tuple[FileModifiedTracker, int, int]] = list()
+        self._external_update_queue: typing.List[typing.Tuple[Tracker, int, int]] = list()
+        self._external_commit_queue: typing.List[typing.Tuple[Tracker, int, int]] = list()
 
-        self._commit_request: typing.Set[FileModifiedTracker] = set()
-        self._suspended_trackers: typing.Set[FileModifiedTracker] = set()
+        self._commit_request: typing.Set[Tracker] = set()
+        self._suspended_trackers: typing.Set[Tracker] = set()
 
     @abstractmethod
-    async def create_trackers(self) -> typing.List[FileModifiedTracker]:
+    async def create_trackers(self) -> typing.List[Tracker]:
         pass
 
     async def _tracker_notified(self, key: str, start_epoch_ms: int, end_epoch_ms: int,
-                                tracker: FileModifiedTracker) -> None:
+                                tracker: Tracker) -> None:
         async with self._lock:
             if tracker in self._suspended_trackers:
                 _LOGGER.debug(f"Archive notification {start_epoch_ms},{end_epoch_ms} ignored on suspended {str(tracker)}")
@@ -62,18 +61,18 @@ class UpdateController(ABC):
         for tracker in self._trackers:
             tracker.load_state()
         for tracker in self._trackers:
-            await self.connection.listen_notification(
-                data_notification_key(tracker.station, tracker.archive),
-                self._tracker_notified, tracker,
-                synchronous=self.SYNCHRONOUS_NOTIFICATION,
-            )
+            for key in tracker.listen_notifications:
+                await self.connection.listen_notification(
+                    key, self._tracker_notified, tracker,
+                    synchronous=self.SYNCHRONOUS_NOTIFICATION,
+                )
 
     async def _matched_trackers(
             self,
             station: typing.Optional[str] = None,
             archive: typing.Optional[str] = None,
             key: typing.Optional[str] = None,
-    ) -> typing.AsyncIterable[FileModifiedTracker]:
+    ) -> typing.AsyncIterable[Tracker]:
         if key:
             try:
                 key = re.compile(key, flags=re.IGNORECASE)
@@ -84,11 +83,7 @@ class UpdateController(ABC):
             key = None
         async with self._lock:
             for tracker in self._trackers:
-                if station and tracker.station != station:
-                    continue
-                if archive and tracker.archive != archive:
-                    continue
-                if key and not key.fullmatch(tracker.update_key or ""):
+                if not tracker.matches_selection(station, archive, key):
                     continue
                 yield tracker
 
