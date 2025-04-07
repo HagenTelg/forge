@@ -1,5 +1,8 @@
 import typing
 
+if typing.TYPE_CHECKING:
+    from nilutility.datatypes import DataObject
+
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     return "ZA0001G"
@@ -54,3 +57,14 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
         PS_ADDR_COUNTRY="South Africa",
         PS_ORCID=None,
     )]
+
+
+def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: int) -> typing.Type["EBASFile"]:
+    from ..default.ebas import file
+
+    if end_epoch_ms <= 1332633600000 and type_code.startswith("absorption_"):
+        type_code = "psap3w_" + type_code[11:]
+    elif type_code.startswith("cpc_"):
+        type_code = "tsi3781cpc_" + type_code[4:]
+
+    return file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)

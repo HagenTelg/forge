@@ -1,5 +1,8 @@
 import typing
 
+if typing.TYPE_CHECKING:
+    from nilutility.datatypes import DataObject
+
 
 def land_use(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     return "Not available"

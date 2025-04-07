@@ -90,7 +90,7 @@ class LegacyMAAP(WavelengthConverter):
         return True
 
 
-class LegacyTSI3010(InstrumentConverter):
+class LegacyTSI3772(InstrumentConverter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -148,7 +148,7 @@ C.run(STATION, {
     ],
     "A21": [ C('thermomaap', start='2017-01-23'), ],
     "A81": [ C('mageeae33', start='2017-03-13'), ],
-    "N61": [ C(LegacyTSI3010, start='2013-01-01', end='2013-12-18'), ],
+    "N61": [ C(LegacyTSI3772, start='2013-01-01', end='2013-12-18'), ],
     "S11": [
         C('ecotechnephelometer', start='2010-01-01', end='2020-09-07'),
         C('ecotechnephelometer', start='2020-09-27'),

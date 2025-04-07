@@ -1,5 +1,8 @@
 import typing
-from forge.product.selection import InstrumentSelection
+
+if typing.TYPE_CHECKING:
+    from nilutility.datatypes import DataObject
+    from forge.product.selection import InstrumentSelection
 
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
@@ -62,11 +65,12 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
         PS_ORCID=None,
     )]
 
-def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List[InstrumentSelection]]]:
+
+def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
     from ..default.ebas import standard_submit
     return standard_submit(gaw_station)
 
 
-def nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List[InstrumentSelection], str, str]]:
+def nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"], str, str]]:
     from ..default.ebas import standard_nrt
     return standard_nrt(gaw_station)

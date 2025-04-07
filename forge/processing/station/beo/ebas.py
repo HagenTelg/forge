@@ -1,5 +1,9 @@
 import typing
 
+if typing.TYPE_CHECKING:
+    from nilutility.datatypes import DataObject
+    from forge.product.selection import InstrumentSelection
+
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     return "BG0001R"

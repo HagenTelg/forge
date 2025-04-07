@@ -1,5 +1,9 @@
 import typing
-from forge.product.selection import InstrumentSelection
+
+if typing.TYPE_CHECKING:
+    from nilutility.datatypes import DataObject
+    from forge.product.ebas.file import EBASFile
+    from forge.product.selection import InstrumentSelection
 
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
@@ -64,3 +68,12 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
         PS_ADDR_ZIP="FI-00014", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
         PS_ORCID=None,
     )]
+
+
+def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: int) -> typing.Type["EBASFile"]:
+    from ..default.ebas import file
+
+    if end_epoch_ms <= 1632268800000 and type_code.startswith("absorption_"):
+        type_code = "psap3w_" + type_code[11:]
+
+    return file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)

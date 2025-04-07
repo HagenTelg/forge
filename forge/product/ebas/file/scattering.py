@@ -445,6 +445,30 @@ class Level2File(SpectralFile, AerosolInstrument):
     def limit_backscattering_q84(self) -> typing.Tuple[typing.Optional[float], typing.Optional[float]]:
         return -0.1, None
         # return -1.0, 40
+
+    @property
+    def limit_scattering_fine(self) -> typing.Optional[typing.Tuple[typing.Optional[float], typing.Optional[float]]]:
+        return None
+
+    @property
+    def limit_scattering_q16_fine(self) -> typing.Optional[typing.Tuple[typing.Optional[float], typing.Optional[float]]]:
+        return None
+
+    @property
+    def limit_scattering_q84_fine(self) -> typing.Optional[typing.Tuple[typing.Optional[float], typing.Optional[float]]]:
+        return None
+
+    @property
+    def limit_backscattering_fine(self) -> typing.Optional[typing.Tuple[typing.Optional[float], typing.Optional[float]]]:
+        return None
+
+    @property
+    def limit_backscattering_q16_fine(self) -> typing.Optional[typing.Tuple[typing.Optional[float], typing.Optional[float]]]:
+        return None
+
+    @property
+    def limit_backscattering_q84_fine(self) -> typing.Optional[typing.Tuple[typing.Optional[float], typing.Optional[float]]]:
+        return None
     
     @classmethod
     def with_limits(
@@ -495,6 +519,64 @@ class Level2File(SpectralFile, AerosolInstrument):
 
         return Result
 
+    @classmethod
+    def with_limits_fine(
+            cls,
+            scattering: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+            scattering_fine: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+            scattering_q16: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+            scattering_q16_fine: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+            scattering_q84: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+            scattering_q84_fine: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+            backscattering: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+            backscattering_fine: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+            backscattering_q16: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+            backscattering_q16_fine: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+            backscattering_q84: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+            backscattering_q84_fine: typing.Tuple[typing.Optional[float], typing.Optional[float]] = None,
+    ) -> typing.Type["Level2File"]:
+        class Result(cls.with_limits(
+            scattering, scattering_q16, scattering_q84,
+            backscattering, backscattering_q16, backscattering_q84
+        )):
+            @property
+            def limit_scattering_fine(self) -> typing.Optional[typing.Tuple[typing.Optional[float], typing.Optional[float]]]:
+                if scattering_fine is not None:
+                    return scattering_fine
+                return super().limit_scattering_fine
+
+            @property
+            def limit_scattering_q16_fine(self) -> typing.Optional[typing.Tuple[typing.Optional[float], typing.Optional[float]]]:
+                if scattering_q16_fine is not None:
+                    return scattering_q16_fine
+                return super().limit_scattering_q16_fine
+
+            @property
+            def limit_scattering_q84_fine(self) -> typing.Optional[typing.Tuple[typing.Optional[float], typing.Optional[float]]]:
+                if scattering_q84_fine is not None:
+                    return scattering_q84_fine
+                return super().limit_scattering_q84_fine
+
+            @property
+            def limit_backscattering_fine(self) -> typing.Optional[typing.Tuple[typing.Optional[float], typing.Optional[float]]]:
+                if backscattering_fine is not None:
+                    return backscattering_fine
+                return super().limit_backscattering_fine
+
+            @property
+            def limit_backscattering_q16_fine(self) -> typing.Optional[typing.Tuple[typing.Optional[float], typing.Optional[float]]]:
+                if backscattering_q16_fine is not None:
+                    return backscattering_q16_fine
+                return super().limit_backscattering_q16_fine
+
+            @property
+            def limit_backscattering_q84_fine(self) -> typing.Optional[typing.Tuple[typing.Optional[float], typing.Optional[float]]]:
+                if backscattering_q84_fine is not None:
+                    return backscattering_q84_fine
+                return super().limit_backscattering_q84_fine
+
+        return Result
+
     async def __call__(self, output_directory: Path) -> None:
         async with WorkingDirectory() as data_directory:
             data_directory = Path(data_directory)
@@ -531,6 +613,11 @@ class Level2File(SpectralFile, AerosolInstrument):
             backscattering_q16 = matrix.spectral_variable()
             backscattering_q84 = matrix.spectral_variable()
             async for nas, selector, root in matrix.iter_data_files(data_directory):
+                def choose_limit(base, fine):
+                    if fine is not None and selector.cut_size < 10.0:
+                        return fine
+                    return base
+
                 flags[nas].integrate_file(root, selector)
                 instrument[nas].integrate_file(root)
                 for var in self.select_variable(
@@ -559,7 +646,9 @@ class Level2File(SpectralFile, AerosolInstrument):
                 ):
                     scattering[nas].integrate_variable(
                         var, selector(var),
-                        converter=self.limit_converter(self.limit_scattering),
+                        converter=self.limit_converter(
+                            choose_limit(self.limit_scattering, self.limit_scattering_fine),
+                        )
                     )
                 for var in self.select_variable(
                         root,
@@ -570,14 +659,14 @@ class Level2File(SpectralFile, AerosolInstrument):
                     scattering_q16[nas].integrate_variable(
                         var, selector(var),
                         converter=self.limit_converter(
-                            self.limit_scattering_q16,
+                            choose_limit(self.limit_scattering_q16, self.limit_scattering_q16_fine),
                             self.quantile_converter(var, 0.1587)
                         )
                     )
                     scattering_q84[nas].integrate_variable(
                         var, selector(var),
                         converter=self.limit_converter(
-                            self.limit_scattering_q84,
+                            choose_limit(self.limit_scattering_q84, self.limit_scattering_q84_fine),
                             self.quantile_converter(var, 0.8413)
                         )
                     )
@@ -588,7 +677,9 @@ class Level2File(SpectralFile, AerosolInstrument):
                 ):
                     backscattering[nas].integrate_variable(
                         var, selector(var),
-                        converter=self.limit_converter(self.limit_backscattering),
+                        converter=self.limit_converter(
+                            choose_limit(self.limit_backscattering, self.limit_backscattering_fine),
+                        )
                     )
                 for var in self.select_variable(
                         root,
@@ -599,14 +690,14 @@ class Level2File(SpectralFile, AerosolInstrument):
                     backscattering_q16[nas].integrate_variable(
                         var, selector(var),
                         converter=self.limit_converter(
-                            self.limit_backscattering_q16,
+                            choose_limit(self.limit_backscattering_q16, self.limit_backscattering_q16_fine),
                             self.quantile_converter(var, 0.1587)
                         )
                     )
                     backscattering_q84[nas].integrate_variable(
                         var, selector(var),
                         converter=self.limit_converter(
-                            self.limit_backscattering_q84,
+                            choose_limit(self.limit_backscattering_q84, self.limit_backscattering_q84_fine),
                             self.quantile_converter(var, 0.8413)
                         )
                     )

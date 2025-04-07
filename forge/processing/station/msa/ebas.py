@@ -1,5 +1,8 @@
 import typing
 
+if typing.TYPE_CHECKING:
+    from nilutility.datatypes import DataObject
+
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     return "ES0022R"

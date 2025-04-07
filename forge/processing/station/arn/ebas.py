@@ -1,5 +1,10 @@
 import typing
 
+if typing.TYPE_CHECKING:
+    from nilutility.datatypes import DataObject
+    from forge.product.ebas.file import EBASFile
+    from forge.product.selection import InstrumentSelection
+
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     return "ES0100R"
@@ -62,3 +67,23 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
         PS_ADDR_COUNTRY="Spain",
         PS_ORCID=None,
     )]
+
+
+def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: int) -> typing.Type["EBASFile"]:
+    from ..default.ebas import file
+    from forge.product.ebas.file.scattering import Level2File as ScatteringLevel2File
+
+    if type_code.startswith("cpc_"):
+        type_code = "tsi3776cpc_" + type_code[4:]
+
+    result = file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)
+    if isinstance(result, ScatteringLevel2File):
+        return result.with_limits(
+            (-1, None),
+            (-1, None),
+            (-1, None),
+            (-1, None),
+            (-1, None),
+            (-1, None),
+        )
+    return result

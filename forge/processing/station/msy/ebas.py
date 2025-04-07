@@ -1,5 +1,9 @@
 import typing
 
+if typing.TYPE_CHECKING:
+    from nilutility.datatypes import DataObject
+    from forge.product.ebas.file import EBASFile
+
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     return "ES1778R"
@@ -60,3 +64,12 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
         PS_ADDR_COUNTRY="Spain",
         PS_ORCID=None,
     )]
+
+
+def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: int) -> typing.Type["EBASFile"]:
+    from ..default.ebas import file
+
+    if type_code.startswith("cpc_"):
+        type_code = "tsi3772cpc_" + type_code[4:]
+
+    return file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)

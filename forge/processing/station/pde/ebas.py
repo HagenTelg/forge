@@ -1,5 +1,9 @@
 import typing
 
+if typing.TYPE_CHECKING:
+    from nilutility.datatypes import DataObject
+    from forge.product.selection import InstrumentSelection
+
 
 def organization(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> "DataObject":
     from nilutility.datatypes import DataObject

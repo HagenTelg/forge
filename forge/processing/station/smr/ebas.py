@@ -1,5 +1,9 @@
 import typing
-from forge.product.selection import InstrumentSelection
+
+if typing.TYPE_CHECKING:
+    from nilutility.datatypes import DataObject
+    from forge.product.ebas.file import EBASFile
+    from forge.product.selection import InstrumentSelection
 
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
@@ -66,7 +70,23 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
     )]
 
 
-def nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List[InstrumentSelection], str, str]]:
+def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: int) -> typing.Type["EBASFile"]:
+    from ..default.ebas import file
+    from forge.product.ebas.file.scattering import Level2File as ScatteringLevel2File
+    result = file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)
+    if isinstance(result, ScatteringLevel2File):
+        return result.with_limits_fine(
+            (-50, None), (-10, None),
+            (-50, None), (-10, None),
+            (-50, None), (-10, None),
+            (-20, None), (-1, None),
+            (-20, None), (-1.5, None),
+            (-20, None), (-0.1, None),
+        )
+    return result
+
+
+def nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"], str, str]]:
     from forge.processing.station.lookup import station_data
     from forge.product.selection import InstrumentSelection
 

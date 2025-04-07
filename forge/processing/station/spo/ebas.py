@@ -1,8 +1,8 @@
 import typing
-from forge.product.selection import InstrumentSelection
 
 if typing.TYPE_CHECKING:
     from forge.product.ebas.file import EBASFile
+    from forge.product.selection import InstrumentSelection
 
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
@@ -36,6 +36,10 @@ def gaw_type(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) ->
 def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: int) -> typing.Type["EBASFile"]:
     from ..default.ebas import file
     from forge.product.ebas.file.scattering import Level2File as ScatteringLevel2File
+
+    if end_epoch_ms <= 599616000000 and type_code.startswith("cpc_"):
+        type_code = "gerichcpc_" + type_code[4:]
+
     result = file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)
     if isinstance(result, ScatteringLevel2File):
         return result.with_limits(
@@ -49,11 +53,11 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
     return result
 
 
-def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List[InstrumentSelection]]]:
+def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
     from ..default.ebas import standard_submit
     return standard_submit(gaw_station)
 
 
-def nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List[InstrumentSelection], str, str]]:
+def nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"], str, str]]:
     from ..default.ebas import standard_nrt
     return standard_nrt(gaw_station)
