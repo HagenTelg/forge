@@ -2,7 +2,7 @@ import typing
 from abc import ABC, abstractmethod
 from math import nan, inf
 import numpy as np
-from forge.logicaltime import containing_epoch_month_range, start_of_epoch_month_ms, months_since_epoch
+from forge.logicaltime import containing_epoch_month_range, start_of_epoch_month_ms
 
 
 def _bin_weighted_average(bin_start: np.ndarray, values: np.ndarray, weights: np.ndarray) -> np.ndarray:
@@ -136,10 +136,6 @@ def fixed_interval_quantiles(
 def _month_bins(times_epoch_ms: np.ndarray):
     if times_epoch_ms.shape[0] < 1:
         return np.empty_like(times_epoch_ms, dtype=np.int64), np.empty_like(times_epoch_ms, dtype=np.int64)
-    if times_epoch_ms.shape[0] == 1:
-        bin_number = months_since_epoch(float(times_epoch_ms[0] / 1000.0))
-        bin_start = start_of_epoch_month_ms(bin_number)
-        return np.array([bin_number], dtype=np.int64), np.array([bin_start], dtype=np.int64)
 
     begin_index = 0
     bin_numbers: typing.List[int] = list()
