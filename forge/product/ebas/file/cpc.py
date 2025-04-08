@@ -141,7 +141,7 @@ class Level0File(EBASFile, AerosolInstrument):
                     cnc[nas].integrate_variable(var, selector(var))
 
         for var in flow_rate:
-            setattr(var.metadata, 'Nominal/measured', 'measured')
+            var.add_characteristic('Nominal/measured', 'measured', self.instrument_type, var.metadata.comp_name, '0')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)

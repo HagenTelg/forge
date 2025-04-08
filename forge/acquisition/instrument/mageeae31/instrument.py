@@ -239,12 +239,12 @@ class Instrument(StreamingInstrument):
 
             self.variable_transmittance(self.data_Ir, dimension_wavelength, code="Ir"),
             self.variable_array(self.data_If, dimension_wavelength, "reference_intensity", code="If", attributes={
-                'long_name': "sensing beam signal",
+                'long_name': "reference beam signal",
                 'C_format': "%7.4f",
             }),
             self.variable_array(self.data_Ip, dimension_wavelength, "sample_intensity", code="Ip",
                                 attributes={
-                'long_name': "reference beam signal",
+                'long_name': "sensing beam signal",
                 'C_format': "%7.4f",
             }),
 

@@ -59,7 +59,7 @@ class InstrumentSelection:
             if self.instrument_type:
                 for check in list(result):
                     types = index.instrument_codes.get(check)
-                    if not types or self.require_tags.isdisjoint(types):
+                    if not types or self.instrument_type.isdisjoint(types):
                         result.remove(check)
                         continue
             return result

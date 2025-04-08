@@ -197,6 +197,8 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
         type_code = "tsi3563nephelometer_" + type_code[11:]
     elif type_code.startswith("cpc_"):
         type_code = "tsi3760cpc_" + type_code[4:]
+    elif type_code.startswith("aethalometer_"):
+        type_code = "mageeae33_" + type_code[13:]
     return EBASFile.from_type_code(type_code)
 
 

@@ -196,12 +196,12 @@ class EBASFile(ABC):
 
             if round_digits is not None:
                 converted_values = [
-                    (round(v, round_digits) if isfinite(v) else None)
+                    (round(float(v), round_digits) if isfinite(v) else None)
                     for v in values
                 ]
             else:
                 converted_values = [
-                    (v if isfinite(v) else None)
+                    (float(v) if isfinite(v) else None)
                     for v in values
                 ]
 

@@ -166,7 +166,7 @@ class Converter(WavelengthConverter):
         var_If.variable_id = "If"
         var_If.coverage_content_type = "physicalMeasurement"
         var_If.cell_methods = "time: mean"
-        var_If.long_name = "sensing beam signal"
+        var_If.long_name = "reference beam signal"
         var_If.C_format = "%7.4f"
         self.apply_wavelength_data(times, var_If, data_If)
 
@@ -175,7 +175,7 @@ class Converter(WavelengthConverter):
         var_Ip.variable_id = "Ip"
         var_Ip.coverage_content_type = "physicalMeasurement"
         var_Ip.cell_methods = "time: mean"
-        var_Ip.long_name = "reference beam signal"
+        var_Ip.long_name = "sensing beam signal"
         var_Ip.C_format = "%7.4f"
         self.apply_wavelength_data(times, var_Ip, data_Ip)
 

@@ -53,6 +53,7 @@ def main():
             station, file_type_code, start_epoch_ms, end_epoch_ms
         )
     except FileNotFoundError:
+        _LOGGER.debug(f"Failed to import '{file_type_code}'", exc_info=True)
         parser.error(f"EBAS file type code '{file_type_code}' no found for station and/or time")
         exit(1)
     converter = converter(station, start_epoch_ms, end_epoch_ms)
