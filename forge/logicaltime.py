@@ -39,7 +39,7 @@ def containing_year_range(start: float, end: float) -> typing.Tuple[int, int]:
     start_year_number = time.gmtime(start).tm_year
     end_year_number = time.gmtime(end).tm_year
     year_end = start_of_year(end_year_number)
-    if year_end < end:
+    if year_end < end or start_year_number == end_year_number:
         end_year_number += 1
     return start_year_number, end_year_number
 
@@ -104,7 +104,7 @@ def containing_epoch_month_range(start: float, end: float) -> typing.Tuple[int, 
     start_month_number = months_since_epoch(start)
     end_month_number = months_since_epoch(end)
     month_end = start_of_epoch_month(end_month_number)
-    if month_end < end:
+    if month_end < end or start_month_number == end_month_number:
         end_month_number += 1
     return start_month_number, end_month_number
 
