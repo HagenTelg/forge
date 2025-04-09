@@ -8,7 +8,7 @@ from . import EBASFile
 from .aerosol_instrument import AerosolInstrument
 
 
-class Level1File(EBASFile, AerosolInstrument):
+class File(EBASFile, AerosolInstrument):
     @property
     def instrument_selection(self) -> typing.Iterable[InstrumentSelection]:
         return [InstrumentSelection(
