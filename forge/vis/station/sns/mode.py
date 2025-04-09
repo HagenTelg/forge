@@ -1,8 +1,8 @@
 import typing
-from ..default.mode import Mode, ViewList, detach, aerosol_modes
+from ..default.mode import Mode, ViewList, detach, aerosol_modes, aerosol_public
 
 
-station_modes = detach(aerosol_modes)
+station_modes = detach(aerosol_modes, aerosol_public)
 
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-maap', "MAAP"),
