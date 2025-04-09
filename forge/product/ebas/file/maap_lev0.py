@@ -51,6 +51,8 @@ class File(SpectralFile, AerosolInstrument):
             'vol_std_pressure': '1013.25hPa',
             'zero_negative': 'Zero/negative possible',
             'zero_negative_desc': 'Zero and neg. values may appear due to statistical variations at very low concentrations',
+            'detection_limit': [0.1, "ug/m3"],
+            'detection_limit_desc': "Determined by instrument noise characteristics, no detection limit flag used",
         })
         return r
 
@@ -65,28 +67,24 @@ class File(SpectralFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument internal",
                 matrix="instrument",
                 title="T_int",
             )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
-                location="instrument internal",
                 matrix="instrument",
                 title="RH",
             )
             flow_rate = matrix.variable(
                 comp_name="flow_rate",
                 unit="l/min",
-                location="sample line",
                 matrix="instrument",
                 title="flow",
             )
@@ -131,8 +129,18 @@ class File(SpectralFile, AerosolInstrument):
                 title='BCconc{wavelength}',
                 comp_name='equivalent_black_carbon',
                 uncertainty=[6.0, '%'],
+                uncertainty_desc='typical value of unit-to-unit variability',
                 unit='ug/m3',
             )
+
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in humidity:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in flow_rate:
+            var.add_characteristic('Location', 'sample line', self.instrument_type, var.metadata.comp_name, '0')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)

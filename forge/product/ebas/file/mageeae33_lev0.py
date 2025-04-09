@@ -81,49 +81,42 @@ class File(SpectralFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument internal",
                 matrix="instrument",
                 title="T_int",
             )
             temperature_control_board = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="control board",
                 matrix="instrument",
                 title="Tcntrl",
             )
             temperature_supply_board = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="power supply board",
                 matrix="instrument",
                 title="Tsupply",
             )
             temperature_LED = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="LED board",
                 matrix="instrument",
                 title="T_LED",
             )
             flow_rate_1 = matrix.variable(
                 comp_name="flow_rate",
                 unit="l/min",
-                location="filter spot 1",
                 matrix="instrument",
                 title="flow1",
             )
             flow_rate_2 = matrix.variable(
                 comp_name="flow_rate",
                 unit="l/min",
-                location="filter spot 2",
                 matrix="instrument",
                 title="flow2",
             )
@@ -305,20 +298,36 @@ class File(SpectralFile, AerosolInstrument):
             var.apply_metadata(
                 title='sens1_{wavelength}',
                 comp_name='sensing_beam_signal',
-                location="filter spot 1",
             )
+            var.add_characteristic('Location', 'filter spot 1', self.instrument_type, var.metadata.comp_name, '0')
         for var in sensing_beam_signal_2:
             var.apply_metadata(
                 title='sens2_{wavelength}',
                 comp_name='sensing_beam_signal',
-                location="filter spot 2",
+            )
+            var.add_characteristic('Location', 'filter spot 2', self.instrument_type, var.metadata.comp_name, '0')
+        for var in attenuation_coefficient_1:
+            var.apply_metadata(
+                title='att1_{wavelength}',
+                comp_name='attenuation_coefficient',
+            )
+            var.add_characteristic('Location', 'filter spot 1', self.instrument_type, var.metadata.comp_name, '0')
+        for var in attenuation_coefficient_2:
+            var.apply_metadata(
+                title='att2_{wavelength}',
+                comp_name='attenuation_coefficient',
+            )
+            var.add_characteristic('Location', 'filter spot 2', self.instrument_type, var.metadata.comp_name, '0')
+        for var in filter_loading_compensation_parameter:
+            var.apply_metadata(
+                title='k_{wavelength}',
+                comp_name='filter_loading_compensation_parameter',
             )
         for var in equivalent_black_carbon_1:
             var.apply_metadata(
                 title='EBC1_{wavelength}',
                 comp_name='equivalent_black_carbon',
                 unit='ug/m3',
-                location="filter spot 1",
                 filter_area="0.785",
                 detection_limit=[0.03, "ug/m3"],
                 detection_limit_desc="Adapted from manufacturer specification",
@@ -328,12 +337,12 @@ class File(SpectralFile, AerosolInstrument):
             efficiency = wavelength_efficiency.get(var.wavelength, nan)
             if isfinite(efficiency):
                 var.metadata.mass_abs_cross_section = f"{efficiency:.2f}"
+            var.add_characteristic('Location', 'filter spot 1', self.instrument_type, var.metadata.comp_name, '0')
         for var in equivalent_black_carbon_2:
             var.apply_metadata(
                 title='EBC2_{wavelength}',
                 comp_name='equivalent_black_carbon',
                 unit='ug/m3',
-                location="filter spot 2",
                 filter_area="0.785",
                 detection_limit=[0.03, "ug/m3"],
                 detection_limit_desc="Adapted from manufacturer specification",
@@ -343,6 +352,7 @@ class File(SpectralFile, AerosolInstrument):
             efficiency = wavelength_efficiency.get(var.wavelength, nan)
             if isfinite(efficiency):
                 var.metadata.mass_abs_cross_section = f"{efficiency:.2f}"
+            var.add_characteristic('Location', 'filter spot 2', self.instrument_type, var.metadata.comp_name, '0')
         for var in equivalent_black_carbon_corrected:
             var.apply_metadata(
                 title='EBC_{wavelength}',
@@ -356,6 +366,21 @@ class File(SpectralFile, AerosolInstrument):
             efficiency = wavelength_efficiency.get(var.wavelength, nan)
             if isfinite(efficiency):
                 var.metadata.mass_abs_cross_section = f"{efficiency:.2f}"
+
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature_control_board:
+            var.add_characteristic('Location', 'control board', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature_supply_board:
+            var.add_characteristic('Location', 'power supply board', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature_LED:
+            var.add_characteristic('Location', 'LED board', self.instrument_type, var.metadata.comp_name, '0')
+        for var in flow_rate_1:
+            var.add_characteristic('Location', 'filter spot 1', self.instrument_type, var.metadata.comp_name, '0')
+        for var in flow_rate_2:
+            var.add_characteristic('Location', 'filter spot 2', self.instrument_type, var.metadata.comp_name, '0')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)

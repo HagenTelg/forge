@@ -30,18 +30,8 @@ class SpectralFile(EBASFile):
 
             def set_wavelength(self, wavelength: typing.Union[int, float],
                                instrument_type: str, component: str) -> None:
-                try:
-                    self.add_characteristic('Wavelength', f'{int(round(wavelength))} nm',
-                                            instrument_type, component)
-                except DCError:
-                    # Notably happens on neph zero components
-                    _LOGGER.warning("Error in wavelength parse (EBAS-IO database possibly incorrect), overriding", exc_info=True)
-                    if getattr(self.metadata, 'characteristics', None) is None:
-                        self.metadata.characteristics = DatasetCharacteristicList()
-                    charac = self.metadata.characteristics.__class__.CLIENT_CLASS_ELEMENTS(
-                        self.metadata.characteristics.__class__.CLIENT_CLASS_ELEMENTS.setup_dict(
-                            'Wavelength', round(wavelength), instrument_type, component))
-                    self.metadata.characteristics.append(charac)
+                self.add_characteristic('Wavelength', f'{int(round(wavelength))} nm',
+                                        instrument_type, component, self.file.file_metadata.get('datalevel'))
 
             def apply_metadata(
                     self,

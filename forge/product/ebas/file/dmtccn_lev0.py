@@ -61,14 +61,12 @@ class File(EBASFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument internal",
                 matrix="instrument",
                 title="T_int",
             )
@@ -87,77 +85,66 @@ class File(EBASFile, AerosolInstrument):
             temperature_T1 = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="CCNC column begin",
                 matrix="instrument",
                 title="T1_meas",
             )
             temperature_T2 = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="CCNC column centre",
                 matrix="instrument",
                 title="T2_meas",
             )
             temperature_T3 = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="CCNC column end",
                 matrix="instrument",
                 title="T3_meas",
             )
             temperature_nafion = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="CCNC humidifier",
                 matrix="instrument",
                 title="Tnaf_ms",
             )
             temperature_inlet = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="CCNC inlet",
                 matrix="instrument",
                 title="Tinl_ms",
             )
             temperature_opc = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="CCNC OPC",
                 matrix="instrument",
                 title="Topc_ms",
             )
             flow_rate_sample = matrix.variable(
                 comp_name="flow_rate",
                 unit="l/min",
-                location="CCNC sample line",
                 matrix="instrument",
                 title="Qsm_ms",
             )
             flow_rate_sheath = matrix.variable(
                 comp_name="flow_rate",
                 unit="l/min",
-                location="CCNC sheath",
                 matrix="instrument",
                 title="Qtot_ms",
             )
             opc_current = matrix.variable(
                 comp_name="electric_current",
                 unit="A",
-                location="CCNC OPC laser",
                 matrix="instrument",
                 title="I_las",
             )
             first_stage_monitor = matrix.variable(
                 comp_name="electric_tension",
                 unit="V",
-                location="CCNC OPC first stage",
                 matrix="instrument",
                 title="U_fst_status",
             )
             proportional_valve = matrix.variable(
                 comp_name="electric_tension",
                 unit="V",
-                location="CCNC flow valve",
                 matrix="instrument",
                 title="Uvalv",
             )
@@ -261,28 +248,45 @@ class File(EBASFile, AerosolInstrument):
                 ):
                     ccnc[nas].integrate_variable(var, selector(var))
 
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
         for var in supersaturation:
             var.add_characteristic('Actual/target', 'target', self.instrument_type, var.metadata.comp_name, '0')
         for var in temperature_gradient:
             var.add_characteristic('Actual/target', 'target', self.instrument_type, var.metadata.comp_name, '0')
         for var in temperature_T1:
             var.add_characteristic('Actual/target', 'actual', self.instrument_type, var.metadata.comp_name, '0')
+            var.add_characteristic('Location', 'CNCC column begin', self.instrument_type, var.metadata.comp_name, '0')
         for var in temperature_T2:
             var.add_characteristic('Actual/target', 'actual', self.instrument_type, var.metadata.comp_name, '0')
+            var.add_characteristic('Location', 'CNCC column centre', self.instrument_type, var.metadata.comp_name, '0')
         for var in temperature_T3:
             var.add_characteristic('Actual/target', 'actual', self.instrument_type, var.metadata.comp_name, '0')
+            var.add_characteristic('Location', 'CNCC column end', self.instrument_type, var.metadata.comp_name, '0')
         for var in temperature_nafion:
             var.add_characteristic('Actual/target', 'actual', self.instrument_type, var.metadata.comp_name, '0')
+            var.add_characteristic('Location', 'CNCC humidifier', self.instrument_type, var.metadata.comp_name, '0')
         for var in temperature_inlet:
             var.add_characteristic('Actual/target', 'actual', self.instrument_type, var.metadata.comp_name, '0')
+            var.add_characteristic('Location', 'CNCC inlet', self.instrument_type, var.metadata.comp_name, '0')
         for var in temperature_opc:
             var.add_characteristic('Actual/target', 'actual', self.instrument_type, var.metadata.comp_name, '0')
+            var.add_characteristic('Location', 'CNCC OPC', self.instrument_type, var.metadata.comp_name, '0')
         for var in flow_rate_sample:
             var.add_characteristic('Actual/target', 'actual', self.instrument_type, var.metadata.comp_name, '0')
+            var.add_characteristic('Location', 'CNCC sample line', self.instrument_type, var.metadata.comp_name, '0')
         for var in flow_rate_sheath:
             var.add_characteristic('Actual/target', 'actual', self.instrument_type, var.metadata.comp_name, '0')
+            var.add_characteristic('Location', 'CNCC sheath', self.instrument_type, var.metadata.comp_name, '0')
+        for var in opc_current:
+            var.add_characteristic('Location', 'CNCC OPC laser', self.instrument_type, var.metadata.comp_name, '0')
+        for var in first_stage_monitor:
+            var.add_characteristic('Location', 'CNCC OPC first stage', self.instrument_type, var.metadata.comp_name, '0')
         for var in proportional_valve:
             var.add_characteristic('Actual/target', 'actual', self.instrument_type, var.metadata.comp_name, '0')
+            var.add_characteristic('Location', 'CNCC flow valve', self.instrument_type, var.metadata.comp_name, '0')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)

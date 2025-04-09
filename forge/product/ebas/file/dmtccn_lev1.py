@@ -64,14 +64,12 @@ class File(EBASFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument internal",
                 matrix="instrument",
                 title="T_int",
             )
@@ -82,7 +80,7 @@ class File(EBASFile, AerosolInstrument):
                 title="SS",
             )
             ccnc = matrix.variable(
-                comp_name="cloud_condensation_nuclei_number_concentration,",
+                comp_name="cloud_condensation_nuclei_number_concentration",
                 unit="1/cm3",
                 detection_limit=[0.007, "1/cm3"],
                 detection_limit_desc="Determined only by instrument counting statistics and flow rate",
@@ -115,6 +113,11 @@ class File(EBASFile, AerosolInstrument):
                         {"variable_name": "number_concentration"},
                 ):
                     ccnc[nas].integrate_variable(var, selector(var))
+
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)

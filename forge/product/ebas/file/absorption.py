@@ -48,28 +48,24 @@ class Level0File(SpectralFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument internal",
                 matrix="instrument",
                 title="T_int",
             )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
-                location="instrument internal",
                 matrix="instrument",
                 title="RH_int",
             )
             flow_rate = matrix.variable(
                 comp_name="flow_rate",
                 unit="l/min",
-                location="sample line",
                 matrix="instrument",
                 title="flow",
             )
@@ -160,6 +156,15 @@ class Level0File(SpectralFile, AerosolInstrument):
                 unit='no unit',
             )
 
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in humidity:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in flow_rate:
+            var.add_characteristic('Location', 'sample_line', self.instrument_type, var.metadata.comp_name, '0')
+
         for nas in matrix:
             instrument[nas].set_serial_number(nas)
             self.apply_inlet(nas)
@@ -213,21 +218,18 @@ class Level1File(SpectralFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument internal",
                 matrix="instrument",
                 title="T_int",
             )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
-                location="instrument internal",
                 matrix="instrument",
                 title="RH_int",
             )
@@ -270,6 +272,13 @@ class Level1File(SpectralFile, AerosolInstrument):
                 comp_name='aerosol_absorption_coefficient',
                 unit='1/Mm',
             )
+
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '1')
+        for var in temperature:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '1')
+        for var in humidity:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '1')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)
@@ -363,21 +372,18 @@ class Level2File(SpectralFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument internal",
                 matrix="instrument",
                 title="T_int",
             )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
-                location="instrument internal",
                 matrix="instrument",
                 title="RH_int",
             )
@@ -459,6 +465,13 @@ class Level2File(SpectralFile, AerosolInstrument):
                 unit='1/Mm',
                 statistics='percentile:84.13',
             )
+
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '2')
+        for var in temperature:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '2')
+        for var in humidity:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '2')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)

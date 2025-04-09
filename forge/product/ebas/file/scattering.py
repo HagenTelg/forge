@@ -81,49 +81,42 @@ class Level0File(SpectralFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature_outlet = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument outlet",
                 matrix="instrument",
                 title="T_out",
             )
             temperature_inlet = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument inlet",
                 matrix="instrument",
                 title="T_int",
             )
             humidity_outlet = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
-                location="instrument outlet",
                 matrix="instrument",
                 title="RH_out",
             )
             humidity_inlet = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
-                location="instrument inlet",
                 matrix="instrument",
                 title="RH_int",
             )
             lamp_current = matrix.variable(
                 comp_name="electric_current",
                 unit="A",
-                location="lamp supply",
                 matrix="instrument",
                 title="lamp_c",
             )
             lamp_voltage = matrix.variable(
                 comp_name="electric_tension",
                 unit="V",
-                location="lamp supply",
                 matrix="instrument",
                 title="lamp_v",
             )
@@ -249,6 +242,21 @@ class Level0File(SpectralFile, AerosolInstrument):
                 unit='1/Mm',
             )
 
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature_outlet:
+            var.add_characteristic('Location', 'instrument outlet', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature_inlet:
+            var.add_characteristic('Location', 'instrument inlet', self.instrument_type, var.metadata.comp_name, '0')
+        for var in humidity_outlet:
+            var.add_characteristic('Location', 'instrument outlet', self.instrument_type, var.metadata.comp_name, '0')
+        for var in humidity_inlet:
+            var.add_characteristic('Location', 'instrument inlet', self.instrument_type, var.metadata.comp_name, '0')
+        for var in lamp_current:
+            var.add_characteristic('Location', 'lamp supply', self.instrument_type, var.metadata.comp_name, '0')
+        for var in lamp_voltage:
+            var.add_characteristic('Location', 'lamp supply', self.instrument_type, var.metadata.comp_name, '0')
+
         for nas in matrix:
             instrument[nas].set_serial_number(nas)
             self.apply_inlet(nas)
@@ -303,21 +311,18 @@ class Level1File(SpectralFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument internal",
                 matrix="instrument",
                 title="T_int",
             )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
-                location="instrument internal",
                 matrix="instrument",
                 title="RH_int",
             )
@@ -374,6 +379,13 @@ class Level1File(SpectralFile, AerosolInstrument):
                 comp_name='aerosol_light_backscattering_coefficient',
                 unit='1/Mm',
             )
+
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '1')
+        for var in temperature:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '1')
+        for var in humidity:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '1')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)
@@ -588,21 +600,18 @@ class Level2File(SpectralFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument internal",
                 matrix="instrument",
                 title="T_int",
             )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
-                location="instrument internal",
                 matrix="instrument",
                 title="RH_int",
             )
@@ -744,6 +753,13 @@ class Level2File(SpectralFile, AerosolInstrument):
                 unit='1/Mm',
                 statistics='percentile:84.13',
             )
+
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '2')
+        for var in temperature:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '2')
+        for var in humidity:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '2')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)

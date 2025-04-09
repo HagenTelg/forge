@@ -45,42 +45,36 @@ class Level0File(EBASFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument internal",
                 matrix="instrument",
                 title="T_int",
             )
             temperature_condensor = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="CPC condensor",
                 matrix="instrument",
                 title="T_con",
             )
             temperature_saturator = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="CPC saturator",
                 matrix="instrument",
                 title="T_con",
             )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
-                location="instrument internal",
                 matrix="instrument",
                 title="RH_int",
             )
             flow_rate = matrix.variable(
                 comp_name="flow_rate",
                 unit="l/min",
-                location="sample line",
                 matrix="instrument",
                 title="act_flow",
             )
@@ -140,8 +134,19 @@ class Level0File(EBASFile, AerosolInstrument):
                 ):
                     cnc[nas].integrate_variable(var, selector(var))
 
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in humidity:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature_condensor:
+            var.add_characteristic('Location', 'CPC condensor', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature_saturator:
+            var.add_characteristic('Location', 'CPC saturator', self.instrument_type, var.metadata.comp_name, '0')
         for var in flow_rate:
             var.add_characteristic('Nominal/measured', 'measured', self.instrument_type, var.metadata.comp_name, '0')
+            var.add_characteristic('Location', 'sample line', self.instrument_type, var.metadata.comp_name, '0')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)
@@ -193,21 +198,18 @@ class Level1File(EBASFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument internal",
                 matrix="instrument",
                 title="T_int",
             )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
-                location="instrument internal",
                 matrix="instrument",
                 title="RH_int",
             )
@@ -245,6 +247,13 @@ class Level1File(EBASFile, AerosolInstrument):
                         {"standard_name": "number_concentration_of_ambient_aerosol_particles_in_air"},
                 ):
                     cnc[nas].integrate_variable(var, selector(var))
+
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '1')
+        for var in temperature:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '1')
+        for var in humidity:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '1')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)
@@ -296,21 +305,18 @@ class Level2File(EBASFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument internal",
                 matrix="instrument",
                 title="T_int",
             )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
-                location="instrument internal",
                 matrix="instrument",
                 title="RH_int",
             )
@@ -374,6 +380,13 @@ class Level2File(EBASFile, AerosolInstrument):
                         var, selector(var),
                         converter=self.quantile_converter(var, 0.8413),
                     )
+
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '2')
+        for var in temperature:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '2')
+        for var in humidity:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '2')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)

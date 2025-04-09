@@ -80,28 +80,24 @@ class File(SpectralFile, AerosolInstrument):
             pressure = matrix.variable(
                 comp_name="pressure",
                 unit="hPa",
-                location="instrument internal",
                 matrix="instrument",
                 title="p_int",
             )
             temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
-                location="instrument internal",
                 matrix="instrument",
                 title="T_int",
             )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
-                location="instrument internal",
                 matrix="instrument",
                 title="RH",
             )
             flow_rate = matrix.variable(
                 comp_name="flow_rate",
                 unit="l/min",
-                location="sample line",
                 matrix="instrument",
                 title="flow",
             )
@@ -188,6 +184,15 @@ class File(SpectralFile, AerosolInstrument):
                 uncertainty=[100.0, '%'],
                 unit='ug/m3',
             )
+
+        for var in pressure:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in temperature:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in humidity:
+            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+        for var in flow_rate:
+            var.add_characteristic('Location', 'sample line', self.instrument_type, var.metadata.comp_name, '0')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)
