@@ -198,7 +198,6 @@ def cli():
     import argparse
     import sys
     import re
-    import datetime
     from forge.const import STATIONS
     from forge.timeparse import parse_time_bounds_arguments
     from forge.logicaltime import containing_year_range, start_of_year
@@ -227,6 +226,11 @@ def cli():
     parser.add_argument('--csv',
                         dest='csv', action='store_true',
                         help="output in CSV format")
+    parser.add_argument('--gap',
+                        dest='max_gap',
+                        type=int,
+                        default=7,
+                        help="maximum gap to ignore missing data in days")
 
     parser.add_argument('--tags',
                         dest='tags', nargs='*',
@@ -378,6 +382,18 @@ def cli():
                 if points[i] == points[i - 1]:
                     del points[i]
 
+        @staticmethod
+        def remove_gaps(points: typing.List["InstrumentPoint"], threshold_seconds: int) -> None:
+            for i in reversed(range(1, len(points)-1)):
+                if points[i].exists:
+                    continue
+                if points[i-1] != points[i+1]:
+                    continue
+                if points[i+1].epoch - points[i].epoch > threshold_seconds:
+                    continue
+                del points[i+1]
+                del points[i]
+
     history_points: typing.Dict[str, typing.List[InstrumentPoint]] = dict()
 
     async def run():
@@ -483,6 +499,8 @@ def cli():
             latest_instruments[instrument_id] = points[-1]
 
         InstrumentPoint.deduplicate(points)
+        if args.max_gap:
+            InstrumentPoint.remove_gaps(points, args.max_gap * 24 * 60 * 60)
 
     combined: typing.List[typing.Tuple[str, InstrumentPoint]] = list()
     for instrument_id, points in history_points.items():
