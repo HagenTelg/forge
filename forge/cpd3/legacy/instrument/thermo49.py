@@ -7,6 +7,8 @@ from .converter import InstrumentConverter
 
 
 class Converter(InstrumentConverter):
+    CONVERT_ZERO: bool = False
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -43,6 +45,16 @@ class Converter(InstrumentConverter):
         data_C2 = self.load_variable(f"C2_{self.instrument_id}")
         data_V1 = self.load_variable(f"V1_{self.instrument_id}")
         data_V2 = self.load_variable(f"V2_{self.instrument_id}")
+
+        if self.CONVERT_ZERO:
+            # Needed for old CPD2 data to backout bad corrections
+            data_Tz = self.load_state(f"Tz_{self.instrument_id}")
+            data_Pz = self.load_state(f"Pz_{self.instrument_id}")
+            data_Xz = self.load_state(f"Xz_{self.instrument_id}")
+        else:
+            data_Tz = None
+            data_Pz = None
+            data_Xz = None
 
         g, times = self.data_group([data_X])
         self.declare_system_flags(g, times)
@@ -161,6 +173,39 @@ class Converter(InstrumentConverter):
             self.apply_data(times, var_V2, data_V2)
 
         self.apply_coverage(g, times, f"X_{self.instrument_id}")
+
+        if data_Xz is not None and data_Xz.time.shape[0] != 0:
+            g, times = self.state_group(data_Xz, name="zero")
+
+            if data_Tz.time.shape[0] > 0:
+                var_Tz = g.createVariable("zero_temperature", "f8", ("time",), fill_value=nan)
+                netcdf_var.variable_temperature(var_Tz)
+                netcdf_timeseries.variable_coordinates(g, var_Tz)
+                var_Tz.variable_id = "Tz"
+                var_Tz.coverage_content_type = "physicalMeasurement"
+                var_Tz.cell_methods = "time: point"
+                var_Tz.long_name = "sample temperature during the zero"
+                self.apply_state(times, var_Tz, data_Tz)
+
+            if data_Pz.time.shape[0] > 0:
+                var_Pz = g.createVariable("zero_pressure", "f8", ("time",), fill_value=nan)
+                netcdf_var.variable_pressure(var_Pz)
+                netcdf_timeseries.variable_coordinates(g, var_Pz)
+                var_Pz.variable_id = "Tz"
+                var_Pz.coverage_content_type = "physicalMeasurement"
+                var_Pz.cell_methods = "time: point"
+                var_Pz.long_name = "sample pressure during the zero"
+                self.apply_state(times, var_Pz, data_Pz)
+
+            var_Xz = g.createVariable("zero_ozone_mixing_ratio", "f8", ("time",), fill_value=nan)
+            netcdf_timeseries.variable_coordinates(g, var_Xz)
+            var_Xz.variable_id = "Xz"
+            var_Xz.coverage_content_type = "physicalMeasurement"
+            var_Xz.cell_methods = "time: point"
+            var_Xz.long_name = "fraction concentration of ozone during the zero"
+            var_Xz.units = "1e-9"
+            var_Xz.C_format = "%9.2f"
+            self.apply_state(times, var_Xz, data_Xz)
 
         self.apply_instrument_metadata(f"X_{self.instrument_id}", manufacturer="Thermo", generic_model="49")
 

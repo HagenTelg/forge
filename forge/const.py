@@ -20,6 +20,7 @@ STATIONS = frozenset({
     'bmw',
     'bnd',
     'bos',
+    'bou',
     'brw',
     'clamps3',
     'clamps4',
