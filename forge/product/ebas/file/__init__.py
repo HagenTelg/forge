@@ -507,7 +507,7 @@ class EBASFile(ABC):
         }
 
     @classmethod
-    def with_file_metadata(cls, metadata: typing.Dict[str, str]) -> typing.Type["EBASFile"]:
+    def with_file_metadata(cls, metadata: typing.Dict[str, typing.Optional[str]]) -> typing.Type["EBASFile"]:
         class WithMetdata(cls):
             @property
             def file_metadata(self) -> typing.Dict[str, str]:

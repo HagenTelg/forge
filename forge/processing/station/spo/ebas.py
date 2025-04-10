@@ -41,8 +41,13 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
         type_code = "gerichcpc_" + type_code[4:]
 
     result = file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)
+
+    result = result.with_file_metadata({
+        'hum_temp_ctrl': None,
+    })
+
     if isinstance(result, ScatteringLevel2File):
-        return result.with_limits(
+        result = result.with_limits(
             (-20, None),
             (-20, None),
             (-20, None),
@@ -50,6 +55,7 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
             (-5, None),
             (-5, None),
         )
+
     return result
 
 
