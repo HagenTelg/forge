@@ -15,6 +15,7 @@ def standard_stp_corrections(data: AvailableData, **kwargs) -> None:
             {"instrument": "tsi3010cpc"},
             {"instrument": "tsi3760cpc"},
             {"instrument": "tsi3781cpc"},
+            {"instrument": "gerichcpc"},
     ), **kwargs):
         to_stp(instrument, temperature=12.0,
                pressure=station_data(instrument.station, 'climatology',

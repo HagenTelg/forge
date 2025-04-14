@@ -137,7 +137,7 @@ class MRINeph(WavelengthConverter):
 
 C.run(STATION, {
     "G81": [
-        C(Thermo49.with_instrument_override(serial_number="1217853289") , end='2016-12-16'),
+        C(Thermo49.with_instrument_override(serial_number="1217853289"), end='2016-12-16'),
         C('thermo49', start='2016-12-16', end='2018-01-09'),
         C('tech2b205', start='2018-01-09', end='2023-03-31'),
         C('thermo49iq', start='2023-03-31'),
