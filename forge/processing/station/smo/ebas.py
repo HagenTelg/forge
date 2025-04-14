@@ -45,3 +45,8 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
             type_code = "tsi3010cpc_" + type_code[4:]
 
     return file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)
+
+
+def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
+    from ..default.ebas import standard_submit
+    return standard_submit(gaw_station)
