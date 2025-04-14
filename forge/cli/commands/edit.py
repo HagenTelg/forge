@@ -245,7 +245,7 @@ class _EditStageArchive(_EditStage):
         scan_begin_time = time.monotonic()
         stations: typing.Dict[str, typing.Dict[int, typing.List[Path]]] = dict()
         for file in self.data_files():
-            data_file = Dataset(str(file), 'r')
+            data_file = Dataset(str(file), 'r+')
             try:
                 if self.override_station:
                     station_name = self.override_station
@@ -329,7 +329,7 @@ class _EditStageFreeform(_EditStage):
                                     file.close()
                                 station_files.clear()
 
-                            station_files.append(Dataset(str(file), 'r'))
+                            station_files.append(Dataset(str(file), 'r+'))
 
                         if station_files:
                             run_edits()
@@ -372,7 +372,7 @@ class _EditStageFreeform(_EditStage):
         scan_begin_time = time.monotonic()
         stations: typing.Dict[str, typing.Tuple[int, int, typing.Dict[str, typing.List[Path]]]] = dict()
         for file in self.data_files():
-            data_file = Dataset(str(file), 'r')
+            data_file = Dataset(str(file), 'r+')
             try:
                 if self.override_station:
                     station_name = self.override_station
