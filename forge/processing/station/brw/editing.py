@@ -45,7 +45,7 @@ def absorption_corrections(data: AvailableData) -> None:
         spot_area_adjustment(
             absorption,
             [20.41, 19.82, 19.40, 19.24, 19.07, 19.56, 19.10, 19.63],
-        [19.690, 19.830, 19.650, 19.52, 19.48, 19.650, 19.84, 19.830],
+            [19.690, 19.830, 19.650, 19.52, 19.48, 19.650, 19.84, 19.830],
         )
 
     # Normal CPD3 data up until building comparison
