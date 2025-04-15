@@ -549,12 +549,12 @@ async def _apply_edit_save(
         if updated_deleted != prior_deleted:
             item['deleted'] = updated_deleted
 
-        prior = int(original_root['start_time'][original_idx])
+        prior = int(original_root['start_time'][original_idx].data)
         if prior != updated_start:
             if prior == -MAX_I64:
                 prior = None
             item['changed_start_time'] = prior
-        prior = int(original_root['end_time'][original_idx])
+        prior = int(original_root['end_time'][original_idx].data)
         if prior != updated_end:
             if prior == MAX_I64:
                 prior = None
@@ -562,7 +562,7 @@ async def _apply_edit_save(
 
         for var, updated in (
                 ('author', updated_author),
-                ('comment', updated_author)
+                ('comment', updated_comment)
         ):
             prior = str(original_root[var][original_idx])
             if prior == updated:
@@ -723,8 +723,8 @@ async def _apply_edit_save(
                 return False
             assert hit.shape[0] == 1
             remove_index = int(hit[0])
-            exiting_start_time = int(existing_root.variables["start_time"][...].data[remove_index])
-            exiting_end_time = int(existing_root.variables["end_time"][...].data[remove_index])
+            exiting_start_time = int(existing_root.variables["start_time"][remove_index].data)
+            exiting_end_time = int(existing_root.variables["end_time"][remove_index].data)
             notify_start = min(notify_start, exiting_start_time)
             notify_end = max(notify_end, exiting_end_time)
 
@@ -733,7 +733,7 @@ async def _apply_edit_save(
             existing_profiles = existing_root.variables["profile"]
             existing_profiles_lookup = existing_profiles.datatype.enum_dict
             existing_profiles = existing_profiles[...].data
-            remove_profile_value = int(existing_profiles[...].data[remove_index])
+            remove_profile_value = int(existing_profiles[remove_index])
             for check, value in existing_profiles_lookup.items():
                 if value == remove_profile_value:
                     if not user.allow_mode(station, check.lower() + '-editing', write=True):
@@ -806,6 +806,7 @@ async def _apply_edit_save(
                     allocated_unique_ids.add(uid)
                     return uid
 
+        original_history = None
         if original_unique_id:
             if original_start == -MAX_I64 or original_end == MAX_I64:
                 data = await fetch_file(-MAX_I64)
@@ -813,6 +814,7 @@ async def _apply_edit_save(
                     raise FileNotFoundError
                 if not remove_existing(data, -MAX_I64):
                     raise FileNotFoundError
+                original_history = modified_history.get(-MAX_I64)
             else:
                 any_hit = False
                 for year in range(*containing_year_range(original_start / 1000.0, original_end / 1000.0)):
@@ -822,6 +824,7 @@ async def _apply_edit_save(
                         continue
                     if remove_existing(data, file_start_ms):
                         any_hit = True
+                        original_history = modified_history.get(file_start_ms)
                 if not any_hit:
                     # Rather than aborting for a single missed year, just require that any hit to
                     # allow for recovery from wierd corruption (shrinking and edit and modifying the
@@ -840,7 +843,7 @@ async def _apply_edit_save(
                     updated_unique_id = new_unique_id()
                 output_file = insert_profile(output_file, -MAX_I64)
 
-            history = modified_history.get(-MAX_I64)
+            history = modified_history.get(-MAX_I64, original_history)
             if history is None:
                 history = created_history()
             write_edit(output_file, updated_unique_id, history)
@@ -861,7 +864,7 @@ async def _apply_edit_save(
                 else:
                     output_file = insert_profile(output_file, file_start_ms)
 
-                history = modified_history.get(file_start_ms)
+                history = modified_history.get(file_start_ms, original_history)
                 if history is None:
                     history = created_history()
                 write_edit(output_file, updated_unique_id, history)
@@ -975,9 +978,13 @@ async def edit_save(user: AccessUser, station: str, mode_name: str,
                             original_start_ms, original_end_ms, original_unique_id,
                             updated_start, updated_end
                         )
-                    except:
-                        _LOGGER.debug(f"Error saving directive for {user.display_id} on {station}:{profile}",
+                    except PermissionError:
+                        _LOGGER.debug(f"Permission denied saving directive for {user.display_id} on {station}:{profile}",
                                       exc_info=True)
+                        return None
+                    except:
+                        _LOGGER.warning(f"Error saving directive for {user.display_id} on {station}:{profile}",
+                                        exc_info=True)
                         return None
             except LockDenied:
                 await backoff()
