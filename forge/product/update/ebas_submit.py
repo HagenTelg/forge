@@ -131,7 +131,7 @@ class Tracker(YearModifiedTracker):
         try:
             await asyncio.get_event_loop().run_in_executor(None, execute_upload)
         except Exception as e:
-            _LOGGER.warning("Upload failed", exc_info=True)
+            _LOGGER.warning(f"Upload failed for {self.station.upper()}/{self.ebas_file}", exc_info=True)
             raise CommitFailure from e
 
     @property

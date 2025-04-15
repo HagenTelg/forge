@@ -98,7 +98,7 @@ class Tracker(NRTTracker):
         try:
             await asyncio.get_event_loop().run_in_executor(None, execute_upload)
         except:
-            _LOGGER.warning("Upload failed", exc_info=True)
+            _LOGGER.warning(f"Upload failed for {self.station.upper()}/{self.ebas_file}", exc_info=True)
             # Just ignore NRT upload failures
 
     @property
