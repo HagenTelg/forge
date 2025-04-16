@@ -54,8 +54,14 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
 
 def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: int) -> typing.Type["EBASFile"]:
     from ..default.ebas import file
+    from forge.product.ebas.file.aerosol_instrument import AerosolInstrument
 
     if type_code.startswith("cpc_"):
         type_code = "tsi3772cpc_" + type_code[4:]
 
-    return file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)
+    result = file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)
+    if isinstance(result, AerosolInstrument):
+        result = result.with_inlet({
+            "pm1": ('Cyclone', 'Cyclone size selection at 1um aerodynamic diameter')
+        })
+    return result

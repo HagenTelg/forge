@@ -33,9 +33,11 @@ class AerosolInstrument:
     @classmethod
     def with_inlet(
             cls,
-            inlet: typing.Union[str, typing.Dict[str, typing.Tuple[str, typing.Optional[str]]]]
+            inlet: typing.Union[str, typing.Tuple[str, typing.Optional[str]], typing.Dict[str, typing.Tuple[str, typing.Optional[str]]]]
     ) -> typing.Type["EBASFile"]:
         if isinstance(inlet, str):
+            inlet = (inlet, None)
+        if isinstance(inlet, tuple):
             inlet = {
                 'pm1': inlet,
                 'pm10': inlet,

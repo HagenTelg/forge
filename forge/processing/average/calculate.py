@@ -27,6 +27,31 @@ def _bin_weighted_average(bin_start: np.ndarray, values: np.ndarray, weights: np
     return sum_values
 
 
+def _bin_stddev(bin_start: np.ndarray, values: np.ndarray,
+                unweighted_mean: np.ndarray, mask: np.ndarray = None) -> np.ndarray:
+    sq = values ** 2
+    sq[np.invert(np.isfinite(sq))] = 0
+    if mask is not None:
+        sq[mask] = 0
+    sq = np.add.reduceat(sq, bin_start, dtype=np.float64)
+
+    count = np.full(values.shape, 1, dtype=np.float64)
+    count[np.invert(np.isfinite(values))] = 0
+    if mask is not None:
+        count[mask] = 0
+    count = np.add.reduceat(count, bin_start, dtype=np.float64)
+
+    result = np.full(unweighted_mean.shape, nan, dtype=np.float64)
+    valid_values = count >= 2
+    result[valid_values] = sq[valid_values] / count[valid_values] - unweighted_mean[valid_values] ** 2
+    result[result < 0.0] = nan
+    valid_values = np.isfinite(result)
+
+    result[valid_values] = np.sqrt(result[valid_values] * (count[valid_values] / (count[valid_values] - 1)))
+    result[np.invert(valid_values)] = nan
+    return result
+
+
 def _fixed_interval_bins(times: np.ndarray, interval: typing.Union[int, float]) -> typing.Tuple[np.ndarray, np.ndarray]:
     bin_numbers = np.empty_like(times, dtype=np.int64)
     np.floor(times / interval, out=bin_numbers, casting='unsafe')
@@ -131,6 +156,21 @@ def fixed_interval_quantiles(
     bin_quantiles = bin_quantiles(bin_start, values, quantiles)
     bin_times = _fixed_interval_times(bin_numbers, times.dtype, interval)
     return bin_quantiles, bin_times
+
+
+def fixed_interval_stddev(
+        times: np.ndarray,
+        values: np.ndarray,
+        interval: typing.Union[int, float],
+) -> typing.Tuple[np.ndarray, np.ndarray]:
+    bin_numbers, bin_start = _fixed_interval_bins(times, interval)
+    unweighted_mean = _bin_weighted_average(
+        bin_start, values,
+        np.full((values.shape[0], ), 1, dtype=values.dtype)
+    )
+    stddev = _bin_stddev(bin_start, values, unweighted_mean)
+    bin_times = _fixed_interval_times(bin_numbers, times.dtype, interval)
+    return stddev, bin_times
 
 
 def _month_bins(times_epoch_ms: np.ndarray):
@@ -400,30 +440,9 @@ class FileAverager(ABC):
         :param mask: the optional mask of values to exclude
         :returns: the per-bin standard deviations
         """
-        sq = values ** 2
-        sq[np.invert(np.isfinite(sq))] = 0
-        if mask is not None:
-            sq[mask] = 0
-        sq = np.add.reduceat(sq, self._bin_start, dtype=np.float64)
-
-        count = np.full(values.shape, 1, dtype=np.float64)
-        count[np.invert(np.isfinite(values))] = 0
-        if mask is not None:
-            count[mask] = 0
-        count = np.add.reduceat(count, self._bin_start, dtype=np.float64)
-
         if unweighted_mean is None:
             unweighted_mean = self.unweighted_mean(values)
-
-        result = np.full(unweighted_mean.shape, nan, dtype=np.float64)
-        valid_values = count >= 2
-        result[valid_values] = sq[valid_values] / count[valid_values] - unweighted_mean[valid_values]**2
-        result[result < 0.0] = nan
-        valid_values = np.isfinite(result)
-
-        result[valid_values] = np.sqrt(result[valid_values] * (count[valid_values] / (count[valid_values] - 1)))
-        result[np.invert(valid_values)] = nan
-        return result
+        return _bin_stddev(self._bin_start, values, unweighted_mean, mask=mask)
 
     def quantiles(
             self,

@@ -6,9 +6,24 @@ from forge.const import STATIONS as VALID_STATIONS
 from forge.cpd3.legacy.raw.write import InstrumentTimeConversion as C
 from forge.cpd3.legacy.instrument.grimm110xopc import Converter as Grimm110xOPC
 from forge.cpd3.legacy.instrument.tsi377xcpc import Converter as TSI377xCPC
+from forge.cpd3.legacy.instrument.generic_size_distribution import Converter as BaseSizeDistribution
 
 STATION = os.path.basename(__file__).split('.', 1)[0].lower()
 assert STATION in VALID_STATIONS
+
+
+class SMPS(BaseSizeDistribution):
+    def run(self) -> bool:
+        if not super().run():
+            return False
+
+        g = self.root.groups["data"]
+        times = g.variables["time"][...].data
+        self.declare_system_flags(g, times, flags_map={
+            "ContaminateFault": "data_contamination_smps_not_ok"
+        })
+
+        return True
 
 
 C.run(STATION, {
@@ -35,7 +50,7 @@ C.run(STATION, {
         C(Grimm110xOPC.with_instrument_override(serial_number="11A15096", model="11-A"), start='2017-01-18', end='2024-03-28'),
         C(Grimm110xOPC, start='2024-03-28'),
     ],
-    "N12": [ C('generic_size_distribution', start='2011-03-15'), ],
+    "N12": [ C(SMPS, start='2011-03-15'), ],
     "N61": [
         C('tsi3010cpc', start='2004-03-18', end='2011-01-23'),
         C(TSI377xCPC.with_instrument_override(serial_number="71033080", model="3772"), start='2011-01-23', end='2023-06-26'),

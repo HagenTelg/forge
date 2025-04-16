@@ -1,8 +1,11 @@
 import typing
-from ..default.mode import Mode, ViewList, detach, aerosol_modes
+from ..default.mode import Mode, ViewList, detach, aerosol_modes, aerosol_public
 
 
-station_modes = detach(aerosol_modes)
+station_modes = detach(aerosol_modes, aerosol_public)
+
+station_modes.pop("public-aerosolshort", None)
+station_modes.pop("public-aerosollong", None)
 
 
 station_modes['aerosol-raw'].remove('aerosol-raw-aethalometer')
