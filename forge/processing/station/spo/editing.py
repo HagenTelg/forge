@@ -8,13 +8,27 @@ from forge.processing.corrections.climatology import vaisala_hmp_limits
 from forge.processing.station.default.editing import standard_absorption_corrections, standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
 from forge.processing.derived.average import hourly_median
 from forge.data.merge.extend import extend_selected
-from forge.data.flags import parse_flags, declare_flag
+from forge.data.flags import declare_flag
+from forge.processing.station.lookup import station_data
 
 
 def stp_corrections(data: AvailableData) -> None:
     for instrument in data.select_instrument({"instrument": "mrinephelometer"}, end="2002-12-07"):
         # Early neph data uses assumed T/P
         to_stp(instrument, temperature=28, pressure=680)
+    for instrument in data.select_instrument((
+            {"instrument": "bmi1710cpc"},
+            {"instrument": "tsi302xcpc"},
+            {"instrument": "tsi375xcpc"},
+            {"instrument": "tsi377xcpc"},
+            {"instrument": "tsi3010cpc"},
+            {"instrument": "tsi3760cpc"},
+            {"instrument": "tsi3781cpc"},
+            {"instrument": "gerichcpc"},
+    ), end="2002-12-07"):
+        to_stp(instrument, temperature=12.0,
+               pressure=station_data(instrument.station, 'climatology',
+                                     'surface_pressure')(instrument.station))
 
     standard_stp_corrections(data, start="2002-12-07")
 
