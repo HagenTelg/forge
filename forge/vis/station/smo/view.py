@@ -1,6 +1,6 @@
 import typing
 from collections import OrderedDict
-from ..default.view import detach, View, aerosol_views, ozone_views, met_views, radiation_views
+from ..default.view import detach, View, aerosol_views, aerosol_public, ozone_views, ozone_public, met_views, radiation_views
 from ..default.met.temperature import Temperature as MetTemperature
 from ..default.met.precipitation import Precipitation as MetPrecipitation
 from ..default.met.editing.precipitation import EditingPrecipitation as MetEditingPrecipitation
@@ -8,7 +8,7 @@ from ..default.met.editing.temperature import EditingTemperature as MetEditingTe
 from ..default.radiation.ambient import Ambient as RadiationAmbient
 
 
-station_views = detach(aerosol_views, ozone_views, met_views, radiation_views)
+station_views = detach(aerosol_views, aerosol_public, ozone_views, ozone_public, met_views, radiation_views)
 
 measurements = OrderedDict([
     ('{code}ambient', '{type} at 2m'),
