@@ -405,11 +405,11 @@ class DataVariable(SelectedVariable):
         if self._is_constant:
             return np.array(1.0, dtype=np.float64)
         if self._is_empty:
-            return np.empty(0, dtype=np.float64)
+            return np.empty((0,), dtype=np.float64)
 
         source_var = self.parent.variables.get("averaged_time")
         if source_var is None or "time" not in source_var.dimensions:
-            return np.full(self.times.shape[0], 1.0, dtype=np.float64)
+            return np.full((self.times.shape[0],), 1.0, dtype=np.float64)
 
         from forge.processing.average.calculate import fixed_interval_coverage_weight
         from forge.timeparse import parse_iso8601_duration
@@ -435,6 +435,10 @@ class DataVariable(SelectedVariable):
                 source_var[selection].data,
                 time_coverage_resolution
             )
+
+        if self._time_origin_indices.shape[0] == 0:
+            # No origin data, so no real weights possible
+            return np.full((self.times.shape[0],), 1.0, dtype=np.float64)
 
         weights = fixed_interval_coverage_weight(
             self._raw_times,
