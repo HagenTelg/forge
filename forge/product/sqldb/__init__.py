@@ -131,14 +131,14 @@ class TableUpdate(ABC):
 
                 # Pick the first finite value along each axis to reduce to one dimensional
                 while len(values.shape) > 1:
-                    if values.shape[1] == 1:
-                        target_shape = list(values.shape)
-                        del target_shape[1]
-                        values = values.reshape(target_shape)
-                        continue
-                    valid = np.isfinite(values)
-                    idx_valid = np.argmax(valid, axis=1)
-                    values = values[np.arange(values.shape[0]),idx_valid[:, 0]]
+                    if values.shape[1] != 1:
+                        valid = np.isfinite(values)
+                        idx_valid = np.argmax(valid, axis=1, keepdims=True)
+                        values = np.take_along_axis(values, idx_valid, axis=1)
+
+                    target_shape = list(values.shape)
+                    del target_shape[1]
+                    values = values.reshape(target_shape)
 
                 _, time_var = find_dimension_values(var.group(), 'time')
                 times = np.asarray(time_var[:].data)[var_idx[0]]
