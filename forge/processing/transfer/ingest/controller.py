@@ -174,14 +174,15 @@ class Controller:
                 return True
             else:
                 return False
-        if not station:
-            try:
-                station = ArchivePut.get_station(file_data)
-            except InvalidFile:
-                _LOGGER.debug(f"Failed to determine station for file {file}", exc_info=True)
-                return False
-
-        file_data.close()
+        try:
+            if not station:
+                try:
+                    station = ArchivePut.get_station(file_data)
+                except InvalidFile:
+                    _LOGGER.debug(f"Failed to determine station for file {file}", exc_info=True)
+                    return False
+        finally:
+            file_data.close()
         preprocessing_time = time.monotonic() - begin_processing
 
         station = station.lower()

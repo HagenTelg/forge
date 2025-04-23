@@ -81,6 +81,7 @@ class Tracker(NRTTracker):
                 ssh.connect(
                     hostname=CONFIGURATION.get('EBAS.UPDATE.NRT.SERVER', "upload.nilu.no"),
                     username=CONFIGURATION.get('EBAS.UPDATE.NRT.USER', self.upload_user),
+                    key_filename=CONFIGURATION.get('EBAS.UPDATE.NRT.KEY'),
                     timeout=120.0,
                 )
                 sftp = ssh.open_sftp()

@@ -36,15 +36,6 @@ class SFTP(Destination):
             user = CONFIGURATION.get('NCEI.UPDATE.ARCHIVE.USER', self.user)
             keyfile = CONFIGURATION.get('NCEI.UPDATE.ARCHIVE.KEY', self.keyfile)
 
-            if keyfile:
-                try:
-                    loader = paramiko.PKey.from_path
-                except AttributeError:
-                    loader = paramiko.RSAKey.from_private_key_file
-                keyfile = loader(keyfile)
-            else:
-                keyfile = None
-
             ssh = paramiko.SSHClient()
             try:
                 class IgnoreHostKey(paramiko.MissingHostKeyPolicy):
@@ -56,7 +47,7 @@ class SFTP(Destination):
                 ssh.connect(
                     hostname=host,
                     username=user,
-                    pkey=keyfile,
+                    key_filename=keyfile,
                     timeout=120.0,
                 )
                 sftp = ssh.open_sftp()

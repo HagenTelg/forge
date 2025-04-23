@@ -95,6 +95,7 @@ class Tracker(YearModifiedTracker):
                 ssh.connect(
                     hostname=CONFIGURATION.get('EBAS.UPDATE.ARCHIVE.SERVER', "ebas-submissions.nilu.no"),
                     username=CONFIGURATION.get('EBAS.UPDATE.ARCHIVE.USER', "ebasftp"),
+                    key_filename=CONFIGURATION.get('EBAS.UPDATE.ARCHIVE.KEY'),
                     timeout=120.0,
                 )
                 sftp = ssh.open_sftp()

@@ -147,6 +147,9 @@ def parse_arguments():
     parser.add_argument('--server',
                         help="upload server URL",
                         action='append')
+    parser.add_argument('--extra',
+                        help="upload server URL without fallback tracking",
+                        action='append')
 
     parser.add_argument('--station',
                         dest='station', type=str,
@@ -257,6 +260,16 @@ def main():
         exit(1)
         return
 
+    extra_servers = args.extra
+    if not extra_servers:
+        extra_servers = CONFIGURATION.get('PROCESSING.UPLOAD.EXTRA')
+        if isinstance(extra_servers, str):
+            extra_servers = [extra_servers]
+        elif not isinstance(extra_servers, list):
+            extra_servers = None
+    if not extra_servers:
+        extra_servers = []
+
     _LOGGER.info(f"Starting upload of {len(upload_files)} file(s)")
 
     if args.skip_station and args.station in args.skip_station:
@@ -292,6 +305,7 @@ def main():
                     url = url.replace(path=url.path.replace('{type}', args.type))
 
                 try:
+                    contents.seek(0)
                     await upload_to_url(url, file, contents, args.compression, upload_key, signature)
                 except UploadRejected:
                     _LOGGER.error(f"Upload of {file} rejected, further attempts aborted")
@@ -324,6 +338,22 @@ def main():
 
                 exit(1)
                 return
+
+            for url in extra_servers:
+                url = URL(url=url)
+                if '{file}' in url.path:
+                    url = url.replace(path=url.path.replace('{file}', file.name))
+                if '{station}' in url.path:
+                    url = url.replace(path=url.path.replace('{station}', args.station))
+                if '{type}' in url.path:
+                    url = url.replace(path=url.path.replace('{type}', args.type))
+                try:
+                    contents.seek(0)
+                    await upload_to_url(url, file, contents, args.compression, upload_key, signature)
+                except UploadRejected:
+                    _LOGGER.debug(f"Upload of {file} rejected to extra server {repr(url)}")
+                except:
+                    _LOGGER.info(f"Upload to extra server {repr(url)} failed", exc_info=True)
 
             contents.close()
 
