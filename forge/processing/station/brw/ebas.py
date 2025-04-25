@@ -42,7 +42,7 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
     elif end_epoch_ms <= 1408147200000 and type_code.startswith("absorption_"):
         type_code = "psap3w_" + type_code[11:]
     elif type_code.startswith("cpc_"):
-        if end_epoch_ms <= 1189382400000:
+        if end_epoch_ms <= 670377600000:
             type_code = "gerichcpc_" + type_code[4:]
         elif end_epoch_ms <= 1723161600000:
             type_code = "tsi3010cpc_" + type_code[4:]
