@@ -214,7 +214,10 @@ class EditDirective:
             if isinstance(sel, dict):
                 sel = [sel]
             for check in sel:
-                var = check.get("Variable")
+                if isinstance(check, str):
+                    var = check
+                else:
+                    var = check.get("Variable")
                 if var not in (f"BaB_{instrument}", f"BaG_{instrument}", f"BaR_{instrument}"):
                     return False
 
@@ -737,7 +740,7 @@ class EditDirective:
 
         def to_constant(value: typing.Any) -> typing.Optional[float]:
             if isinstance(value, dict):
-                if value.get('Type').lower() == 'constant':
+                if value.get('Type', '').lower() == 'constant':
                     value = value.get('Value')
             if value is None:
                 return None
