@@ -26,9 +26,15 @@ class ParticleConcentration(TimeSeries):
         cnc.traces.append(n_cnc)
 
         n_cnc = TimeSeries.Trace(cm_3)
-        n_cnc.legend = "CNC2 (MAGIC)"
+        n_cnc.legend = "CNC2 (MAGIC N42)"
         n_cnc.data_record = f'{mode}-cnc'
         n_cnc.data_field = 'cnc2'
+        cnc.traces.append(n_cnc)
+
+        n_cnc = TimeSeries.Trace(cm_3)
+        n_cnc.legend = "CNC3 (MAGIC N43)"
+        n_cnc.data_record = f'{mode}-cnc'
+        n_cnc.data_field = 'cnc3'
         cnc.traces.append(n_cnc)
 
 
@@ -55,9 +61,15 @@ class EditingParticleConcentration(TimeSeries):
         raw.traces.append(n_cnc)
 
         n_cnc = TimeSeries.Trace(cm_3)
-        n_cnc.legend = "Raw CNC2 (MAGIC)"
+        n_cnc.legend = "Raw CNC2 (MAGIC N42)"
         n_cnc.data_record = f'{profile}-raw-cnc'
         n_cnc.data_field = 'cnc2'
+        raw.traces.append(n_cnc)
+
+        n_cnc = TimeSeries.Trace(cm_3)
+        n_cnc.legend = "Raw CNC3 (MAGIC N44)"
+        n_cnc.data_record = f'{profile}-raw-cnc'
+        n_cnc.data_field = 'cnc3'
         raw.traces.append(n_cnc)
 
 
@@ -79,17 +91,33 @@ class EditingParticleConcentration(TimeSeries):
         edited.traces.append(n_cnc)
 
         n_cnc = TimeSeries.Trace(cm_3)
-        n_cnc.legend = "Edited CNC2 (MAGIC)"
+        n_cnc.legend = "Edited CNC2 (MAGIC N42)"
         n_cnc.data_record = f'{profile}-editing-cnc'
         n_cnc.data_field = 'cnc2'
+        edited.traces.append(n_cnc)
+
+        n_cnc = TimeSeries.Trace(cm_3)
+        n_cnc.legend = "Edited CNC3 (MAGIC N44)"
+        n_cnc.data_record = f'{profile}-editing-cnc'
+        n_cnc.data_field = 'cnc3'
         edited.traces.append(n_cnc)
 
 
 class ADMagicCPC250StatusSecondary(ADMagicCPC250Status):
     def __init__(self, mode: str, **kwargs):
         super().__init__(mode, **kwargs)
-        self.title = "MAGIC CPC Status"
+        self.title = "MAGIC CPC Status N42"
 
         for g in self.graphs:
             for t in g.traces:
                 t.data_record += '2'
+
+
+class ADMagicCPC250StatusTertiary(ADMagicCPC250Status):
+    def __init__(self, mode: str, **kwargs):
+        super().__init__(mode, **kwargs)
+        self.title = "MAGIC CPC Status N44"
+
+        for g in self.graphs:
+            for t in g.traces:
+                t.data_record += '3'
