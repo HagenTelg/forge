@@ -8,6 +8,26 @@ from forge.processing.station.default.editing import standard_absorption_correct
 from forge.data.flags import parse_flags
 
 
+def absorption_corrections(data: AvailableData) -> None:
+    # CPD1/2 data: already has Weiss applied for PSAPs
+    for absorption, scattering in data.select_instrument((
+            {"instrument": "psap1w"},
+            {"instrument": "psap3w"},
+    ), {"tags": "scattering -secondary"}, end="2016-02-19T16:52:00Z"):
+        remove_low_transmittance(absorption)
+        bond_1999(absorption, scattering)
+    for absorption, scattering in data.select_instrument((
+            {"instrument": "bmitap"},
+            {"instrument": "clap"},
+    ), {"tags": "scattering -secondary"}, end="2016-02-19T16:52:00Z"):
+        remove_low_transmittance(absorption)
+        weiss(absorption)
+        bond_1999(absorption, scattering)
+
+    # Normal corrections now
+    standard_absorption_corrections(data, start="2016-02-19T16:52:00Z")
+
+
 def aerosol_contamination(data: AvailableData) -> None:
     def remove_contamination(start, end, *remove_flags):
         for aerosol in data.select_instrument((
@@ -73,7 +93,7 @@ def run(data: AvailableData) -> None:
     aerosol_contamination(data)
 
     standard_stp_corrections(data)
-    standard_absorption_corrections(data)
+    absorption_corrections(data)
     standard_scattering_corrections(data)
 
     standard_intensives(data)
