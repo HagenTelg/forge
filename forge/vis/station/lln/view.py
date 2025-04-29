@@ -1,20 +1,16 @@
 import typing
-from ..default.view import detach, View, aerosol_views
+from ..default.view import detach, View, aerosol_views, aerosol_public
 from ..default.aerosol.admagiccpc import ADMagicCPC200Status
-from ..default.aerosol.psap import PSAPStatus
 from .optical import OpticalCOSMOS, EditingCOSMOS
 from .clap import CLAPStatusCOSMOS
 from .tca import TCA08Mass, TCA08Status, EditingTCA
 
 
-station_views = detach(aerosol_views)
+station_views = detach(aerosol_views, aerosol_public)
 
 
 station_views['aerosol-raw-cpcstatus'] = ADMagicCPC200Status('aerosol-raw')
 station_views['aerosol-realtime-cpcstatus'] = ADMagicCPC200Status('aerosol-realtime', realtime=True)
-
-station_views['aerosol-raw-psapstatus'] = PSAPStatus('aerosol-raw')
-station_views['aerosol-realtime-psapstatus'] = PSAPStatus('aerosol-realtime', realtime=True)
 
 station_views['aerosol-raw-opticalcosmos'] = OpticalCOSMOS('aerosol-raw')
 station_views['aerosol-realtime-opticalcosmos'] = OpticalCOSMOS('aerosol-realtime', realtime=True)

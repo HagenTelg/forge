@@ -1,8 +1,8 @@
 import typing
-from ..default.mode import Mode, ViewList, detach, aerosol_modes
+from ..default.mode import Mode, ViewList, detach, aerosol_modes, aerosol_public
 
 
-station_modes = detach(aerosol_modes)
+station_modes = detach(aerosol_modes, aerosol_public)
 
 station_modes['aerosol-raw'].remove('aerosol-raw-wind')
 station_modes['aerosol-realtime'].remove('aerosol-realtime-wind')
@@ -27,20 +27,20 @@ station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-clapst
                                          'aerosol-realtime-clapstatus')
 
 
-station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-tca', "TCA"),
-                                    'aerosol-raw-opticalcosmos')
-station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-tca', "TCA"),
-                                         'aerosol-realtime-opticalcosmos')
-station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-tca', "TCA"),
-                                        'aerosol-editing-cosmosclap')
-station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-tca', "TCA"),
-                                      'aerosol-clean-opticalcosmos')
-station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-tca', "TCA"),
-                                     'aerosol-avgh-opticalcosmos')
-station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-tcastatus', "TCA Status"),
-                                    'aerosol-raw-cpcstatus')
-station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-tcastatus', "TCA Status"),
-                                         'aerosol-realtime-cpcstatus')
+# station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-tca', "TCA"),
+#                                     'aerosol-raw-opticalcosmos')
+# station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-tca', "TCA"),
+#                                          'aerosol-realtime-opticalcosmos')
+# station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-tca', "TCA"),
+#                                         'aerosol-editing-cosmosclap')
+# station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-tca', "TCA"),
+#                                       'aerosol-clean-opticalcosmos')
+# station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-tca', "TCA"),
+#                                      'aerosol-avgh-opticalcosmos')
+# station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-tcastatus', "TCA Status"),
+#                                     'aerosol-raw-cpcstatus')
+# station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-tcastatus', "TCA Status"),
+#                                          'aerosol-realtime-cpcstatus')
 
 
 

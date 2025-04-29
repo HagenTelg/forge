@@ -1,11 +1,11 @@
 import typing
 from collections import OrderedDict
-from ..default.view import detach, View, aerosol_views
+from ..default.view import detach, View, aerosol_views, aerosol_public
 from ..default.aerosol.tsi377Xcpc import TSI3776CPCStatus
 from ..default.aerosol.temperature import Temperature
 
 
-station_views = detach(aerosol_views)
+station_views = detach(aerosol_views, aerosol_public)
 
 measurements = OrderedDict([
     ('{code}sample', '{code}_V11 (sample)'),

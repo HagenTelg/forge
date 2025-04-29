@@ -127,7 +127,7 @@ class Converter(WavelengthConverter):
         var_Bs = g.createVariable("scattering_coefficient", "f8", ("time", "wavelength"), fill_value=nan)
         netcdf_var.variable_extinction(var_Bs, is_stp=False)
         netcdf_timeseries.variable_coordinates(g, var_Bs)
-        var_Bs.variable_id = "Be"
+        var_Bs.variable_id = "Bs"
         var_Bs.coverage_content_type = "physicalMeasurement"
         var_Bs.cell_methods = "time: mean"
         self.apply_wavelength_data(times, var_Bs, data_Bs)

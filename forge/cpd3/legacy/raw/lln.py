@@ -4,6 +4,7 @@ import typing
 import os
 from forge.const import STATIONS as VALID_STATIONS
 from forge.cpd3.legacy.raw.write import InstrumentTimeConversion as C
+from forge.cpd3.legacy.instrument.psap3w import Converter as PSAP3W
 from forge.cpd3.legacy.instrument.azonixumac1050 import Converter as UMAC
 from forge.cpd3.legacy.instrument.lovepid import Converter as LovePID
 
@@ -11,9 +12,17 @@ STATION = os.path.basename(__file__).split('.', 1)[0].lower()
 assert STATION in VALID_STATIONS
 
 
+class ZeroingPSAP(PSAP3W):
+    def default_flags_map(self, bit_shift: int = 16) -> typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]]:
+        flags_map = super().default_flags_map(bit_shift=bit_shift)
+        flags_map["Zero"] = "zero"
+        return flags_map
+
+
 C.run(STATION, {
     "A11": [
-        C('psap3w', start='2008-10-10', end='2023-12-05'),
+        C('psap3w', start='2008-10-10', end='2017-07-25'),
+        C(ZeroingPSAP, start='2017-07-25', end='2023-12-05'),
         C('clap', start='2023-12-05'),
     ],
     "A12": [
