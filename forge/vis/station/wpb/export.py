@@ -128,7 +128,7 @@ else:
             ExportCSV.Column([Selection(variable_name="light_absorption", wavelength=wavelength,
                                         require_tags={"absorption"}, instrument_id="A12",
                                         exclude_tags={"aethalometer", "thermomaap"})],
-                             header="Ba" + code + "_{instrument_id}", default_header=f"Ba{code}", always_present=True)
+                             header="Ba" + code + "_{instrument_id}", default_header=f"Ba{code}")
             for code, wavelength in STANDARD_THREE_WAVELENGTHS
         ] + [
             ExportCSV.Column([Selection(variable_name="sample_flow",
@@ -146,7 +146,7 @@ else:
             ExportCSV.Column([Selection(variable_name="light_absorption", wavelength=wavelength, cut_size=cut_size,
                                         require_tags={"absorption"}, instrument_id="A12",
                                         exclude_tags={"aethalometer", "thermomaap"})],
-                             header="Ba" + code + record + "_{instrument_id}", default_header=f"Ba{code}", always_present=True)
+                             header="Ba" + code + record + "_{instrument_id}", default_header=f"Ba{code}")
             for record, cut_size in STANDARD_CUT_SIZE_SPLIT
             for code, wavelength in STANDARD_THREE_WAVELENGTHS
         ] + [
