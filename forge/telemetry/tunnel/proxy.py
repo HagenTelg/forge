@@ -360,12 +360,6 @@ def main():
     parser.add_argument('--key',
                         dest='key',
                         help="system key file")
-    parser.add_argument('--station',
-                        dest='station',
-                        help="target station identifier")
-    parser.add_argument('--connect',
-                        dest='target',
-                        help="target key identifier")
     parser.add_argument('--listen-host',
                         dest='listen_host',
                         help="TCP host to listen on",
@@ -376,6 +370,14 @@ def main():
     parser.add_argument('--hub-socket',
                         dest='hub_socket',
                         help="direct connection hub server socket")
+
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument('--station',
+                       dest='station',
+                       help="target station identifier")
+    group.add_argument('--connect',
+                       dest='target',
+                       help="target key identifier")
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--listen',
