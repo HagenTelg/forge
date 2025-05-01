@@ -117,20 +117,14 @@ if use_cpd3("wpb"):
         return export_profile_lookup(station, mode_name, station_profile_export)
 
 else:
-    from ..default.export import aerosol_exports, export_get, export_visible, ExportCSV, Selection, STANDARD_CUT_SIZE_SPLIT, STANDARD_THREE_WAVELENGTHS
+    from ..default.export import aerosol_exports, find_key, export_get, export_visible, ExportCSV, Selection, STANDARD_CUT_SIZE_SPLIT, STANDARD_THREE_WAVELENGTHS
     from copy import deepcopy
 
     export_entries = dict()
     export_entries["aerosol"] = deepcopy(aerosol_exports)
 
     for archive in ("raw", "clean",):
-        export_entries[archive].append(ExportCSV("absorption", "Absorption", [
-            ExportCSV.Column([Selection(variable_name="light_absorption", wavelength=wavelength,
-                                        require_tags={"absorption"},
-                                        exclude_tags={"secondary", "aethalometer", "thermomaap"})],
-                             header="Ba" + code + "_{instrument_id}", default_header=f"Ba{code}", always_present=True)
-            for code, wavelength in STANDARD_THREE_WAVELENGTHS
-        ] + [
+        find_key(export_entries["aerosol"][archive], "absorption").columns.extend([
             ExportCSV.Column([Selection(variable_name="light_absorption", wavelength=wavelength,
                                         require_tags={"absorption"}, instrument_id="A12",
                                         exclude_tags={"aethalometer", "thermomaap"})],
@@ -138,15 +132,6 @@ else:
             for code, wavelength in STANDARD_THREE_WAVELENGTHS
         ] + [
             ExportCSV.Column([Selection(variable_name="sample_flow",
-                                        require_tags={"absorption"},
-                                        exclude_tags={"secondary", "aethalometer", "thermomaap"})]),
-            ExportCSV.Column([Selection(variable_name="path_length_change",
-                                        require_tags={"absorption"},
-                                        exclude_tags={"secondary", "aethalometer", "thermomaap"})]),
-            ExportCSV.Column([Selection(variable_name="spot_number",
-                                        require_tags={"absorption"},
-                                        exclude_tags={"secondary", "aethalometer", "thermomaap"})]),
-            ExportCSV.Column([Selection(variable_name="sample_flow",
                                         require_tags={"absorption"}, instrument_id="A12",
                                         exclude_tags={"aethalometer", "thermomaap"})]),
             ExportCSV.Column([Selection(variable_name="path_length_change",
@@ -155,40 +140,15 @@ else:
             ExportCSV.Column([Selection(variable_name="spot_number",
                                         require_tags={"absorption"}, instrument_id="A12",
                                         exclude_tags={"aethalometer", "thermomaap"})]),
-        ]))
+        ])
     for archive in ("avgh",):
-        aerosol_exports[archive].append(ExportCSV("absorption", "Absorption", [
-            ExportCSV.Column([Selection(variable_name="light_absorption", wavelength=wavelength, cut_size=cut_size,
-                                        require_tags={"absorption"},
-                                        exclude_tags={"secondary", "aethalometer", "thermomaap"})],
-                             header="Ba" + code + record + "_{instrument_id}", default_header=f"Ba{code}", always_present=True)
-            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
-            for code, wavelength in STANDARD_THREE_WAVELENGTHS
-        ] +  [
+        find_key(export_entries["aerosol"][archive], "absorption").columns.extend([
             ExportCSV.Column([Selection(variable_name="light_absorption", wavelength=wavelength, cut_size=cut_size,
                                         require_tags={"absorption"}, instrument_id="A12",
                                         exclude_tags={"aethalometer", "thermomaap"})],
                              header="Ba" + code + record + "_{instrument_id}", default_header=f"Ba{code}", always_present=True)
             for record, cut_size in STANDARD_CUT_SIZE_SPLIT
             for code, wavelength in STANDARD_THREE_WAVELENGTHS
-        ] + [
-            ExportCSV.Column([Selection(variable_name="sample_flow", cut_size=cut_size,
-                                        require_tags={"absorption"},
-                                        exclude_tags={"secondary", "aethalometer", "thermomaap"})],
-                             header="Q" + record + "_{instrument_id}")
-            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
-        ] + [
-            ExportCSV.Column([Selection(variable_name="path_length_change", cut_size=cut_size,
-                                        require_tags={"absorption"},
-                                        exclude_tags={"secondary", "aethalometer", "thermomaap"})],
-                             header="Ld" + record + "_{instrument_id}")
-            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
-        ] + [
-            ExportCSV.Column([Selection(variable_name="spot_number", cut_size=cut_size,
-                                        require_tags={"absorption"},
-                                        exclude_tags={"secondary", "aethalometer", "thermomaap"})],
-                             header="Fn" + record + "_{instrument_id}")
-            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
         ] + [
             ExportCSV.Column([Selection(variable_name="sample_flow", cut_size=cut_size,
                                         require_tags={"absorption"}, instrument_id="A12",
@@ -207,11 +167,11 @@ else:
                                         exclude_tags={"aethalometer", "thermomaap"})],
                              header="Fn" + record + "_{instrument_id}")
             for record, cut_size in STANDARD_CUT_SIZE_SPLIT
-        ]))
+        ])
 
 
     for archive in ("raw", "clean", "avgh"):
-        export_entries[archive].append(ExportCSV("ambient", "Ambient Meteorological", [
+        export_entries["aerosol"][archive].append(ExportCSV("ambient", "Ambient Meteorological", [
             ExportCSV.Column([Selection(variable_id="WS", instrument_id="XM1")]),
             ExportCSV.Column([Selection(variable_id="WD", instrument_id="XM1")]),
             ExportCSV.Column([Selection(variable_id="T1", instrument_id="XM1")]),
