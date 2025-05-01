@@ -232,11 +232,11 @@ def start_instrument_serial(source: str, instrument_unit_name: str) -> typing.Op
     properties.append(("ExecStart", assemble_forge_exec(
         "forge-acquisition-serial-multiplexer", "--systemd",
         *(["--debug"] if _ENABLE_DEBUG or CONFIGURATION.get(f"INSTRUMENT.{source}.ENABLE_DEBUG") else []),
-        "--eavesdropper", "${RUNTIME_DIRECTORY}/eavesdropper.sock",
-        "--raw", "${RUNTIME_DIRECTORY}/raw.sock",
-        "--control", "${RUNTIME_DIRECTORY}/control.dgram",
+        "--eavesdropper", f"/run/forge-serial-{source}/eavesdropper.sock",
+        "--raw", f"/run/forge-serial-{source}/raw.sock",
+        "--control", f"/run/forge-serial-{source}/control.dgram",
         "--",
-        physical_port, "${RUNTIME_DIRECTORY}/instrument.tty", "${RUNTIME_DIRECTORY}/eavesdropper.tty"
+        physical_port, f"/run/forge-serial-{source}/instrument.tty", f"/run/forge-serial-{source}/eavesdropper.tty"
     )))
 
     release_transient_unit(serial_unit_name)
@@ -297,7 +297,7 @@ def start_instrument(source: str) -> None:
     properties.append(("ExecStart", assemble_forge_exec(
         "forge-acquisition-instrument", "--systemd",
         *(["--debug"] if _ENABLE_DEBUG or CONFIGURATION.get(f"INSTRUMENT.{source}.ENABLE_DEBUG") else []),
-        "--data-working", "${RUNTIME_DIRECTORY}",
+        "--data-working", f"/run/forge-instrument-{source}",
         "--data-completed", _COMPLETED_DATA_DIRECTORY,
         "--state-location", _STATE_LOCATION_DIRECTORY,
         *serial_args,
@@ -305,7 +305,7 @@ def start_instrument(source: str) -> None:
         instrument_type, source
     )))
     properties.append(("ExecStopPost", assemble_exec(
-        "find", "${RUNTIME_DIRECTORY}", "-mindepth", "1", "-maxdepth", "1", "-type", "f",
+        "find", f"/run/forge-instrument-{source}", "-mindepth", "1", "-maxdepth", "1", "-type", "f",
         "-name", "*.nc",
         "-exec", "mv", "--", "{}", f"{_COMPLETED_DATA_DIRECTORY}/", ";"
     )))

@@ -23,5 +23,5 @@ WorkingDirectory=/
 RuntimeDirectory=forge-eventlog
 ReadWritePaths=/var/lib/forge/incoming
 Environment=ROOT_PATH_FOR_DYNACONF=/etc/forge/acquisition
-ExecStart=/opt/forge/venv/bin/forge-acquisition-event-log --systemd --data-working ${RUNTIME_DIRECTORY} --data-completed /var/lib/forge/incoming
-ExecStopPost=find ${RUNTIME_DIRECTORY} -mindepth 1 -maxdepth 1 -type f -name *.nc -exec mv -- {} /var/lib/forge/incoming/ \;
+ExecStart=/opt/forge/venv/bin/forge-acquisition-event-log --systemd --data-working /run/forge-eventlog --data-completed /var/lib/forge/incoming
+ExecStopPost=find /run/forge-eventlog -mindepth 1 -maxdepth 1 -type f -name *.nc -exec mv -- {} /var/lib/forge/incoming/ \;
