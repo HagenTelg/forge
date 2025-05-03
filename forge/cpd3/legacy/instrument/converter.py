@@ -91,10 +91,6 @@ class InstrumentConverter(ABC):
         valid = time_difference > 0.0
         if not np.any(valid):
             return None
-        time_difference = seconds[1:] - seconds[:-1]
-        valid = time_difference > 0.0
-        if not np.any(valid):
-            return None
         time_difference = time_difference[valid]
         time_step_values, time_step_count = np.unique(time_difference, return_counts=True)
         time_step = float(time_step_values[np.argmax(time_step_count)])

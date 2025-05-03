@@ -79,27 +79,31 @@ class Converter(WavelengthConverter):
         if split_transmittance is None:
             split_transmittance = self.calculate_split_monitor(np.concatenate([v.time for v in data_Ir]))
         if not split_transmittance:
-            mon_g = g
-            mon_times = times
+            tr_g = g
+            tr_times = times
         elif any([v.time.shape[0] != 0 for v in data_Ir]):
-            mon_g, mon_times = self.data_group(data_Ir, name='status', fill_gaps=False)
+            tr_g, tr_times = self.data_group(data_Ir, name='status', fill_gaps=False)
         else:
-            mon_g, mon_times = None, None
+            tr_g, tr_times = None, None
             split_transmittance = True
 
-        if mon_g is not None:
-            var_Ir = mon_g.createVariable("transmittance", "f8", ("time", "wavelength"), fill_value=nan)
+        if tr_g is not None:
+            var_Ir = tr_g.createVariable("transmittance", "f8", ("time", "wavelength"), fill_value=nan)
             netcdf_var.variable_transmittance(var_Ir)
-            netcdf_timeseries.variable_coordinates(mon_g, var_Ir)
+            netcdf_timeseries.variable_coordinates(tr_g, var_Ir)
             var_Ir.variable_id = "Ir"
             var_Ir.coverage_content_type = "physicalMeasurement"
             var_Ir.cell_methods = "time: last"
             var_Ir.long_name = "transmittance fraction of light through the filter relative to the amount before sampling on spot one"
-            self.apply_wavelength_data(mon_times, var_Ir, data_Ir)
+            self.apply_wavelength_data(tr_times, var_Ir, data_Ir)
 
         split_monitor = self.split_monitor
+        mon_g = None
+        mon_times = None
         if split_monitor is None and split_transmittance:
             split_monitor = split_transmittance
+            mon_g = tr_g
+            mon_times = tr_times
         if split_monitor is None:
             split_monitor = self.calculate_split_monitor(data_T1.time)
         if mon_g is None:
