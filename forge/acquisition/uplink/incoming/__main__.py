@@ -9,7 +9,7 @@ from .server import app
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Forge telemetry manager backend web server.")
+    parser = argparse.ArgumentParser(description="Forge acquisition uplink backend web server.")
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--bind',
