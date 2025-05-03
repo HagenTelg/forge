@@ -112,6 +112,6 @@ def dilution(
                     factor_output.variable.units = "1"
                     factor_output.variable.C_format = "%6.3f"
                     factor_output.variable.variable_id = "ZDILUTION"
-                    factor_output[:] = factor[:]
+                    factor_output[...] = factor[...]
             except FileExistsError:
                 continue
