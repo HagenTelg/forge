@@ -97,9 +97,9 @@ class Converter(WavelengthConverter):
             var_Ir.long_name = "transmittance fraction of light through the filter relative to the amount before sampling on spot one"
             self.apply_wavelength_data(mon_times, var_Ir, data_Ir)
 
-        split_monitor = split_transmittance
-        if split_monitor is None:
-            split_monitor = self.split_monitor
+        split_monitor = self.split_monitor
+        if split_monitor is None and split_transmittance:
+            split_monitor = split_transmittance
         if split_monitor is None:
             split_monitor = self.calculate_split_monitor(data_T1.time)
         if mon_g is None:

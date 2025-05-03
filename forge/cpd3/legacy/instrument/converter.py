@@ -83,24 +83,24 @@ class InstrumentConverter(ABC):
     def average_interval(self) -> typing.Optional[float]:
         return 60.0
 
-    def calculate_split_monitor(self, candidate_times: np.ndarray) -> bool:
+    def calculate_split_monitor(self, candidate_times: np.ndarray) -> typing.Optional[bool]:
         if candidate_times.shape[0] < 2:
-            return False
+            return None
         seconds = np.round(candidate_times / (60 * 1000.0)) * 60.0
         time_difference = seconds[1:] - seconds[:-1]
         valid = time_difference > 0.0
         if not np.any(valid):
-            return False
+            return None
         time_difference = seconds[1:] - seconds[:-1]
         valid = time_difference > 0.0
         if not np.any(valid):
-            return False
+            return None
         time_difference = time_difference[valid]
         time_step_values, time_step_count = np.unique(time_difference, return_counts=True)
         time_step = float(time_step_values[np.argmax(time_step_count)])
         data_interval = self.average_interval
         if not data_interval:
-            return False
+            return None
         if time_step <= data_interval * 2:
             return False
         return True
