@@ -33,11 +33,11 @@ class Server(SocketServer):
         control = Controller()
         await control.initialize()
 
-        diagnostic_socket = CONFIGURATION.get('ARCHIVE.DIAGNOSTIC_SOCKET')
+        diagnostic_socket = CONFIGURATION.get('ARCHIVE.DIAGNOSTIC.SOCKET', CONFIGURATION.get('ARCHIVE.DIAGNOSTIC_SOCKET'))
         if diagnostic_socket:
             _LOGGER.debug("Initializing diagnostics")
             global diagnostics
-            diagnostics = Diagnostics(diagnostic_socket, control)
+            diagnostics = Diagnostics(diagnostic_socket, control, CONFIGURATION.get('ARCHIVE.DIAGNOSTIC.MODE'))
             await diagnostics.initialize()
 
     @property

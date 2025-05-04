@@ -14,10 +14,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Diagnostics:
-    def __init__(self, socket_path: str, control: Controller):
+    def __init__(self, socket_path: str, control: Controller, socket_mode: typing.Optional[int] = 0):
         self.socket_path = socket_path
         self.control = control
         self._server = None
+        self._socket_mode = socket_mode
 
     async def initialize(self) -> None:
         _LOGGER.info(f"Listening on diagnostics socket {self.socket_path}")
@@ -26,6 +27,11 @@ class Diagnostics:
         except OSError:
             pass
         self._server = await asyncio.start_unix_server(self.connection, path=self.socket_path)
+        if self._socket_mode:
+            try:
+                os.chmod(self.socket_path, self._socket_mode)
+            except OSError:
+                _LOGGER.debug(f"Error setting mode on socket for {self.socket_path}", exc_info=True)
 
     def shutdown(self) -> None:
         try:
@@ -184,7 +190,7 @@ def main():
                         dest='debug', action='store_true',
                         help="enable debug output")
     parser.add_argument('--socket',
-                        dest='socket', default=CONFIGURATION.get('ARCHIVE.DIAGNOSTIC_SOCKET'),
+                        dest='socket', default=CONFIGURATION.get('ARCHIVE.DIAGNOSTIC.SOCKET', CONFIGURATION.get('ARCHIVE.DIAGNOSTIC_SOCKET')),
                         help="set the diagnostic control socket")
 
     subparsers = parser.add_subparsers(dest='command')
