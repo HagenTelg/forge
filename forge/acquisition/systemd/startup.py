@@ -12,6 +12,7 @@ from forge.acquisition.cutsize import CutSize
 
 
 _LOGGER = logging.getLogger(__name__)
+_SYSTEM_BUS: dbus.SystemBus = None
 _SYSTEMD: dbus.Interface = None
 _ACQUISITION_SYSTEM_GROUP: str = None
 _DATA_OUTPUT_USER: str = None
@@ -90,11 +91,46 @@ def release_transient_unit(name: str) -> None:
     except dbus.exceptions.DBusException:
         pass
 
+    # Wait for shutdown
+    try:
+        unit = _SYSTEMD.GetUnit(name)
+        unit = _SYSTEM_BUS.get_object("org.freedesktop.systemd1", unit)
+        unit = dbus.Interface(unit, dbus_interface="org.freedesktop.DBus.Properties")
+        timeout = time.monotonic() + 10
+        while time.monotonic() < timeout:
+            state = unit.Get("org.freedesktop.systemd1.Unit", "ActiveState")
+            if state in ("inactive", "failed"):
+                break
+            time.sleep(0.1)
+    except dbus.exceptions.DBusException:
+        pass
+
     # Remove any status about it
     try:
         _SYSTEMD.ResetFailedUnit(name)
     except dbus.exceptions.DBusException:
         pass
+
+    # Make sure the transient file was actually removed.  It looks like some cases
+    # can result in systemd's state becoming wierd in fast shutdown/restart sequences.
+    unit_file = Path("/var/run/systemd/transient/") / name
+    timeout = time.monotonic() + 5
+    while time.monotonic() < timeout:
+        if not unit_file.exists():
+            break
+        time.sleep(0.1)
+    else:
+        _LOGGER.info(f"Unit {name} not removed, removing and forcing systemd re-execute")
+        try:
+            unit_file.unlink()
+        except:
+            pass
+        time.sleep(1)
+        try:
+            _SYSTEMD.Reexecute()
+        except dbus.exceptions.DBusException:
+            pass
+        time.sleep(5)
 
 
 def start_transient_unit(name: str, properties: typing.List[typing.Tuple[str, typing.Any]]) -> None:
@@ -429,8 +465,9 @@ def main():
     global _IMPORT_ROOT
     _IMPORT_ROOT = args.import_path
 
-    bus = dbus.SystemBus()
-    pid1 = bus.get_object("org.freedesktop.systemd1", "/org/freedesktop/systemd1")
+    global _SYSTEM_BUS
+    _SYSTEM_BUS = dbus.SystemBus()
+    pid1 = _SYSTEM_BUS.get_object("org.freedesktop.systemd1", "/org/freedesktop/systemd1")
     global _SYSTEMD
     _SYSTEMD = dbus.Interface(pid1, dbus_interface="org.freedesktop.systemd1.Manager")
 
