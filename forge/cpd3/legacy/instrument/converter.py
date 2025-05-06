@@ -821,6 +821,15 @@ class InstrumentConverter(ABC):
         if len(bits_allocated) == 1 and not bit_to_flag.get(1 << 0):
             return None
 
+        # Need to check for the flag in the first bit, since it would get overwritten with the bad assignment
+        for cpd3_flag, flag in flags_map.items():
+            if isinstance(flag, str):
+                continue
+            bit = flag[1]
+            if bit != (1 << 0):
+                continue
+            bits_allocated.add(cpd3_flag)
+
         flags_data, allocated_present = self._convert_system_flags(
             bit_to_flag,
             flag_to_bit,
