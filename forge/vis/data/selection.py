@@ -95,7 +95,7 @@ class VariableRootContext:
 
     def group_cut_size_dimension(self, group: Dataset) -> np.ndarray:
         hit = self._group_cut_size_dimension.get(group)
-        if hit:
+        if hit is not None:
             return hit
         _, cut_values = find_dimension_values(group, 'cut_size')
         hit = cut_values[:].data
@@ -659,6 +659,9 @@ class Selection(InstrumentSelection):
                     return None
             else:
                 raise RuntimeError
+        else:
+            if var.statistics_type:
+                return None
 
         wavelength_dimension_number: typing.Optional[int] = None
         wavelength_dimension_selector: typing.Optional[int] = None

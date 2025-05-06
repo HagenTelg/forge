@@ -225,7 +225,7 @@ for archive in ("avgh",):
         ExportCSV.Column([Selection(variable_name="light_absorption", wavelength=wavelength, cut_size=cut_size,
                                     require_tags={"absorption"},
                                     exclude_tags={"secondary", "aethalometer", "thermomaap"})],
-                         header="Ba" + code + record + "_{instrument_id}", default_header=f"Ba{code}", always_present=True)
+                         header="Ba" + code + record + "_{instrument_id}", default_header=f"Ba{code}")
         for record, cut_size in STANDARD_CUT_SIZE_SPLIT
         for code, wavelength in STANDARD_THREE_WAVELENGTHS
     ] + [
