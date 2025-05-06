@@ -57,6 +57,12 @@ class AerosolContamination(MatchContamination):
         "mass_concentration",
         "spot_one_light_absorption",
         "spot_two_light_absorption",
+        "backscatter_fraction",
+        "asymmetry_parameter",
+        "single_scattering_albedo",
+        "radiative_forcing_efficiency",
+        "scattering_angstrom_exponent",
+        "absorption_angstrom_exponent",
     }
     STANDARD_NAMES = {
         "number_concentration_of_ambient_aerosol_particles_in_air",
@@ -64,6 +70,10 @@ class AerosolContamination(MatchContamination):
         "volume_backwards_scattering_coefficient_in_air_due_to_dried_aerosol_particles",
         "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles",
         "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles",
+        "backscattering_ratio",
+        "asymmetry_factor_of_ambient_aerosol_particles",
+        "single_scattering_albedo_in_air_due_to_ambient_aerosol_particles",
+        "angstrom_exponent_of_ambient_aerosol_in_air",
     }
 
 
