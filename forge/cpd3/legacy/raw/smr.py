@@ -58,6 +58,7 @@ class LegacyCPC(InstrumentConverter):
             variable: str = None,
             flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
             bit_shift: int = 16,
+            only_fixed_assignment: bool = False,
     ) -> None:
         return None
 

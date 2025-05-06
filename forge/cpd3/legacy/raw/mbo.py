@@ -536,6 +536,7 @@ class LegacyAuxCPC(InstrumentConverter):
             variable: str = None,
             flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
             bit_shift: int = 16,
+            only_fixed_assignment: bool = False,
     ) -> None:
         return None
 
@@ -768,6 +769,7 @@ class Met(InstrumentConverter):
             variable: str = None,
             flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
             bit_shift: int = 16,
+            only_fixed_assignment: bool = False,
     ) -> None:
         return None
 
@@ -821,6 +823,7 @@ class CCGG(InstrumentConverter):
             variable: str = None,
             flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
             bit_shift: int = 16,
+            only_fixed_assignment: bool = False,
     ) -> None:
         return None
 
@@ -851,11 +854,12 @@ class C(BaseConverter):
                     variable: str = None,
                     flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
                     bit_shift: int = 16,
-            ) -> bool:
+                    only_fixed_assignment: bool = False,
+            ):
                 if flags_map is None:
                     flags_map = self.default_flags_map(bit_shift)
                 flags_map["ContaminateThermodenuder"] = "data_contamination_thermodenuder"
-                return super().analyze_flags_mapping_bug(variable=variable, flags_map=flags_map)
+                return super().analyze_flags_mapping_bug(variable=variable, flags_map=flags_map, only_fixed_assignment=only_fixed_assignment)
 
 
         seg.converter = WithTDFlags

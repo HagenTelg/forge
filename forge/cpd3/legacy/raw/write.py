@@ -68,6 +68,9 @@ class InstrumentTimeConversion:
         group.add_argument('--flags-bug-fix',
                            dest='flags_bug_fix', action='store_true',
                            help="fix and report the system flags bit assignment bug")
+        group.add_argument('--flags-bug-fix2',
+                           dest='flags_bug_fix2', action='store_true',
+                           help="fix and report the system flags bit assignment bug second pass")
         parser.add_argument('--instrument',
                             dest='instrument',
                             help="instrument ID restriction")
@@ -228,7 +231,7 @@ class InstrumentTimeConversion:
 
             return
 
-        if args.flags_bug_fix:
+        if args.flags_bug_fix or args.flags_bug_fix2:
             begin_time = time.monotonic()
             _LOGGER.debug(f"Starting flags bug fix for {station.upper()} in {format_iso8601_time(start)} to {format_iso8601_time(end)}")
 
@@ -268,7 +271,7 @@ class InstrumentTimeConversion:
 
                             result = conversion.converter(
                                 station, instrument_id, start_of_day, end_of_day, None
-                            ).analyze_flags_mapping_bug()
+                            ).analyze_flags_mapping_bug(only_fixed_assignment=args.flags_bug_fix2)
                             if not result:
                                 continue
                             flags_data, bit_to_flag = result

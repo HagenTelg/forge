@@ -809,6 +809,7 @@ class InstrumentConverter(ABC):
             variable: str = None,
             flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
             bit_shift: int = 16,
+            only_fixed_assignment: bool = False,
     ) -> typing.Optional[typing.Tuple["InstrumentConverter.Data", typing.Dict[int, str]]]:
         if flags_map is None:
             flags_map = self.default_flags_map(bit_shift)
@@ -820,6 +821,9 @@ class InstrumentConverter(ABC):
         # Exactly one unassigned flag and the first bit free (it would always go there), also always ok
         if len(bits_allocated) == 1 and not bit_to_flag.get(1 << 0):
             return None
+
+        if only_fixed_assignment:
+            bits_allocated = set()
 
         # Need to check for the flag in the first bit, since it would get overwritten with the bad assignment
         for cpd3_flag, flag in flags_map.items():

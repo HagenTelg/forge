@@ -44,10 +44,11 @@ class AirQuality(InstrumentConverter):
             variable: str = None,
             flags_map: typing.Dict[str, typing.Union[str, typing.Tuple[str, int]]] = None,
             bit_shift: int = 16,
-    ) -> bool:
+            only_fixed_assignment: bool = False,
+    ):
         return self.analyze_flags_mapping_bug(flags_map={
             "ContaminateAirQuality": "data_contamination_air_quality",
-        })
+        }, only_fixed_assignment=only_fixed_assignment)
 
 
 C.run(STATION, {
