@@ -628,21 +628,21 @@ class EditDirective:
     def convert_action(self, action: typing.Dict[str, typing.Any], index: EditIndex) -> typing.Tuple[str, str]:
         def convert_calibration(calibration: typing.Any) -> typing.List[float]:
             if calibration is None:
-                return []
+                raise EditConversionFailed("invalid calibration")
 
             if isinstance(calibration, float) or isinstance(calibration, int):
                 return [float(calibration)]
             elif isinstance(calibration, dict):
                 return convert_calibration(calibration.get('Coefficients'))
             elif not isinstance(calibration, list):
-                return []
+                raise EditConversionFailed("invalid calibration")
 
             result = []
             for coefficient in calibration:
                 try:
                     coefficient = float(coefficient)
-                except (ValueError, TypeError):
-                    return []
+                except (ValueError, TypeError) as e:
+                    raise EditConversionFailed("invalid calibration") from e
                 result.append(coefficient)
             return result
 
