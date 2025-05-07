@@ -385,7 +385,8 @@ class StationsController:
     async def initialize(self) -> None:
         for station in sorted(STATIONS):
             _LOGGER.debug(f"Initializing {station.upper()}")
-            manager = self.Manager(self, station.lower())
+            station = station.lower()
+            manager = self.Manager(self, station)
             self.stations[station] = manager
             await manager.initialize()
         for station in self.stations.values():
@@ -464,12 +465,20 @@ class StationsController:
         for station in self.stations.values():
             await station.shutdown()
 
-    async def flush(self, start: int = -MAX_I64, end: int = MAX_I64) -> None:
+    async def flush(self, start: int = -MAX_I64, end: int = MAX_I64, stations: typing.Set[str] = None) -> None:
         if self._shutdown_in_progress:
             return
-        _LOGGER.debug(f"Flushing all data in {start if start > -MAX_I64 else '-INF'},{end if end < MAX_I64 else 'INF'}")
-        for station in self.stations.values():
-            await station.flush(start, end)
+        if stations:
+            _LOGGER.debug(f"Flushing {','.join([s.upper() for s in stations])} data in {start if start > -MAX_I64 else '-INF'},{end if end < MAX_I64 else 'INF'}")
+            for station in stations:
+                station = self.stations.get(station)
+                if station is None:
+                    continue
+                await station.flush(start, end)
+        else:
+            _LOGGER.debug(f"Flushing all data in {start if start > -MAX_I64 else '-INF'},{end if end < MAX_I64 else 'INF'}")
+            for station in self.stations.values():
+                await station.flush(start, end)
 
     def request_timeout(self) -> float:
         if self._in_transaction:
@@ -545,12 +554,19 @@ class StationsController:
         controller_run: asyncio.Task = None
 
         async def control_connection(reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+            async def _read_string() -> str:
+                s_len = struct.unpack('<I', await reader.readexactly(4))[0]
+                return (await reader.readexactly(s_len)).decode('utf-8')
+
             try:
                 command = struct.unpack('<B', await reader.readexactly(1))[0]
                 if command == 0:
-                    flush_start, flush_end = struct.unpack('<qq', await reader.readexactly(16))
+                    flush_start, flush_end, station_count = struct.unpack('<qqI', await reader.readexactly(20))
+                    flush_stations = set()
+                    for _ in range(station_count):
+                        flush_stations.add((await _read_string()).lower())
                     if controller:
-                        await controller.flush(flush_start, flush_end)
+                        await controller.flush(flush_start, flush_end, flush_stations)
                         writer.write(struct.pack('<B', 0))
                     else:
                         writer.write(struct.pack('<B', 1))
@@ -742,6 +758,9 @@ class StationsController:
         parser.add_argument('--before',
                             dest='before',
                             help="flush data before a time, or 'today' for the start of the current UTC day")
+        parser.add_argument('--station',
+                            dest='station', action='append',
+                            help="station to flush")
 
         args = parser.parse_args()
         if not args.control_socket:
@@ -764,7 +783,13 @@ class StationsController:
             _LOGGER.debug(f"Connecting to control socket {args.control_socket}")
             reader, writer = await asyncio.open_unix_connection(args.control_socket)
 
-            writer.write(struct.pack('<Bqq', 0, -MAX_I64, before))
+            stations = set([s.lower() for s in args.station] if args.station else [])
+
+            writer.write(struct.pack('<BqqI', 0, -MAX_I64, before, len(stations)))
+            for s in stations:
+                s = s.encode('utf-8')
+                writer.write(struct.pack('<I', len(s)))
+                writer.write(s)
             result = struct.unpack('<B', await reader.readexactly(1))[0]
 
             writer.close()
