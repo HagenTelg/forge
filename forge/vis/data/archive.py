@@ -437,6 +437,8 @@ class ContaminationRecord(Record):
                                 continue
                             if len(var.variable.dimensions) < 1 or var.variable.dimensions[0] != 'time':
                                 continue
+                            if var.statistics_type:
+                                continue
                             if var.times is None:
                                 continue
                             for sel in selections:
