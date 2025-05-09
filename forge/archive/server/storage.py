@@ -102,8 +102,9 @@ class _ActionWriteFile:
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 self.contents.rename(destination)
             except:
-                _LOGGER.error("Write file action apply failed for %s (%s)", destination, redirection)
-                exit(1)
+                _LOGGER.error("Write file action apply failed for %s (%s)", destination, redirection,
+                              exc_info=True)
+                os._exit(1)
             if redirection:
                 if created:
                     return _RedirectedCreatedFile()
@@ -144,8 +145,9 @@ class _ActionRemoveFile:
             if redirection:
                 return _RedirectedWrittenFile(redirection)
         except:
-            _LOGGER.error("Remove file action apply failed for %s (%s)", destination, redirection)
-            exit(1)
+            _LOGGER.error("Remove file action apply failed for %s (%s)", destination, redirection,
+                          exc_info=True)
+            os._exit(1)
         finally:
             _remove_empty_directories(root, destination)
 
