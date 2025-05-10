@@ -276,7 +276,7 @@ async def _write_avgm(connection: Connection, station: str, start: int, end: int
     await put.preemptive_lock_range(station, "avgm", start * 1000, end * 1000)
 
     await _write_files(connection, put, source, station, "avgm", True, "forge.average.monthly",
-                       "Writing daily monthly data, {percent_done:.0f}% done")
+                       "Writing monthly averaged data, {percent_done:.0f}% done")
 
 
 async def update_avgm_data(connection: Connection, station: str, start: float, end: float) -> None:
