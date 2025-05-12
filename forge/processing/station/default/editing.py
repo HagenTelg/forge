@@ -29,6 +29,7 @@ def standard_stp_corrections(data: AvailableData, **kwargs) -> None:
         to_stp(instrument, temperature={"variable_name": "optics_temperature"})
     for instrument in data.select_instrument((
             {"instrument": "aerodynecaps"},
+            {"instrument": "dmtpax"},
             {"instrument": "teledynet640"},
             {"instrument": "tsi3563nephelometer"},
     ), **kwargs):

@@ -247,6 +247,10 @@ class EditDirective:
                 return True
         return False
 
+    @property
+    def is_optional(self) -> bool:
+        return self.disabled
+
     def history(
             self,
             index: EditIndex,
@@ -1029,7 +1033,7 @@ def write_all(
                     ):
                         output_root.variables[var][output_idx] = source
                 except EditConversionFailed as e:
-                    if info.disabled:
+                    if info.is_optional:
                         _LOGGER.debug(f"Conversion of edit {info} failed: {e.message}")
                     else:
                         _LOGGER.warning(f"Conversion of edit {info} failed: {e.message}")

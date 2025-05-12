@@ -85,3 +85,30 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
             (-5, None), (-2, None),
         )
     return result
+
+
+def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
+    from ..default.ebas import standard_submit
+    result = standard_submit(gaw_station)
+
+    result.update({
+        "aethalometer_lev0": ("clean", [InstrumentSelection(
+            require_tags=["aethalometer"],
+            exclude_tags=["secondary"],
+        )]),
+        "aethalometer_lev1": ("clean", [InstrumentSelection(
+            require_tags=["aethalometer"],
+            exclude_tags=["secondary"],
+        )]),
+        "aethalometer_lev2": ("avgh", [InstrumentSelection(
+            require_tags=["aethalometer"],
+            exclude_tags=["secondary"],
+        )])
+    })
+
+    return result
+
+
+def nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"], str, str]]:
+    from ..default.ebas import standard_nrt
+    return standard_nrt(gaw_station)
