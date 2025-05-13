@@ -110,7 +110,7 @@ def run(data: AvailableData) -> None:
                 {"variable_id": "WD1"},
         ):
             wind_direction[:] = (wind_direction[:] + 180) % 360
-    for met in data.select_instrument({"instrument_id": "XM1"}, start="2007-01-01"):
+    for met in data.select_instrument({"instrument_id": "XM1"}, start="2007-01-01", end="2025-05-01"):
         meteorological_climatology_limits(
             met,
             temperature_range=(-10, 25),
@@ -118,6 +118,16 @@ def run(data: AvailableData) -> None:
             pressure_range=(660, 690),
             precipitation_range=(0, 200),
             normalized_temperature_rate_of_change=(-0.05, 0.05),
+            maximum_wind_speed=50,
+        )
+    # Rate of change disabled per David Marshall email on 2025-05-13
+    for met in data.select_instrument({"instrument_id": "XM1"}, start="2025-05-01"):
+        meteorological_climatology_limits(
+            met,
+            temperature_range=(-10, 25),
+            dewpoint_range=(-40, 22),
+            pressure_range=(660, 690),
+            precipitation_range=(0, 200),
             maximum_wind_speed=50,
         )
 
