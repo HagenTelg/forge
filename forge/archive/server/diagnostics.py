@@ -550,7 +550,7 @@ def main():
                         "KEY", "R/W", "START", "END"
                     ], output_rows, flex=0, prefix="    ")
 
-                notifications = response['notifications']
+                notifications = response.get('notifications')
                 if notifications:
                     output_rows = list()
                     notifications.sort(key=lambda x: (x['key'], x['start'], x['end']))
@@ -565,7 +565,7 @@ def main():
                         "KEY", "START", "END"
                     ], output_rows, flex=0, prefix="    ")
 
-                intents = response['intent_release']
+                intents = response.get('intent_release')
                 if intents:
                     output_rows = list()
                     intents.sort(key=lambda x: (x['key'], x['start'], x['end']))
@@ -580,7 +580,7 @@ def main():
                         "KEY", "START", "END"
                     ], output_rows, flex=0, prefix="    ")
 
-                intents = response['intent_acquire']
+                intents = response.get('intent_acquire')
                 if intents:
                     output_rows = list()
                     intents.sort(key=lambda x: (x['key'], x['start'], x['end']))
