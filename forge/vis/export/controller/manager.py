@@ -133,7 +133,12 @@ class _ExportRequest:
                 self._apply_result(None)
                 return None
 
-            result = await exporter()
+            try:
+                result = await exporter()
+            except:
+                _LOGGER.error(f"Error in export for {self.station},{self.mode_name},{self.export_key},{self.start_epoch_ms},{self.end_epoch_ms}")
+                self._apply_result(None)
+                return None
             if not result:
                 self._apply_result(None)
                 return None

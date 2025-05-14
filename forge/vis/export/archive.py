@@ -177,6 +177,11 @@ class ExportCSV(ArchiveExportEntry):
                             self._cut_sizes.astype(np.float32, casting='unsafe', copy=False),
                             cut_size_times.astype(np.float32, casting='unsafe', copy=False)
                         ))
+                    elif self._cut_sizes is not None:
+                        self._cut_sizes = np.concatenate((
+                            self._cut_sizes.astype(np.float32, casting='unsafe', copy=False),
+                            np.full(values.shape, nan, dtype=np.float32)
+                        ))
 
                 if not self._is_state and var.is_state:
                     self._is_state = True
