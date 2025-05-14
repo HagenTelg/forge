@@ -136,7 +136,7 @@ class _ExportRequest:
             try:
                 result = await exporter()
             except:
-                _LOGGER.error(f"Error in export for {self.station},{self.mode_name},{self.export_key},{self.start_epoch_ms},{self.end_epoch_ms}")
+                _LOGGER.error(f"Error in export for {self.station},{self.mode_name},{self.export_key},{self.start_epoch_ms},{self.end_epoch_ms}", exc_info=True)
                 self._apply_result(None)
                 return None
             if not result:
