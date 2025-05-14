@@ -32,7 +32,7 @@ class ParticleConcentration(TimeSeries):
         cnc.traces.append(n_cnc)
 
         n_cnc = TimeSeries.Trace(cm_3)
-        n_cnc.legend = "CNC3 (MAGIC N43)"
+        n_cnc.legend = "CNC3 (MAGIC N44)"
         n_cnc.data_record = f'{mode}-cnc'
         n_cnc.data_field = 'cnc3'
         cnc.traces.append(n_cnc)

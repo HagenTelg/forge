@@ -40,28 +40,33 @@ if use_cpd3("spo"):
         start_epoch_ms, end_epoch_ms, {
             Name(station, 'raw', 'N_N41'): 'cnc',
             Name(station, 'raw', 'N_N42'): 'cnc2',
+            Name(station, 'raw', 'N_N44'): 'cnc3',
         }, send
     )
     station_profile_data['aerosol']['realtime']['cnc'] = {
         RealtimeTranslator.Key('N_N41'): 'cnc',
         RealtimeTranslator.Key('N_N42'): 'cnc2',
+        RealtimeTranslator.Key('N_N44'): 'cnc3',
     }
     station_profile_data['aerosol']['clean']['cnc'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
         start_epoch_ms, end_epoch_ms, {
             Name(station, 'clean', 'N_N41'): 'cnc',
             Name(station, 'clean', 'N_N42'): 'cnc2',
+            Name(station, 'clean', 'N_N43'): 'cnc3',
         }, send
     )
     station_profile_data['aerosol']['avgh']['cnc'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
         start_epoch_ms, end_epoch_ms, {
             Name(station, 'avgh', 'N_N41'): 'cnc',
             Name(station, 'avgh', 'N_N42'): 'cnc2',
+            Name(station, 'avgh', 'N_N43'): 'cnc3',
         }, send
     )
     station_profile_data['aerosol']['editing']['cnc'] = lambda station, start_epoch_ms, end_epoch_ms, send: EditedReader(
         start_epoch_ms, end_epoch_ms, station, 'aerosol', {
             Name(station, 'clean', 'N_N41'): 'cnc',
             Name(station, 'clean', 'N_N42'): 'cnc2',
+            Name(station, 'clean', 'N_N43'): 'cnc3',
         }, send
     )
 
@@ -100,6 +105,43 @@ if use_cpd3("spo"):
         RealtimeTranslator.Key('P_N42'): 'Psample',
         RealtimeTranslator.Key('PCT_N42'): 'PCTwick',
         RealtimeTranslator.Key('V_N42'): 'Vpulse',
+    }
+
+    station_profile_data['aerosol']['raw']['cpcstatus3'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
+        start_epoch_ms, end_epoch_ms, {
+            Name(station, 'raw', 'Tu_N44'): 'Tinlet',
+            Name(station, 'raw', 'TDu_N44'): 'TDinlet',
+            Name(station, 'raw', 'Uu_N44'): 'Uinlet',
+            Name(station, 'raw', 'T1_N44'): 'Tconditioner',
+            Name(station, 'raw', 'T2_N44'): 'Tinitiator',
+            Name(station, 'raw', 'T3_N44'): 'Tmoderator',
+            Name(station, 'raw', 'T4_N44'): 'Toptics',
+            Name(station, 'raw', 'T5_N44'): 'Theatsink',
+            Name(station, 'raw', 'T6_N44'): 'Tcase',
+            Name(station, 'raw', 'T7_N44'): 'Tboard',
+            Name(station, 'raw', 'TD1_N44'): 'TDgrowth',
+            Name(station, 'raw', 'Q_N44'): 'Qsample',
+            Name(station, 'raw', 'P_N44'): 'Psample',
+            Name(station, 'raw', 'PCT_N44'): 'PCTwick',
+            Name(station, 'raw', 'V_N44'): 'Vpulse',
+        }, send
+    )
+    station_profile_data['aerosol']['realtime']['cpcstatus3'] = {
+        RealtimeTranslator.Key('Tu_N44'): 'Tinlet',
+        RealtimeTranslator.Key('TDu_N44'): 'TDinlet',
+        RealtimeTranslator.Key('Uu_N44'): 'Uinlet',
+        RealtimeTranslator.Key('T1_N44'): 'Tconditioner',
+        RealtimeTranslator.Key('T2_N44'): 'Tinitiator',
+        RealtimeTranslator.Key('T3_N44'): 'Tmoderator',
+        RealtimeTranslator.Key('T4_N44'): 'Toptics',
+        RealtimeTranslator.Key('T5_N44'): 'Theatsink',
+        RealtimeTranslator.Key('T6_N44'): 'Tcase',
+        RealtimeTranslator.Key('T7_N44'): 'Tboard',
+        RealtimeTranslator.Key('TD1_N44'): 'TDgrowth',
+        RealtimeTranslator.Key('Q_N44'): 'Qsample',
+        RealtimeTranslator.Key('P_N44'): 'Psample',
+        RealtimeTranslator.Key('PCT_N44'): 'PCTwick',
+        RealtimeTranslator.Key('V_N44'): 'Vpulse',
     }
 
     station_profile_data['aerosol']['raw']['dmps'] = lambda station, start_epoch_ms, end_epoch_ms, send: DataReader(
