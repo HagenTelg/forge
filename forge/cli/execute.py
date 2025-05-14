@@ -147,7 +147,7 @@ class ExecuteStage(ABC):
 
         def __enter__(self) -> Path:
             assert self._output is None
-            self._output = TemporaryDirectory()
+            self._output = TemporaryDirectory(dir=self.exec.temp_dir_root)
             return Path(self._output.name)
 
         def __exit__(self, exc_type, exc_val, exc_tb):
@@ -174,6 +174,7 @@ class Execute:
     def __init__(self):
         self.stages: typing.List[ExecuteStage] = list()
         self.stderr_is_output: bool = False
+        self.temp_dir_root: typing.Optional[Path] = None
 
         self._progress_stack: typing.List[Progress] = list()
 
@@ -258,7 +259,7 @@ class Execute:
             return
 
         if self._read_only_input_files:
-            self._read_only_combined_input = TemporaryDirectory()
+            self._read_only_combined_input = TemporaryDirectory(dir=self.temp_dir_root)
             for file in self._read_only_input_files:
                 if not file.exists() or not file.is_file():
                     _LOGGER.debug("Invalid file '%s' specified", file)
@@ -275,7 +276,7 @@ class Execute:
             self._read_only_input_files.clear()
             return
 
-        self._writable_data_path = TemporaryDirectory()
+        self._writable_data_path = TemporaryDirectory(dir=self.temp_dir_root)
 
     def ensure_writable(self) -> None:
         self.ensure_readable()
@@ -283,7 +284,7 @@ class Execute:
             return
 
         if self._read_only_combined_input:
-            self._writable_data_path = TemporaryDirectory()
+            self._writable_data_path = TemporaryDirectory(dir=self.temp_dir_root)
             copy_files: typing.List[Path] = [f for f in Path(self._read_only_combined_input.name).iterdir()]
             with self.progress("Copying files") as progress:
                 completed_files: int = 0

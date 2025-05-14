@@ -100,8 +100,9 @@ class _MoveOutput(ExecuteStage):
 
 class MergeInstrument(ExecuteStage):
     class _FileSet:
-        def __init__(self, output_file: Path):
+        def __init__(self, output_file: Path, temp_dir: typing.Optional[Path] = None):
             self.output_file = output_file
+            self._temp_dir = temp_dir
             self.input_files: typing.List[typing.Tuple[int, Path]] = list()
 
         def execute(self) -> None:
@@ -126,7 +127,7 @@ class MergeInstrument(ExecuteStage):
                 do_merge([f[1] for f in self.input_files], self.output_file)
                 return
 
-            with TemporaryDirectory() as merge_dir:
+            with TemporaryDirectory(dir=self._temp_dir) as merge_dir:
                 def split_merge(merge_files: typing.List[Path], output_file: Path) -> None:
                     if len(merge_files) <= 32:
                         do_merge(merge_files, output_file)
@@ -179,7 +180,7 @@ class MergeInstrument(ExecuteStage):
                     file_id: str = '-'.join(file_id)
                     merge_target = merge_sets.get(file_id)
                     if merge_target is None:
-                        merge_target = self._FileSet(output_path / f"{file_id}.nc")
+                        merge_target = self._FileSet(output_path / f"{file_id}.nc", temp_dir=self.exec.temp_dir_root)
                         merge_sets[file_id] = merge_target
                     merge_target.input_files.append((start_time, input_file))
                 finally:

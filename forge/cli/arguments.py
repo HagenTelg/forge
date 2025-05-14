@@ -62,6 +62,9 @@ class ParseArguments:
                 parser.add_argument('--debug',
                                     dest='debug', action='store_true',
                                     help="enable debug output")
+                parser.add_argument('--temp-dir',
+                                    dest='temp_dir',
+                                    help="temporary file root directory")
                 group = parser.add_mutually_exclusive_group()
                 group.add_argument('--archive-host',
                                    dest='archive_tcp_server',
@@ -107,6 +110,12 @@ class ParseArguments:
                     exec.set_archive_tcp(args.archive_tcp_server, args.archive_tcp_port)
                 elif args.archive_unix_socket:
                     exec.set_archive_unix(args.archive_unix_socket)
+                if args.temp_dir:
+                    from pathlib import Path
+                    temp_dir = Path(args.temp_dir)
+                    if not temp_dir.is_dir():
+                        parser.error("invalid temporary directory")
+                    exec.temp_dir_root = temp_dir
 
             if not args.command:
                 parser.error("no command specified")

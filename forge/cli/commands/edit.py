@@ -78,7 +78,7 @@ class _EditStage(ExecuteStage):
 
     async def before(self) -> None:
         if self.apply_edits:
-            self._edit_file_storage = TemporaryDirectory()
+            self._edit_file_storage = TemporaryDirectory(dir=self.exec.temp_dir_root)
 
     async def after(self) -> None:
         if self._edit_file_storage:
