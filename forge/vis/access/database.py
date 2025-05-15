@@ -212,6 +212,14 @@ class AccessController(BaseAccessController):
             Route('/confirm', endpoint=self.confirm_access, methods=['GET', 'HEAD', 'POST'], name='confirm_access'),
         ]
 
+        self._show_logo: typing.Union[str, bool] = True
+        logo = CONFIGURATION.get('AUTHENTICATION.SHOW_LOGO')
+        if logo is not None:
+            if isinstance(logo, str):
+                self._show_logo = str(logo)
+            else:
+                self._show_logo = bool(logo)
+
         self.enable_password = False
         if CONFIGURATION.get('AUTHENTICATION.PASSWORD.ENABLE', True):
             self.routes.append(Route('/password/login', endpoint=self.password_login,
@@ -373,6 +381,7 @@ class AccessController(BaseAccessController):
 
         return HTMLResponse(await package_template('access', 'login.html').render_async(
             request=request,
+            logo=self._show_logo,
             enable_password=self.enable_password,
             enable_google=self.enable_google,
             enable_logingov=self.enable_logingov,

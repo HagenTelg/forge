@@ -30,8 +30,14 @@ import forge.vis.acquisition.server
 import forge.vis.dashboard.server
 
 
-async def _favicon(request: Request) -> Response:
-    return FileResponse(package_data('static/favicon.png'))
+favicon_url = CONFIGURATION.get('SERVER.FAVICON_URL')
+if favicon_url:
+    favicon_url = str(favicon_url)
+    async def _favicon(request: Request) -> Response:
+        return RedirectResponse(favicon_url)
+else:
+    async def _favicon(request: Request) -> Response:
+        return FileResponse(package_data('static/favicon.png'))
 
 
 @requires('authenticated')
@@ -107,6 +113,7 @@ TEMPLATE_ENV.globals["ENABLE_LOGIN"] = forge.vis.access.authentication.enable_lo
 
 
 routes = [
+    Route('/static/favicon.png', endpoint=_favicon, name='favicon'),
     Mount('/static', app=StaticFiles(directory=package_data('static')), name='static'),
     Route('/favicon.png', endpoint=_favicon),
     Route('/favicon.ico', endpoint=_favicon),

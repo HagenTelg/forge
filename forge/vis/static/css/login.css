@@ -71,8 +71,7 @@ button:disabled {
 }
 
 img.logo {
-  width: 200px;
-  border-radius: 50%;
+  height: 200px;
 }
 
 .container {
