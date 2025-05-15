@@ -473,6 +473,15 @@ class _Variable:
         if source_data is None:
             return
 
+        if self.enum_type and isinstance(source_data, np.ma.MaskedArray) and getattr(self.variable, '_FillValue', None) is None:
+            # Weird case where enums are unassigned (valid-ish) which results in masked values without a fill value,
+            # but the uninitialized value isn't an enum value.  So assigning the masked array values results in
+            # a NetCDF error due to it not being a valid enum value (i.e. the mask isn't considered in assignment).
+            fill_mask = source_data.mask
+            if np.any(fill_mask):
+                source_data = np.array(source_data.data)
+                source_data[fill_mask] = min(self.dtype.enum_dict.values())
+
         if data_mapping.source_reshape is not None:
             source_data = np.reshape(source_data, (time_mapping.count, *data_mapping.source_reshape))
         if data_mapping.source_transpose is not None:
@@ -499,7 +508,29 @@ class _Variable:
         pass
 
     def finish(self) -> None:
-        pass
+        if getattr(self.variable, '_FillValue', None) is not None:
+            return
+
+        if self.enum_type:
+            populate_value = min(self.dtype.enum_dict.values())
+        elif np.issubdtype(self.dtype, np.integer):
+            populate_value = 0
+        else:
+            return
+
+        # Handle the case where parts of the variable are left unset due to skipping segments in the value merge
+        mask_target = self.variable[...].mask
+        if not np.any(mask_target):
+            return
+
+        if len(mask_target.shape) == 0:
+            self.variable[0] = populate_value
+        elif len(mask_target.shape) == 1:
+            self.variable[mask_target] = populate_value
+        else:
+            refill = self.variable[...].data
+            refill[mask_target] = populate_value
+            self.variable[...] = refill
 
 
 class _ConstantVariable(_Variable):
@@ -792,6 +823,7 @@ class _FlagsVariable(_DataVariable):
 
     def declare_structure(self, root: netCDF4.Dataset) -> None:
         self.variable = root.createVariable(self.name, self.dtype, tuple(self.bind_dimensions), fill_value=False)
+        self.variable[...] = 0
         variable_flags(self.variable, self.bits)
 
     def convert_values(self, source: netCDF4.Variable, data: np.ndarray) -> typing.Optional[np.ndarray]:

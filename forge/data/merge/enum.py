@@ -52,7 +52,7 @@ class MergeEnum:
         else:
             return None
 
-        converted = np.full(data.shape, 0, dtype=dtype)
+        converted = np.full(data.shape, min(dest_enum.values()), dtype=dtype)
         for name, value in source_enum.items():
             converted[data == value] = dest_enum[name]
         return converted
