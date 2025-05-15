@@ -19,8 +19,9 @@ class _TTYContext:
         standard_termios(tio)
         termios.tcsetattr(self.slave, termios.TCSANOW, tio)
 
-        umask = os.umask(0o666) | 0o111
+        umask = os.umask(0o666)
         os.umask(umask)
+        umask |= 0o111
         os.fchmod(self.slave, 0o666 & ~umask)
         try:
             os.fchown(self.slave, os.geteuid(), os.getegid())

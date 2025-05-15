@@ -20,8 +20,9 @@ from forge.acquisition.serial.util import standard_termios, TCAttr
 
 _LOGGER = logging.getLogger(__name__)
 
-UMASK = os.umask(0o666) | 0o111
+UMASK = os.umask(0o666)
 os.umask(UMASK)
+UMASK |= 0o111
 
 
 class TIOCPKT(IntEnum):

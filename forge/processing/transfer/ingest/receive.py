@@ -168,8 +168,9 @@ def main():
 
                 # NamedTemporaryFile hard codes the mode to 0o600, so manually apply the umask now
                 try:
-                    umask = os.umask(0o666) | 0o111
+                    umask = os.umask(0o666)
                     os.umask(umask)
+                    umask |= 0o111
                 except NotImplementedError:
                     umask = 0o033
                 file_mode = 0o666 & ~umask
