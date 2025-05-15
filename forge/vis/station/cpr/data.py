@@ -361,7 +361,7 @@ else:
             "Bs": [Selection(variable_name="scattering_coefficient", instrument_code="purpleair", exclude_tags={"secondary"},
                              wavelength_number=0)],
         })
-    data_records[f"aerosol-{archive}-hurricane"] = RealtimeRecord({
+    data_records[f"aerosol-realtime-hurricane"] = RealtimeRecord({
         "WS": [RealtimeSelection("WS", variable_name="wind_speed", instrument_id="XM3")],
         "WD": [RealtimeSelection("WD", variable_name="wind_direction", instrument_id="XM3")],
         "P": [RealtimeSelection("P", variable_name="ambient_pressure", instrument_code="purpleair", exclude_tags={"secondary"})],
