@@ -120,7 +120,7 @@ def parse_arguments():
     add_access_selection_arguments(command_parser)
     command_parser.add_argument('--multiple',
                                 dest='multiple', action='store_true',
-                                help="required if a single station is not selected")
+                                help="required if a key station is not selected")
 
     command_parser = subparsers.add_parser('purge',
                                            help="purge telemetry")
