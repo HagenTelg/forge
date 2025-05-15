@@ -293,6 +293,15 @@ else:
             ExportCSV.Column([Selection(variable_id="T_V12")]),
             ExportCSV.Column([Selection(variable_id="U_V12")]),
         ])
+    for archive in ("clean",):
+        find_key(export_entries["aerosol"][archive], "intensive").columns.extend([
+            ExportCSV.Column([Selection(variable_name="sample_temperature",
+                                        require_tags={"scattering"}, exclude_tags={"secondary"})],
+                             default_header="T", always_present=True),
+            ExportCSV.Column([Selection(variable_name="sample_pressure",
+                                        require_tags={"scattering"}, exclude_tags={"secondary"})],
+                             default_header="P", always_present=True),
+        ])
     for archive in ("avgh",):
         find_key(export_entries["aerosol"][archive], "scattering").columns.extend([
             ExportCSV.Column([Selection(variable_name="scattering_coefficient", wavelength=wavelength, cut_size=cut_size,
@@ -382,6 +391,17 @@ else:
         ] + [
             ExportCSV.Column([Selection(variable_id="U_V12", cut_size=cut_size)],
                              header="U" + record + "_V12")
+            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
+        ])
+        find_key(export_entries["aerosol"][archive], "intensive").columns.extend([
+            ExportCSV.Column([Selection(variable_name="sample_temperature", cut_size=cut_size,
+                                        require_tags={"scattering"}, exclude_tags={"secondary"})],
+                             header="T" + record + "_{instrument_id}", default_header="T" + record)
+            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
+        ] + [
+            ExportCSV.Column([Selection(variable_name="sample_pressure", cut_size=cut_size,
+                                        require_tags={"scattering"}, exclude_tags={"secondary"})],
+                             header="P" + record + "_{instrument_id}", default_header="P" + record)
             for record, cut_size in STANDARD_CUT_SIZE_SPLIT
         ])
 
