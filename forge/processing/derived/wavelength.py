@@ -227,7 +227,7 @@ def adjust_wavelengths(
         else:
             wavelength_selected = np.stack([data[vs] for vs in value_select], axis=-1)
         for output_idx in range(len(target_wavelengths)):
-            result[time_select, ..., output_idx] = _adjust_single_wavelength(
+            result[tuple([*time_select] + [..., output_idx])] = _adjust_single_wavelength(
                 wavelength_selected, input_wavelengths, target_wavelengths[output_idx], parameters
             )
     return result
