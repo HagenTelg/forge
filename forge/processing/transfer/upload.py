@@ -10,7 +10,7 @@ import shutil
 import zstandard
 from pathlib import Path
 from hashlib import sha512
-from tempfile import TemporaryFile
+from tempfile import NamedTemporaryFile
 from ftplib import FTP
 from base64 import b64encode, b64decode
 from os.path import exists as file_exists
@@ -42,7 +42,9 @@ async def upload_post(session: aiohttp.ClientSession, url: URL,
     upload_filename = file.name
     upload_filename.replace('"', "_")
 
-    async with session.post(str(url), data=contents, headers={
+    # aiohttp has a strange API that takes ownership of file objects passed (and closes them), so open a copy since
+    # we need it still around for alternate destinations
+    async with session.post(str(url), data=open(contents.name, "rb"), headers={
         'X-HostID': f'{public_key} {signature}',
         'Content-Disposition': f'attachment; filename="{upload_filename}"',
         'Content-Type': content_type,
@@ -96,7 +98,7 @@ async def upload_to_url(url: URL, file: Path, contents: typing.BinaryIO, compres
 async def prepare_file(file: Path, private_key: PrivateKey, compression: str) -> typing.Tuple[bytes, typing.BinaryIO, int]:
     if compression == 'zstd':
         with file.open('rb') as input_file:
-            upload_file: typing.BinaryIO = TemporaryFile()
+            upload_file: typing.BinaryIO = NamedTemporaryFile()
             zstandard.ZstdCompressor().copy_stream(input_file, upload_file, size=file.stat().st_size)
     else:
         upload_file: typing.BinaryIO = file.open('rb')
