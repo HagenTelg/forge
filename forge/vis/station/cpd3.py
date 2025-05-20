@@ -34,7 +34,6 @@ _enable_forge_archive = bool(CONFIGURATION.get('ARCHIVE.ENABLE_FORGE', False))
 _forge_untranslated_stations = frozenset({
     "etl",
     "euk",
-    "arn",
     "lau",
     "wpc",
     "mrad",
