@@ -155,6 +155,7 @@ def slew_edits(data: AvailableData):
                     wavelength_selector = value_select[widx]
                     values = var[wavelength_selector]
                     slope = windowed_slope(var.times[time_select] / (60.0 * 1000.0), values)
+                    slope = np.concatenate((slope, [slope[-1]]))
                     to_invalidate = np.logical_or(
                         slope < -0.008333,
                         slope > 0.066667,
