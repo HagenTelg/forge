@@ -89,6 +89,7 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
 
 def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
     from ..default.ebas import standard_submit
+    from forge.product.selection import InstrumentSelection
     result = standard_submit(gaw_station)
 
     result.update({
