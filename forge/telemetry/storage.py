@@ -728,7 +728,7 @@ class DisplayInterface:
         return await self.db.execute(execute)
 
     @staticmethod
-    def _filter_keys(query, accepted_keys: typing.Optional[typing.Set[PublicKey]]):
+    def _filter_keys(query, accepted_keys: typing.Optional[typing.List[PublicKey]]):
         if not accepted_keys:
             return query
         query = query.filter(db.or_(
@@ -737,7 +737,7 @@ class DisplayInterface:
         return query
 
     async def get_last_seen(self, station: str,
-                            accepted_keys: typing.Optional[typing.Set[PublicKey]] = None) -> typing.Optional[datetime.datetime]:
+                            accepted_keys: typing.Optional[typing.List[PublicKey]] = None) -> typing.Optional[datetime.datetime]:
         station = station.lower()
 
         def execute(engine: Engine):
@@ -753,7 +753,7 @@ class DisplayInterface:
         return await self.db.execute(execute)
 
     async def get_status(self, station: str,
-                         accepted_keys: typing.Optional[typing.Set[PublicKey]] = None) -> typing.Tuple[typing.Optional[datetime.datetime], typing.Optional[int]]:
+                         accepted_keys: typing.Optional[typing.List[PublicKey]] = None) -> typing.Tuple[typing.Optional[datetime.datetime], typing.Optional[int]]:
         station = station.lower()
 
         def execute(engine: Engine):
@@ -776,7 +776,7 @@ class DisplayInterface:
         return await self.db.execute(execute)
 
     async def get_time_offset(self, station: str,
-                              accepted_keys: typing.Optional[typing.Set[PublicKey]] = None) -> typing.Optional[int]:
+                              accepted_keys: typing.Optional[typing.List[PublicKey]] = None) -> typing.Optional[int]:
         station = station.lower()
 
         def execute(engine: Engine):

@@ -7,15 +7,15 @@ from .database import Interface, AccessStation, AccessData
 
 
 class DisplayInterface(Interface):
-    async def get_data_processing_keys(self, station: str) -> typing.Set[PublicKey]:
+    async def get_data_processing_keys(self, station: str) -> typing.List[PublicKey]:
         def execute(engine: Engine):
             with Session(engine) as orm_session:
                 query = orm_session.query(AccessStation).filter_by(station=station.lower())
                 query = query.join(AccessData)
 
-                result: typing.Set[PublicKey] = set()
+                result: typing.List[PublicKey] = list()
                 for access in query:
-                    result.add(self.key_from_column(access.public_key))
+                    result.append(self.key_from_column(access.public_key))
                 return result
 
         return await self.db.execute(execute)
