@@ -24,6 +24,7 @@ class Simulator(StreamingSimulator):
         self.flags: int = 0
 
         self.support_scd: bool = True
+        self.not_full: bool = False
 
     @property
     def data_N(self) -> float:
@@ -47,7 +48,7 @@ class Simulator(StreamingSimulator):
                         f"{self.data_PDorifice / 10.0:.1f},"
                         f"{self.data_PDnozzle / 10.0:.1f},"
                         f"{self.data_Alaser:.0f},"
-                        f"FULL ({self.data_liquid_level})\r"
+                        f"{self.not_full and 'NOT' or ''}FULL ({self.data_liquid_level})\r"
                     ).encode('ascii'))
                 elif line == b'RSF':
                     self.writer.write(f"{flow_lpm_to_ccm(self.data_Q):.1f}\r".encode('ascii'))

@@ -56,6 +56,26 @@ async def test_no_scd():
 
 
 @pytest.mark.asyncio
+async def test_not_full():
+    simulator: Simulator = None
+    instrument: Instrument = None
+    simulator, instrument = await create_streaming_instrument(Instrument, Simulator)
+    simulator.not_full = True
+    bus: BusInterface = instrument.context.bus
+
+    simulator_run = asyncio.ensure_future(simulator.run())
+    instrument_run = asyncio.ensure_future(instrument.run())
+
+    await wait_cancelable(bus.wait_for_communicating(), 30)
+
+    assert await bus.value('N') == simulator.data_N
+    assert await bus.value('C') == simulator.data_C
+    assert await bus.value('liquid_level') == simulator.data_liquid_level
+
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
+
+
+@pytest.mark.asyncio
 async def test_flow_configuration():
     simulator: Simulator = None
     instrument: Instrument = None

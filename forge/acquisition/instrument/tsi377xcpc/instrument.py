@@ -245,7 +245,7 @@ class Instrument(StreamingInstrument):
         elif liquid_level.startswith(b"NOTFULL ("):
             self.notify_liquid_low(True)
 
-            adc_level = liquid_level[6:]
+            adc_level = liquid_level[9:]
             try:
                 adc_level = adc_level[:adc_level.index(b')')]
             except ValueError:
