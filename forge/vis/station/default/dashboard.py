@@ -42,9 +42,27 @@ code_records: typing.Dict[str, Record] = {
     'forge-archive-flush-avgm': BasicRecord.simple_override(
         name="Forge archive monthly averaged data flush",
     ),
+
+    'forge-editing-backup': BasicRecord.simple_override(
+        name="Forge editing user data backup",
+    ),
     'forge-archive-backup': BasicRecord.simple_override(
         name="Forge archive server backup",
     ),
+    'rotate-archive-backup': BasicRecord.simple_override(
+        name="Forge archive server backup",
+    ),
+    'forge-archive-snapshots': BasicRecord.simple_override(
+        name="Forge archive snapshot rotation",
+    ),
+    'forge-archive-storage-errors': BasicRecord.simple_override(
+        name="Forge archive storage error check",
+    ),
+    'forge-scrub-archive': BasicRecord.simple_override(
+        name="Forge archive storage data integrity check",
+        offline=8 * 24 * 60 * 60,
+    ),
+
     'forge-aerosolftp-update': BasicRecord.simple_override(
         name="Aerosol FTP file update",
     ),
@@ -72,9 +90,11 @@ code_records: typing.Dict[str, Record] = {
     'forge-sqldb-update': BasicRecord.simple_override(
         name="Forge SQL database update",
     ),
+
     'forge-update': BasicRecord.simple_override(
         name="Automatic Forge software update",
     ),
+
     'station-hourly': BasicRecord.simple_override(
         name="All stations hourly processing",
     ),
@@ -114,6 +134,9 @@ code_records: typing.Dict[str, Record] = {
         name="Automatic web server Forge software update",
     ),
     'aeroweb-forge-dashboard-emailsend': BasicRecord.simple_override(
+        name="Daily email send",
+    ),
+    'forge-dashboard-emailsend': BasicRecord.simple_override(
         name="Daily email send",
     ),
 
