@@ -14,7 +14,7 @@ assert STATION in VALID_STATIONS
 C.run(STATION, {
     "A11": [ C('psap3w'), ],
     "A12": [ C('bmitap+secondary', start='2019-06-21'), ],
-    "N71": [ C('tsi3010cpc', start='2019-06-21'), ],
+    "N71": [ C('tsi3010cpc'), ],
     "S11": [ C('tsi3563nephelometer'), ],
 
     "X1": [
