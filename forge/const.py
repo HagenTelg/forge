@@ -90,6 +90,8 @@ DISPLAY_STATIONS = frozenset(STATIONS - {
     'lab',
     'lju',
     'mrad',
+    'msa',
+    'msy',
     'nil',
     'pay',
     'pek',
