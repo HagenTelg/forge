@@ -8,6 +8,7 @@ from forge.processing.corrections.filter_absorption import weiss_undo, spot_area
 from forge.processing.corrections.climatology import vaisala_hmp_limits
 from forge.processing.derived.average import hourly_median
 from forge.processing.station.default.editing import standard_absorption_corrections, standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
+from forge.processing.derived.intensives import generate_intensives, AdjustWavelengthParameters
 from forge.data.flags import parse_flags, declare_flag
 from forge.data.merge.extend import extend_selected
 
@@ -234,7 +235,20 @@ def run(data: AvailableData) -> None:
     absorption_corrections(data)
     scattering_corrections(data)
 
-    standard_intensives(data)
+    # PSAP-1W extrapolation
+    for intensives, scattering, absorption, cpc in data.derive_output(
+            "XI",
+            {"tags": "scattering -secondary"},
+            {"tags": "absorption -secondary -aethalometer -thermomaap"},
+            {"tags": "cpc -secondary"},
+            tags=("aerosol", "intensives"),
+            end="2006-08-12",
+    ):
+        generate_intensives(intensives, cpc, scattering, absorption, wavelength_adjustment=AdjustWavelengthParameters(
+            fallback_angstrom_exponent=1.0,
+        ))
+    standard_intensives(data, start="2006-08-12")
+
     standard_meteorological(data)
 
     for met in data.select_instrument({"instrument_id": "XM1"}, start="2017-07-03"):

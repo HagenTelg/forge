@@ -64,19 +64,20 @@ def standard_corrections(data: AvailableData, **kwargs) -> None:
     standard_scattering_corrections(data, **kwargs)
 
 
-def standard_intensives(data: AvailableData) -> None:
+def standard_intensives(data: AvailableData, **kwargs) -> None:
     for intensives, scattering, absorption, cpc in data.derive_output(
             "XI",
             {"tags": "scattering -secondary"},
             {"tags": "absorption -secondary -aethalometer -thermomaap"},
             {"tags": "cpc -secondary"},
             tags=("aerosol", "intensives"),
+            **kwargs
     ):
         generate_intensives(intensives, cpc, scattering, absorption)
 
 
-def standard_meteorological(data: AvailableData) -> None:
-    for met in data.select_instrument({"tags": "met"}):
+def standard_meteorological(data: AvailableData, **kwargs) -> None:
+    for met in data.select_instrument({"tags": "met"}, **kwargs):
         populate_humidity(met)
 
 

@@ -3,6 +3,7 @@ import typing
 from forge.processing.context import AvailableData
 from forge.processing.corrections import *
 from forge.processing.station.default.editing import standard_absorption_corrections, standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
+from forge.processing.derived.intensives import generate_intensives, AdjustWavelengthParameters
 
 
 def absorption_corrections(data: AvailableData) -> None:
@@ -51,7 +52,20 @@ def run(data: AvailableData) -> None:
                 )
             )
 
-    standard_intensives(data)
+    # PSAP-1W extrapolation
+    for intensives, scattering, absorption, cpc in data.derive_output(
+            "XI",
+            {"tags": "scattering -secondary"},
+            {"tags": "absorption -secondary -aethalometer -thermomaap"},
+            {"tags": "cpc -secondary"},
+            tags=("aerosol", "intensives"),
+            end="2002-02-08",
+    ):
+        generate_intensives(intensives, cpc, scattering, absorption, wavelength_adjustment=AdjustWavelengthParameters(
+            fallback_angstrom_exponent=1.0,
+        ))
+    standard_intensives(data, start="2002-02-08")
+
     standard_meteorological(data)
 
 
