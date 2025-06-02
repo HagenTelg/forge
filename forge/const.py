@@ -84,6 +84,7 @@ STATIONS = frozenset({
 })
 DISPLAY_STATIONS = frozenset(STATIONS - {
     'air',
+    'amy',
     'clamps3',
     'clamps4',
     'cpt',
