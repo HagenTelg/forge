@@ -108,4 +108,5 @@ DISPLAY_STATIONS = frozenset(STATIONS - {
     'wlg',
     'wpa',
     'wpc',
+    'zep',
 })
