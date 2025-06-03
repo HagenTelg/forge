@@ -3,9 +3,16 @@ import typing
 from forge.processing.context import AvailableData
 from forge.processing.corrections.filter_absorption import spot_area_adjustment
 from forge.processing.station.default.editing import standard_absorption_corrections, standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
+from forge.processing.corrections.filter_absorption import azumi_filter
 
 
 def absorption_corrections(data: AvailableData) -> None:
+    for absorption in data.select_instrument((
+            {"instrument": "bmitap"},
+            {"instrument": "clap"},
+    )):
+        azumi_filter(absorption)
+
     # Apply TAP spot sizes per Keefer email 2023-07-28
     for absorption in data.select_instrument((
             {"instrument_id": "A12"},
