@@ -3,6 +3,7 @@ import typing
 import numpy as np
 from math import nan
 from forge.processing.context import AvailableData
+from forge.processing.corrections import *
 from forge.processing.station.default.editing import standard_absorption_corrections, standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
 from forge.processing.derived.intensives import generate_intensives, AdjustWavelengthParameters
 from forge.data.flags import parse_flags
@@ -41,7 +42,22 @@ def absorption_corrections(data: AvailableData) -> None:
             is_in_zero = extend_selected(is_in_zero, source_flags.times, 2 * 60 * 1000, 2 * 60 * 1000)
             absorption[is_in_zero, ...] = nan
 
-    standard_absorption_corrections(data)
+        # CPD1/2 data: already has Weiss applied for PSAPs
+        for absorption, scattering in data.select_instrument((
+                {"instrument": "psap1w"},
+                {"instrument": "psap3w"},
+        ), {"tags": "scattering -secondary"}, end="2017-06-07T10:29:00Z"):
+            remove_low_transmittance(absorption)
+            bond_1999(absorption, scattering)
+        for absorption, scattering in data.select_instrument((
+                {"instrument": "bmitap"},
+                {"instrument": "clap"},
+        ), {"tags": "scattering -secondary"}, end="2017-06-07T10:29:00Z"):
+            remove_low_transmittance(absorption)
+            weiss(absorption)
+            bond_1999(absorption, scattering)
+
+        standard_absorption_corrections(data, start="2017-06-07T10:29:00Z")
 
 
 def run(data: AvailableData) -> None:
