@@ -13,7 +13,7 @@ assert STATION in VALID_STATIONS
 
 C.run(STATION, {
     "A11": [
-        C('psap3w', end='2012-03-25'),
+        C('psap3w', end='2016-04-11'),
         C('clap', start='2016-04-11'),
     ],
     "A12": [ C('clap+secondary', start='2011-07-20', end='2016-04-12'), ],
