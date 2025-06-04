@@ -66,6 +66,8 @@ class UpdateController(ABC):
                     key, self._tracker_notified, tracker,
                     synchronous=self.SYNCHRONOUS_NOTIFICATION,
                 )
+        for tracker in self._trackers:
+            await tracker.initial_scan()
 
     async def _matched_trackers(
             self,

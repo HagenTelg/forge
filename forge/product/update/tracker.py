@@ -176,14 +176,14 @@ class Tracker(ABC):
                 except AttributeError:
                     os.fsync(f.fileno())
 
-    def load_state(self) -> None:
+    def load_state(self) -> bool:
         try:
             with open(self.state_file, "r") as f:
                 if os.fstat(f.fileno()).st_size == 0:
                     raise FileNotFoundError
                 state = from_json(f)
         except FileNotFoundError:
-            return
+            return False
 
         state_version = state.get('version')
         if state.get('version') != self.STATE_VERSION:
@@ -195,6 +195,10 @@ class Tracker(ABC):
             self._outputs.append(self.Output.from_state(self, o))
         _LOGGER.debug("Loaded state with %d(%d) candidates and %d outputs",
                       len(self._candidates), len(state['candidates']), len(state['outputs']),)
+        return True
+
+    async def initial_scan(self) -> None:
+        pass
 
     def notify_candidate(self, start_epoch_ms: int, end_epoch_ms: int, save_state: bool = True) -> None:
         start_epoch_ms, end_epoch_ms = self.round_candidate(start_epoch_ms, end_epoch_ms)

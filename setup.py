@@ -101,6 +101,9 @@ setup(
         "forge-ncei-control = forge.product.update.ncei:control",
         "forge-sqldb-updater = forge.product.update.sqldb:updater",
         "forge-sqldb-control = forge.product.update.sqldb:control",
+        "forge-integrity-file = forge.product.integrity.cli:main",
+        "forge-integrity-updater = forge.product.update.integrity:updater",
+        "forge-integrity-control = forge.product.update.integrity:control",
 
         "forge-cpd3-cache-client = forge.cpd3.cache.client:main",
         "forge-cpd3-cache-server = forge.cpd3.cache.server:main",
