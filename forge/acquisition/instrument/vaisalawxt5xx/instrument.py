@@ -641,11 +641,11 @@ class Instrument(StreamingInstrument):
 
         now = time.monotonic()
         if self.report_conditions not in seen_reports:
-            if rain_accumulation is not None:
+            if rain_accumulation is not None and self._accumulated_rain is not None:
                 if rain_accumulation >= self._accumulated_rain:
                     self.data_WI((rain_accumulation - self._accumulated_rain) / (60 * 60))
                     seen_reports.add(self.report_precipitation)
-            elif aux_rain_accumulation is not None:
+            elif aux_rain_accumulation is not None and self._accumulated_rain is not None:
                 if aux_rain_accumulation >= self._accumulated_rain:
                     self.data_WI((aux_rain_accumulation - self._accumulated_rain) / (60 * 60))
                     seen_reports.add(self.report_precipitation)
