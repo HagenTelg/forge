@@ -34,7 +34,7 @@ def leaky_zero_correction(data: AvailableData) -> None:
 
     for neph in data.select_instrument((
             {"instrument_id": "S41"}
-    ), start="22015-11-25T19:13:00Z", end="2016-01-01"):
+    ), start="2015-11-25T19:13:00Z", end="2016-01-01"):
         for total in neph.select_variable((
                 {"variable_name": "scattering_coefficient"},
                 {"standard_name": "volume_scattering_coefficient_in_air_due_to_dried_aerosol_particles"},
