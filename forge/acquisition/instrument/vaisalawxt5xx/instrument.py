@@ -491,7 +491,7 @@ class Instrument(StreamingInstrument):
                 elif transducer_id == 2:
                     self.data_Theater(value)
                     seen_reports.add(self.report_monitor)
-                elif transducer_id == 4:
+                elif transducer_id == 3:
                     self.data_Taux(value)
                     self.report_auxiliary_temperature()
                 else:
