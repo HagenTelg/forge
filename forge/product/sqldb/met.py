@@ -30,12 +30,12 @@ class Update(TableUpdate):
                                     statistics="stability_factor"),
             ]
 
-            async for segment_files in self.aligned_files(data_directory):
+            async for update_start, update_end, update_files in self.aligned_files(data_directory):
                 updates = list()
-                for file in segment_files:
+                for file in update_files:
                     for c in data_columns:
                         u = c(file)
                         if u:
                             updates.append(u)
-                await self.apply_updates(updates)
+                await self.apply_updates(update_start, update_end, updates)
 
