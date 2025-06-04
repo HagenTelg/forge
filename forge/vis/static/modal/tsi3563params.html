@@ -414,13 +414,13 @@ var ACTION_PROMPT_DATA;
     $(okButton).click(function(event) {
         event.preventDefault();
 
-        const data = {};
+        const parameters = {};
         for (const b of buildResult) {
-            b(data);
+            b(parameters);
         }
 
-        if (Object.keys(data).length !== 0) {
-            AcquisitionSocket.sendCommand(data.source, 'set_parameters', data);
+        if (Object.keys(parameters).length !== 0) {
+            AcquisitionSocket.sendCommand(data.source, 'set_parameters', parameters);
         }
         hideModal();
     });
