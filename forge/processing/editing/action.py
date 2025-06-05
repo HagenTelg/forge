@@ -50,7 +50,14 @@ class Action(ABC):
     def needs_prepare(self) -> bool:
         return False
 
-    def prepare(self, root: Dataset, data: Dataset, times: np.ndarray) -> None:
+    def prepare(self, root: Dataset, data: Dataset) -> None:
+        pass
+
+    @property
+    def needs_setup(self) -> bool:
+        return False
+
+    def setup(self, root: Dataset, data: Dataset, times: np.ndarray) -> None:
         pass
 
     @property
@@ -204,7 +211,10 @@ class FlowCorrection(Action):
         self.instrument = str(self.parameters["instrument"])
         self.calibration = np.polynomial.Polynomial(self.parameters["calibration"])
         self.reverse_calibration = np.array(self.parameters["reverse_calibration"], dtype=np.float64)
-        self._flow_ratio: typing.Optional[np.ndarray] = None
+        self._flow_times_global: typing.Optional[np.ndarray] = None
+        self._flow_ratio_global: typing.Optional[np.ndarray] = None
+        self._apply_ratio: typing.Optional[np.ndarray] = None
+        self._apply_times: typing.Optional[np.ndarray] = None
 
     def filter_data(self, root: Dataset, _data: Dataset) -> bool:
         return getattr(root, 'instrument_id', None) == self.instrument
@@ -213,16 +223,7 @@ class FlowCorrection(Action):
     def needs_prepare(self) -> bool:
         return True
 
-    def prepare(self, _root: Dataset, data: Dataset, _times: np.ndarray) -> None:
-        self._flow_ratio = None
-
-        sample_flow = data.variables.get('sample_flow')
-        if sample_flow is None:
-            return
-        sample_flow = sample_flow[:].data
-        if len(sample_flow.shape) == 0:
-            sample_flow = sample_flow.reshape((1,))
-
+    def _calculate_ratio(self, sample_flow: np.ndarray) -> np.ndarray:
         ratio = _apply_recalibration(sample_flow, self.reverse_calibration, self.calibration)
         valid = np.all((
             ratio != 0.0,
@@ -230,7 +231,46 @@ class FlowCorrection(Action):
         ), axis=0)
         ratio[valid] /= sample_flow[valid]
         ratio[np.invert(valid)] = nan
-        self._flow_ratio = ratio
+        return ratio
+
+    def prepare(self, root: Dataset, data: Dataset) -> None:
+        sample_flow = data.variables.get('sample_flow')
+        if sample_flow is None:
+            return
+
+        if len(sample_flow.shape) == 0 or sample_flow.dimensions[0] != 'time':
+            sample_flow = sample_flow[...].data
+            sample_flow = sample_flow.reshape((1,))
+            self._flow_times_global = None
+        else:
+            from .directives import data_times
+            times = data_times(data)
+            if times is None:
+                return
+            self._flow_times_global = times
+            sample_flow = sample_flow[...].data
+
+        self._flow_ratio_global = self._calculate_ratio(sample_flow)
+
+    @property
+    def needs_setup(self) -> bool:
+        return True
+
+    def setup(self, _root: Dataset, data: Dataset, times: np.ndarray) -> None:
+        self._apply_times = times
+        self._apply_ratio = None
+
+        sample_flow = data.variables.get('sample_flow')
+        if sample_flow is None:
+            return
+
+        if len(sample_flow.shape) == 0 or sample_flow.dimensions[0] != 'time':
+            sample_flow = sample_flow[...].data
+            sample_flow = sample_flow.reshape((1,))
+        else:
+            sample_flow = sample_flow[...].data
+
+        self._apply_ratio = self._calculate_ratio(sample_flow)
 
     _NAME_OP: typing.Dict[str, typing.Callable[[np.ndarray, np.ndarray], np.ndarray]] = {
         "number_concentration": lambda original, ratio: (original.T / ratio.T).T,
@@ -268,14 +308,34 @@ class FlowCorrection(Action):
                 continue
 
             if isinstance(time_selection, slice):
-                if self._flow_ratio is not None:
-                    var[time_selection] = op(var[:].data[time_selection], self._flow_ratio[time_selection])
+                if self._apply_ratio is not None:
+                    if self._apply_ratio.shape[0] == var.shape[0]:
+                        var[time_selection] = op(var[:].data[time_selection], self._apply_ratio[time_selection])
+                    else:
+                        var[time_selection] = op(var[:].data[time_selection], self._apply_ratio)
+                elif self._flow_ratio_global is not None:
+                    if self._flow_times_global is None:
+                        var[time_selection] = op(var[:].data[time_selection], self._flow_ratio_global)
+                    else:
+                        from forge.data.merge.timealign import align_latest
+                        aligned_ratio = align_latest(self._apply_times[time_selection], self._flow_times_global, self._flow_ratio_global)
+                        var[time_selection] = op(var[:].data[time_selection], aligned_ratio)
                 else:
                     var[time_selection] = nan
             else:
                 modified = var[:].data
-                if self._flow_ratio is not None:
-                    modified[time_selection] = op(modified[time_selection], self._flow_ratio[time_selection])
+                if self._apply_ratio is not None:
+                    if self._apply_ratio.shape[0] == var.shape[0]:
+                        modified[time_selection] = op(modified[time_selection], self._apply_ratio[time_selection])
+                    else:
+                        modified[time_selection] = op(modified[time_selection], self._apply_ratio)
+                elif self._flow_ratio_global is not None:
+                    if self._flow_times_global is None:
+                        modified[time_selection] = op(modified[time_selection], self._flow_ratio_global)
+                    else:
+                        from forge.data.merge.timealign import align_latest
+                        aligned_ratio = align_latest(self._apply_times[time_selection], self._flow_times_global, self._flow_ratio_global)
+                        modified[time_selection] = op(modified[time_selection], aligned_ratio)
                 else:
                     modified[time_selection] = nan
                 var[:] = modified
@@ -309,10 +369,10 @@ class SizeCutFix(Action):
         return 'cut_size' in data.variables
 
     @property
-    def needs_prepare(self) -> bool:
+    def needs_setup(self) -> bool:
         return True
 
-    def prepare(self, _root: Dataset, data: Dataset, _times: np.ndarray) -> None:
+    def setup(self, _root: Dataset, data: Dataset, _times: np.ndarray) -> None:
         cut_size = data.variables['cut_size']
         if not isfinite(self.operate_size):
             self._apply_mask = np.invert(np.isfinite(cut_size[:].data))

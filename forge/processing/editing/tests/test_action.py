@@ -55,6 +55,7 @@ def test_invalidate(data_file: Dataset):
         "selection": [{"variable_id": "N"}]
     }))
     assert not a.needs_prepare
+    assert not a.needs_setup
     assert not a.filter_data(data_file, data_file)
     assert a.filter_data(data_file, data_file.groups["data"])
     a.apply(data_file, data_file.groups["data"], slice(0, 2))
@@ -65,6 +66,7 @@ def test_invalidate(data_file: Dataset):
         "selection": [{"variable_name": "scattering_coefficient", "wavelength": 200}]
     }))
     assert not a.needs_prepare
+    assert not a.needs_setup
     assert not a.filter_data(data_file, data_file)
     assert a.filter_data(data_file, data_file.groups["data"])
     a.apply(data_file, data_file.groups["data"], slice(3, 4))
@@ -82,7 +84,7 @@ def test_contaminate(data_file: Dataset):
 
     a = Contaminate("")
     assert not a.needs_prepare
-    assert not a.filter_data(data_file, data_file)
+    assert not a.needs_setup
     assert a.filter_data(data_file, data_file.groups["data"])
     a.apply(data_file, data_file.groups["data"], slice(0, 2))
     assert data_file.groups["data"].variables["system_flags"][:].data.tolist() == [0x03, 0x02, 0, 0x01]
@@ -99,7 +101,7 @@ def test_abnormal_data(data_file: Dataset):
 
     a = AbnormalData(to_json({'episode_type': 'wild_fire'}))
     assert not a.needs_prepare
-    assert not a.filter_data(data_file, data_file)
+    assert not a.needs_setup
     assert a.filter_data(data_file, data_file.groups["data"])
     a.apply(data_file, data_file.groups["data"], slice(0, 2))
     assert data_file.groups["data"].variables["system_flags"][:].data.tolist() == [0x03, 0x02, 0, 0x01]
@@ -119,6 +121,7 @@ def test_calibration(data_file: Dataset):
         "calibration": [5.0, 1.0],
     }))
     assert not a.needs_prepare
+    assert not a.needs_setup
     assert not a.filter_data(data_file, data_file)
     assert a.filter_data(data_file, data_file.groups["data"])
     a.apply(data_file, data_file.groups["data"], slice(0, 2))
@@ -130,6 +133,7 @@ def test_calibration(data_file: Dataset):
         "calibration": [6.0, 1.0],
     }))
     assert not a.needs_prepare
+    assert not a.needs_setup
     assert not a.filter_data(data_file, data_file)
     assert a.filter_data(data_file, data_file.groups["data"])
     a.apply(data_file, data_file.groups["data"], slice(3, 4))
@@ -150,6 +154,7 @@ def test_recalibrate(data_file: Dataset):
         "reverse_calibration": [-1.0, 1.0],
     }))
     assert not a.needs_prepare
+    assert not a.needs_setup
     assert not a.filter_data(data_file, data_file)
     assert a.filter_data(data_file, data_file.groups["data"])
     a.apply(data_file, data_file.groups["data"], slice(0, 2))
@@ -162,6 +167,7 @@ def test_recalibrate(data_file: Dataset):
         "reverse_calibration": [-1.0, 1.0],
     }))
     assert not a.needs_prepare
+    assert not a.needs_setup
     assert not a.filter_data(data_file, data_file)
     assert a.filter_data(data_file, data_file.groups["data"])
     a.apply(data_file, data_file.groups["data"], slice(3, 4))
@@ -199,14 +205,60 @@ def test_flow_correction(tmp_path):
         "reverse_calibration": [0.0, 0.5],
     }))
     assert a.needs_prepare
+    assert a.needs_setup
     assert a.filter_data(file, file.groups["data"])
-    a.prepare(file, file.groups["data"], file.groups["data"].variables["time"][:].data)
+    a.prepare(file, file.groups["data"])
+    a.setup(file, file.groups["data"], file.groups["data"].variables["time"][:].data)
     a.apply(file, file.groups["data"], slice(0, 2))
     assert file.groups["data"].variables["sample_flow"][:].data.tolist() == [4, 8, 88, 89]
     assert file.groups["data"].variables["scattering_coefficient"][:].data.tolist() == [3, 4, 98, 99]
 
 
-def test_flow_correction(tmp_path):
+def test_flow_correction_legacy(tmp_path):
+    file = Dataset(str(tmp_path / "data.nc"), 'w', format='NETCDF4')
+    file.instrument_id = "X1"
+
+    g = file.createGroup("data")
+    times = data_structure.time_coordinate(g)
+    times[:] = [100, 200, 300, 400]
+
+    var = data_structure.measured_variable(g, "scattering_coefficient")
+    data_variable.variable_total_scattering(var)
+    var.variable_id = "Bs"
+    var[:] = [12, 16, 98, 99]
+
+    g = file.createGroup("status")
+    times = data_structure.time_coordinate(g)
+    times[:] = [100, 300]
+
+    var = data_structure.measured_variable(g, "sample_flow")
+    data_variable.variable_sample_flow(var)
+    var.variable_id = "Q"
+    var[:] = [1, 88]
+
+    from forge.processing.editing.action import FlowCorrection
+
+    assert Action.from_code("FlowCorrection") == FlowCorrection
+
+    a = FlowCorrection(to_json({
+        "instrument": "X1",
+        "calibration": [0.0, 2.0],
+        "reverse_calibration": [0.0, 0.5],
+    }))
+    assert a.needs_prepare
+    assert a.needs_setup
+    assert a.filter_data(file, file.groups["data"])
+    a.prepare(file, file.groups["data"])
+    a.prepare(file, file.groups["status"])
+    a.setup(file, file.groups["data"], file.groups["data"].variables["time"][:].data)
+    a.apply(file, file.groups["data"], slice(0, 2))
+    a.setup(file, file.groups["status"], file.groups["status"].variables["time"][:].data)
+    a.apply(file, file.groups["status"], slice(0, 1))
+    assert file.groups["status"].variables["sample_flow"][:].data.tolist() == [4, 88]
+    assert file.groups["data"].variables["scattering_coefficient"][:].data.tolist() == [3, 4, 98, 99]
+
+
+def test_size_cut(tmp_path):
     file = Dataset(str(tmp_path / "data.nc"), 'w', format='NETCDF4')
     file.instrument_id = "X1"
 
@@ -234,9 +286,9 @@ def test_flow_correction(tmp_path):
         "cutsize": 10,
         "modified_cutsize": 1,
     }))
-    assert a.needs_prepare
+    assert a.needs_setup
     assert a.filter_data(file, file.groups["data"])
-    a.prepare(file, file.groups["data"], file.groups["data"].variables["time"][:].data)
+    a.setup(file, file.groups["data"], file.groups["data"].variables["time"][:].data)
     a.apply(file, file.groups["data"], slice(0, 3))
     assert file.groups["data"].variables["cut_size"][:].data.tolist() == [1, 1, 2.5, 10]
     assert file.groups["data"].variables["scattering_coefficient"][:].data.tolist() == [10, 11, 12, 13]
@@ -245,9 +297,9 @@ def test_flow_correction(tmp_path):
         "cutsize": 1,
         "modified_cutsize": "invalidate",
     }))
-    assert a.needs_prepare
+    assert a.needs_setup
     assert a.filter_data(file, file.groups["data"])
-    a.prepare(file, file.groups["data"], file.groups["data"].variables["time"][:].data)
+    a.setup(file, file.groups["data"], file.groups["data"].variables["time"][:].data)
     a.apply(file, file.groups["data"], slice(1, 4))
     assert file.groups["data"].variables["cut_size"][:].data.tolist() == [1, 1, 2.5, 10]
     assert file.groups["data"].variables["scattering_coefficient"][:].data.tolist() == pytest.approx([10, nan, 12, 13], nan_ok=True)

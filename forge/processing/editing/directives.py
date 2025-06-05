@@ -93,8 +93,8 @@ def apply_edit_directives(
     condition_parameters: np.ndarray = directives_root.variables["condition_parameters"][...]
 
     instantiated_edits: typing.List[typing.Tuple[int, int, str, Condition, Action]] = list()
-    any_action_prepare: bool = False
-    any_condition_prepare: bool = False
+    any_action_setup: bool = False
+    any_prepare: bool = False
     for idx in active_edits:
         edit_start = int(start_time[idx])
         edit_end = int(end_time[idx])
@@ -102,20 +102,16 @@ def apply_edit_directives(
         try:
             edit_action = action_lookup[int(actions[idx])](str(action_parameters[idx]))
             if edit_action.needs_prepare:
-                any_action_prepare = True
+                any_prepare = True
+            if edit_action.needs_setup:
+                any_action_setup = True
             edit_condition = condition_lookup[int(conditions[idx])](str(condition_parameters[idx]))
             if edit_condition.needs_prepare:
-                any_condition_prepare = True
+                any_prepare = True
         except:
             _LOGGER.error(f"Error instantiating edit {edit_start},{edit_end}/{edit_profile}", exc_info=True)
             raise
         instantiated_edits.append((edit_start, edit_end, edit_profile, edit_condition, edit_action))
-
-    if any_condition_prepare:
-        for file in data_files:
-            for data in _walk_data(file):
-                for _, _, _, condition, _ in instantiated_edits:
-                    condition.prepare(file, data)
 
     file_filter: typing.Optional[StationFileFilter] = None
 
@@ -142,13 +138,29 @@ def apply_edit_directives(
         )
         return file_filter
 
+    if any_prepare:
+        for file in data_files:
+            for data in _walk_data(file):
+                for _, _, profile, condition, action in instantiated_edits:
+                    if condition.needs_prepare:
+                        condition.prepare(file, data)
+
+                    if not action.needs_prepare:
+                        continue
+                    if action.limit_profile:
+                        if not get_file_filter().profile_accepts_file(profile, file):
+                            continue
+                    if not action.filter_data(file, data):
+                        continue
+                    action.prepare(file, data)
+
     for file in data_files:
         for data in _walk_data(file):
             times = None
 
-            if any_action_prepare:
+            if any_action_setup:
                 for _, _, profile, _, action in instantiated_edits:
-                    if not action.needs_prepare:
+                    if not action.needs_setup:
                         continue
                     if action.limit_profile:
                         if not get_file_filter().profile_accepts_file(profile, file):
@@ -159,7 +171,7 @@ def apply_edit_directives(
                         times = data_times(data)
                     if times is None:
                         continue
-                    action.prepare(file, data, times)
+                    action.setup(file, data, times)
 
             for edit_start, edit_end, profile, condition, action in instantiated_edits:
                 if action.limit_profile:
