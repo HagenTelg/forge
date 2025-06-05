@@ -3,8 +3,8 @@ import typing
 import numpy as np
 from math import nan
 from forge.processing.context import AvailableData
-from forge.processing.corrections import *
 from forge.processing.station.default.editing import standard_absorption_corrections, standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
+from forge.processing.corrections.filter_absorption import azumi_filter
 
 
 def run(data: AvailableData) -> None:
@@ -28,6 +28,12 @@ def run(data: AvailableData) -> None:
         ), {"variable_name": "cut_size"}):
             to_remove = np.invert(np.isfinite(cut_size[...]))
             var[to_remove, ...] = nan
+
+    for absorption in data.select_instrument((
+            {"instrument": "bmitap"},
+            {"instrument": "clap"},
+    ), start="2025-02-07"):
+        azumi_filter(absorption)
 
     standard_stp_corrections(data)
     standard_absorption_corrections(data)
