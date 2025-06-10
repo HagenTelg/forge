@@ -261,6 +261,8 @@ else:
             ExportCSV.Column([Selection(variable_name="sample_temperature", instrument_id="S12")]),
             ExportCSV.Column([Selection(variable_name="sample_humidity", instrument_id="S12")]),
             ExportCSV.Column([Selection(variable_name="sample_pressure", instrument_id="S12")]),
+            ExportCSV.Column([Selection(variable_name="inlet_temperature", instrument_id="S12", instrument_code="tsi3563nephelometer")]),
+            ExportCSV.Column([Selection(variable_name="inlet_humidity", instrument_id="S12", instrument_code="tsi3563nephelometer")]),
         ] + [
             ExportCSV.Column([Selection(variable_name="scattering_coefficient", wavelength=wavelength,
                                         instrument_id="S13")],
@@ -329,6 +331,16 @@ else:
             ExportCSV.Column([Selection(variable_name="sample_pressure", cut_size=cut_size,
                                         instrument_id="S12")],
                              header="P" + record + "_{instrument_id}")
+            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
+        ] + [
+            ExportCSV.Column([Selection(variable_name="inlet_temperature", cut_size=cut_size,
+                                        instrument_id="S12", instrument_code="tsi3563nephelometer")],
+                             header="Tu" + record + "_{instrument_id}")
+            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
+        ] + [
+            ExportCSV.Column([Selection(variable_name="inlet_humidity", cut_size=cut_size,
+                                        instrument_id="S12", instrument_code="tsi3563nephelometer")],
+                             header="Uu" + record + "_{instrument_id}")
             for record, cut_size in STANDARD_CUT_SIZE_SPLIT
         ] + [
             ExportCSV.Column([Selection(variable_name="scattering_coefficient", wavelength=wavelength, cut_size=cut_size,
