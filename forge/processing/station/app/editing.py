@@ -4,6 +4,7 @@ import numpy as np
 from math import nan
 from forge.processing.context import AvailableData
 from forge.processing.corrections import *
+from forge.processing.corrections.filter_absorption import azumi_filter
 from forge.processing.station.default.editing import standard_absorption_corrections, standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
 from forge.processing.derived.intensives import generate_intensives, AdjustWavelengthParameters
 from forge.data.flags import parse_flags
@@ -73,6 +74,12 @@ def stp_corrections(data: AvailableData) -> None:
 
 
 def absorption_corrections(data: AvailableData) -> None:
+    for absorption in data.select_instrument((
+            {"instrument": "bmitap"},
+            {"instrument": "clap"},
+    ), start="2023-06-05"):
+        azumi_filter(absorption)
+
     # Extend the TSI neph zeros to get all the CLAP data
     for clap, neph in data.select_instrument((
             {"instrument": "clap"},
