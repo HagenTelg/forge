@@ -101,7 +101,7 @@ class Converter(InstrumentConverter):
             netcdf_var.variable_air_pressure(var_P)
             netcdf_timeseries.variable_coordinates(g, var_P)
             var_P.variable_id = "P"
-            var_P.coverage_content_Pype = "physicalMeasurement"
+            var_P.coverage_content_type = "physicalMeasurement"
             var_P.cell_methods = "time: mean"
             var_P.long_name = "absolute air pressure"
             self.apply_data(times, var_P, data_P)

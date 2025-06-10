@@ -117,7 +117,7 @@ class LegacyAE16(WavelengthConverter):
             netcdf_var.variable_sample_flow(var_Q)
             netcdf_timeseries.variable_coordinates(g, var_Q)
             var_Q.variable_id = "Q"
-            var_Q.coverage_content_Qype = "physicalMeasurement"
+            var_Q.coverage_content_type = "physicalMeasurement"
             var_Q.cell_methods = "time: mean"
             var_Q.C_format = "%6.3f"
             var_Q.ancillary_variables = "standard_temperature standard_pressure"

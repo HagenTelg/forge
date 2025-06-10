@@ -368,7 +368,7 @@ class LegacyBMITAP(WavelengthConverter):
             netcdf_var.variable_sample_flow(var_Q)
             netcdf_timeseries.variable_coordinates(g, var_Q)
             var_Q.variable_id = "Q"
-            var_Q.coverage_content_Qype = "physicalMeasurement"
+            var_Q.coverage_content_type = "physicalMeasurement"
             var_Q.cell_methods = "time: mean"
             var_Q.C_format = "%6.3f"
             self.apply_data(times, var_Q, data_Q)
@@ -617,7 +617,7 @@ class Met(InstrumentConverter):
             netcdf_var.variable_air_pressure(var_P)
             netcdf_timeseries.variable_coordinates(g, var_P)
             var_P.variable_id = "P"
-            var_P.coverage_content_Pype = "physicalMeasurement"
+            var_P.coverage_content_type = "physicalMeasurement"
             var_P.cell_methods = "time: mean"
             var_P.long_name = "ambient pressure"
             self.apply_data(times, var_P, data_P)

@@ -66,7 +66,7 @@ class Converter(InstrumentConverter):
             netcdf_var.variable_size_distribution_dN(var_Nb)
             netcdf_timeseries.variable_coordinates(g, var_Nb)
             var_Nb.variable_id = "Nb"
-            var_Nb.coverage_content_Vype = "physicalMeasurement"
+            var_Nb.coverage_content_type = "physicalMeasurement"
             self.apply_data(times, var_Nb, data_Nb)
         else:
             var_diameter = None
