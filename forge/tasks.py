@@ -4,10 +4,24 @@ import asyncio
 _background_tasks: typing.Set[asyncio.Task] = set()
 
 
+def _reap_background_task(task: asyncio.Task) -> None:
+    _background_tasks.discard(task)
+    try:
+        task.result()
+    except asyncio.CancelledError:
+        pass
+    except Exception as e:
+        asyncio.get_event_loop().call_exception_handler({
+            'message': 'Exception in background task',
+            'exception': e,
+            'future': task,
+        })
+
+
 def background_task(coro: typing.Awaitable) -> asyncio.Task:
     r = asyncio.get_event_loop().create_task(coro)
     _background_tasks.add(r)
-    r.add_done_callback(lambda task: _background_tasks.discard(r))
+    r.add_done_callback(_reap_background_task)
     return r
 
 
