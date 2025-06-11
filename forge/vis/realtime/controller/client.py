@@ -8,7 +8,8 @@ from forge.vis.realtime.controller.block import ValueType, DataBlock
 
 
 class WriteData:
-    def __init__(self, writer: asyncio.StreamWriter):
+    def __init__(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        self.reader = reader
         self.writer = writer
 
     def _send_string(self, s: str):
@@ -19,6 +20,9 @@ class WriteData:
     async def connect(self) -> None:
         self.writer.write(struct.pack('<B', ConnectionType.WRITE.value))
         await self.writer.drain()
+
+    async def run(self) -> None:
+        await self.reader.readexactly(1)
 
     async def _send_contents(self, record: typing.Dict[str, typing.Union[float, typing.List[float]]]) -> None:
         self.writer.write(struct.pack('<I', len(record)))

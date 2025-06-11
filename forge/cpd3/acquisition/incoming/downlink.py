@@ -335,8 +335,8 @@ class DownlinkSocket(AcquisitionSocket):
             realtime_socket_name = CONFIGURATION.get('REALTIME.SOCKET', '/run/forge-vis-realtime.socket')
             _LOGGER.debug(f"Connecting realtime translator for {self.display_id} to {realtime_socket_name}")
             try:
-                _, writer = await asyncio.open_unix_connection(realtime_socket_name)
-                realtime_output = RealtimeOutput(writer)
+                reader, writer = await asyncio.open_unix_connection(realtime_socket_name)
+                realtime_output = RealtimeOutput(reader, writer)
                 await realtime_output.connect()
 
                 self.realtime_translator = translator

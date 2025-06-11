@@ -43,29 +43,64 @@ class RealtimeTranslatorOutput:
 
         self.data_consolidation_time: float = 0.5
         self._send_data_task: typing.Optional[asyncio.Task] = None
+        self._send_data_exception: typing.Optional[Exception] = None
+
+        self._run_task: typing.Optional[asyncio.Task] = None
 
     async def _send_queued_data(self) -> None:
-        await asyncio.sleep(self.data_consolidation_time)
+        try:
+            await asyncio.sleep(self.data_consolidation_time)
 
-        to_send = list(self._translator_output.queued_data.items())
-        self._translator_output.queued_data.clear()
-        self._send_data_task = None
+            to_send = list(self._translator_output.queued_data.items())
+            self._translator_output.queued_data.clear()
+            self._send_data_task = None
 
-        if not self.output:
-            return
+            if not self.output:
+                return
 
-        for data_name, record in to_send:
-            await self.output.send_data(self.station, data_name, record)
+            for data_name, record in to_send:
+                await self.output.send_data(self.station, data_name, record)
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            self._send_data_exception = e
+            raise
 
     def _queue_send_data(self) -> None:
+        e = self._send_data_exception
+        self._send_data_exception = None
+        if e is not None:
+            raise e
+
+        if not self._run_task:
+            raise RuntimeError("Realtime translator client not running")
+        if self._run_task.done():
+            try:
+                self._run_task.result()
+            except Exception as e:
+                raise RuntimeError("Realtime translator client failed") from e
+            raise RuntimeError("Realtime translator client not running")
+
         if self._send_data_task:
             return
         self._send_data_task = asyncio.get_event_loop().create_task(self._send_queued_data())
 
     async def start(self) -> None:
-        pass
+        self._run_task = asyncio.ensure_future(self.output.run())
 
     async def shutdown(self) -> None:
+        t = self._run_task
+        self._run_task = None
+        if t:
+            try:
+                t.cancel()
+            except:
+                pass
+            try:
+                await t
+            except:
+                pass
+
         t = self._send_data_task
         self._send_data_task = None
         if t:

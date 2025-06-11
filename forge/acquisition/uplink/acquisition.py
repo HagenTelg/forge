@@ -47,6 +47,7 @@ class AcquisitionTranslatorClient(AcquisitionClient):
 
         self.data_consolidation_time: float = 0.1
         self._send_data_task: typing.Optional[asyncio.Task] = None
+        self._send_data_exception: typing.Optional[Exception] = None
 
     async def start(self) -> None:
         self._run_task = asyncio.ensure_future(self.run())
@@ -84,16 +85,36 @@ class AcquisitionTranslatorClient(AcquisitionClient):
             pass
 
     async def _send_queued_data(self) -> None:
-        await asyncio.sleep(self.data_consolidation_time)
+        try:
+            await asyncio.sleep(self.data_consolidation_time)
 
-        for source, values in self._output.queued_data.items():
-            if not values:
-                continue
-            self.send_data(source, values)
-            values.clear()
-        self._send_data_task = None
+            for source, values in self._output.queued_data.items():
+                if not values:
+                    continue
+                self.send_data(source, values)
+                values.clear()
+            self._send_data_task = None
+        except asyncio.CancelledError:
+            raise
+        except Exception as e:
+            self._send_data_exception = e
+            raise
 
     def _queue_send_data(self) -> None:
+        e = self._send_data_exception
+        self._send_data_exception = None
+        if e is not None:
+            raise e
+
+        if not self._run_task:
+            raise RuntimeError("Acquisition bus client not running")
+        if self._run_task.done():
+            try:
+                self._run_task.result()
+            except Exception as e:
+                raise RuntimeError("Acquisition bus client failed") from e
+            raise RuntimeError("Acquisition bus client not running")
+
         if self._send_data_task:
             return
         self._send_data_task = asyncio.get_event_loop().create_task(self._send_queued_data())

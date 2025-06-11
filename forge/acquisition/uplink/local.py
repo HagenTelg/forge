@@ -102,8 +102,8 @@ def main():
             if translator and isinstance(translator, RealtimeTranslator):
                 _LOGGER.debug(f"Connecting realtime translator for {station} to {realtime_socket_name}")
                 try:
-                    _, writer = await asyncio.open_unix_connection(realtime_socket_name)
-                    output = RealtimeOutput(writer)
+                    reader, writer = await asyncio.open_unix_connection(realtime_socket_name)
+                    output = RealtimeOutput(reader, writer)
                     await output.connect()
                     realtime_output = RealtimeTranslatorOutput(station, output, translator)
                 except OSError:
@@ -154,10 +154,11 @@ def main():
         heartbeat = loop.create_task(send_heartbeat())
 
     _LOGGER.debug("Local visualization uplink start")
-    loop.add_signal_handler(signal.SIGINT, loop.stop)
-    loop.add_signal_handler(signal.SIGTERM, loop.stop)
+    bus_wait = loop.create_task(bus_client.wait())
+    loop.add_signal_handler(signal.SIGINT, bus_wait.cancel)
+    loop.add_signal_handler(signal.SIGTERM, bus_wait.cancel)
     try:
-        loop.run_forever()
+        loop.run_until_complete(bus_wait)
     except asyncio.CancelledError:
         pass
     _LOGGER.debug("Local visualization uplink stop")

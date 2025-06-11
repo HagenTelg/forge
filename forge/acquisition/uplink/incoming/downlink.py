@@ -48,8 +48,8 @@ class DownlinkSocket(BusSocket, BusInterface):
             realtime_socket_name = CONFIGURATION.get('REALTIME.SOCKET', '/run/forge-vis-realtime.socket')
             _LOGGER.debug(f"Connecting realtime translator for {self.display_id} to {realtime_socket_name}")
             try:
-                _, writer = await asyncio.open_unix_connection(realtime_socket_name)
-                output = RealtimeOutput(writer)
+                reader, writer = await asyncio.open_unix_connection(realtime_socket_name)
+                output = RealtimeOutput(reader, writer)
                 await output.connect()
                 realtime_output = RealtimeTranslatorOutput(self.station, output, translator)
 
