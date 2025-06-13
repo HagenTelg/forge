@@ -140,8 +140,10 @@ class Converter(InstrumentConverter):
         data_T = self.load_variable(f"T_{self.instrument_id}")
         data_V = self.load_variable(f"V_{self.instrument_id}")
         data_raw_inputs = self.load_array_variable(f"ZINPUTS_{self.instrument_id}")
-        if data_T.time.shape[0] != 0 or data_V.time.shape[0] != 0 or data_raw_inputs.time.shape[0] != 0:
+        if data_raw_inputs.time.shape[0] != 0:
             self._average_interval = self.calculate_average_interval(np.concatenate([data_T.time, data_V.time, data_raw_inputs.time]))
+            if self._average_interval and self._average_interval > 5 * 60:
+                self._average_interval = None
 
         self.apply_instrument_metadata(f"T_{self.instrument_id}", manufacturer="Campbell", model="CR1000-GML")
 
