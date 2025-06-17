@@ -8,9 +8,16 @@ from forge.processing.station.default.editing import standard_absorption_correct
 from forge.processing.derived.intensives import generate_intensives, AdjustWavelengthParameters
 from forge.data.flags import parse_flags
 from forge.data.merge.extend import extend_selected
+from forge.processing.corrections.filter_absorption import azumi_filter
 
 
 def absorption_corrections(data: AvailableData) -> None:
+    for absorption in data.select_instrument((
+            {"instrument": "bmitap"},
+            {"instrument": "clap"},
+    ), start="2017-01-02T07:00:00Z"):
+        azumi_filter(absorption)
+
     # Extend the neph zeros to invalidate additional CLAP data.
     # The CLAP data shows dips around the neph zeros, likely due to insufficient flush/blank time.
     # So this removes additional CLAP data when the neph has a zero or blank flag set.
@@ -42,22 +49,22 @@ def absorption_corrections(data: AvailableData) -> None:
             is_in_zero = extend_selected(is_in_zero, source_flags.times, 2 * 60 * 1000, 2 * 60 * 1000)
             absorption[is_in_zero, ...] = nan
 
-        # CPD1/2 data: already has Weiss applied for PSAPs
-        for absorption, scattering in data.select_instrument((
-                {"instrument": "psap1w"},
-                {"instrument": "psap3w"},
-        ), {"tags": "scattering -secondary"}, end="2017-06-07T10:29:00Z"):
-            remove_low_transmittance(absorption)
-            bond_1999(absorption, scattering)
-        for absorption, scattering in data.select_instrument((
-                {"instrument": "bmitap"},
-                {"instrument": "clap"},
-        ), {"tags": "scattering -secondary"}, end="2017-06-07T10:29:00Z"):
-            remove_low_transmittance(absorption)
-            weiss(absorption)
-            bond_1999(absorption, scattering)
+    # CPD1/2 data: already has Weiss applied for PSAPs
+    for absorption, scattering in data.select_instrument((
+            {"instrument": "psap1w"},
+            {"instrument": "psap3w"},
+    ), {"tags": "scattering -secondary"}, end="2017-06-07T10:29:00Z"):
+        remove_low_transmittance(absorption)
+        bond_1999(absorption, scattering)
+    for absorption, scattering in data.select_instrument((
+            {"instrument": "bmitap"},
+            {"instrument": "clap"},
+    ), {"tags": "scattering -secondary"}, end="2017-06-07T10:29:00Z"):
+        remove_low_transmittance(absorption)
+        weiss(absorption)
+        bond_1999(absorption, scattering)
 
-        standard_absorption_corrections(data, start="2017-06-07T10:29:00Z")
+    standard_absorption_corrections(data, start="2017-06-07T10:29:00Z")
 
 
 def run(data: AvailableData) -> None:
