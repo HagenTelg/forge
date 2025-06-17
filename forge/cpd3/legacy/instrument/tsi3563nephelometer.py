@@ -1,6 +1,4 @@
 import typing
-from os.path import split
-
 import numpy as np
 import forge.data.structure.variable as netcdf_var
 import forge.data.structure.timeseries as netcdf_timeseries
