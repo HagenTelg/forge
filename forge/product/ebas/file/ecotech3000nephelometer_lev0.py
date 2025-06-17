@@ -13,11 +13,11 @@ class File(Level0File):
 
     @property
     def instrument_model(self) -> str:
-        return "3000"
+        return "Aurora3000"
 
     @property
     def instrument_name(self) -> str:
-        return f'Ecotech_3000_{self.station.upper()}'
+        return f'Ecotech_Aurora3000_{self.station.upper()}'
 
     @property
     def file_metadata(self) -> typing.Dict[str, str]:
