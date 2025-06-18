@@ -304,10 +304,11 @@ class VariableContext:
 
     @property
     def interval(self) -> typing.Optional[float]:
-        if self.variable.group().name == 'status':
-            # Legacy 15-minute data does not align with averaging
-            return None
-        return self._root.time_coverage_resolution
+        interval = self._root.time_coverage_resolution
+        if interval == 60.0 and  self.variable.group().name == 'status':
+            # Legacy 15-minute monitor record data
+            return 15 * 60.0
+        return interval
 
     @property
     def time_bounds_ms(self) -> typing.Tuple[int, int]:
