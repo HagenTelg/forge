@@ -56,7 +56,7 @@ class _Redirection:
             self.root.rmdir()
         except:
             _LOGGER.error("Backend redirection release failed on generation %d", self.generation, exc_info=True)
-            exit(1)
+            os._exit(1)
 
 
 def _remove_empty_directories(root: Path, destination: Path) -> None:
@@ -363,7 +363,7 @@ class Storage:
                 self._transaction_root.mkdir()
             except:
                 _LOGGER.error("Unable to create transaction (%d) write directory", self.generation, exc_info=True)
-                exit(1)
+                os._exit(1)
             self._actions: typing.Dict[str, typing.Union[_ActionWriteFile, _ActionRemoveFile]] = dict()
 
         def commit(self, progress: typing.Optional[typing.Callable[[int, int], None]] = None) -> None:
@@ -415,7 +415,7 @@ class Storage:
                 return destination.open('wb')
             except OSError:
                 _LOGGER.error("Unable to write file (%s) in transaction (%d)", name, self.generation, exc_info=True)
-                exit(1)
+                os._exit(1)
 
         def remove_file(self, name: str) -> bool:
             name = self.storage.normalize_filename(name)
@@ -510,7 +510,7 @@ class Storage:
                     os.fsync(journal.fileno())
         except:
             _LOGGER.error("Journal write failed", exc_info=True)
-            exit(1)
+            os._exit(1)
 
     def _commit(self, generation: int, transaction_root: Path,
                 actions: typing.Dict[str, typing.Union[_ActionWriteFile, _ActionRemoveFile]],
@@ -528,7 +528,7 @@ class Storage:
                 redirection_root.mkdir()
             except:
                 _LOGGER.error("Unable to create redirection directory on generation (%d)", generation, exc_info=True)
-                exit(1)
+                os._exit(1)
             redirection = _Redirection(generation, redirection_root)
             index = bisect_right(self._redirection_generation, generation)
             self._redirection_generation.insert(index, generation)
