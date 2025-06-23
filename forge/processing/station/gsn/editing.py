@@ -4,9 +4,16 @@ from forge.processing.context import AvailableData
 from forge.processing.corrections import *
 from forge.processing.station.default.editing import standard_absorption_corrections, standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
 from forge.processing.derived.intensives import generate_intensives, AdjustWavelengthParameters
+from forge.processing.corrections.filter_absorption import azumi_filter
 
 
 def absorption_corrections(data: AvailableData) -> None:
+    for absorption in data.select_instrument((
+            {"instrument": "bmitap"},
+            {"instrument": "clap"},
+    ), start="2025-01-31"):
+        azumi_filter(absorption)
+
     # CPD1/2 data: already has Weiss applied for PSAPs
     for absorption, scattering in data.select_instrument((
             {"instrument": "psap1w"},
