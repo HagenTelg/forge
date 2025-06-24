@@ -218,7 +218,8 @@ class Instrument(StreamingInstrument):
                 result_data['percent_error']['average'] = average_error
                 spancheck.instrument.data_spancheck_result(result_data, oneshot=True)
                 spancheck.instrument.context.bus.log(
-                    f"Spancheck completed with an average error of {average_error:.1f}%",
+                    f"Spancheck completed with an average error of {average_error:.1f}%" if isfinite(average_error) else
+                    "Spancheck completed but encountered an error in calculation, sensors may be invalid",
                     result_data)
 
                 spancheck.instrument.data_PCTc([

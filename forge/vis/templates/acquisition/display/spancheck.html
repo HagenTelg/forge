@@ -97,6 +97,13 @@
     let activeState = undefined;
     let percentErrorResult = new Map();
 
+    function formatPercentError(percent) {
+        if (isFinite(percent)) {
+            return percent.toFixed(1) + "%";
+        } else {
+            return "ERROR - CHECK SENSORS";
+        }
+    }
     function updateVisibility() {
         $('.spancheck-state', context.root).css('display', 'none');
 
@@ -112,14 +119,14 @@
 
                 const displayText = document.getElementById('{{uid}}_percent_error');
                 if (percentErrorResult.size === 1) {
-                    displayText.textContent = percentErrorResult.values().next().value.toFixed(1) + "%";
+                    displayText.textContent = formatPercentError(percentErrorResult.values().next().value);
                 } else {
                     let contents = '';
                     percentErrorResult.forEach((pct, source) => {
                         if (contents.length === 0) {
-                            contents = source + ": " + pct.toFixed(1) + "%";
+                            contents = source + ": " + formatPercentError(pct);
                         } else {
-                            contents += ", " + source + ": " + pct.toFixed(1) + "%";
+                            contents += ", " + source + ": " + formatPercentError(pct);
                         }
                     });
                     displayText.textContent = contents;
