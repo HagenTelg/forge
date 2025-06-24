@@ -30,12 +30,12 @@ async def calculate_archive_integrity(
         instrument_limit: typing.Set[str],
         start_epoch_ms: int, end_epoch_ms: int,
 ) -> typing.AsyncIterator[typing.Tuple[str, float, float, bytes, bytes, bytes]]:
-    with ProcessPoolExecutor() as executor:
-        concurrent_limit = max(os.cpu_count() + 2, 32)
-        launched_files: typing.Set[asyncio.Future] = set()
-        launched_info: typing.Dict[asyncio.Future, typing.Tuple[str, str, float]] = dict()
+    async with WorkingDirectory() as working_directory:
+        with ProcessPoolExecutor() as executor:
 
-        async with WorkingDirectory() as working_directory:
+            concurrent_limit = max(os.cpu_count() + 2, 32)
+            launched_files: typing.Set[asyncio.Future] = set()
+            launched_info: typing.Dict[asyncio.Future, typing.Tuple[str, str, float]] = dict()
             transaction_begin: float = 0
 
             async def launch_file(file_time_ms: int, instrument_id: str) -> None:
@@ -140,8 +140,7 @@ async def calculate_archive_integrity(
             while launched_files:
                 async for result in process_launched():
                     yield result
-
-        executor.shutdown(wait=True)
+            executor.shutdown(wait=True)
 
 
 def apply_output_pattern(

@@ -161,6 +161,9 @@ class IntegrityTracker(Tracker):
             try:
                 with open(name, "rt") as f:
                     for line in f:
+                        line = line.strip()
+                        if not line:
+                            continue
                         key, value = line.split(',', 1)
                         if do_exclude:
                             bounds = self._file_to_bounds(key)
@@ -169,6 +172,9 @@ class IntegrityTracker(Tracker):
                         current_file_data[key.strip()] = value
             except FileNotFoundError:
                 pass
+            except:
+                _LOGGER.warning(f"Error parsing file {name}")
+                raise
 
             current_file_name = name
 
