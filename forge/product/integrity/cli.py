@@ -201,6 +201,10 @@ async def _verify_files(root_directory: Path, verify_input: typing.Iterable[str]
             line_number: int = 0
             for line in file:
                 line_number += 1
+                line = line.strip()
+                if not line:
+                    _LOGGER.debug(f"Ignoring empty line {input_file_name}:{line_number}")
+                    continue
                 try:
                     (read_file_name, _, _, file_hash, data_hash, qualitative_hash, *_) = line.split(',')
                     file_hash = bytes.fromhex(file_hash)
@@ -307,6 +311,10 @@ async def _verify_archive(connection: Connection, verify_input: typing.Iterable[
                 line_number: int = 0
                 for line in file:
                     line_number += 1
+                    line = line.strip()
+                    if not line:
+                        _LOGGER.debug(f"Ignoring empty line {input_file_name}:{line_number}")
+                        continue
                     try:
                         (read_file_name, _, _, file_hash, data_hash, qualitative_hash, *_) = line.split(',')
                         file_hash = bytes.fromhex(file_hash)
