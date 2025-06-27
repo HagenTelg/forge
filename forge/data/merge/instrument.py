@@ -101,7 +101,7 @@ def _cut_size_mapping(cut_size_source: netCDF4.Variable, cut_size_destination: n
     if len(cut_size_destination.shape) != 1 or cut_size_destination.shape[0] == 1:
         return slice(1), 1
 
-    def to_wavelength(value):
+    def to_cut_size(value):
         try:
             if value.mask:
                 return nan
@@ -110,12 +110,16 @@ def _cut_size_mapping(cut_size_source: netCDF4.Variable, cut_size_destination: n
         return float(value)
 
     if not cut_size_source.shape or cut_size_source.shape[0] == 1:
-        target_index = int(np.where(cut_size_destination[:] == to_wavelength(cut_size_source[0]))[0])
+        cut_size = to_cut_size(cut_size_source[0])
+        if not isfinite(cut_size):
+            target_index = int(np.where(np.invert(np.isfinite(cut_size_destination[:])))[0])
+        else:
+            target_index = int(np.where(cut_size_destination[:] == cut_size)[0])
         return slice(target_index, target_index+1), 1
 
     output_apply: typing.List[int] = [0] * cut_size_source.shape[0]
     for sidx in range(cut_size_source.shape[0]):
-        cut_size = to_wavelength(cut_size_source[sidx])
+        cut_size = to_cut_size(cut_size_source[sidx])
         if not isfinite(cut_size):
             didx = int(np.where(np.invert(np.isfinite(cut_size_destination[:].data)))[0])
         else:
