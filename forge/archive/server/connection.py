@@ -95,7 +95,9 @@ class Connection:
                     'key': notification.key,
                     'start': notification.start,
                     'end': notification.end,
-                } for notification in self._transaction.queued_notifications
+                }
+                for key_notifications in self._transaction.queued_notifications.values()
+                for notification in key_notifications
             ]
             result['intent_acquire'] = [
                 {

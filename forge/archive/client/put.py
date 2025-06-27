@@ -32,6 +32,7 @@ class ArchivePut:
         self._index: typing.Dict[str, typing.Dict[str, typing.Dict[int, ArchiveIndex]]] = dict()
         self._history: typing.Dict[str, typing.Dict[int, InstrumentHistory]] = dict()
         self._data_locks: typing.Dict[str, typing.Dict[str, typing.Set[int]]] = dict()
+        self._sent_notifications: typing.Dict[str, typing.Set[typing.Tuple[int, int]]] = dict()
         self._eventlog_locks: typing.Dict[str, typing.Set[int]] = dict()
 
     @staticmethod
@@ -268,9 +269,15 @@ class ArchivePut:
                 await self._merge_data_file(file, station, archive, instrument_id,
                                             archive_file_start, archive_file_end)
 
-        await self._connection.send_notification(data_notification_key(station, archive),
-                                                 destination_start, destination_end)
-        _LOGGER.debug("Sent update notification")
+        send_notify_key = data_notification_key(station, archive)
+        sent_intervals = self._sent_notifications.get(send_notify_key)
+        if not sent_intervals:
+            sent_intervals = set()
+            self._sent_notifications[send_notify_key] = sent_intervals
+        if (destination_start, destination_end) not in sent_intervals:
+            await self._connection.send_notification(send_notify_key, destination_start, destination_end)
+            sent_intervals.add((destination_start, destination_end))
+            _LOGGER.debug("Sent update notification")
 
     async def _replace_data_file(self, file: Dataset, station: str, archive: str, instrument_id: str,
                                  archive_file_start: int, archive_file_end: int) -> None:

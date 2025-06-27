@@ -3,6 +3,7 @@ import asyncio
 import logging
 import time
 from abc import ABC, abstractmethod
+from forge.range import Merge as RangeMerge
 from .lock import ArchiveLocker, LockDenied
 from .notify import NotificationDispatch
 from .intent import IntentTracker
@@ -132,7 +133,7 @@ class WriteTransaction(_BaseTransaction):
                  intent: IntentTracker):
         super().__init__(storage, locker, intent)
         self.notify = notify
-        self.queued_notifications: typing.List[NotificationDispatch.Queued] = list()
+        self.queued_notifications: typing.Dict[str, typing.List[NotificationDispatch.Queued]] = dict()
         self.intents_to_acquire: typing.Dict[int, typing.Tuple[str, int, int]] = dict()
         self.intents_to_release: typing.Set[int] = set()
 
@@ -182,7 +183,10 @@ class WriteTransaction(_BaseTransaction):
         for lock in self.locks:
             lock.release()
         self.locks.clear()
-        await self.notify.dispatch(self.queued_notifications)
+        all_notifications = list()
+        for key_notify in self.queued_notifications.values():
+            all_notifications.extend(key_notify)
+        await self.notify.dispatch(all_notifications)
         self.queued_notifications.clear()
 
     async def abort(self) -> None:
@@ -216,7 +220,45 @@ class WriteTransaction(_BaseTransaction):
         return None
 
     def send_notification(self, key: str, start: int, end: int) -> None:
-        self.queued_notifications.append(self.notify.queue_notification(key, start, end))
+        target = self.queued_notifications.get(key)
+        if not target:
+            target = list()
+            self.queued_notifications[key] = target
+
+        class Merge(RangeMerge):
+            def __init__(self, notify: NotificationDispatch, notifications: typing.List[NotificationDispatch.Queued]):
+                self.notify = notify
+                self.notifications = notifications
+
+            @property
+            def canonical(self) -> bool:
+                return True
+
+            def combine_contiguous(self, index: int) -> bool:
+                return True
+
+            def __len__(self) -> int:
+                return len(self.notifications)
+
+            def __delitem__(self, key: typing.Union[slice, int]) -> None:
+                del self.notifications[key]
+
+            def insert(self, index: int, start: int, end: int) -> typing.Any:
+                new_queued = self.notify.queue_notification(key, start, end)
+                self.notifications.insert(index, new_queued)
+                return new_queued
+
+            def merge_contained(self, index: int) -> typing.Any:
+                return None
+
+            def get_start(self, index: int) -> typing.Union[int, float]:
+                return self.notifications[index].start
+
+            def get_end(self, index: int) -> typing.Union[int, float]:
+                return self.notifications[index].end
+
+        merge = Merge(self.notify, target)
+        merge(start, end)
 
     def acquire_intent(self, uid: int, key: str, start: int, end: int) -> None:
         self.intents_to_acquire[uid] = (key, start, end)
