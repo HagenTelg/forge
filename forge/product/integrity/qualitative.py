@@ -17,7 +17,12 @@ def _decompose(values: np.ndarray) -> np.ndarray:
                                      'constant', constant_values=nan)
 
         level_data = np.abs(np.nanmean(level_pieces, axis=1))
-        level_data = np.round(np.log10(level_data) * 10)
+        valid_level_data = np.logical_and(
+            np.isfinite(level_data),
+            level_data > 0
+        )
+        level_data[valid_level_data] = np.round(np.log10(level_data[valid_level_data]) * 10)
+        level_data[np.invert(valid_level_data)] = 32767
         level_data[level_data < -32767] = -32767
         level_data[level_data > 32767] = 32767
         result[level_begin:level_begin + level_data.shape[0]] = level_data.astype(np.int16)
