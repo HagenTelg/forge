@@ -22,7 +22,7 @@ def _decompose(values: np.ndarray) -> np.ndarray:
             level_data > 0
         )
         level_data[valid_level_data] = np.round(np.log10(level_data[valid_level_data]) * 10)
-        level_data[np.invert(valid_level_data)] = 32767
+        level_data[np.invert(valid_level_data)] = -32767
         level_data[level_data < -32767] = -32767
         level_data[level_data > 32767] = 32767
         result[level_begin:level_begin + level_data.shape[0]] = level_data.astype(np.int16)
@@ -39,7 +39,13 @@ def qualitative_digest(data: np.ndarray, digest) -> None:
         return
 
     if data.shape[0] <= _DECOMPOSITION_LEVELS[-1]:
-        data = np.round(np.log10(np.abs(data)) * 10)
+        data = np.abs(data)
+        valid_data = np.logical_and(
+            np.isfinite(data),
+            data > 0
+        )
+        data[valid_data] = np.round(np.log10(data[valid_data]) * 10)
+        data[np.invert(valid_data)] = -32767
         data[data < -32767] = -32767
         data[data > 32767] = 32767
         digest.update(data.astype('<i2', casting='unsafe', order='C').tobytes(order='C'))
