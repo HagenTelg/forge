@@ -264,12 +264,18 @@ class Controller(UpdateController):
             if a not in ("raw", "edited", "clean", "avgh", "avgd", "avgm"):
                 raise ValueError(f"Invalid archive: {a}")
             archives.add(a)
+        stations: typing.Set[str] = set()
+        for s in CONFIGURATION.get("INTEGRITY.UPDATE.STATIONS", STATIONS):
+            s = s.lower()
+            if s not in STATIONS:
+                raise ValueError(f"Invalid station: {s}")
+            stations.add(s)
 
         output = str(CONFIGURATION["INTEGRITY.UPDATE.OUTPUT"])
         command = CONFIGURATION.get("INTEGRITY.UPDATE.COMPLETION_COMMAND")
 
         trackers: typing.List[Tracker] = list()
-        for station in STATIONS:
+        for station in stations:
             for archive in archives:
                 trackers.append(IntegrityTracker(self.connection, self.state_path, station, archive, output, command))
         return trackers
