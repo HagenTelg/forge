@@ -55,6 +55,7 @@ class UpdateManager:
         self._pending: typing.List[UpdateManager._Pending] = list()
         self._do_update: typing.Dict[UpdateManager._Pending, int] = OrderedDict()
         self._lock: asyncio.Lock = None
+        self._archive_sync_time: float = time.time()
 
         self._intersecting = self._Intersecting(self)
         self._shutdown_in_progress: bool = False
@@ -108,6 +109,9 @@ class UpdateManager:
                 for p in state['pending']:
                     await self._install_pending(p[0], p[1], save_state=False)
 
+        # Sync time up before the modified scan (which can take a while)
+        self._archive_sync_time = time.time()
+
         modified = await self.get_modified(state_modified or 0)
         async with self._lock:
             _LOGGER.debug("Found %d modified pending", len(modified))
@@ -142,6 +146,8 @@ class UpdateManager:
         def __init__(self, manager: "UpdateManager", active: "UpdateManager._Pending"):
             self._manager = manager
             self._active: typing.Optional["UpdateManager._Pending"] = active
+            # Manager will be up to date as of the start of the update, at least
+            self._update_sync_time: float = time.time()
 
         async def __aenter__(self) -> typing.Tuple[int, int]:
             return self._active.start, self._active.end
@@ -165,6 +171,7 @@ class UpdateManager:
             active.intents.clear()
 
             async with self._manager._lock:
+                self._manager._archive_sync_time = max(self._update_sync_time, self._manager._archive_sync_time)
                 if not self._manager._shutdown_in_progress:
                     self._manager._save_state()
 
@@ -205,7 +212,7 @@ class UpdateManager:
     def _save_state(self, sync: bool = False) -> None:
         state_contents: typing.Dict[str, typing.Any] = {
             'version': self.STATE_VERSION,
-            'modified': int(floor(time.time())),
+            'modified': int(floor(self._archive_sync_time)),
             'pending': [[p.start, p.end] for p in self._pending],
         }
 
@@ -285,6 +292,10 @@ class UpdateManager:
 
             _LOGGER.debug(f"Received notification for %s,%d,%d", key, start, end)
             start, end = self.round_notification(key, start, end)
+
+            # A notification received means we're synced up with the backing modified time, since the notification
+            # is sent with the transaction that modifies the files.
+            self._archive_sync_time = time.time()
 
             # Connection callbacks are not re-entrant and the connection can process normal requests
             # (intent acquisition), so this is safe.
