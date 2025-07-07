@@ -58,6 +58,8 @@ class UpdateManager:
         self._archive_sync_time: float = time.time()
 
         self._intersecting = self._Intersecting(self)
+        self._pending_in_progress: typing.Optional[UpdateManager._Pending] = None
+        self._stale_intents: typing.List[Connection.IntentHandle] = list()
         self._shutdown_in_progress: bool = False
 
     @property
@@ -107,6 +109,8 @@ class UpdateManager:
             async with self._lock:
                 _LOGGER.debug("Found %d state pending", len(state['pending']))
                 for p in state['pending']:
+                    # This is both to ensure intents are acquired and to handle state re-merge due to
+                    # error shutdown (active just appended)
                     await self._install_pending(p[0], p[1], save_state=False)
 
         # Sync time up before the modified scan (which can take a while)
@@ -126,12 +130,32 @@ class UpdateManager:
     async def shutdown(self) -> None:
         async with self._lock:
             self._shutdown_in_progress = True
+
+            # Re-acquire without intents before the state save, in case the connection has failed
+            acquire = self._pending_in_progress
+            self._pending_in_progress = None
+            if acquire is not None:
+                self._merge_pending(acquire.start, acquire.end)
+
             self._save_state()
 
             for p in self._pending:
                 for i in p.intents:
                     await i.release(True)
                 p.intents.clear()
+            for i in self._stale_intents:
+                await i.release(True)
+            self._stale_intents.clear()
+
+    def aborted(self) -> None:
+        self._shutdown_in_progress = True
+
+        acquire = self._pending_in_progress
+        self._pending_in_progress = None
+        if acquire is not None:
+            self._merge_pending(acquire.start, acquire.end)
+
+        self._save_state()
 
     async def flush(self, start: int = -MAX_I64, end: int = MAX_I64) -> None:
         any_hit = False
@@ -143,13 +167,39 @@ class UpdateManager:
             self.notify_update_ready()
 
     class _NextUpdate:
-        def __init__(self, manager: "UpdateManager", active: "UpdateManager._Pending"):
+        def __init__(self, manager: "UpdateManager", active: "UpdateManager._Pending", index: int):
             self._manager = manager
             self._active: typing.Optional["UpdateManager._Pending"] = active
+            self._active_update_index = index
             # Manager will be up to date as of the start of the update, at least
             self._update_sync_time: float = time.time()
 
+        def _remove_from_pending(self) -> None:
+            # Save the pending we're holding for state saves (so they reflect what's been committed, and we haven't
+            # commited this yet) as well as shutdown/abort reintegration
+            self._manager._pending_in_progress = self._active
+
+            remove_idx = self._active_update_index
+            # Only search the whole pending if it has moved since being queued
+            if remove_idx >= len(self._manager._pending) or self._manager._pending[remove_idx] != self._active:
+                remove_idx = self._manager._pending.index(self._active)
+            del self._manager._pending[remove_idx]
+
+            # Renumber any remaining queued (otherwise the above optimization may only work once)
+            for key, update_idx in reversed(list(self._manager._do_update.items())):
+                if update_idx > remove_idx:
+                    update_idx -= 1
+                self._manager._do_update[key] = update_idx
+
         async def __aenter__(self) -> typing.Tuple[int, int]:
+            self._manager._do_update.pop(self._active)
+            self._remove_from_pending()
+
+            # We're in a transaction, so queue intents for release
+            assert self._manager.connection.in_transaction
+            for i in self._active.intents:
+                await i.release()
+
             return self._active.start, self._active.end
 
         async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -159,18 +209,28 @@ class UpdateManager:
                 raise RuntimeError("Duplicate context exit")
 
             if exc_type is not None:
-                # If we've failed, re-install the pending then release the replaced intents
                 async with self._manager._lock:
-                    await self._manager._install_pending(active.start, active.end, force_update=True)
-                for i in active.intents:
-                    await i.release(True)
+                    # Re-acquire the failed range in the current pending
+                    await self._manager._install_pending(
+                        active.start, active.end,
+                        force_update=not self._manager._shutdown_in_progress,
+                        # Save state even in shutdown, since the shutdown will have saved without the pending
+                        # we're rolling back
+                        save_state=True,
+                    )
+                    # Transaction abort means that the intent release doesn't take effect, so explicitly release them
+                    # now that the pending has been re-acquired
+                    self._manager._stale_intents.extend(active.intents)
                 active.intents.clear()
+
+                self._manager._pending_in_progress = None
                 return
 
             # Active intents cleared by transaction exit, and pending itself no longer relevant (update completed)
             active.intents.clear()
 
             async with self._manager._lock:
+                self._manager._pending_in_progress = None
                 self._manager._archive_sync_time = max(self._update_sync_time, self._manager._archive_sync_time)
                 if not self._manager._shutdown_in_progress:
                     self._manager._save_state()
@@ -189,31 +249,24 @@ class UpdateManager:
                 active, idx = next(iter(self._do_update.items()))
             except StopIteration:
                 return None
-            update = self._NextUpdate(self, active)
-            self._do_update.pop(active)
+            return self._NextUpdate(self, active, idx)
 
-            # Only search the whole pending if it has moved since being queued
-            if idx >= len(self._pending) or self._pending[idx] != active:
-                idx = self._pending.index(active)
-            del self._pending[idx]
-
-            # Renumber any remaining queued (otherwise the above optimization may only work once)
-            for key, update_idx in reversed(list(self._do_update.items())):
-                if update_idx > idx:
-                    update_idx -= 1
-                self._do_update[key] = update_idx
-
-            # We're in a transaction, so queue intents for release
-            for i in active.intents:
-                await i.release()
-
-            return update
+    async def transaction_exit(self) -> None:
+        async with self._lock:
+            for intent in self._stale_intents:
+                await intent.release(True)
+            self._stale_intents.clear()
 
     def _save_state(self, sync: bool = False) -> None:
+        save_pending = self._pending
+        if self._pending_in_progress is not None:
+            # Don't need to re-merge since a load will merge anyway
+            save_pending = save_pending + [self._pending_in_progress]
+
         state_contents: typing.Dict[str, typing.Any] = {
             'version': self.STATE_VERSION,
             'modified': int(floor(self._archive_sync_time)),
-            'pending': [[p.start, p.end] for p in self._pending],
+            'pending': [[p.start, p.end] for p in save_pending],
         }
 
         with open(self.state_file, "w") as f:
@@ -226,12 +279,14 @@ class UpdateManager:
                 except AttributeError:
                     os.fsync(f.fileno())
 
-    async def _install_pending(self, start: int, end: int, save_state: bool = True, force_update: bool = False) -> None:
+    def _merge_pending(
+            self, start: int, end: int
+    ) -> typing.Tuple[typing.Optional["UpdateManager._Pending"], typing.Optional[int], typing.List["UpdateManager._Pending"]]:
         class Merge(RangeMerge):
             def __init__(self, manager: "UpdateManager"):
                 self.manager = manager
                 self.to_release: typing.List["UpdateManager._Pending"] = list()
-                self.inserted_index: int = None
+                self.inserted_index: typing.Optional[int] = None
 
             @property
             def canonical(self) -> bool:
@@ -264,25 +319,30 @@ class UpdateManager:
 
         merge = Merge(self)
         new_pending = merge(start, end)
+        return new_pending, merge.inserted_index, merge.to_release
+
+    async def _install_pending(self, start: int, end: int, save_state: bool = True, force_update: bool = False) -> None:
+        new_pending, inserted_index, to_release = self._merge_pending(start, end)
         if not new_pending:
             _LOGGER.debug("Already have pending containing %d,%d", start, end)
             return
         if save_state:
             self._save_state(sync=True)
 
-        _LOGGER.debug("Acquiring pending %d,%d that replaces %d existing", start, end, len(merge.to_release))
+        _LOGGER.debug("Acquiring pending %d,%d that replaces %d existing", start, end, len(to_release))
 
         # Acquire new intents, then release the replaced ones
         await new_pending.acquire()
-        for p in merge.to_release:
+        for p in to_release:
             for i in p.intents:
                 await i.release(True)
             p.intents.clear()
+            # Renumber and replace any updates on the replaced pending
             was_updated = self._do_update.pop(p, None)
             if was_updated:
-                self._do_update[new_pending] = merge.inserted_index
+                self._do_update[new_pending] = inserted_index
         if force_update:
-            self._do_update[new_pending] = merge.inserted_index
+            self._do_update[new_pending] = inserted_index
 
     async def _notification_received(self, key: str, start: int, end: int) -> None:
         async with self._lock:
@@ -442,15 +502,19 @@ class StationsController:
                         return False
             except LockDenied as ld:
                 _LOGGER.debug("Archive busy: %s", ld.status)
+                self._in_transaction = False
+                for station in self.stations.values():
+                    await station.transaction_exit()
                 # If a station was busy, put it at the back so that we try others first
                 if station_busy is not None:
                     station = station_order[station_busy]
                     del station_order[station_busy]
                     station_order.append(station)
-                self._in_transaction = False
                 await backoff()
             finally:
                 self._in_transaction = False
+                for station in self.stations.values():
+                    await station.transaction_exit()
 
     async def run(self, before_idle: typing.Optional[typing.Callable[[], typing.Awaitable]] = None) -> None:
         while True:
@@ -474,7 +538,18 @@ class StationsController:
     async def shutdown(self) -> None:
         self._shutdown_in_progress = True
         for station in self.stations.values():
-            await station.shutdown()
+            try:
+                await station.shutdown()
+            except:
+                _LOGGER.warning(f"Error during station {station.station.upper()} shutdown", exc_info=True)
+
+    def aborted(self) -> None:
+        self._shutdown_in_progress = True
+        for station in self.stations.values():
+            try:
+                station.aborted()
+            except:
+                _LOGGER.warning(f"Error during station {station.station.upper()} abort", exc_info=True)
 
     async def flush(self, start: int = -MAX_I64, end: int = MAX_I64, stations: typing.Set[str] = None) -> None:
         if self._shutdown_in_progress:
@@ -726,8 +801,14 @@ class StationsController:
         except asyncio.CancelledError:
             pass
         except:
+            _LOGGER.debug("Aborting station updated controller")
+            try:
+                controller.aborted()
+            except:
+                _LOGGER.error("Error in controller abort", exc_info=True)
             if args.dashboard:
                 loop.run_until_complete(report_failed(args.dashboard, exc_info=True))
+            _LOGGER.debug("Station updated controller completed abort")
             raise
         finally:
             controller_run = None

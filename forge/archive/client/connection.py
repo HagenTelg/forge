@@ -447,8 +447,12 @@ class Connection:
 
         return await self._request_response(request, response, path, modified_after)
 
+    @property
+    def in_transaction(self) -> bool:
+        return self._transaction_intents is not None
+
     async def transaction_begin(self, write: bool) -> None:
-        assert self._transaction_intents is None
+        assert not self.in_transaction
 
         async def request(connection: "Connection"):
             connection.writer.write(struct.pack('<BB', ClientPacket.TRANSACTION_BEGIN.value, write and 1 or 0))
@@ -463,7 +467,7 @@ class Connection:
         self._transaction_intents = dict()
 
     async def transaction_commit(self) -> typing.List["Connection.IntentHandle"]:
-        assert self._transaction_intents is not None
+        assert self.in_transaction
 
         async def request(connection: "Connection"):
             connection.writer.write(struct.pack('<B', ClientPacket.TRANSACTION_COMMIT.value))
@@ -493,7 +497,7 @@ class Connection:
         return acquired
 
     async def transaction_abort(self) -> typing.List["Connection.IntentHandle"]:
-        assert self._transaction_intents is not None
+        assert self.in_transaction
 
         async def request(connection: "Connection"):
             connection.writer.write(struct.pack('<B', ClientPacket.TRANSACTION_ABORT.value))
@@ -705,7 +709,7 @@ class Connection:
 
             await self._connection._request_response(request, response, self)
 
-            if not immediate and self._connection._transaction_intents is not None:
+            if not immediate and self._connection.in_transaction:
                 self._connection._transaction_intents[self] = False
                 return
             if not self._realized:
@@ -730,7 +734,7 @@ class Connection:
             uid = struct.unpack('<Q', await connection.reader.readexactly(8))[0]
 
             intent = connection.IntentHandle(connection, uid)
-            if not immediate and connection._transaction_intents is not None:
+            if not immediate and connection.in_transaction:
                 connection._transaction_intents[intent] = True
             else:
                 intent._realized = True
