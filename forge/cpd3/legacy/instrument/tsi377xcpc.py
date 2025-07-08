@@ -139,7 +139,6 @@ class Converter(InstrumentConverter):
         self.apply_data(times, var_T4, data_T4)
 
         var_A = g.createVariable("laser_current", "f8", ("time",), fill_value=nan)
-        netcdf_var.variable_temperature(var_A)
         netcdf_timeseries.variable_coordinates(g, var_A)
         var_A.variable_id = "A"
         var_A.coverage_content_type = "physicalMeasurement"
