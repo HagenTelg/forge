@@ -214,7 +214,6 @@ class SelectionShortcut {
     li.style.display = 'none';
     Selection.shortcut_menu.appendChild(li);
 
-
     EditDirectiveAvailable.ready(() => {
         for (let i=0; i<EditDirectiveAvailable.available.length; i++) {
             const available = EditDirectiveAvailable.available[i];
@@ -380,7 +379,8 @@ EditDirectiveAvailable.ready(() => {
         return [li, ul]
     }
 
-    instrumentVariables.forEach((variables, instrument) => {
+    Array.from(instrumentVariables.keys()).sort().forEach((instrument) => {
+        const variables = instrumentVariables.get(instrument);
         let instrumentMenu = undefined;
         instrumentSelections.forEach((selection) => {
             if (!selection.matchesInitial(instrument, variables)) {
