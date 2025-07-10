@@ -23,7 +23,7 @@ const divisions = {
 };
 
 function updateSelectedPoints() {
-    conditionTarget.points.length = 0;
+    conditionTarget.moments.length = 0;
 
     for (let i=0; i<pointList.rows.length; i++) {
         const tr = pointList.rows[i];
@@ -31,7 +31,7 @@ function updateSelectedPoints() {
             continue;
         }
 
-        conditionTarget.points.push(i);
+        conditionTarget.moments.push(i);
     }
 }
 
@@ -80,15 +80,15 @@ function populatePointList() {
         const tr = addPoint();
         tr.children[0].textContent = formatTime(timeOffset);
 
-        while (selectedPointsIndex < conditionTarget.points.length) {
-            if (conditionTarget.points[selectedPointsIndex] >= rowIndex) {
+        while (selectedPointsIndex < conditionTarget.moments.length) {
+            if (conditionTarget.moments[selectedPointsIndex] >= rowIndex) {
                 break;
             }
             ++selectedPointsIndex;
         }
 
-        if (selectedPointsIndex < conditionTarget.points.length &&
-                rowIndex === conditionTarget.points[selectedPointsIndex]) {
+        if (selectedPointsIndex < conditionTarget.moments.length &&
+                rowIndex === conditionTarget.moments[selectedPointsIndex]) {
             tr.classList.add('selected');
         }
     }
@@ -99,7 +99,7 @@ $(selectInterval).change(function(event) {
     if (conditionTarget.interval === this.value) {
         return;
     }
-    conditionTarget.points.length = 0;
+    conditionTarget.moments.length = 0;
     conditionTarget.interval = this.value;
 
     const interval = intervals[conditionTarget.interval];
@@ -117,7 +117,7 @@ $(selectDivision).change(function(event) {
     if (conditionTarget.division === this.value) {
         return;
     }
-    conditionTarget.points.length = 0;
+    conditionTarget.moments.length = 0;
     conditionTarget.division = this.value;
     populatePointList();
 });
@@ -138,8 +138,8 @@ selectEditDirectiveCondition = function(directive, lockController) {
     }
     selectDivision.value = conditionTarget.division;
 
-    if (!conditionTarget.points) {
-        conditionTarget.points = [];
+    if (!conditionTarget.moments) {
+        conditionTarget.moments = [];
     }
 
     setVisibleDivisions();

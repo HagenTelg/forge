@@ -381,7 +381,7 @@ def _to_cpd3_trigger(directive: typing.Dict[str, typing.Any]) -> typing.Optional
                 })
         return triggers
     elif op == 'periodic':
-        points = condition.get('points', [])
+        points = condition.get('moments', [])
         interval = condition.get('interval')
         division = condition.get('division')
 
