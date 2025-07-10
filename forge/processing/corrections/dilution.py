@@ -3,6 +3,7 @@ import logging
 import numpy as np
 from math import nan
 from .selections import VOLUME_DEPENDENT_MEASUREMENTS
+from .stp import correct_volume
 from ..context import SelectedData, SelectedVariable
 
 _LOGGER = logging.getLogger(__name__)
@@ -72,11 +73,26 @@ def _assemble_flow(
                 source_data = SelectedData.ensure_data(raw_flow["data"])
                 flow_value = source_data.get_input(target, raw_flow["flow"])
 
+                if "sample_temperature" in raw_flow and "sample_pressure" in raw_flow:
+                    correct_temperature = raw_flow["sample_temperature"]
+                    if isinstance(correct_temperature, int) or isinstance(correct_temperature, float):
+                        correct_temperature = np.full(flow_value.shape, float(correct_temperature), dtype=np.float64)
+                    else:
+                        correct_temperature = source_data.get_input(target, raw_flow["sample_temperature"])
+
+                    correct_pressure = raw_flow["sample_pressure"]
+                    if isinstance(correct_pressure, int) or isinstance(correct_pressure, float):
+                        correct_pressure = np.full(flow_value.shape, float(correct_pressure), dtype=np.float64)
+                    else:
+                        correct_pressure = source_data.get_input(target, raw_flow["sample_pressure"])
+                        
+                    flow_value = correct_volume(flow_value[...], correct_temperature[...], correct_pressure[...])
+
                 fallback = raw_flow.get("fallback")
                 if fallback is not None:
                     missing_values = np.invert(np.isnan(flow_value))
                     if np.any(missing_values):
-                        flow_value = np.array(flow_value.values, copy=True)
+                        flow_value = np.array(flow_value[...], copy=True)
                         flow_value[missing_values] = fallback
             except FileNotFoundError:
                 _LOGGER.debug("Failed to find flow for %s", raw_flow)

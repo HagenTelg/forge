@@ -181,6 +181,415 @@ def recalculate_neph_rh(data: AvailableData) -> None:
             rh_out[...] = extrapolate_rh(sensor_temp[...], sensor_rh[...], temperature_in[...])
 
 
+def dilution_corrections(data: AvailableData) -> None:
+    for S11, S12, A11, N71, N11, pid, umac in data.select_multiple(
+            {"instrument_id": "S11"},
+            {"instrument_id": "S12"},
+            {"instrument_id": "A11"},
+            {"instrument_id": "N71"},
+            {"instrument_id": "N11"},
+            {"instrument_id": "X2"},
+            {"instrument_id": "X1"},
+            start="2005-11-21", end="2007-01-08"
+    ):
+        dilution(
+            (S11, S12, A11, N11, N71),
+            (
+                {"data": pid, "flow": {"variable_id": "Q_Q13"}},
+                {"data": A11, "flow": {"variable_name": "sample_flow"}},
+                {"data": umac, "flow":  {"variable_id": "Q_Q73"}},
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sheath_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sample_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+            ), (
+                {"data": umac, "flow": {"variable_id": "Q_Q12"}},
+            )
+        )
+
+    # CNC not connected
+    for S11, S12, A11, N11 in data.select_multiple(
+            {"instrument_id": "S11"},
+            {"instrument_id": "S12"},
+            {"instrument_id": "A11"},
+            {"instrument_id": "N11"},
+            start="2008-05-09", end="2008-07-26"
+    ):
+        dilution(
+            (S11, S12, A11, N11),
+            (
+                29.5,
+                {"data": A11, "flow": {"variable_name": "sample_flow"}},
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sheath_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sample_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+            ), (
+                7.8,
+            )
+        )
+
+    # CNC added back
+    for S11, S12, A11, N71, N11, pid, umac in data.select_multiple(
+            {"instrument_id": "S11"},
+            {"instrument_id": "S12"},
+            {"instrument_id": "A11"},
+            {"instrument_id": "N71"},
+            {"instrument_id": "N11"},
+            {"instrument_id": "X2"},
+            {"instrument_id": "X1"},
+            start="2008-07-26", end="2008-08-23"
+    ):
+        dilution(
+            (S11, S12, A11, N11, N71),
+            (
+                {"data": pid, "flow": {"variable_id": "Q_Q13"}},
+                {"data": A11, "flow": {"variable_name": "sample_flow"}},
+                {"data": umac, "flow":  {"variable_id": "Q_Q73"}},
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sheath_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sample_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+            ), (
+                {"data": umac, "flow": {"variable_id": "Q_Q12"}},
+            )
+        )
+
+    # PSAP removed
+    for S11, S12, N71, N11, pid, umac in data.select_multiple(
+            {"instrument_id": "S11"},
+            {"instrument_id": "S12"},
+            {"instrument_id": "N71"},
+            {"instrument_id": "N11"},
+            {"instrument_id": "X2"},
+            {"instrument_id": "X1"},
+            start="2008-08-23", end="2009-01-01"
+    ):
+        dilution(
+            (S11, S12, N11, N71),
+            (
+                {"data": pid, "flow": {"variable_id": "Q_Q13"}},
+                {"data": umac, "flow":  {"variable_id": "Q_Q73"}},
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sheath_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sample_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+            ), (
+                {"data": umac, "flow": {"variable_id": "Q_Q12"}},
+            )
+        )
+
+    for S11, S12, A11, A12, N71, N11, pid, umac in data.select_multiple(
+            {"instrument_id": "S11"},
+            {"instrument_id": "S12"},
+            {"instrument_id": "A11"},
+            {"instrument_id": "A12"},
+            {"instrument_id": "N71"},
+            {"instrument_id": "N11"},
+            {"instrument_id": "X2"},
+            {"instrument_id": "X1"},
+            start="2013-12-14", end="2014-10-09T16:00:00Z"
+    ):
+        dilution(
+            (S11, S12, A11, A12, N11, N71),
+            (
+                {"data": pid, "flow": {"variable_id": "Q_Q12"}},
+                {"data": A11, "flow": {"variable_name": "sample_flow"}},
+                {"data": A12, "flow": {"variable_name": "sample_flow"}},
+                {"data": umac, "flow":  {"variable_id": "Q_Q61"}},
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sheath_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sample_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+            ), (
+                {"data": umac, "flow": {"variable_id": "Q_Q11"}},
+            )
+        )
+    for S11, S12, A11, A12, N71, N11, pid, umac, dilution_flow in data.select_multiple(
+            {"instrument_id": "S11"},
+            {"instrument_id": "S12"},
+            {"instrument_id": "A11"},
+            {"instrument_id": "A12"},
+            {"instrument_id": "N71"},
+            {"instrument_id": "N11"},
+            {"instrument_id": "X2"},
+            {"instrument_id": "X1"},
+            {"instrument_id": "Q11"},
+            start="2014-10-09T16:00:00Z", end="2015-02-18"
+    ):
+        dilution(
+            (S11, S12, A11, A12, N11, N71),
+            (
+                {"data": pid, "flow": {"variable_id": "Q_Q12"}},
+                {"data": A11, "flow": {"variable_name": "sample_flow"}},
+                {"data": A12, "flow": {"variable_name": "sample_flow"}},
+                {"data": umac, "flow":  {"variable_id": "Q_Q61"}},
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sheath_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sample_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+            ), (
+                {"data": dilution_flow, "flow": {"variable_name": "sample_flow"}},
+            )
+        )
+    # Comms spotty
+    for S11, S12, A11, A12, N71, N11, pid, umac in data.select_multiple(
+            {"instrument_id": "S11"},
+            {"instrument_id": "S12"},
+            {"instrument_id": "A11"},
+            {"instrument_id": "A12"},
+            {"instrument_id": "N71"},
+            {"instrument_id": "N11"},
+            {"instrument_id": "X2"},
+            {"instrument_id": "X1"},
+            start="2015-02-18", end="2015-03-02T21:00:00Z"
+    ):
+        dilution(
+            (S11, S12, A11, A12, N11, N71),
+            (
+                {"data": pid, "flow": {"variable_id": "Q_Q12"}},
+                {"data": A11, "flow": {"variable_name": "sample_flow"}},
+                {"data": A12, "flow": {"variable_name": "sample_flow"}},
+                {"data": umac, "flow":  {"variable_id": "Q_Q61"}},
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sheath_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sample_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+            ), (
+                11.10,
+            )
+        )
+    for S11, S12, A11, A12, N71, N11, pid, umac, dilution_flow in data.select_multiple(
+            {"instrument_id": "S11"},
+            {"instrument_id": "S12"},
+            {"instrument_id": "A11"},
+            {"instrument_id": "A12"},
+            {"instrument_id": "N71"},
+            {"instrument_id": "N11"},
+            {"instrument_id": "X2"},
+            {"instrument_id": "X1"},
+            {"instrument_id": "Q11"},
+            start="2015-03-02T21:00:00Z", end="2015-05-16"
+    ):
+        dilution(
+            (S11, S12, A11, A12, N11, N71),
+            (
+                {"data": pid, "flow": {"variable_id": "Q_Q12"}},
+                {"data": A11, "flow": {"variable_name": "sample_flow"}},
+                {"data": A12, "flow": {"variable_name": "sample_flow"}},
+                {"data": umac, "flow":  {"variable_id": "Q_Q61"}},
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sheath_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sample_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+            ), (
+                {"data": dilution_flow, "flow": {"variable_name": "sample_flow"}},
+            )
+        )
+    for S11, S12, A11, A12, N71, N11, pid, umac in data.select_multiple(
+            {"instrument_id": "S11"},
+            {"instrument_id": "S12"},
+            {"instrument_id": "A11"},
+            {"instrument_id": "A12"},
+            {"instrument_id": "N71"},
+            {"instrument_id": "N11"},
+            {"instrument_id": "X2"},
+            {"instrument_id": "X1"},
+            start="2015-05-15", end="2015-07-01"
+    ):
+        dilution(
+            (S11, S12, A11, A12, N11, N71),
+            (
+                {"data": pid, "flow": {"variable_id": "Q_Q12"}},
+                {"data": A11, "flow": {"variable_name": "sample_flow"}},
+                {"data": A12, "flow": {"variable_name": "sample_flow"}, "fallback": 0.0},
+                {"data": umac, "flow":  {"variable_id": "Q_Q61"}},
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sheath_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sample_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+            ), (
+                11.10,
+            )
+        )
+    # Constant rotometer in use
+    for S11, S12, A11, A12, N71, N11, pid, umac in data.select_multiple(
+            {"instrument_id": "S11"},
+            {"instrument_id": "S12"},
+            {"instrument_id": "A11"},
+            {"instrument_id": "A12"},
+            {"instrument_id": "N71"},
+            {"instrument_id": "N11"},
+            {"instrument_id": "X2"},
+            {"instrument_id": "X1"},
+            start="2015-07-01", end="2015-11-08"
+    ):
+        dilution(
+            (S11, S12, A11, A12, N11, N71),
+            (
+                {"data": pid, "flow": {"variable_id": "Q_Q12"}},
+                {"data": A11, "flow": {"variable_name": "sample_flow"}},
+                {"data": A12, "flow": {"variable_name": "sample_flow"}, "fallback": 0.0},
+                {"data": umac, "flow":  {"variable_id": "Q_Q61"}},
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sheath_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sample_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+            ), (
+                3.7178,
+            )
+        )
+    for S11, S12, A11, A12, N71, N11, pid, umac in data.select_multiple(
+            {"instrument_id": "S11"},
+            {"instrument_id": "S12"},
+            {"instrument_id": "A11"},
+            {"instrument_id": "A12"},
+            {"instrument_id": "N71"},
+            {"instrument_id": "N11"},
+            {"instrument_id": "X2"},
+            {"instrument_id": "X1"},
+            start="2015-11-08", end="2015-12-01"
+    ):
+        dilution(
+            (S11, S12, A11, A12, N11, N71),
+            (
+                {"data": pid, "flow": {"variable_id": "Q_Q12"}},
+                {"data": A11, "flow": {"variable_name": "sample_flow"}},
+                {"data": A12, "flow": {"variable_name": "sample_flow"}},
+                {"data": umac, "flow":  {"variable_id": "Q_Q61"}},
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sheath_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sample_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+            ), (
+                9.324,
+            )
+        )
+    for S11, S12, A11, A12, N71, N11, pid, umac, dilution_flow in data.select_multiple(
+            {"instrument_id": "S11"},
+            {"instrument_id": "S12"},
+            {"instrument_id": "A11"},
+            {"instrument_id": "A12"},
+            {"instrument_id": "N71"},
+            {"instrument_id": "N11"},
+            {"instrument_id": "X2"},
+            {"instrument_id": "X1"},
+            {"instrument_id": "Q11"},
+            start="2015-12-01",
+    ):
+        dilution(
+            (S11, S12, A11, A12, N11, N71),
+            (
+                {"data": pid, "flow": {"variable_id": "Q_Q12"}},
+                {"data": A11, "flow": {"variable_name": "sample_flow"}},
+                {"data": A12, "flow": {"variable_name": "sample_flow"}},
+                {"data": umac, "flow":  {"variable_id": "Q_Q61"}},
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sheath_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+                {
+                    "data": N11,
+                    "flow": {"variable_name": "sample_flow"},
+                    "sample_temperature": {"variable_name": "sample_temperature"},
+                    "sample_pressure": {"variable_name": "sample_pressure"},
+                },
+            ), (
+                {"data": dilution_flow, "flow": {"variable_name": "sample_flow"}},
+            )
+        )
+
+
 def run(data: AvailableData) -> None:
     neph_cal_corrections(data)
     absorption_humidity_correction(data)
