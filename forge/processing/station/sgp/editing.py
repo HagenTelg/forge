@@ -9,6 +9,7 @@ from forge.processing.corrections.selections import VOLUME_DEPENDENT_MEASUREMENT
 from forge.processing.corrections.stp import correct_optical, standard_temperature, standard_pressure
 from forge.processing.corrections.filter_absorption import spot_area_adjustment, bond_1999_coarse
 from forge.processing.station.default.editing import standard_scattering_corrections, standard_intensives, standard_meteorological, standard_stp_corrections
+from forge.data.flags import parse_flags
 
 
 def stp_corrections(data: AvailableData) -> None:
@@ -72,36 +73,62 @@ def stp_corrections(data: AvailableData) -> None:
 def absorption_corrections(data: AvailableData) -> None:
     for absorption in data.select_instrument((
             {"instrument_id": "A11"},
-    ), end="2002-04-01"):
+    ), end="2005-04-01"):
         spot_area_adjustment(absorption, 21.29, 21.29*1.2145)
+    for absorption in data.select_instrument((
+            {"instrument_id": "A11"},
+    ), start="2005-04-01", end="2007-05-23T02:12:00Z"):
+        spot_area_adjustment(absorption, 1, 1.0692)
+
+    # Extend the zero data removal so that the CLAP doesn't catch the zero filter still being
+    # switched (since data will include the partial minute during the switch).
+    for clap, neph in data.select_instrument((
+            {"instrument": "clap"},
+    ), {"instrument_id": "S11"}, start="2011-03-09"):
+        for absorption in clap.select_variable((
+                {"variable_name": "light_absorption"},
+                {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
+                {"standard_name": "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles"},
+        )):
+            try:
+                source_flags = neph.get_input(absorption, {
+                    "variable_name": "system_flags",
+                })
+            except FileNotFoundError:
+                continue
+            if not np.issubdtype(source_flags.values.dtype, np.integer):
+                continue
+            flags = parse_flags(source_flags.variable)
+            matched_bits = 0
+            for bits, name in flags.items():
+                if name not in ("zero", "blank", "spancheck"):
+                    continue
+                matched_bits |= bits
+            if matched_bits == 0:
+                continue
+            is_in_zero = np.bitwise_and(source_flags.values, matched_bits) != 0
+            absorption[is_in_zero, ...] = nan
 
     # CPD1/2 data: already has Weiss applied for PSAPs
     for absorption, scattering in data.select_instrument((
             {"instrument": "psap1w"},
             {"instrument": "psap3w"},
-    ), {"tags": "scattering -secondary"}, end="2002-04-01"):
+    ), {"tags": "scattering -secondary"}):
         remove_low_transmittance(absorption)
         bond_1999_coarse(absorption, scattering)
-    # This was possibly inactive in the corr.conf file? (shuffled around and commented out)
-    for absorption, scattering in data.select_instrument((
-            {"instrument": "psap1w"},
-            {"instrument": "psap3w"},
-    ), {"tags": "scattering -secondary"}, start="2002-04-01"):
-        remove_low_transmittance(absorption)
-        bond_1999(absorption, scattering)
     for absorption, scattering in data.select_instrument((
             {"instrument": "bmitap"},
             {"instrument": "clap"},
     ), {"tags": "scattering -secondary"}):
         remove_low_transmittance(absorption)
         weiss(absorption)
-        bond_1999(absorption, scattering)
+        bond_1999_coarse(absorption, scattering)
 
 
 def scattering_corrections(data: AvailableData) -> None:
     # Note, the leakfix.01 and leakfix.02 are not applied (since they haven't been ported)
 
-    def web_neph_loss_correction(start, end, slope_coarse: float, slope_fine: float = None):
+    def wet_neph_loss_correction(start, end, slope_coarse: float, slope_fine: float = None):
         if not slope_fine:
             slope_fine = slope_coarse
         for scattering in data.select_instrument((
@@ -121,13 +148,13 @@ def scattering_corrections(data: AvailableData) -> None:
                     value[fine_data] = value[fine_data] * slope_fine
                     value[coarse_data] = value[coarse_data] * slope_coarse
 
-    web_neph_loss_correction("1998-12-18T16:48:00Z", "2000-01-18T04:48:00Z", 1.133)
-    web_neph_loss_correction("2000-01-18T04:48:00Z", "2000-01-29T07:12:00Z", 1.176)
-    web_neph_loss_correction("2000-01-29T07:12:00Z", "2000-07-03T19:12:00Z", 1.250)
-    web_neph_loss_correction("2000-07-03T19:12:00Z", "2001-02-16T12:00:00Z", 1.333, 1.613)
-    web_neph_loss_correction("2001-02-16T12:00:00Z", "2001-10-05T16:48:00Z", 1.14, 1.20)
-    web_neph_loss_correction("2001-10-05T16:48:00Z", "2001-10-27T14:24:00Z", 1.32, 1.36)
-    web_neph_loss_correction("2001-10-27T14:24:00Z", "2002-04-01T00:00:00Z", 1.15, 1.20)
+    wet_neph_loss_correction("1998-12-18T16:48:00Z", "2000-01-18T04:48:00Z", 1.133)
+    wet_neph_loss_correction("2000-01-18T04:48:00Z", "2000-01-29T07:12:00Z", 1.176)
+    wet_neph_loss_correction("2000-01-29T07:12:00Z", "2000-07-03T19:12:00Z", 1.250)
+    wet_neph_loss_correction("2000-07-03T19:12:00Z", "2001-02-16T12:00:00Z", 1.333, 1.613)
+    wet_neph_loss_correction("2001-02-16T12:00:00Z", "2001-10-05T16:48:00Z", 1.14, 1.20)
+    wet_neph_loss_correction("2001-10-05T16:48:00Z", "2001-10-27T14:24:00Z", 1.32, 1.36)
+    wet_neph_loss_correction("2001-10-27T14:24:00Z", "2002-04-01T00:00:00Z", 1.15, 1.20)
 
     standard_scattering_corrections(data)
 
