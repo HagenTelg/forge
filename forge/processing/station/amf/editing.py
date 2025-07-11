@@ -182,22 +182,21 @@ def recalculate_neph_rh(data: AvailableData) -> None:
 
 
 def dilution_corrections(data: AvailableData) -> None:
-    for S11, S12, A11, N71, N11, pid, umac in data.select_multiple(
+    for S11, S12, A11, N71, N11, analog in data.select_multiple(
             {"instrument_id": "S11"},
             {"instrument_id": "S12"},
             {"instrument_id": "A11"},
             {"instrument_id": "N71"},
             {"instrument_id": "N11"},
-            {"instrument_id": "X2"},
             {"instrument_id": "X1"},
             start="2005-11-21", end="2007-01-08"
     ):
         dilution(
             (S11, S12, A11, N11, N71),
             (
-                {"data": pid, "flow": {"variable_id": "Q_Q13"}},
+                {"data": analog, "flow": {"variable_id": "Q_Q13"}},
                 {"data": A11, "flow": {"variable_name": "sample_flow"}},
-                {"data": umac, "flow":  {"variable_id": "Q_Q73"}},
+                {"data": analog, "flow":  {"variable_id": "Q_Q73"}},
                 {
                     "data": N11,
                     "flow": {"variable_name": "sheath_flow"},
@@ -211,7 +210,7 @@ def dilution_corrections(data: AvailableData) -> None:
                     "sample_pressure": {"variable_name": "sample_pressure"},
                 },
             ), (
-                {"data": umac, "flow": {"variable_id": "Q_Q12"}},
+                {"data": analog, "flow": {"variable_id": "Q_Q12"}},
             )
         )
 
@@ -246,22 +245,21 @@ def dilution_corrections(data: AvailableData) -> None:
         )
 
     # CNC added back
-    for S11, S12, A11, N71, N11, pid, umac in data.select_multiple(
+    for S11, S12, A11, N71, N11, analog in data.select_multiple(
             {"instrument_id": "S11"},
             {"instrument_id": "S12"},
             {"instrument_id": "A11"},
             {"instrument_id": "N71"},
             {"instrument_id": "N11"},
-            {"instrument_id": "X2"},
             {"instrument_id": "X1"},
             start="2008-07-26", end="2008-08-23"
     ):
         dilution(
             (S11, S12, A11, N11, N71),
             (
-                {"data": pid, "flow": {"variable_id": "Q_Q13"}},
+                {"data": analog, "flow": {"variable_id": "Q_Q13"}},
                 {"data": A11, "flow": {"variable_name": "sample_flow"}},
-                {"data": umac, "flow":  {"variable_id": "Q_Q73"}},
+                {"data": analog, "flow":  {"variable_id": "Q_Q73"}},
                 {
                     "data": N11,
                     "flow": {"variable_name": "sheath_flow"},
@@ -275,25 +273,24 @@ def dilution_corrections(data: AvailableData) -> None:
                     "sample_pressure": {"variable_name": "sample_pressure"},
                 },
             ), (
-                {"data": umac, "flow": {"variable_id": "Q_Q12"}},
+                {"data": analog, "flow": {"variable_id": "Q_Q12"}},
             )
         )
 
     # PSAP removed
-    for S11, S12, N71, N11, pid, umac in data.select_multiple(
+    for S11, S12, N71, N11, analog in data.select_multiple(
             {"instrument_id": "S11"},
             {"instrument_id": "S12"},
             {"instrument_id": "N71"},
             {"instrument_id": "N11"},
-            {"instrument_id": "X2"},
             {"instrument_id": "X1"},
             start="2008-08-23", end="2009-01-01"
     ):
         dilution(
             (S11, S12, N11, N71),
             (
-                {"data": pid, "flow": {"variable_id": "Q_Q13"}},
-                {"data": umac, "flow":  {"variable_id": "Q_Q73"}},
+                {"data": analog, "flow": {"variable_id": "Q_Q13"}},
+                {"data": analog, "flow":  {"variable_id": "Q_Q73"}},
                 {
                     "data": N11,
                     "flow": {"variable_name": "sheath_flow"},
@@ -307,7 +304,7 @@ def dilution_corrections(data: AvailableData) -> None:
                     "sample_pressure": {"variable_name": "sample_pressure"},
                 },
             ), (
-                {"data": umac, "flow": {"variable_id": "Q_Q12"}},
+                {"data": analog, "flow": {"variable_id": "Q_Q12"}},
             )
         )
 
