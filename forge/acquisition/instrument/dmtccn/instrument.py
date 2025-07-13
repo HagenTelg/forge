@@ -257,7 +257,7 @@ class Instrument(StreamingInstrument):
             try:
                 alarm_bits = int(parse_number(alarm_bits))
             except ValueError:
-                raise CommunicationsError(f"invalid alarms in {fields}")
+                raise CommunicationsError(f"invalid alarms in {alarm_bits}")
         if alarm_bits < 0:
             self.notify_safe_mode_active(True)
             alarm_bits = -alarm_bits
