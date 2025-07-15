@@ -14,10 +14,20 @@ from forge.data.merge.extend import extend_selected
 
 
 def absorption_corrections(data: AvailableData) -> None:
+    # NSA correction from corr_nsa
+    for absorption in data.select_instrument((
+            {"instrument_id": "A91"},
+    ), start="1997-10-06", end="1999-12-28"):
+        spot_area_adjustment(absorption, 1.0, 0.991)
+    for absorption, scattering in data.select_instrument((
+            {"instrument_id": "A91"},
+    ), {"instrument_id": "S91"}, start="1997-10-06", end="2004-03-31"):
+        remove_low_transmittance(absorption)
+        bond_1999(absorption, scattering)
+
     # Incorrect Weiss constants initially
     for absorption, scattering in data.select_instrument((
-            {"instrument": "psap1w"},
-            {"instrument": "psap3w"},
+            {"instrument_id": "A11"},
     ), {"tags": "scattering -secondary"}, start="1997-10-06", end="2000-03-28"):
         remove_low_transmittance(absorption)
         weiss_undo(absorption, 0.710, 1.0796)
@@ -26,8 +36,8 @@ def absorption_corrections(data: AvailableData) -> None:
 
     # CPD1/2 data: already has Weiss applied for PSAPs
     for absorption, scattering in data.select_instrument((
-            {"instrument": "psap1w"},
-            {"instrument": "psap3w"},
+            {"instrument": "psap1w", "instrument_id": "A11"},
+            {"instrument": "psap3w", "instrument_id": "A11"},
     ), {"tags": "scattering -secondary"}, start="2000-03-28", end="2016-08-18T17:52:00Z"):
         remove_low_transmittance(absorption)
         bond_1999(absorption, scattering)
