@@ -79,6 +79,7 @@ STATIONS = frozenset({
     'slc',
     'smo',
     'smr',
+    'snow',
     'sns',
     'spl',
     'spo',
