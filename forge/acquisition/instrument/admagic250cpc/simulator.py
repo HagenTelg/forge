@@ -35,6 +35,8 @@ class Simulator(StreamingSimulator):
         self.data_TDinlet = 85.0
         self.data_TDgrowth = 85.0
 
+        self.mref_parameters: bool = True
+
         self.parameters = Parameters(
             lset=1000,
             doslope=171, doint=44, doff=216,
@@ -52,6 +54,8 @@ class Simulator(StreamingSimulator):
             wgn=40,
             wmax=188,
             wmin=39,
+            mrefint=19.39,
+            mrefslope=0.28,
             tcon=Parameters.Temperature(Parameters.Temperature.Mode.RELATIVE, -18.0),
             tini=Parameters.Temperature(Parameters.Temperature.Mode.RELATIVE, -17.0),
             tmod=Parameters.Temperature(Parameters.Temperature.Mode.RELATIVE, 0.0),
@@ -217,6 +221,10 @@ class Simulator(StreamingSimulator):
                             f"wmin {self.parameters.wmin}\r\n"
                             f"(lcur {self.parameters.lcur}mA --reading only)\r\n"
                         ).encode('ascii'))
+                    elif line == b"mrefint" and self.mref_parameters:
+                        self.writer.write(f"{self.parameters.mrefint:.2f}\r\n".encode('ascii'))
+                    elif line == b"mrefslope" and self.mref_parameters:
+                        self.writer.write(f"{self.parameters.mrefslope:.2f}\r\n".encode('ascii'))
                     elif line == b'tcon':
                         self._output_parameter_temperature('tcon')
                     elif line == b'tini':
@@ -255,6 +263,9 @@ class Simulator(StreamingSimulator):
                             value = int(fields[1])
                             setattr(self.parameters, name, value)
                         elif name in self.parameters.FLOAT_PARAMETERS:
+                            value = float(fields[1])
+                            setattr(self.parameters, name, value)
+                        elif name in self.parameters.EXPLICIT_READ_FLOAT_PARAMETERS and self.mref_parameters:
                             value = float(fields[1])
                             setattr(self.parameters, name, value)
                         elif name in self.parameters.TEMPERATURE_PARAMETERS:

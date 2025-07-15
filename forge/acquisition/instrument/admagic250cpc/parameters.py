@@ -163,21 +163,23 @@ class Parameters:
     })
     FLOAT_PARAMETERS = frozenset({
         "qset", "heff", "hmax",
-        # "mrefint", "mrefslope"
+    })
+    EXPLICIT_READ_FLOAT_PARAMETERS = frozenset({
+        "mrefint", "mrefslope",
     })
     TEMPERATURE_PARAMETERS = frozenset({
         "tcon", "tini", "tmod", "topt"
     })
 
     def __init__(self, **kwargs):
-        for name in (self.INTEGER_PARAMETERS | self.FLOAT_PARAMETERS | self.TEMPERATURE_PARAMETERS):
+        for name in (self.INTEGER_PARAMETERS | self.FLOAT_PARAMETERS | self.EXPLICIT_READ_FLOAT_PARAMETERS | self.TEMPERATURE_PARAMETERS):
             setattr(self, name, kwargs.get(name))
 
         # Read only from the instrument
         self.lcur: typing.Optional[float] = None
 
     def overlay(self, other: "Parameters") -> None:
-        for name in (self.INTEGER_PARAMETERS | self.FLOAT_PARAMETERS):
+        for name in (self.INTEGER_PARAMETERS | self.FLOAT_PARAMETERS | self.EXPLICIT_READ_FLOAT_PARAMETERS):
             top = getattr(other, name, None)
             if top is None:
                 continue
@@ -291,16 +293,16 @@ class Parameters:
             'units': "%",
         })
 
-        # target.float_attr("mrefint", self, 'mrefint', attributes={
-        #     'long_name': "moderator reference intercept parameter in setpoint calculation",
-        #     'C_format': "%4.1f",
-        #     'units': "degC",
-        # })
-        # target.float_attr("mrefslope", self, 'mrefslope', attributes={
-        #     'long_name': "moderator reference slope parameter in setpoint calculation",
-        #     'C_format': "%5.2f",
-        #     'units': "1",   # degC degC-1
-        # })
+        target.float_attr("mrefint", self, 'mrefint', attributes={
+            'long_name': "moderator reference intercept parameter in setpoint calculation",
+            'C_format': "%5.2f",
+            'units': "degC",
+        })
+        target.float_attr("mrefslope", self, 'mrefslope', attributes={
+            'long_name': "moderator reference slope parameter in setpoint calculation",
+            'C_format': "%4.2f",
+            'units': "1",   # degC degC-1
+        })
 
         class _TemperatureSetpoint(BaseDataOutput.Float):
             def __init__(self, parameters: Parameters, name: str,
@@ -359,7 +361,7 @@ class Parameters:
 
     def persistent(self) -> typing.Dict[str, typing.Any]:
         result: typing.Dict[str, typing.Any] = dict()
-        for name in (self.INTEGER_PARAMETERS | self.FLOAT_PARAMETERS):
+        for name in (self.INTEGER_PARAMETERS | self.FLOAT_PARAMETERS | self.EXPLICIT_READ_FLOAT_PARAMETERS):
             value = getattr(self, name, None)
             if value is None:
                 continue
@@ -413,8 +415,8 @@ class Parameters:
         set_in_range("qset", float, 0, 100)
         set_in_range("heff", float, 0, 1)
         set_in_range("hmax", float, 0, 100)
-        # set_if_valid("mrefint", float)
-        # set_if_valid("mrefslope", float)
+        set_if_valid("mrefint", float)
+        set_if_valid("mrefslope", float)
 
         def set_temperature(name):
             c = config.get(name)
@@ -503,7 +505,7 @@ class Parameters:
             if value is None:
                 continue
             result.append(f"{name},{int(value)}".encode('ascii'))
-        for name in self.FLOAT_PARAMETERS:
+        for name in (self.FLOAT_PARAMETERS | self.EXPLICIT_READ_FLOAT_PARAMETERS):
             value = getattr(self, name, None)
             if value is None:
                 continue

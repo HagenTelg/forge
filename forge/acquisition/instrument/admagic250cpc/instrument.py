@@ -183,6 +183,28 @@ class Instrument(StreamingInstrument):
             del sus[0]
         self.active_parameters.parse_sus(sus)
 
+        for t in (b"mrefint", b"mrefslope"):
+            self.writer.write(t + b"\r")
+            try:
+                resp = await self.read_multiple_lines(total=5.0, first=2.0, tail=1.0)
+                if b"ERROR" in resp[0] or len(resp) > 1 and b"ERROR" in resp[1]:
+                    continue
+                raw_parameters += "\n\n"
+                raw_parameters += "\n".join([l.decode('utf-8', 'backslashreplace') for l in resp])
+                if resp[0].startswith(t) and b':' not in resp[0]:
+                    del resp[0]
+                if not resp:
+                    continue
+
+                value = resp[0]
+                if b':' in value:
+                    value = (value.split(b':', 1))[1]
+                value = value.strip()
+                value = float(value)
+            except (asyncio.TimeoutError, ValueError, TypeError):
+                continue
+            setattr(self.active_parameters, t.decode('ascii'), float(value))
+
         for t in (b"tcon", b"tini", b"tmod", b"topt"):
             self.writer.write(t + b"\r")
             resp = await self.read_multiple_lines(total=5.0, first=2.0, tail=1.0)
