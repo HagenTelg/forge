@@ -8,10 +8,17 @@ from forge.processing.derived.intensives import generate_intensives, AdjustWavel
 
 
 def absorption_corrections(data: AvailableData) -> None:
+    # MLN corrections from corr_mln
+    for absorption, scattering in data.select_instrument((
+            {"instrument_id": "A91"},
+    ), {"instrument_id": "S91"}, start="2000-04-06", end="2003-11-14"):
+        remove_low_transmittance(absorption)
+        bond_1999(absorption, scattering)
+
     # CPD1/2 data: already has Weiss applied for PSAPs
     for absorption, scattering in data.select_instrument((
-            {"instrument": "psap1w"},
-            {"instrument": "psap3w"},
+            {"instrument": "psap1w", "instrument_id": "A11"},
+            {"instrument": "psap3w", "instrument_id": "A11"},
     ), {"tags": "scattering -secondary"}, start="2000-04-29", end="2015-05-07T19:45:00Z"):
         remove_low_transmittance(absorption)
         bond_1999(absorption, scattering)
