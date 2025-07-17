@@ -298,15 +298,15 @@ def azumi_filter(
 def spot_area_adjustment(
         data,
         original: typing.Union[float, int, typing.Iterable[float]],
-        corrected: typing.Union[float, typing.Iterable[float]],
+        corrected: typing.Union[float, int, typing.Iterable[float]],
 ) -> None:
     data = SelectedData.ensure_data(data)
 
-    if not isinstance(original, float) and not isinstance(original, float):
+    if not isinstance(original, float) and not isinstance(original, int):
         original = np.array(original, dtype=np.float64)
     else:
         original = np.array([original], dtype=np.float64)
-    if not isinstance(corrected, float) and not isinstance(corrected, float):
+    if not isinstance(corrected, float) and not isinstance(corrected, int):
         corrected = np.array(corrected, dtype=np.float64)
     else:
         corrected = np.array([corrected], dtype=np.float64)

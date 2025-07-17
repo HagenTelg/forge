@@ -78,7 +78,7 @@ def absorption_corrections(data: AvailableData) -> None:
     for absorption in data.select_instrument((
             {"instrument_id": "A11"},
     ), start="2005-04-01", end="2007-05-23T02:12:00Z"):
-        spot_area_adjustment(absorption, 1, 1.0692)
+        spot_area_adjustment(absorption, 1.0, 1.0692)
 
     # Extend the zero data removal so that the CLAP doesn't catch the zero filter still being
     # switched (since data will include the partial minute during the switch).
