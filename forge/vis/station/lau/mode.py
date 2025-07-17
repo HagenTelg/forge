@@ -1,6 +1,8 @@
 import typing
-from ..default.mode import Mode, ozone_modes
+from ..default.mode import Mode, detach, ozone_modes, ozone_public
+
+station_modes = detach(ozone_modes, ozone_public)
 
 
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:
-    return ozone_modes.get(mode_name)
+    return station_modes.get(mode_name)

@@ -4,4 +4,4 @@ from forge.timeparse import parse_iso8601_time
 
 
 DATA_START_TIME: float = parse_iso8601_time("2003-10-17").timestamp()
-#DATA_END_TIME: float = parse_iso8601_time("2024-07-30").timestamp()
+DATA_END_TIME: float = parse_iso8601_time("2025-07-17T13:00:00Z").timestamp()
