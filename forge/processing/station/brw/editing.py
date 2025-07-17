@@ -262,7 +262,7 @@ def run(data: AvailableData) -> None:
     standard_meteorological(data)
 
     for met in data.select_instrument({"instrument_id": "XM1"}, start="2017-07-03"):
-        vaisala_hmp_limits(met)
+        vaisala_hmp_limits(met, maximum_humidity=108.0)
 
 
 if __name__ == '__main__':
