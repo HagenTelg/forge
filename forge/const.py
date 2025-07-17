@@ -11,7 +11,6 @@ MAX_I64 = int(0x7FFF_FFFF_FFFF_FFFF)
 STATIONS = frozenset({
     'aao',
     'ai1',
-    'ai2',
     'ai3',
     'air',
     'alt',
@@ -27,7 +26,6 @@ STATIONS = frozenset({
     'bos',
     'bou',
     'brw',
-    'ces',
     'cgo',
     'clamps3',
     'clamps4',
@@ -104,12 +102,10 @@ STATIONS = frozenset({
 DISPLAY_STATIONS = frozenset(STATIONS - {
     'aao',
     'ai1',
-    'ai2',
     'ai3',
     'air',
     'amf',
     'amy',
-    'ces',
     'cgo',
     'clamps3',
     'clamps4',
