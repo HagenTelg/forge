@@ -4,7 +4,7 @@ PATCH_VERSION = 4
 __short_version__ = f'{MAJOR_VERSION}.{MINOR_VERSION}'
 __version__ = f'{__short_version__}.{PATCH_VERSION}'
 
-HELP_URL = 'https://gitlab.com/derek.hageman/forge/-/issues'
+HELP_URL = 'https://gitlab.com/derek.hageman/forge/-/wikis/home'
 
 MAX_I64 = int(0x7FFF_FFFF_FFFF_FFFF)
 
