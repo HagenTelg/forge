@@ -839,8 +839,8 @@ else:
         "CO2": [Selection(variable_name="carbon_dioxide_mixing_ratio", instrument_id="G71")],
     })
     data_records["aerosol-raw-noy"] = DataRecord({
-        "NO": [Selection(variable_name="nitrogen_monoxide_mixing_ratio", instrument_id="G72")],
-        "NOy": [Selection(variable_name="nitrogen_oxide_mixing_ratio", instrument_id="G72")],
+        "NO": [Selection(variable_name="nitrogen_monoxide_mixing_ratio", exclude_tags={"secondary"})],
+        "NOy": [Selection(variable_name="nitrogen_oxide_mixing_ratio", exclude_tags={"secondary"})],
     })
 
     data_records["aerosol-raw-flow"] = DataRecord({
