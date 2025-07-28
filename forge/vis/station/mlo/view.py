@@ -14,6 +14,7 @@ from ..default.radiation.ambient import Ambient as RadiationAmbient
 from .counts import ParticleConcentration, EditingParticleConcentration,  ADMagicCPC250StatusSecondary
 from .contamination import EditingContaminationDetails
 from .pressure import Pressure
+from .extensive import ExtensiveSecondary
 
 
 station_views = detach(aerosol_views, aerosol_public, ozone_views, ozone_public, met_views, radiation_views)
@@ -29,6 +30,10 @@ station_views['aerosol-editing-contaminationdetails'] = EditingContaminationDeta
 
 station_views['aerosol-raw-pressure'] = Pressure('aerosol-raw')
 station_views['aerosol-realtime-pressure'] = Pressure('aerosol-realtime', realtime=True)
+
+station_views['aerosol-editing-extensive2'] = ExtensiveSecondary('aerosol-editing')
+station_views['aerosol-clean-extensive2'] = ExtensiveSecondary('aerosol-clean')
+station_views['aerosol-avgh-extensive2'] = ExtensiveSecondary('aerosol-avgh')
 
 temperature_measurements = OrderedDict([
     ('{code}ambient', '{type} at 2m'),

@@ -12,6 +12,13 @@ station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-cpcsta
 station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-contaminationdetails', "Contamination Details"),
                                         'aerosol-editing-wind')
 
+station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-extensive2', "Secondary Extensive"),
+                                        'aerosol-editing-extensive')
+station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-extensive2', "Secondary Extensive"),
+                                      'aerosol-clean-extensive')
+station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-extensive2', "Secondary Extensive"),
+                                     'aerosol-avgh-extensive')
+
 station_modes['met-raw'].insert(ViewList.Entry('met-raw-precipitation', "Precipitation"))
 station_modes['met-editing'].insert(ViewList.Entry('met-editing-precipitation', "Precipitation"))
 station_modes['met-clean'].insert(ViewList.Entry('met-clean-precipitation', "Precipitation"))
