@@ -30,7 +30,7 @@ def wmo_region(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
 
 
 def gaw_type(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "R"
+    return "G"
 
 
 def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: int) -> typing.Type["EBASFile"]:
