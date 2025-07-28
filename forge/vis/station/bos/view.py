@@ -5,7 +5,7 @@ from ..default.aerosol.t640 import T640MassAethalometer, T640Status
 from ..default.aerosol.editing.t640 import EditingT640
 from ..default.aerosol.public.clap import PublicCLAPAethalometerShort, PublicCLAPAethalometerLong
 from ..default.aerosol.public.aethalometer import PublicAE33Short, PublicAE33Long
-from .dmps import DMPSStatus, DMPSDistribution
+from .dmps import DMPSStatus, DMPSDistribution, DMPSCounts
 from .pops import POPSCounts
 from .counts import RealtimeParticleConcentration, EditingParticleConcentration, ADMagicCPC250StatusStatusSecondary, PublicCountsShort, PublicCountsLong
 from .ecotechnephelometer import NephelometerStatusSecondary, NephelometerZeroSecondary
@@ -33,6 +33,9 @@ station_views['aerosol-avgh-mass'] = T640MassAethalometer('aerosol-avgh')
 station_views['aerosol-realtime-mass'] = T640MassAethalometer('aerosol-realtime', realtime=True)
 station_views['aerosol-realtime-t640status'] = T640Status('aerosol-realtime', realtime=True)
 
+station_views['aerosol-raw-dmpscounts'] = DMPSCounts('aerosol-raw')
+station_views['aerosol-clean-dmpscounts'] = DMPSCounts('aerosol-clean')
+station_views['aerosol-avgh-dmpscounts'] = DMPSCounts('aerosol-avgh')
 station_views['aerosol-raw-dmps'] = DMPSDistribution('aerosol-raw')
 station_views['aerosol-raw-dmpsstatus'] = DMPSStatus('aerosol-raw')
 station_views['aerosol-editing-dmps'] = DMPSDistribution('aerosol-editing')

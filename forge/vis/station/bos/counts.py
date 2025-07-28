@@ -160,6 +160,7 @@ class PublicCountsShort(PublicTimeSeries):
         drier.data_field = 'Qdrier'
         cpc_flow.traces.append(drier)
 
+
 class PublicCountsLong(PublicCountsShort):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

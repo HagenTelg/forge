@@ -71,6 +71,20 @@ station_modes['aerosol-editing'].insert(ViewList.Entry('aerosol-editing-backscat
 #                                     'aerosol-raw-t640status')
 
 
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-dmpscounts', "DMPS Counts"),
+                                    'aerosol-raw-umacstatus')
+station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-dmpscounts', "DMPS Counts"),
+                                      'aerosol-clean-wind')
+station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-dmpscounts', "DMPS Counts"),
+                                     'aerosol-avgh-wind')
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-dmps', "DMPS Distribution"),
+                                    'aerosol-raw-dmpscounts')
+station_modes['aerosol-clean'].insert(ViewList.Entry('aerosol-clean-dmps', "DMPS Distribution"),
+                                      'aerosol-clean-dmpscounts')
+station_modes['aerosol-avgh'].insert(ViewList.Entry('aerosol-avgh-dmps', "DMPS Distribution"),
+                                     'aerosol-avgh-dmpscounts')
+
+
 station_modes['public-aerosolshort'].insert(Public.Entry('public-aerosolshort-absorption', "Absorption Overview"),
                                             'public-aerosolshort-counts')
 station_modes['public-aerosollong'].insert(Public.Entry('public-aerosollong-absorption', "Absorption Overview"),
