@@ -42,6 +42,10 @@ _MATCH_FRACTIONAL_YEAR = re.compile(
     r'\s*(\d{4})\.(\d+)\s*',
     flags=re.IGNORECASE
 )
+_MATCH_YEAR_DOY = re.compile(
+    r'\s*(\d{4}):(\d{1,3}(\.\d*)?)\s*',
+    flags=re.IGNORECASE
+)
 _MATCH_EPOCH = re.compile(
     r'\s*E(M?)\s*:\s*(\d+)\s*',
     flags=re.IGNORECASE
@@ -89,7 +93,6 @@ def parse_iso8601_time(s: str) -> datetime.datetime:
 def _parse_unambiguous_absolute(
         s: str,
         year: typing.Optional[int] = None,
-        only_year: bool = False,
 ) -> typing.Tuple[datetime.datetime, datetime.datetime]:
     m = _MATCH_WEEK.fullmatch(s)
     if m:
@@ -126,6 +129,25 @@ def _parse_unambiguous_absolute(
             t = start + (end - start) * fraction
             start = datetime.datetime.fromtimestamp(t, tz=datetime.timezone.utc)
             return start, start
+
+    m = _MATCH_YEAR_DOY.fullmatch(s)
+    if m:
+        doy_year = int(m.group(1))
+        doy = float(m.group(2))
+        doy_decimals = m.group(3)
+        if 1970 <= doy_year <= 2999 and 1.0 <= doy <= 366.0:
+            start = lt.start_of_year(doy_year)
+            if doy_decimals and len(doy_decimals) == 3:
+                # 200.13 rounds to an exact hour
+                doy = round((doy - 1) * 24) * 60 * 60
+                end = 60 * 60
+            else:
+                doy = round((doy - 1) * (24 * 60)) * 60
+                end = 0
+            t = start + doy
+            start = datetime.datetime.fromtimestamp(t, tz=datetime.timezone.utc)
+            end = start + datetime.timedelta(seconds=end)
+            return start, end
 
     m = _MATCH_ISO8601_TIME.fullmatch(s)
     if m:
@@ -213,6 +235,13 @@ def _apply_offset(reference: datetime.datetime, offset: float) -> datetime.datet
 def _parse_any_single_time(parts: typing.List[str],
                            reference: typing.Optional[datetime.datetime] = None,
                            is_end: bool = False) -> datetime.datetime:
+    def doy_to_seconds(doy: float, raw: str) -> float:
+        fraction_parts = raw.split('.', 1)
+        if len(fraction_parts) == 2 and len(fraction_parts[1]) == 2:
+            # 200.13 rounds to an exact hour
+            return round((doy - 1) * 24) * 60 * 60
+        return round((doy - 1) * (24 * 60)) * 60
+
     if len(parts) == 1 and reference:
         try:
             return _apply_offset(reference, _parse_any_offset(parts[0]) * (1 if is_end else -1))
@@ -222,7 +251,7 @@ def _parse_any_single_time(parts: typing.List[str],
         try:
             doy = float(parts[0])
             if 1.0 <= doy <= 366.0:
-                doy = round((doy - 1) * (24 * 60)) * 60
+                doy = doy_to_seconds(doy, parts[0])
                 doy = datetime.datetime(reference.year, 1, 1, tzinfo=datetime.timezone.utc).timestamp() + doy
                 doy = datetime.datetime.fromtimestamp(doy, tz=datetime.timezone.utc)
                 if is_end and doy > reference:
@@ -256,8 +285,8 @@ def _parse_any_single_time(parts: typing.List[str],
             if 1970 <= year <= 2999 and 1.0 <= doy <= 366.0:
                 if is_end and int(doy) == doy:
                     doy += 1
-                doy = round((doy - 1) * (24 * 60)) * 60
-                doy = datetime.datetime(year, 1, 1, tzinfo=datetime.timezone.utc).timestamp() + doy
+                doy = doy_to_seconds(doy, parts[1])
+                doy = lt.start_of_year(year) + doy
                 doy = datetime.datetime.fromtimestamp(doy, tz=datetime.timezone.utc)
                 if reference:
                     if is_end and doy > reference:
