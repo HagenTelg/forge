@@ -125,7 +125,7 @@ class Converter(WavelengthConverter):
         data_system_flags, system_flags_bits = self.declare_system_flags(g, times)
 
         var_Bs = g.createVariable("scattering_coefficient", "f8", ("time", "wavelength"), fill_value=nan)
-        netcdf_var.variable_extinction(var_Bs, is_stp=False)
+        netcdf_var.variable_total_scattering(var_Bs, is_stp=False)
         netcdf_timeseries.variable_coordinates(g, var_Bs)
         var_Bs.variable_id = "Bs"
         var_Bs.coverage_content_type = "physicalMeasurement"
@@ -202,7 +202,7 @@ class Converter(WavelengthConverter):
         var_Pu.variable_id = "Pu"
         var_Pu.coverage_content_type = "physicalMeasurement"
         var_Pu.cell_methods = "time: mean"
-        var_Pu.long_name = "vacuum pressure"
+        var_Pu.long_name = "inlet pressure"
         self.apply_data(times, var_Pu, data_Pu)
 
         var_T1 = g.createVariable("sample_temperature", "f8", ("time",), fill_value=nan)
