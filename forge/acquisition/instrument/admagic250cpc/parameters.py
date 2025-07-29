@@ -159,16 +159,16 @@ class Parameters:
 
     INTEGER_PARAMETERS = frozenset({
         "lset", "doslope", "doint", "doff", "dvlt", "dthr", "pht", "dthr2", "qcf", "qtrg",
-        "wtrg", "wdry", "wwet", "wgn", "wmax", "wmin"
+        "wtrg", "wdry", "wwet", "wgn", "wmax", "wmin", "qset", "hmax",
     })
     FLOAT_PARAMETERS = frozenset({
-        "qset", "heff", "hmax",
+        "heff",
     })
     EXPLICIT_READ_FLOAT_PARAMETERS = frozenset({
         "mrefint", "mrefslope",
     })
     TEMPERATURE_PARAMETERS = frozenset({
-        "tcon", "tini", "tmod", "topt"
+        "tcon", "tini", "tmod", "topt",
     })
 
     def __init__(self, **kwargs):
@@ -412,9 +412,9 @@ class Parameters:
         set_in_range("wgn", int, 0, 255)
         set_in_range("wmax", int, 0, 1023)
         set_in_range("wmin", int, 0, 1023)
-        set_in_range("qset", float, 0, 100)
+        set_in_range("qset", int, 0, 100)
+        set_in_range("hmax", int, 0, 100)
         set_in_range("heff", float, 0, 1)
-        set_in_range("hmax", float, 0, 100)
         set_if_valid("mrefint", float)
         set_if_valid("mrefslope", float)
 
@@ -456,14 +456,14 @@ class Parameters:
         ("wmin",    re.compile(rb"^wmin(?:,|\s+)(\d+)", flags=re.IGNORECASE)),
         ("wmax",    re.compile(rb"^wMin/Wmax\s+\d+/(\d+)", flags=re.IGNORECASE)),
         ("wmin",    re.compile(rb"^wMin/Wmax\s+(\d+)/\d+", flags=re.IGNORECASE)),
+        ("qset", re.compile(rb"^qtrg\s+\d+[^(]*\(\s*qset\s*(-?\d+)(?:\.\d*)?", flags=re.IGNORECASE)),
+        ("qset", re.compile(rb"^qset(?:,|\s+)(-?\d+)(?:\.\d*)?", flags=re.IGNORECASE)),
+        ("hmax", re.compile(rb"^heff(?:,|\s+)-?\d+(?:\.\d*)?\S*\s+hmax\s*(-?\d+)(?:\.\d*)?", flags=re.IGNORECASE)),
+        ("hmax", re.compile(rb"^hmax(?:,|\s+)(-?\d+)(?:\.\d*)?", flags=re.IGNORECASE)),
     ]
 
     FLOAT_PARSE: typing.List[typing.Tuple[str, "re.Pattern"]] = [
-        ("qset",    re.compile(rb"^qtrg\s+\d+[^(]*\(\s*qset\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
-        ("qset",    re.compile(rb"^qset(?:,|\s+)(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
         ("heff",    re.compile(rb"^heff(?:,|\s+)(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
-        ("hmax",    re.compile(rb"^heff-?\d+(?:\.\d*)?\S*\s+hmax\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
-        ("hmax",    re.compile(rb"^hmax(?:,|\s+)(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
         # ("mrefint", re.compile(rb"^mrefint\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
         # ("mrefslope", re.compile(rb"^mrefslope\s*(-?\d+(?:\.\d*)?)", flags=re.IGNORECASE)),
         ("lcur",    re.compile(rb"^\(?\s*lcur\s*(\d+(?:\.\d*)?)", flags=re.IGNORECASE)),

@@ -380,12 +380,10 @@ var ACTION_PROMPT_DATA;
     }
 
     for (const name of ['lset', 'doslope', 'doint', 'doff', 'dvlt', 'dthr', 'pht', 'dthr2', 'qcf', 'qtrg', 
-            'wtrg', 'wdry', 'wwet', 'wgn', 'wmax', 'wmin']) {
+            'wtrg', 'wdry', 'wwet', 'wgn', 'wmax', 'wmin', 'qset', 'hmax']) {
         numberField(name, true);
     }
-    numberField('qset', false, 1);
     numberField('heff', false, 2);
-    numberField('hmax', false, 2);
     numberField('mrefint', false, 2);
     numberField('mrefslope', false, 2);
     for (const name of ['tcon', 'tini', 'tmod', 'topt']) {
