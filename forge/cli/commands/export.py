@@ -8,7 +8,7 @@ import sys
 import numpy as np
 from copy import deepcopy
 from math import isfinite, nan, floor, ceil, log2
-from netCDF4 import Variable, Dataset, Dimension
+from netCDF4 import Variable, Dataset
 from forge.logicaltime import start_of_year, julian_day
 from forge.timeparse import parse_interval_argument
 from forge.data.flags import parse_flags

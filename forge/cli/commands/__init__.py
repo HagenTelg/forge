@@ -56,5 +56,7 @@ def available_commands() -> typing.List[typing.Type[ParseCommand]]:
     result.append(CutSizeCommand)
     from .select import Command as SelectCommand
     result.append(SelectCommand)
+    from .summary import Command as SummaryCommand
+    result.append(SummaryCommand)
 
     return result

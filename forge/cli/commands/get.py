@@ -114,7 +114,7 @@ So 'TYPE:STATE' eans that subsequent variables are only selected if they are cla
 The key 'VARIABLE_NAME, 'NETCDF_VARIABLE', or 'NCVAR' selects variables based on the NetCDF variable name
   as a regular expression (case insensitive).
 So 'NCVAR:scattering_coefficient' selects any scattering coefficient variables based on the NetCDF variable name.
-The key 'STANDARD_NAME' or 'STDNAME' selects variables based on the CF conveientions standard name assigned.
+The key 'STANDARD_NAME' or 'STDNAME' selects variables based on the CF conventions standard name assigned.
 So 'STANDARD_NAME:mole_fraction_of_ozone_in_air' selects ozone concentrations.
 The key 'VARIABLE_ID' selects data as the raw variable ID described above.
 So 'VARIABLE_ID:BsG_S11' is the same as just 'BsG_S11'.

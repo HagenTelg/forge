@@ -2,7 +2,7 @@ import typing
 from netCDF4 import Dataset, Dimension, Variable
 
 
-def find_dimension(origin: Dataset, name: str) -> typing.Tuple[Dimension, Variable]:
+def find_dimension(origin: Dataset, name: str) -> Dimension:
     while True:
         try:
             return origin.dimensions[name]
