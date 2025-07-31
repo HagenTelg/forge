@@ -296,12 +296,12 @@ else:
 
     data_records["aerosol-raw-flow"] = DataRecord({
         "sample": [Selection(variable_id="Q_Q11")],
-        "dilution": [Selection(variable_id="Q_Q12")],
+        "dilution": [Selection(variable_id="Q", instrument_id="Q12"), Selection(variable_id="Q_Q12")],
         "pitot": [Selection(variable_id="Pd_P01")],
     })
     data_records["aerosol-realtime-flow"] = RealtimeRecord({
         "sample": [RealtimeSelection("Q_Q11", variable_id="Q_Q11")],
-        "dilution": [RealtimeSelection("Q_Q12", variable_id="Q_Q12")],
+        "dilution": [RealtimeSelection("Q", variable_id="Q", instrument_id="Q12")],
         "pitot": [RealtimeSelection("Pd_P01", variable_id="Pd_P01")],
     })
 
