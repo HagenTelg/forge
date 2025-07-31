@@ -326,12 +326,26 @@ class _RowContext:
             return ""
         return f"{self.wavelength:.0f}"
 
+    @property
+    def display_instrument(self) -> str:
+        if not self._separate_instruments:
+            return ""
+        if not self._instrument_fanout:
+            return ""
+        r = self._instrument_fanout[0]
+        if len(self._instrument_fanout) > 1:
+            r += " " + self._instrument_fanout[1]
+        if len(self._instrument_fanout) > 2:
+            r += " #" + self._instrument_fanout[2]
+        return r
+
 
 class _SummaryStage(ExecuteStage):
     def __init__(self, execute: Execute, parser: argparse.ArgumentParser, args: argparse.Namespace):
         super().__init__(execute)
 
         self._use_statistics = args.use_statistics
+        self._show_instrument = args.separate_instruments
         self._base_context = _RowContext()
         self._base_context.attach_args(args)
 
@@ -371,11 +385,11 @@ class _SummaryStage(ExecuteStage):
                 integrate_values(sub_context, sub_data)
 
         def fanout_cut_size(context: _RowContext, data: np.ndarray, dimensions: typing.List[str]) -> None:
-            if not context.separate_cut:
-                fanout_bin_number(context, data, dimensions)
-                return
-
             if 'cut_size' not in dimensions:
+                if not context.separate_cut:
+                    fanout_bin_number(context, data, dimensions)
+                    return
+
                 if 'cut_size' not in getattr(variable, 'ancillary_variables', "").split():
                     fanout_bin_number(context, data, dimensions)
                     return
@@ -413,6 +427,19 @@ class _SummaryStage(ExecuteStage):
                     fanout_bin_number(context, sub_data, dimensions)
                 return
 
+            dim_idx = dimensions.index('cut_size')
+            sub_dimensions = list(dimensions)
+            del sub_dimensions[dim_idx]
+
+            if not context.separate_cut:
+                for select_idx in range(data.shape[dim_idx]):
+                    sub_index: typing.List[typing.Union[slice, int]] = [slice(None)] * len(dimensions)
+                    sub_index[dim_idx] = select_idx
+                    sub_data = data[tuple(sub_index)]
+
+                    fanout_bin_number(context, sub_data, sub_dimensions)
+                return
+
             try:
                 _, cut_var = find_dimension_values(variable.group(), 'cut_size')
             except KeyError:
@@ -420,9 +447,6 @@ class _SummaryStage(ExecuteStage):
                 fanout_bin_number(context, data, dimensions)
                 return
 
-            dim_idx = dimensions.index('cut_size')
-            sub_dimensions = list(dimensions)
-            del sub_dimensions[dim_idx]
             for select_idx in range(cut_var.shape[0]):
                 sub_context = deepcopy(context)
 
@@ -617,8 +641,11 @@ class _SummaryStage(ExecuteStage):
             ["DESCRIPTION"],
         ]
         wavelength_rows = ["WL"]
-        last_desc = None
+        instrument_rows = ["INSTRUMENT"]
         prior_key = None
+        last_desc = None
+        last_inst = None
+        unique_instruments = set()
         for name, ctx, value in rows:
             name_key = ctx.name_assignment_key
             force_changed = name_key != prior_key
@@ -636,8 +663,18 @@ class _SummaryStage(ExecuteStage):
                 last_desc = desc
             else:
                 columns[3].append("")
+
+            inst = ctx.display_instrument
+            unique_instruments.add(inst)
+            if force_changed or last_inst != inst:
+                instrument_rows.append(inst)
+                last_inst = inst
+            else:
+                instrument_rows.append("")
         if output_wavelength:
             columns.insert(1, wavelength_rows)
+        if len(unique_instruments) > 1 or len(unique_instruments) == 1 and unique_instruments != {""}:
+            columns.insert(-1, instrument_rows)
 
         column_widths: typing.List[int] = list()
         for cidx in range(len(columns)):
