@@ -226,11 +226,12 @@ Wi-Fi networked connection:
 ```toml
 [instrument.A81]
 type = "purpleairwifi"
-url = "http://192.168.0.98/json?live=true"
+url = "http://192.168.0.98"
 ```
 
 - Instrument baud rate: 115200
 - Display letter: A
+- Default URL: `/json?live=true`
 
 ## RMY 86xxx Series Sonic Anemometer
 

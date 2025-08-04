@@ -1,14 +1,15 @@
 import typing
 import asyncio
 import time
-from starlette.applications import Starlette
 from starlette.routing import Route
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+from forge.acquisition.instrument.http import HttpSimulator
 
 
-class Simulator:
+class Simulator(HttpSimulator):
     def __init__(self):
+        super().__init__()
         self.data_Xa = 12.0
         self.data_Xb = 13.0
         self.data_IBsa = 200.0
@@ -17,7 +18,7 @@ class Simulator:
         self.data_U = 40.0
         self.data_P = 880.0
 
-    def record(self) -> typing.Dict[str, typing.Any]:
+    def record(self, _request: Request) -> JSONResponse:
         result: typing.Dict[str, typing.Any] = dict()
 
         ts = time.gmtime()
@@ -36,34 +37,14 @@ class Simulator:
         result["pm2_5_cf_1"] = self.data_Xa
         result["pm2_5_cf_1_b"] = self.data_Xb
 
-        return result
+        return JSONResponse(result)
 
-
-async def _response(_request: Request) -> JSONResponse:
-    return JSONResponse(Simulator().record())
-
-
-app = Starlette(routes=[
-    Route('/json', endpoint=_response),
-])
+    @property
+    def routes(self) -> typing.List[Route]:
+        return [
+            Route('/json', endpoint=self.record),
+        ]
 
 
 if __name__ == '__main__':
-    import argparse
-    import uvicorn
-
-    parser = argparse.ArgumentParser(description="Purple Air PA-II simulator")
-    parser.add_argument('--bind',
-                        dest="bind_address",
-                        help="the IP address to listen for connections on")
-    parser.add_argument('--port',
-                        dest="port", type=int, default=8000,
-                        help="TCP port to listen for connections on")
-    args = parser.parse_args()
-
-    if args.bind_address is not None:
-        uvicorn.run('forge.acquisition.instrument.purpleairwifi.simulator:app',
-                    host=args.bind_address, port=args.port)
-    else:
-        uvicorn.run('forge.acquisition.instrument.purpleairwifi.simulator:app',
-                    port=args.port)
+    Simulator.run_server()

@@ -4,6 +4,7 @@ import os
 from forge.acquisition import LayeredConfiguration
 from .base import BaseDataOutput, BaseBusInterface, BasePersistentInterface, CutSize
 from .streaming import StreamingContext, StreamingInstrument, StreamingSimulator
+from .http import HttpContext, HttpInstrument, HttpSimulator
 
 
 class DataOutput(BaseDataOutput):
@@ -196,3 +197,32 @@ async def cleanup_streaming_instrument(
             pass
     simulator.writer.close()
     instrument.context.writer.close()
+
+
+
+async def create_http_instrument(instrument: typing.Type[HttpInstrument],
+                                 simulator: typing.Type[HttpSimulator],
+                                 config: typing.Optional[dict] = None) -> typing.Tuple[HttpSimulator,
+                                                                                       HttpInstrument]:
+    data = DataOutput("nil", "XTEST")
+    bus = BusInterface()
+    persistent = PersistentInterface()
+    s = simulator()
+    context = simulator.TestContext(LayeredConfiguration(config or dict()), data, bus, persistent, s.routes)
+    await context.router.startup()
+    i = instrument(context)
+    return s, i
+
+
+async def cleanup_http_instrument(
+        simulator: HttpSimulator, instrument: HttpInstrument,
+        *run: asyncio.Task,
+) -> None:
+    await instrument.context.router.shutdown()
+    for t in run:
+        t.cancel()
+    for t in run:
+        try:
+            await t
+        except asyncio.CancelledError:
+            pass

@@ -6,32 +6,36 @@ import traceback
 import time
 from json import JSONDecodeError
 from forge.units import temperature_f_to_c
-from ..standard import IterativeCommunicationsInstrument
-from ..base import BaseContext, BaseBusInterface, CommunicationsError
+from ..http import HttpInstrument, HttpContext, CommunicationsError
 from ..parse import parse_datetime_field
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class Instrument(IterativeCommunicationsInstrument):
+class Instrument(HttpInstrument):
     INSTRUMENT_TYPE = "purpleair"
     MANUFACTURER = "Purple Air"
     MODEL = "PA-II"
     DISPLAY_LETTER = "A"
     TAGS = frozenset({"aerosol", "purpleair"})
     INSTRUMENT_INFO_METADATA = {
-        **IterativeCommunicationsInstrument.INSTRUMENT_INFO_METADATA,
+        **HttpInstrument.INSTRUMENT_INFO_METADATA,
         **{
             'mac_address': "instrument WiFi MAC address",
             'hardware': "instrument hardware description",
         }
     }
 
-    def __init__(self, context: BaseContext):
+    def __init__(self, context: HttpContext):
         super().__init__(context)
+        if not context.url.path and not context.url.query:
+            # Override by setting path = "/" (e.x. http://192.168.0.98/)
+            context.url = context.url.replace(
+                path="/json",
+                query="live=true"
+            )
 
         self._report_interval: float = float(context.config.get('REPORT_INTERVAL', default=1.0))
-        self._url: str = str(context.config['URL'])
         self._sleep_time: float = 0
 
         self.data_Xa = self.input("Xa")
@@ -123,19 +127,10 @@ class Instrument(IterativeCommunicationsInstrument):
         self.instrument_report()
 
     async def _poll_report(self) -> None:
-        timeout = aiohttp.ClientTimeout(total=30)
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.get(self._url) as resp:
-                if resp.status != 200:
-                    data = (await resp.read()).decode('utf-8')
-                    raise CommunicationsError(f"invalid response status: {resp.reason} - {data}")
-                try:
-                    fields = await resp.json()
-                    if not isinstance(fields, dict):
-                        raise CommunicationsError
-                except JSONDecodeError as e:
-                    raise CommunicationsError("invalid response") from e
-                self._process_report(fields)
+        fields = await self.get(json=True)
+        if not isinstance(fields, dict):
+            raise CommunicationsError
+        self._process_report(fields)
 
     async def initialize_communications(self) -> bool:
         await self._poll_report()

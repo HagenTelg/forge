@@ -1,6 +1,6 @@
 
 def main():
     from .instrument import Instrument
-    from ..run import launch
+    from ..http import launch
 
     launch(Instrument)
