@@ -1,10 +1,7 @@
 import typing
 import asyncio
-import aiohttp
 import logging
-import traceback
 import time
-from json import JSONDecodeError
 from forge.units import temperature_f_to_c
 from ..http import HttpInstrument, HttpContext, CommunicationsError
 from ..parse import parse_datetime_field

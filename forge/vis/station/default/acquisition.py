@@ -34,6 +34,7 @@ class Acquisition(BaseAcquisition):
         self.display_instrument.append(self.DisplayInstrumentSimple('bmitap'))
         self.display_instrument.append(self.DisplayInstrumentSimple('mageeae31'))
         self.display_instrument.append(self.DisplayInstrumentSimple('mageeae33'))
+        self.display_instrument.append(self.DisplayInstrumentSimple('mageeae36'))
         self.display_instrument.append(self.DisplayInstrumentSimple('teledynen500'))
         self.display_instrument.append(self.DisplayInstrumentSimple('teledynet640'))
         self.display_instrument.append(self.DisplayInstrumentSimple('tsi3563nephelometer'))

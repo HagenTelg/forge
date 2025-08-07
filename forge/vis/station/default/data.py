@@ -68,7 +68,10 @@ for archive in ("raw", "editing", "clean", "avgh"):
                                   require_tags={"aethalometer"}, exclude_tags={"secondary"})])
          for wl in range(7)] +
         [(f"CF{wl+1}", [Selection(variable_name="correction_factor", wavelength_number=wl,
-                                  require_tags={"aethalometer", "mageeae33"}, exclude_tags={"secondary"})])
+                                  require_tags={"aethalometer", "mageeae33"}, exclude_tags={"secondary"}),
+                        Selection(variable_name="correction_factor", wavelength_number=wl,
+                                  require_tags={"aethalometer", "mageeae36"}, exclude_tags={"secondary"})
+                        ])
          for wl in range(7)]
     ))
     aerosol_data[f"aerosol-{archive}-wind"] = DataRecord({
@@ -174,15 +177,25 @@ aerosol_data["aerosol-raw-clapstatus"] = DataRecord({
 }, hold_fields={"spot"})
 aerosol_data["aerosol-raw-aethalometerstatus"] = DataRecord({
     "Tcontroller": [Selection(variable_name="controller_temperature",
-                              instrument_code="mageeae33", exclude_tags={"secondary"})],
+                              instrument_code="mageeae33", exclude_tags={"secondary"}),
+                    Selection(variable_name="controller_temperature",
+                              instrument_code="mageeae36", exclude_tags={"secondary"})],
     "Tsupply": [Selection(variable_name="supply_temperature",
-                          instrument_code="mageeae33", exclude_tags={"secondary"})],
+                          instrument_code="mageeae33", exclude_tags={"secondary"}),
+                Selection(variable_name="supply_temperature",
+                          instrument_code="mageeae36", exclude_tags={"secondary"})],
     "Tled": [Selection(variable_name="led_temperature",
-                       instrument_code="mageeae33", exclude_tags={"secondary"})],
+                       instrument_code="mageeae33", exclude_tags={"secondary"}),
+             Selection(variable_name="led_temperature",
+                       instrument_code="mageeae36", exclude_tags={"secondary"})],
     "Q1": [Selection(variable_name="spot_one_flow",
-                     instrument_code="mageeae33", exclude_tags={"secondary"})],
+                     instrument_code="mageeae33", exclude_tags={"secondary"}),
+           Selection(variable_name="spot_one_flow",
+                     instrument_code="mageeae36", exclude_tags={"secondary"})],
     "Q2": [Selection(variable_name="spot_two_flow",
-                     instrument_code="mageeae33", exclude_tags={"secondary"})],
+                     instrument_code="mageeae33", exclude_tags={"secondary"}),
+           Selection(variable_name="spot_two_flow",
+                     instrument_code="mageeae36", exclude_tags={"secondary"})],
     "Q": [Selection(variable_name="sample_flow",
                     require_tags={"aethalometer"}, exclude_tags={"secondary"})],
 })
@@ -334,15 +347,25 @@ aerosol_data["aerosol-realtime-clapstatus"] = RealtimeRecord({
 }, hold_fields={"spot"})
 aerosol_data["aerosol-realtime-aethalometerstatus"] = RealtimeRecord({
     "Tcontroller": [RealtimeSelection("Tcontroller", variable_name="controller_temperature",
-                                      instrument_code="mageeae33", exclude_tags={"secondary"})],
+                                      instrument_code="mageeae33", exclude_tags={"secondary"}),
+                    RealtimeSelection("Tcontroller", variable_name="controller_temperature",
+                                      instrument_code="mageeae36", exclude_tags={"secondary"})],
     "Tsupply": [RealtimeSelection("Tsupply", variable_name="supply_temperature",
-                                  instrument_code="mageeae33", exclude_tags={"secondary"})],
+                                  instrument_code="mageeae33", exclude_tags={"secondary"}),
+                RealtimeSelection("Tsupply", variable_name="supply_temperature",
+                                  instrument_code="mageeae36", exclude_tags={"secondary"})],
     "Tled": [RealtimeSelection("Tled", variable_name="led_temperature",
-                               instrument_code="mageeae33", exclude_tags={"secondary"})],
+                               instrument_code="mageeae33", exclude_tags={"secondary"}),
+             RealtimeSelection("Tled", variable_name="led_temperature",
+                               instrument_code="mageeae36", exclude_tags={"secondary"})],
     "Q1": [RealtimeSelection("Q1", variable_name="spot_one_flow",
-                             instrument_code="mageeae33", exclude_tags={"secondary"})],
+                             instrument_code="mageeae33", exclude_tags={"secondary"}),
+           RealtimeSelection("Q1", variable_name="spot_one_flow",
+                             instrument_code="mageeae36", exclude_tags={"secondary"})],
     "Q2": [RealtimeSelection("Q2", variable_name="spot_two_flow",
-                             instrument_code="mageeae33", exclude_tags={"secondary"})],
+                             instrument_code="mageeae33", exclude_tags={"secondary"}),
+           RealtimeSelection("Q2", variable_name="spot_two_flow",
+                             instrument_code="mageeae36", exclude_tags={"secondary"})],
     "Q": [RealtimeSelection("Q", variable_name="sample_flow",
                             require_tags={"aethalometer"}, exclude_tags={"secondary"})],
 })
@@ -457,19 +480,31 @@ aerosol_public[f"public-aerosolweb-aethalometer"] = RealtimeRecord(dict(
                                       require_tags={"aethalometer"}, exclude_tags={"secondary"})])
      for wl in range(7)] +
     [(f"CF{wl+1}", [RealtimeSelection(f"k{wl+1}",variable_name="correction_factor", wavelength_number=wl,
-                                      require_tags={"aethalometer", "mageeae33"}, exclude_tags={"secondary"})])
+                                      require_tags={"aethalometer", "mageeae33"}, exclude_tags={"secondary"}),
+                    RealtimeSelection(f"k{wl + 1}", variable_name="correction_factor", wavelength_number=wl,
+                                      require_tags={"aethalometer", "mageeae36"}, exclude_tags={"secondary"})])
      for wl in range(7)] +
     list({
         "Tcontroller": [RealtimeSelection("Tcontroller", variable_name="controller_temperature",
-                                      instrument_code="mageeae33", exclude_tags={"secondary"})],
+                                      instrument_code="mageeae33", exclude_tags={"secondary"}),
+                        RealtimeSelection("Tcontroller", variable_name="controller_temperature",
+                                          instrument_code="mageeae36", exclude_tags={"secondary"})],
         "Tsupply": [RealtimeSelection("Tsupply", variable_name="supply_temperature",
-                                  instrument_code="mageeae33", exclude_tags={"secondary"})],
+                                  instrument_code="mageeae33", exclude_tags={"secondary"}),
+                    RealtimeSelection("Tsupply", variable_name="supply_temperature",
+                                      instrument_code="mageeae36", exclude_tags={"secondary"})],
         "Tled": [RealtimeSelection("Tled", variable_name="led_temperature",
-                               instrument_code="mageeae33", exclude_tags={"secondary"})],
+                               instrument_code="mageeae33", exclude_tags={"secondary"}),
+                 RealtimeSelection("Tled", variable_name="led_temperature",
+                                   instrument_code="mageeae36", exclude_tags={"secondary"})],
         "Q1": [RealtimeSelection("Q1", variable_name="spot_one_flow",
-                             instrument_code="mageeae33", exclude_tags={"secondary"})],
+                             instrument_code="mageeae33", exclude_tags={"secondary"}),
+               RealtimeSelection("Q1", variable_name="spot_one_flow",
+                                 instrument_code="mageeae36", exclude_tags={"secondary"})],
         "Q2": [RealtimeSelection("Q2", variable_name="spot_two_flow",
-                             instrument_code="mageeae33", exclude_tags={"secondary"})],
+                             instrument_code="mageeae33", exclude_tags={"secondary"}),
+               RealtimeSelection("Q2", variable_name="spot_two_flow",
+                                 instrument_code="mageeae36", exclude_tags={"secondary"})],
         "Q": [RealtimeSelection("Q", variable_name="sample_flow",
                             require_tags={"aethalometer"}, exclude_tags={"secondary"})],
     }.items())

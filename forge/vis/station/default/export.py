@@ -144,8 +144,12 @@ for archive in ("raw", "clean",):
                          header="Ir" + str(wl+1) + "_{instrument_id}", default_header=f"Ir{wl+1}")
         for wl in range(7)
     ] + [
-        ExportCSV.Column([Selection(variable_name="correction_factor", wavelength_number=wl,
-                                    require_tags={"aethalometer", "mageeae33"}, exclude_tags={"secondary"})],
+        ExportCSV.Column([
+            Selection(variable_name="correction_factor", wavelength_number=wl,
+                      require_tags={"aethalometer", "mageeae33"}, exclude_tags={"secondary"}),
+            Selection(variable_name="correction_factor", wavelength_number=wl,
+                      require_tags={"aethalometer", "mageeae36"}, exclude_tags={"secondary"}),
+        ],
                          header="ZFACTOR" + str(wl+1) + "_{instrument_id}", default_header=f"ZFACTOR{wl+1}")
         for wl in range(7)
     ]))

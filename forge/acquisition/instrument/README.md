@@ -211,6 +211,36 @@ cut_size = false
 - Display letter: E
 - Instrument time base set on the front panel
 
+## Magee AE36 Aethalometer
+
+Direction serial communication using ADP:
+```toml
+[instrument.A81]
+type = "mageeae36"
+serial_port = "/dev/serial/by-id/..."
+cut_size = false
+```
+
+ADP over network:
+```toml
+[instrument.A81]
+type = "mageeae36"
+tcp = "140.172.50.74:8003"
+cut_size = false
+```
+
+UIDEP over HTTP:
+```toml
+[instrument.A81]
+type = "mageeae36"
+tcp = "http://140.172.50.74"
+cut_size = false
+```
+
+- Instrument baud rate: 115200
+- Display letter: E
+- Instrument time base set on the front panel
+
 ## Purple Air
 
 Direct USB connection:

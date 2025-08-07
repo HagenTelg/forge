@@ -262,6 +262,11 @@ def run(instrument: BaseInstrument, systemd: bool = False) -> None:
     _LOGGER.debug("Shutdown complete")
 
 
+def configure_context(args: argparse.Namespace, ctx: BaseContext) -> None:
+    ctx.average_config = average_config(args)
+    ctx.cutsize_config = cutsize_config(args)
+
+
 def launch(create_instrument: typing.Callable[[BaseContext], BaseInstrument]) -> None:
     args = arguments()
     args = args.parse_args()
@@ -271,8 +276,7 @@ def launch(create_instrument: typing.Callable[[BaseContext], BaseInstrument]) ->
     config = instrument_config(args)
 
     ctx = BaseContext(config, data, bus, persistent)
-    ctx.average_config = average_config(args)
-    ctx.cutsize_config = cutsize_config(args)
+    configure_context(ctx)
 
     instrument = create_instrument(ctx)
     ctx.persistent.version = instrument.PERSISTENT_VERSION

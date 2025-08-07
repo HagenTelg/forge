@@ -2,7 +2,7 @@ import typing
 import asyncio
 import logging
 import time
-import traceback
+import argparse
 from forge.tasks import wait_cancelable
 from forge.acquisition import LayeredConfiguration
 from .base import BaseSimulator, BaseContext, BaseDataOutput, BasePersistentInterface, BaseBusInterface, CommunicationsError
@@ -179,11 +179,10 @@ class StreamingSimulator(BaseSimulator):
         self.writer = writer
 
 
-def launch(instrument: typing.Type[StreamingInstrument]) -> None:
-    from .run import run, arguments, average_config, instrument_config, cutsize_config, \
-        data_output, bus_interface, persistent_interface
+def arguments() -> argparse.ArgumentParser:
+    from .run import arguments as base_arguments
 
-    args = arguments()
+    args = base_arguments()
 
     args.add_argument('--serial',
                       dest="serial",
@@ -192,79 +191,91 @@ def launch(instrument: typing.Type[StreamingInstrument]) -> None:
                       dest="control",
                       help="auxiliary serial control socket")
 
-    args = args.parse_args()
+    return args
 
+
+def create_context(
+        args: argparse.Namespace,
+        instrument: typing.Type[StreamingInstrument],
+        instrument_config: LayeredConfiguration,
+        data: BaseDataOutput,
+        bus: BaseBusInterface,
+        persistent: BasePersistentInterface,
+) -> StreamingContext:
+    if args.serial:
+        from .serial import SerialPortContext
+        serial_args = getattr(instrument, 'SERIAL_PORT', {})
+        return SerialPortContext(instrument_config, data, bus, persistent, args.serial, serial_args, args.control)
+
+    serial = instrument_config.section_or_constant("SERIAL_PORT")
+    if serial:
+        from .serial import SerialPortContext
+        serial_args = getattr(instrument, 'SERIAL_PORT', {})
+        return SerialPortContext(instrument_config, data, bus, persistent, serial, serial_args, args.control)
+
+    tcp = instrument_config.section_or_constant("TCP")
+    if tcp:
+        from .tcp import TCPContext
+        if isinstance(tcp, str):
+            if tcp.startswith('['):
+                (host, port) = tcp.split(']')
+                host = host[1:-1]
+                if port.startswith(':'):
+                    port = port[1:]
+            else:
+                (host, port) = tcp.split(':')
+            port = int(port.strip())
+            ssl = None
+            always_reset = True
+        else:
+            host = str(tcp.get("HOST"))
+            port = int(tcp.get("PORT").strip())
+            ssl = tcp.get("SSL") or None
+            retain = tcp.get("RETRY_RETAIN_CONNECTION")
+            if retain is None:
+                always_reset = True
+            else:
+                always_reset = not retain
+        host = host.strip()
+        if not host:
+            raise ValueError(f"invalid TCP target host: {host}")
+        if port <= 0 or port > 65535:
+            raise ValueError(f"invalid TCP target port: {port}")
+        return TCPContext(instrument_config, data, bus, persistent, host, port, ssl, always_reset)
+
+    unix = instrument_config.section_or_constant("UNIX_SOCKET")
+    if unix:
+        from .unixsocket import UnixSocketContext
+        if isinstance(unix, str):
+            path = unix
+            always_reset = True
+        else:
+            path = str(unix.get("PATH"))
+            retain = tcp.get("RETRY_RETAIN_CONNECTION")
+            if retain is None:
+                always_reset = True
+            else:
+                always_reset = not retain
+        path = path.strip()
+        if not path:
+            raise ValueError(f"invalid Unix socket path: {path}")
+        return UnixSocketContext(instrument_config, data, bus, persistent, path, always_reset)
+
+    raise ValueError("no serial port or streaming device defined")
+
+
+def launch(instrument: typing.Type[StreamingInstrument]) -> None:
+    from .run import run, instrument_config, data_output, bus_interface, persistent_interface, configure_context
+
+    args = arguments()
+    args = args.parse_args()
     bus = bus_interface(args)
     data = data_output(args)
     persistent = persistent_interface(args)
-
     instrument_config = instrument_config(args)
 
-    def context() -> StreamingContext:
-        if args.serial:
-            from .serial import SerialPortContext
-            serial_args = getattr(instrument, 'SERIAL_PORT', {})
-            return SerialPortContext(instrument_config, data, bus, persistent, args.serial, serial_args, args.control)
-
-        serial = instrument_config.section_or_constant("SERIAL_PORT")
-        if serial:
-            from .serial import SerialPortContext
-            serial_args = getattr(instrument, 'SERIAL_PORT', {})
-            return SerialPortContext(instrument_config, data, bus, persistent, serial, serial_args, args.control)
-
-        tcp = instrument_config.section_or_constant("TCP")
-        if tcp:
-            from .tcp import TCPContext
-            if isinstance(tcp, str):
-                if tcp.startswith('['):
-                    (host, port) = tcp.split(']')
-                    host = host[1:-1]
-                    if port.startswith(':'):
-                        port = port[1:]
-                else:
-                    (host, port) = tcp.split(':')
-                port = int(port.strip())
-                ssl = None
-                always_reset = True
-            else:
-                host = str(tcp.get("HOST"))
-                port = int(tcp.get("PORT").strip())
-                ssl = tcp.get("SSL") or None
-                retain = tcp.get("RETRY_RETAIN_CONNECTION")
-                if retain is None:
-                    always_reset = True
-                else:
-                    always_reset = not retain
-            host = host.strip()
-            if not host:
-                raise ValueError(f"invalid TCP target host: {host}")
-            if port <= 0 or port > 65535:
-                raise ValueError(f"invalid TCP target port: {port}")
-            return TCPContext(instrument_config, data, bus, persistent, host, port, ssl, always_reset)
-
-        unix = instrument_config.section_or_constant("UNIX_SOCKET")
-        if unix:
-            from .unixsocket import UnixSocketContext
-            if isinstance(unix, str):
-                path = unix
-                always_reset = True
-            else:
-                path = str(unix.get("PATH"))
-                retain = tcp.get("RETRY_RETAIN_CONNECTION")
-                if retain is None:
-                    always_reset = True
-                else:
-                    always_reset = not retain
-            path = path.strip()
-            if not path:
-                raise ValueError(f"invalid Unix socket path: {path}")
-            return UnixSocketContext(instrument_config, data, bus, persistent, path, always_reset)
-
-        raise ValueError("no serial port or streaming device defined")
-
-    ctx = context()
-    ctx.average_config = average_config(args)
-    ctx.cutsize_config = cutsize_config(args)
+    ctx = create_context(args, instrument, instrument_config, data, bus, persistent)
+    configure_context(args, ctx)
 
     instrument = instrument(ctx)
     ctx.persistent.version = instrument.PERSISTENT_VERSION

@@ -120,19 +120,28 @@ class HttpSimulator(BaseSimulator):
                 }
 
             body = bytearray()
+            location = None
             status = 0
 
             async def send(message):
                 nonlocal body
                 nonlocal status
+                nonlocal location
 
                 t = message.get("type")
                 if t == "http.response.start":
                     status = message.get("status", 0)
+                    for h, v in message.get("headers", []):
+                        if h.lower() == b"location":
+                            location = v.decode('utf-8')
+                            break
                 elif t == "http.response.body":
                     body += message.get("body", b"")
 
             await self.router(scope, receive, send)
+            if (status in (307, 308)) and location is not None:
+                scope["path"] = location
+                return await self._handle_response(scope, body, require_ok, json)
 
             if require_ok and status != 200:
                 raise CommunicationsError
@@ -226,23 +235,19 @@ class HttpSimulator(BaseSimulator):
         pass
 
 
-def launch(instrument: typing.Type[HttpInstrument]) -> None:
-    from .run import run, arguments, average_config, instrument_config, cutsize_config, \
-        data_output, bus_interface, persistent_interface
+def arguments() -> argparse.ArgumentParser:
+    from .run import arguments as base_arguments
+    return base_arguments()
 
-    args = arguments()
-    args = args.parse_args()
-    bus = bus_interface(args)
-    data = data_output(args)
-    persistent = persistent_interface(args)
-    instrument_config = instrument_config(args)
 
-    ctx = HttpContext(instrument_config, data, bus, persistent)
-    ctx.average_config = average_config(args)
-    ctx.cutsize_config = cutsize_config(args)
+def configure_context(args: argparse.Namespace, ctx: HttpContext,
+                      instrument: typing.Type[HttpInstrument],
+                      instrument_config: LayeredConfiguration) -> None:
+    from .run import configure_context as base_configure_context
+    base_configure_context(args, ctx)
 
     if instrument.REQUIRE_URL:
-        url = str(instrument_config.get("URL"))
+        url = str(instrument_config.get("URL", default="")).strip()
         if not url:
             raise ValueError("No instrument URL set")
         ctx.url = URL(url=url)
@@ -290,6 +295,20 @@ def launch(instrument: typing.Type[HttpInstrument]) -> None:
         )
 
     timeout()
+
+
+def launch(instrument: typing.Type[HttpInstrument]) -> None:
+    from .run import run, arguments, instrument_config, data_output, bus_interface, persistent_interface
+
+    args = arguments()
+    args = args.parse_args()
+    bus = bus_interface(args)
+    data = data_output(args)
+    persistent = persistent_interface(args)
+    instrument_config = instrument_config(args)
+
+    ctx = HttpContext(instrument_config, data, bus, persistent)
+    configure_context(args, ctx, instrument, instrument_config)
 
     instrument = instrument(ctx)
     ctx.persistent.version = instrument.PERSISTENT_VERSION
