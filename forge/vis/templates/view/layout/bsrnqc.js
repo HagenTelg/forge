@@ -1,5 +1,5 @@
 let layout = {
-    title: "BSRN QC Flagging",
+    title: { text: "BSRN QC Flagging" },
 
     autosize : true,
     hovermode: 'x',

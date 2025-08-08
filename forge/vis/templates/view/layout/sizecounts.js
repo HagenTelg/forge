@@ -4,7 +4,7 @@ TimeSelect.setIntervalBounds();
 
 let layout = {
     //{% if view.title %}
-    title: "{{ view.title }}",
+    title: { text: "{{ view.title }}" },
     //{% endif %}
 
     autosize : true,
@@ -21,21 +21,21 @@ let layout = {
 
     xaxis: TimeSeriesCommon.getXAxis(),
     xaxis2: {
-        title: "D (μm)",
+        title: { text: "D (μm)" },
         hoverformat: ".3f",
         type: 'log',
     },
 
     yaxis: {
         side: 'left',
-        title: "cm⁻³",
+        title: { text: "cm⁻³" },
         hoverformat: ".1f",
         rangemode: 'tozero',
         domain: [0.3, 1],
     },
     yaxis2: {
         side: 'left',
-        title: "dN (cm⁻³)",
+        title: { text: "dN (cm⁻³)" },
         hoverformat: ".2f",
         rangemode: 'tozero',
         domain: [0, 0.2],

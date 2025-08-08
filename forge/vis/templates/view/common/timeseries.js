@@ -2,7 +2,7 @@ var TimeSeriesCommon = {};
 (function() {
     TimeSeriesCommon.getXAxis = function() {
         const result = {
-            title: "UTC",
+            title: { text: "UTC" },
             type: 'date',
             hoverformat: '%Y-%m-%d %H:%M:%S',
             tickformat: '%H:%M\n %Y-%m-%d',

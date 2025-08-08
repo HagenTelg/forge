@@ -9,7 +9,7 @@ const layout = {
     showlegend: false,
 
     xaxis: {
-        title: "D (μm)",
+        title: { text: "D (μm)" },
         hoverformat: ".3f",
         type: 'log',
         automargin: true,
@@ -17,7 +17,7 @@ const layout = {
 
     yaxis2: {
         side: 'left',
-        title: "dN/dlog(Dp) (cm⁻³)",
+        title: { text: "dN/dlog(Dp) (cm⁻³)" },
         hoverformat: ".1f",
         rangemode: 'tozero',
         automargin: true,
@@ -25,7 +25,7 @@ const layout = {
     },
     yaxis: {
         side: 'right',
-        title: "dN (cm⁻³)",
+        title: { text: "dN (cm⁻³)" },
         hoverformat: ".1f",
         rangemode: 'tozero',
         automargin: true,

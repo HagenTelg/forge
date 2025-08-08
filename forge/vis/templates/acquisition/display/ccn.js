@@ -9,14 +9,14 @@ const layout = {
     showlegend: false,
 
     xaxis: {
-        title: "Bin Index",
+        title: { text: "Bin Index" },
         hoverformat: ".0f",
         automargin: true,
     },
 
     yaxis: {
         side: 'left',
-        title: "dN (cm⁻³)",
+        title: { text: "dN (cm⁻³)" },
         hoverformat: ".1f",
         rangemode: 'tozero',
         automargin: true,

@@ -4,7 +4,7 @@ TimeSelect.setIntervalBounds();
 
 let layout = {
     //{% if view.title %}
-    title: "{{ view.title }}",
+    title: { text: "{{ view.title }}" },
     //{% endif %}
 
     autosize : true,
@@ -47,7 +47,7 @@ let layout = {
         //{% endif %}
 
         //{% if axis.title %}
-        title: "{{ axis.title }}",
+        title: { text: "{{ axis.title }}" },
         //{% endif %}
 
         //{% if axis.hover_format %}

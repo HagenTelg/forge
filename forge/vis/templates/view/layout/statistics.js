@@ -1,6 +1,6 @@
 let layout = {
     //{% if view.title %}
-    title: "{{ view.title }}",
+    title: { text: "{{ view.title }}" },
     //{% endif %}
 
     autosize : true,
@@ -23,7 +23,7 @@ let layout = {
         fixedrange: true,
     },
     xaxis2: {
-        title: "UTC",
+        title: { text: "UTC" },
         type: 'date',
         tickformat: '%b\n%Y',
         zeroline: false,
@@ -34,7 +34,7 @@ let layout = {
         domain: [0.4, 1],
         side: 'left',
         //{% if view.units %}
-        title: "{{ view.units }}",
+        title: { text: "{{ view.units }}" },
         //{% endif %}
         type: '{% if view.logarithmic %}log{% else %}linear{% endif %}',
         //{% if view.range == 0 %}
@@ -47,7 +47,7 @@ let layout = {
         domain: [0, 0.3],
         side: 'left',
         //{% if view.units %}
-        title: "{{ view.units }}",
+        title: { text: "{{ view.units }}" },
         //{% endif %}
         type: '{% if view.logarithmic %}log{% else %}linear{% endif %}',
         //{% if view.range == 0 %}

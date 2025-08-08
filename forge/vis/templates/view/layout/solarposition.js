@@ -3,7 +3,7 @@ const longitude = '{{ longitude }}' * 1.0;
 const solarTime = new Solar.Time(latitude, longitude);
 
 let layout = {
-    title: "Solar Position",
+    title: { text: "Solar Position" },
 
     autosize : true,
     hovermode: 'x',
@@ -43,11 +43,11 @@ let layout = {
 
     yaxis: {
         side: 'left',
-        title: "degrees",
+        title: { text: "degrees" },
     },
     yaxis2: {
         side: 'left',
-        title: "degrees",
+        title: { text: "degrees" },
         range: [0, 360],
         zeroline: false,
         tickvals: [0, 90, 180, 270, 360],
