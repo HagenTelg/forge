@@ -22,8 +22,8 @@ let layout = {
     },
 
     legend: {
-        y: 0.33,
         yanchor: 'top',
+        y: '{{ 1 - ( 2/3 * (1 + 0.3/3) ) }}' * 1,
     },
 
     xaxis: TimeSeriesCommon.getXAxis(),

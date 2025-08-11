@@ -40,6 +40,7 @@ let layout = {
     //  {% for axis in graph.axes %}
     "{{ view.axis_code(axis, base='yaxis') }}": {
         side: '{% if axis.side %}{{ axis.side }}{% else %}{% if loop.index%2 == 1 %}left{% else %}right{% set axis_loop.have_right = True %}{% endif %}{% endif %}',
+        automargin: true,
         //{% if loop.index > 1 %}
         overlaying: '{{ view.axis_code(graph.axes[0]) }}',
         zeroline: false,
@@ -72,27 +73,31 @@ let layout = {
     //  {% endfor %}
     //{% endfor %}
 
-    legend: {
+    //{% for graph in view.graphs %}
+    "legend{% if loop.index > 1 %}{{ loop.index }}{% endif %}": {
         groupclick: 'toggleitem',
         tracegroupgap: 30,
         traceorder: 'grouped',
         //{% if axis_loop.have_right %}
         x: 1.06,
         //{% endif %}
+        yanchor: 'top',
+        y: '{{ 1 - ( (loop.index0/(view.graphs|length)) * (1 + 0.3/(view.graphs|length)) ) }}' * 1,
     },
+    //{% endfor %}
 };
 
 let data = [
     //{% set trace_loop = namespace(index=0) %}
     //{% for graph in view.graphs %}
-    //{% set graph_index = loop.index0 %}
+    //{% set graph_index = loop.index %}
     //  {% for trace in graph.traces %}
     {
         x: [ ],
         y: [ ],
         mode: 'lines',
         yaxis: '{{ view.axis_code(trace.axis) }}',
-        legendgroup: '{{ graph_index }}',
+        legend: 'legend{% if graph_index > 1 %}{{ graph_index }}{% endif %}',
         name: "{{ trace.legend }}",
         hovertemplate: "{{ trace.hover_template() }}",
         line: {
