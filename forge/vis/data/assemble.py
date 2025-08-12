@@ -27,6 +27,9 @@ def begin_stream(user: AccessUser, station: str, data_name: str, start_epoch_ms:
         elif data_name.endswith("-events"):
             from .example import ExampleEventLog
             return ExampleEventLog(start_epoch_ms, send)
+        elif data_name.endswith("-passed"):
+            from .example import ExamplePassed
+            return ExamplePassed(send)
         return None
 
     if data_name.endswith('-editing-directives'):
@@ -44,5 +47,9 @@ def begin_stream(user: AccessUser, station: str, data_name: str, start_epoch_ms:
         if len(components) == 3 and components[2] == 'events':
             return station_data(station, 'eventlog', 'get')(station, '-'.join(components[:2]),
                                                             start_epoch_ms, end_epoch_ms, send)
+    elif data_name.endswith('-passed'):
+        components = data_name.split('-', 2)
+        if len(components) == 3 and components[2] == 'passed':
+            return station_data(station, 'status', 'passed')(station, '-'.join(components[:2]), send)
 
     return station_data(station, 'data', 'get')(station, data_name, start_epoch_ms, end_epoch_ms, send)

@@ -1,0 +1,26 @@
+<form class="passedsummary-entry">
+  <div id="passedsummary-title" class="passedsummary-header">Passed Data Summary</div>
+
+  <div class="passedsummary-center">
+      <div class="passedsummary-lines">
+        <div class="passedsummary-lines" id="passedsummary_details">Loading...</div>
+        <div id="passedsummary_plot"></div>
+      </div>
+  </div>
+
+  <div class="passedsummary-footer">
+    <span id="passedsummary_loading" class="mdi mdi-loading mdi-spin"></span>
+
+    <button id="passedsummary-ok">Ok</button>
+  </div>
+</form>
+
+<script>
+(function() {
+{% include 'status/passed.js' %}
+})();
+</script>
+
+<style>
+{% include 'status/passed.css' %}
+</style>

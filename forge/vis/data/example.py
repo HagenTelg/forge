@@ -177,3 +177,26 @@ class ExampleEventLog(DataStream):
             'acquisition': True,
         })
 
+
+class ExamplePassed(DataStream):
+    def __init__(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
+        super().__init__(send)
+
+    async def run(self) -> None:
+        from forge.logicaltime import year_bounds_ms
+        for year in range(2018, 2025):
+            if year == 2021:
+                continue
+            start, end = year_bounds_ms(year)
+            await self.send({
+                'start_epoch_ms': start,
+                'end_epoch_ms': end,
+                'pass_time_epoch_ms': 1746057600000,
+                'comment': "A comment" if year == 2020 else "",
+            })
+        await self.send({
+            'start_epoch_ms': 1736035200000,
+            'end_epoch_ms': 1736467200000,
+            'pass_time_epoch_ms': 1736467200000,
+            'comment': "After a gap",
+        })
