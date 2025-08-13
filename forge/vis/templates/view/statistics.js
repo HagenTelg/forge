@@ -335,7 +335,7 @@ class TimeDrag {
 
         shapes.push({
             type: 'rect',
-            layer: 'between',
+            layer: 'above',
             xref: 'x2',
             yref: 'y2 domain',
             x0: DataSocket.toPlotTime(begin_time),
@@ -355,7 +355,7 @@ class TimeDrag {
         let handle_y1 = middle_y + span_y * 0.3;
         shapes.push({
             type: 'line',
-            layer: 'between',
+            layer: 'above',
             xref: 'x2',
             yref: 'y2 domain',
             x0: DataSocket.toPlotTime(begin_time),
@@ -369,7 +369,7 @@ class TimeDrag {
         });
         shapes.push({
             type: 'line',
-            layer: 'between',
+            layer: 'above',
             xref: 'x2',
             yref: 'y2 domain',
             x0: DataSocket.toPlotTime(end_time),
