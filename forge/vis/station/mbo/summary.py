@@ -9,10 +9,10 @@ class Summary(TimeSeries):
 
     THERMO_OZONE_SLOPE = 1.35135
     THERMO_OZONE_INTERCEPT = 1.29191
-    ECOTECH_OZONE_SLOPE = 0.882
-    ECOTECH_OZONE_INTERCEPT = -4.82
-    TWOB_OZONE_SLOPE = 1
-    TWOB_OZONE_INTERCEPT = 0
+    ECOTECH_OZONE_SLOPE = 0.88928
+    ECOTECH_OZONE_INTERCEPT = -2.80062
+    TWOB_OZONE_SLOPE = 1.01554
+    TWOB_OZONE_INTERCEPT = -4.07545
 
     class CalibrateOzone(TimeSeries.Processing):
         def __init__(self):
