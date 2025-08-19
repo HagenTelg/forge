@@ -260,9 +260,9 @@ def align_wavelengths(
 
     for input_wavelengths, input_select, input_times in source.select_wavelengths(tail_index_only=True):
         if source_values is not None:
-            input_data = np.stack([source_values[..., vs] for vs in input_select], axis=-1)
+            input_data = np.stack([source_values[vs] for vs in input_select], axis=-1)
         else:
-            input_data = np.stack([source[..., vs] for vs in input_select], axis=-1)
+            input_data = np.stack([source[vs] for vs in input_select], axis=-1)
         input_begin, input_end = source.times[input_times][[0, -1]]
         for target_wavelengths, output_select, output_times in destination.select_wavelengths(tail_index_only=True):
             output_begin, output_end = destination.times[output_times][[0, -1]]
@@ -281,7 +281,7 @@ def align_wavelengths(
             apply_times = slice(begin_index, end_index)
 
             for output_idx in range(len(target_wavelengths)):
-                result[apply_times, ..., output_select[output_idx]] = _adjust_single_wavelength(
+                result[*((apply_times,) + output_select[output_idx])] = _adjust_single_wavelength(
                     input_data[apply_times], input_wavelengths, target_wavelengths[output_idx], parameters
                 )
 

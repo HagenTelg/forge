@@ -693,6 +693,8 @@ class DataVariable(SelectedVariable):
             idx_wavelength = np.where(valid_wavelengths)[0][idx_wavelength]
 
             begin_index, end_index = self._time_slice(self.times, start_ms, end_ms)
+            if begin_index >= end_index:
+                continue
             time_selector = slice(begin_index, end_index)
 
             wavelength_selectors: typing.List[typing.Tuple] = list()
