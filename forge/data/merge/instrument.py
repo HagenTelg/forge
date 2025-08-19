@@ -87,6 +87,8 @@ def _wavelength_mapping(wavelength_source: netCDF4.Variable, destination_size: i
             break
         if target_index in remapped_indices:
             break
+        if target_index >= len(output_apply):
+            break
         remapped_indices.add(target_index)
         output_apply[target_index] = sidx
     else:
