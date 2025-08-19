@@ -39,7 +39,10 @@ def weiss(
             {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
             {"standard_name": "volume_extinction_coefficient_in_air_due_to_ambient_aerosol_particles"},
     ), {"variable_name": "transmittance"}):
-        absorption.values = correct_weiss(absorption.values, transmittance.values, a, b)
+        transmittance = transmittance.values
+        if transmittance.shape != absorption.shape:
+            transmittance = np.resize(transmittance, absorption.shape)
+        absorption.values = correct_weiss(absorption.values, transmittance, a, b)
 
 
 def weiss_undo(
