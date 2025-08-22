@@ -28,14 +28,6 @@ station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-psapstatus', "PS
 station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-psapstatus', "PSAP Status"),
                                          'aerosol-realtime-clapstatus')
 
-station_modes['aerosol-raw'].remove('aerosol-raw-aethalometer')
-station_modes['aerosol-raw'].remove('aerosol-raw-aethalometerstatus')
-station_modes['aerosol-realtime'].remove('aerosol-realtime-aethalometer')
-station_modes['aerosol-realtime'].remove('aerosol-realtime-aethalometerstatus')
-station_modes['aerosol-editing'].remove('aerosol-editing-aethalometer')
-station_modes['aerosol-clean'].remove('aerosol-clean-aethalometer')
-station_modes['aerosol-avgh'].remove('aerosol-avgh-aethalometer')
-
 station_modes['aerosol-raw'].remove('aerosol-raw-wind')
 station_modes['aerosol-realtime'].remove('aerosol-realtime-wind')
 station_modes['aerosol-editing'].remove('aerosol-editing-wind')
