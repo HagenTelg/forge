@@ -258,7 +258,9 @@ aerosol_data[f"aerosol-realtime-aethalometer"] = RealtimeRecord(dict(
                                       require_tags={"aethalometer"}, exclude_tags={"secondary"})])
      for wl in range(7)] +
     [(f"CF{wl+1}", [RealtimeSelection(f"k{wl+1}",variable_name="correction_factor", wavelength_number=wl,
-                                      require_tags={"aethalometer", "mageeae33"}, exclude_tags={"secondary"})])
+                                      require_tags={"aethalometer", "mageeae33"}, exclude_tags={"secondary"}),
+                    RealtimeSelection(f"k{wl + 1}", variable_name="correction_factor", wavelength_number=wl,
+                                      require_tags={"aethalometer", "mageeae36"}, exclude_tags={"secondary"})])
      for wl in range(7)]
 ))
 aerosol_data["aerosol-realtime-wind"] = RealtimeRecord({
