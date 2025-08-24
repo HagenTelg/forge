@@ -276,7 +276,7 @@ def launch(create_instrument: typing.Callable[[BaseContext], BaseInstrument]) ->
     config = instrument_config(args)
 
     ctx = BaseContext(config, data, bus, persistent)
-    configure_context(ctx)
+    configure_context(args, ctx)
 
     instrument = create_instrument(ctx)
     ctx.persistent.version = instrument.PERSISTENT_VERSION
