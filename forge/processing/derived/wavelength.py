@@ -281,7 +281,7 @@ def align_wavelengths(
             apply_times = slice(begin_index, end_index)
 
             for output_idx in range(len(target_wavelengths)):
-                result[*((apply_times,) + output_select[output_idx])] = _adjust_single_wavelength(
+                result[tuple(((apply_times,) + output_select[output_idx]))] = _adjust_single_wavelength(
                     input_data[apply_times], input_wavelengths, target_wavelengths[output_idx], parameters
                 )
 
