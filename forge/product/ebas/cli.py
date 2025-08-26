@@ -24,6 +24,9 @@ def main():
     parser.add_argument('--directory',
                         dest='directory',
                         help="output directory instead of the current one")
+    parser.add_argument('--tag',
+                        dest='tag', nargs='*',
+                        help="tags to add")
     parser.add_argument('station',
                         help="station code")
     parser.add_argument('data',
@@ -56,6 +59,16 @@ def main():
         _LOGGER.debug(f"Failed to import '{file_type_code}'", exc_info=True)
         parser.error(f"EBAS file type code '{file_type_code}' no found for station and/or time")
         exit(1)
+    if args.tag:
+        add_tags = set([t.strip() for t in args.tag])
+        class TagConverter(converter):
+            @property
+            def tags(self) -> typing.Optional[typing.Set[str]]:
+                tags = set(super().tags)
+                tags.update(add_tags)
+                return tags
+
+        converter = TagConverter
     converter = converter(station, start_epoch_ms, end_epoch_ms)
 
     async def run():

@@ -163,7 +163,7 @@ class Level0File(SpectralFile, AerosolInstrument):
         for var in humidity:
             var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
         for var in flow_rate:
-            var.add_characteristic('Location', 'sample_line', self.instrument_type, var.metadata.comp_name, '0')
+            var.add_characteristic('Location', 'sample line', self.instrument_type, var.metadata.comp_name, '0')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)

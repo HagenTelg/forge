@@ -159,6 +159,16 @@ class Level0File(SpectralFile, AerosolInstrument):
                         {"variable_name": "inlet_humidity"},
                 ):
                     humidity_inlet[nas].integrate_variable(var, selector(var, require_cut_size_match=False))
+                for var in self.select_variable(
+                        root,
+                        {"variable_name": "lamp_current"},
+                ):
+                    lamp_current[nas].integrate_variable(var, selector(var, require_cut_size_match=False))
+                for var in self.select_variable(
+                        root,
+                        {"variable_name": "lamp_voltage"},
+                ):
+                    lamp_voltage[nas].integrate_variable(var, selector(var, require_cut_size_match=False))
 
                 for var in self.select_variable(
                         root,
