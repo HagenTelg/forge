@@ -203,9 +203,12 @@ class _BaseInstrument(_InstrumentMixin):
                     target(exp(v / -100.0))
             return apply
 
-        def set_bc_value(target: Input) -> typing.Callable[[float], None]:
+        def set_bc_value(target: Input, index: int = None, absorption: Input = None) -> typing.Callable[[float], None]:
             def apply(v: float):
-                target(mass_ng_to_ug(v))
+                x = mass_ng_to_ug(v)
+                target(x)
+                if index is not None and absorption is not None:
+                    absorption(x * self._ebc_efficiency[i])
             return apply
 
         def set_ebc_efficiency(index: int) -> typing.Callable[[float], None]:
@@ -220,8 +223,8 @@ class _BaseInstrument(_InstrumentMixin):
             self.float_columns[f"sens{wl_name}_2"] = set_wavelength_value(self.data_Ips_wavelength[index])
             self.float_columns[f"atn{wl_name}_1"] = set_atn_value(self.data_Ir_wavelength[index], index, self._have_direct_Ir)
             self.float_columns[f"atn{wl_name}_2"] = set_atn_value(self.data_Irs_wavelength[index], index, self._have_direct_Irs)
-            self.float_columns[f"bc{wl_name}_1"] = set_bc_value(self.data_Xa_wavelength[index])
-            self.float_columns[f"bc{wl_name}_2"] = set_bc_value(self.data_Xb_wavelength[index])
+            self.float_columns[f"bc{wl_name}_1"] = set_bc_value(self.data_Xa_wavelength[index], index, self.data_Ba_wavelength[index])
+            self.float_columns[f"bc{wl_name}_2"] = set_bc_value(self.data_Xb_wavelength[index], index, self.data_Bas_wavelength[index])
             self.float_columns[f"bc{wl_name}"] = set_bc_value(self.data_X_wavelength[index])
             self.float_columns[f"k{wl_name}"] = set_wavelength_value(self.data_correction_factor_wavelength[index])
             self.float_columns[f"babs{wl_name}"] = set_wavelength_value_direct(self.data_Bac_wavelength[index], index, self._have_direct_Bac)
