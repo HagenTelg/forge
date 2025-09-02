@@ -85,7 +85,7 @@ class InstrumentHistory:
             for instrument_id, under_values in under.items():
                 existing = destination.get(instrument_id)
                 if not existing:
-                    destination[instrument_id] = under_values
+                    destination[instrument_id] = list(under_values)
                     continue
 
                 if len(existing) < len(under_values):

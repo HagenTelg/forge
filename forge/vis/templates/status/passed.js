@@ -293,7 +293,6 @@ modalWindow.onmodalhide = function() {
         incomingPassedStream.stopStream();
         incomingPassedStream = undefined;
     }
-    exportSocket.close();
     if (originalHide) {
         originalHide();
     }

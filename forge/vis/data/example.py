@@ -200,3 +200,55 @@ class ExamplePassed(DataStream):
             'pass_time_epoch_ms': 1736467200000,
             'comment': "After a gap",
         })
+
+
+class ExampleInstruments(DataStream):
+    def __init__(self, send: typing.Callable[[typing.Dict], typing.Awaitable[None]]):
+        super().__init__(send)
+
+    async def run(self) -> None:
+        await self.send({
+            'start_epoch_ms': 1420070400000,
+            'end_epoch_ms': 1735689600000,
+            'instrument_id': "S11",
+            'instrument_code': "tsi3563nephelometer",
+            'manufacturer': "TSI",
+            'model': "3563",
+            'serial_number': "1001",
+        })
+        await self.send({
+            'start_epoch_ms': 1420070400000,
+            'end_epoch_ms': 1577836800000,
+            'instrument_id': "A11",
+            'instrument_code': "clap",
+            'manufacturer': "GML",
+            'model': "CLAP",
+            'serial_number': "1",
+        })
+        await self.send({
+            'start_epoch_ms': 1577836800000,
+            'end_epoch_ms': 1735689600000,
+            'instrument_id': "A11",
+            'instrument_code': "clap",
+            'manufacturer': "GML",
+            'model': "CLAP",
+            'serial_number': "2",
+        })
+        await self.send({
+            'start_epoch_ms': 1525132800000,
+            'end_epoch_ms': 1588291200000,
+            'instrument_id': "N61",
+            'instrument_code': "tsi3760",
+            'manufacturer': "TSI",
+            'model': "3760",
+            'serial_number': "123",
+        })
+        await self.send({
+            'start_epoch_ms': 1651363200000,
+            'end_epoch_ms': 1704067200000,
+            'instrument_id': "N61",
+            'instrument_code': "tsi3760",
+            'manufacturer': "TSI",
+            'model': "3760",
+            'serial_number': "123",
+        })

@@ -52,6 +52,7 @@
 
         <li><a id="show_event_log" class="main-menu-item" href="{{ request.url_for('eventlog', station=station, mode_name=mode.mode_name) }}" title="Show the event log">Message Log</a></li>
         <li><a id="show_passed_summary" class="main-menu-item" href="{{ request.url_for('passed_modal', station=station, mode_name=mode.mode_name) }}" title="Show the passed data summary dialog">Show Passed</a></li>
+        <li><a id="show_instrument_summary" class="main-menu-item" href="{{ request.url_for('instruments_modal', station=station, mode_name=mode.mode_name) }}" title="Show the available instruments summary dialog">Show Instruments</a></li>
 
         {% include 'mode/topbar/menuitems.html' %}
       </ul>

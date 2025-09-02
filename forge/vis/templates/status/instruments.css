@@ -1,0 +1,64 @@
+.instrumentsummary-entry {
+  display: flex;
+  flex-direction: column;
+}
+
+.instrumentsummary-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 8px 0 0 16px;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.instrumentsummary-center {
+  position: relative;
+  display: flex;
+  margin: 48px 16px 8px;
+  align-items: center;
+}
+
+.instrumentsummary-lines {
+  position: relative;
+  display: flex;
+  margin: 0;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.instrumentsummary-footer {
+  padding: 0;
+  margin: 0;
+  background-color: #0080ff;
+  color: white;
+  height: 45px;
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.instrumentsummary-footer button {
+  border: none;
+  outline: none;
+  color: inherit;
+  padding: 14px 20px;
+  background-color: transparent;
+  font-weight: bold;
+  font-family: inherit;
+  cursor: pointer;
+}
+.instrumentsummary-footer button:hover,
+.instrumentsummary-footer button:focus {
+  color: #000;
+  text-decoration: none;
+}
+
+#instrumentsummary_loading {
+  position: absolute;
+  left: 10px;
+  bottom: -2px;
+  font-size: 40px;
+  flex-grow: 1;
+  text-align: center;
+  color: white;
+}

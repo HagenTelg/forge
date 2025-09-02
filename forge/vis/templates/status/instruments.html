@@ -1,0 +1,26 @@
+<form class="instrumentsummary-entry">
+  <div id="instrumentsummary-title" class="instrumentsummary-header">Instrument Summary</div>
+
+  <div class="instrumentsummary-center">
+      <div class="instrumentsummary-lines">
+        <div class="instrumentsummary-lines" id="instrumentsummary_details">Loading...</div>
+        <div id="instrumentsummary_plot"></div>
+      </div>
+  </div>
+
+  <div class="instrumentsummary-footer">
+    <span id="instrumentsummary_loading" class="mdi mdi-loading mdi-spin"></span>
+
+    <button id="instrumentsummary-ok">Ok</button>
+  </div>
+</form>
+
+<script>
+(function() {
+{% include 'status/instruments.js' %}
+})();
+</script>
+
+<style>
+{% include 'status/instruments.css' %}
+</style>
