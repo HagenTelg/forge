@@ -599,8 +599,8 @@ class DataSelection:
             component_type = component_type.lower()
             if component_type == 'tag' or component_type == 'tags':
                 component_value = component_value.strip().lower()
-                require_tags.clear()
-                exclude_tags.clear()
+                require_tags = set()
+                exclude_tags = set()
                 for tag in _PLAIN_SPLIT.split(component_value):
                     tag = tag.strip()
                     if tag.startswith('-'):
