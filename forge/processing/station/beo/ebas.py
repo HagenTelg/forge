@@ -66,9 +66,10 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
     )]
 
 
-def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
-    from ..default.ebas import standard_submit
-    return standard_submit(gaw_station)
+# Disabled, Betsy email 2025-09-08
+# def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
+#     from ..default.ebas import standard_submit
+#     return standard_submit(gaw_station)
 
 
 def nrt(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"], str, str]]:
