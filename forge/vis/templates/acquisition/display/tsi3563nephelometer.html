@@ -294,10 +294,11 @@
     let haveSpancheckResults = false;
     let inSpancheck = false;
     let inRunMode = true;
+    let isBypassed = false;
 
     function updateVisibility() {
-        setVisible('#{{uid}}_start_zero', inRunMode);
-        setVisible('#{{uid}}_start_spancheck', inRunMode);
+        setVisible('#{{uid}}_start_zero', inRunMode && !isBypassed);
+        setVisible('#{{uid}}_start_spancheck', inRunMode && !isBypassed);
         setVisible('#{{uid}}_stop_spancheck', inSpancheck);
         setVisible('#{{uid}}_apply_spancheck_calibration', haveSpancheckResults && inRunMode);
         setVisible('#{{uid}}_set_parameters', inRunMode);
@@ -312,6 +313,7 @@
             inSpancheck = notifications.includes('spancheck');
             inRunMode = !inSpancheck && !notifications.includes('zero') && !notifications.includes('blank');
         }
+        isBypassed = state.bypassed;
         updateVisibility();
     }, context.source);
 
@@ -335,7 +337,6 @@
         }
         updateVisibility();
     }, context.source, 'spancheck_result');
-
 
     context.addSourceTarget((value) => {
         currentParameters = value;
