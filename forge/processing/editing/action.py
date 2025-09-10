@@ -438,6 +438,7 @@ class AbnormalData(_FlaggingAction):
     _FLAG_MAP = {
         'wild_fire': 'abnormal_data_wild_fire',
         'dust': 'abnormal_data_dust',
+        'volcanic_plume': 'abnormal_volcanic_plume',
     }
 
     def __init__(self, parameters: str):

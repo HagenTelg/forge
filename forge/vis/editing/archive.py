@@ -214,7 +214,7 @@ def _to_archive_action(action: typing.Dict[str, typing.Any]) -> typing.Tuple[str
         if not isinstance(episode_type, str):
             raise ValueError
         episode_type = str(episode_type).lower()
-        if episode_type not in ('wild_fire', 'dust'):
+        if episode_type not in ('wild_fire', 'dust', 'volcanic_plume'):
             raise ValueError
         return 'AbnormalData', {
             "episode_type": episode_type,

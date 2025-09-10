@@ -307,6 +307,8 @@ def _to_cpd3_action(directive: typing.Dict[str, typing.Any]) -> typing.Dict[str,
             episode_type = 'WildFire'
         elif episode_type == 'dust':
             episode_type = 'Dust'
+        elif episode_type == 'volcanic_plume':
+            episode_type = 'VolcanicPlume'
         else:
             raise ValueError
         return {
@@ -829,6 +831,8 @@ def _convert_directive(profile: str, identity: Identity,
         episode_type = str(action.get('EpisodeType', 'WildFire')).lower()
         if episode_type == 'dust':
             result['episode_type'] = 'dust'
+        if episode_type == 'volcanic_plume':
+            result['episode_type'] = 'volcanic_plume'
         else:
             result['episode_type'] = 'wild_fire'
     else:

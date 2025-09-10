@@ -709,6 +709,8 @@ class EditDirective:
             episode_type = str(action.get('EpisodeType', 'WildFire')).lower()
             if episode_type == 'dust':
                 episode_type = 'dust'
+            elif episode_type == 'volcanic_plume':
+                episode_type = 'volcanic_plume'
             else:
                 episode_type = 'wild_fire'
             return "AbnormalData", to_json({

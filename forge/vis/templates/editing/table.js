@@ -179,6 +179,7 @@ $(document).ready(function() {
             switch(directive.episode_type) {
             case 'wild_fire': return "Wild Fire";
             case 'dust': return "Dust";
+            case 'volcanic_plume': return "Volcanic Plume";
             default: return "";
             }
         }
