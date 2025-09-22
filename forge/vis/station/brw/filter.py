@@ -26,6 +26,12 @@ class FilterStatus(TimeSeries):
         active.data_field = 'Fn'
         status.traces.append(active)
 
+        filter_mode = TimeSeries.Trace(filter_index)
+        filter_mode.legend = "Mode Number"
+        filter_mode.data_record = f'{mode}-filterstatus'
+        filter_mode.data_field = 'mode'
+        status.traces.append(filter_mode)
+
         for i in range(8):
             dP = TimeSeries.Trace(hPa)
             dP.legend = f"Pd_P{i+1}"
