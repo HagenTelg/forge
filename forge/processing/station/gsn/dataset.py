@@ -27,3 +27,8 @@ def creator_institution(station: str, tags: typing.Optional[typing.Set[str]] = N
 
 def creator_url(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     return None
+
+
+def license(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
+    # Awaiting confirmation
+    return None
