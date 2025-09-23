@@ -6,4 +6,8 @@ if typing.TYPE_CHECKING:
 
 def updates(station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
     from ..default.sqldb import standard_updates
-    return standard_updates(station)
+    u = standard_updates(station)
+    for k in list(u.keys()):
+        if k.startswith("met_"):
+            del u[k]
+    return u
