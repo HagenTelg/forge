@@ -18,16 +18,24 @@ class Update(TableUpdate):
             await self.fetch_instrument_files(self.data_selection, data_directory)
 
             data_columns = [
-                self.VariableColumn("P", {"variable_id": "P"}),
-                self.VariableColumn( "WI", {"variable_id": "WI"}),
-                self.VariableColumn( "U", [{"variable_id": "U"}, {"variable_id": "U1"}]),
-                self.VariableColumn( "T", [{"variable_id": "T"}, {"variable_id": "T1"}]),
-                self.VariableColumn( "T1", {"variable_id": "T2"}),
-                self.VariableColumn( "T2", {"variable_id": "T3"}),
-                self.VariableColumn( "WS", [{"variable_id": "WS"}, {"variable_id": "WS1"}]),
-                self.VariableColumn( "WD", [{"variable_id": "WD"}, {"variable_id": "WD1"}]),
+                self.VariableColumn("P", {"variable_id": "P"},
+                                    always_set=False),
+                self.VariableColumn( "WI", {"variable_id": "WI"},
+                                     always_set=False),
+                self.VariableColumn( "U", [{"variable_id": "U"}, {"variable_id": "U1"}],
+                                     always_set=False),
+                self.VariableColumn( "T", [{"variable_id": "T"}, {"variable_id": "T1"}],
+                                     always_set=False),
+                self.VariableColumn( "T1", {"variable_id": "T2"},
+                                     always_set=False),
+                self.VariableColumn( "T2", {"variable_id": "T3"},
+                                     always_set=False),
+                self.VariableColumn( "WS", [{"variable_id": "WS"}, {"variable_id": "WS1"}],
+                                     always_set=False),
+                self.VariableColumn( "WD", [{"variable_id": "WD"}, {"variable_id": "WD1"}],
+                                     always_set=False),
                 self.VariableColumn( "WDg", [{"variable_id": "WD"}, {"variable_id": "WD1"}],
-                                    statistics="stability_factor"),
+                                    statistics="stability_factor", always_set=False),
             ]
 
             async for update_start, update_end, update_files in self.aligned_files(data_directory):

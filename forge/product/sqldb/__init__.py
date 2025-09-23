@@ -97,10 +97,12 @@ class TableUpdate(ABC):
         def __init__(self, name: str,
                      selection: typing.Union[typing.Union[typing.Dict, VariableSelection, str], typing.List[typing.Union[typing.Dict, VariableSelection, str]]],
                      wavelength_index: typing.Optional[int] = None,
-                     statistics: typing.Optional[str] = None):
+                     statistics: typing.Optional[str] = None,
+                     always_set: bool = True):
             self.name = name
             self.wavelength_index = wavelength_index
             self.statistics = statistics
+            self.always_set = always_set
             if not isinstance(selection, list):
                 selection = [selection]
             self.selections: typing.List[typing.Union[typing.Dict, VariableSelection, str]] = selection
@@ -397,22 +399,41 @@ class TableUpdate(ABC):
                 self._remove_inner(update_start, update_end, conn)
 
                 param_map: typing.Dict[str, typing.Callable[[int, int], typing.Any]] = dict()
+                always_set: typing.Set[str] = set()
 
                 for key_column in (list(self.PRIMARY_KEY) + list(self.EXTRA_KEY)):
                     param_map[key_column.name] = key_column
+                    always_set.add(key_column.name)
                 for u in updates:
                     param_map[u.column.name] = u
+                    if u.column.always_set:
+                        always_set.add(key_column.name)
 
                 table = table(self.table_name, *[column(n) for n in param_map.keys()])
-                stmt = insert(table).values(**{
-                    n: bindparam(n) for n in param_map.keys()
-                })
 
                 params = {}
+                param_order = sorted(param_map.keys())
+                set_statements = {}
+                set_key = []
                 for time_idx in range(times.shape[0]):
                     time_epoch_ms = int(times[time_idx])
-                    for param_name, get_value in param_map.items():
-                        params[param_name] = get_value(time_idx, time_epoch_ms)
+                    for param_name in param_order:
+                        get_value = param_map[param_name]
+
+                        v = get_value(time_idx, time_epoch_ms)
+                        if v is None and param_name not in always_set:
+                            params.pop(param_name, None)
+                        else:
+                            params[param_name] = v
+                            set_key.append(param_name)
+
+                    stmt = set_statements.get(tuple(set_key), None)
+                    if stmt is None:
+                        stmt = insert(table).values(**{
+                            n: bindparam(n) for n in params.keys()
+                        })
+                        set_statements[tuple(set_key)] = stmt
+
                     conn.execute(stmt, params)
 
         begin = time.monotonic()
