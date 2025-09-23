@@ -171,7 +171,10 @@ class Controller(UpdateController):
         from forge.processing.station.lookup import station_data
 
         trackers: typing.List[Tracker] = list()
+        exclude_stations: typing.Set[str] = {s.lower() for s in CONFIGURATION.get('EBAS.UPDATE.ARCHIVE.EXCLUDE_STATIONS', ())}
         for station in STATIONS:
+            if station in exclude_stations:
+                continue
             for ebas_file, (archive, selections) in station_data(station, 'ebas', 'submit')(station).items():
                 trackers.append(Tracker(self.connection, self.state_path, station, archive, ebas_file, selections))
         return trackers
