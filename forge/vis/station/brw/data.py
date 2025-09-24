@@ -385,7 +385,7 @@ else:
 
     data_records["aerosol-raw-filterstatus2"] = DataRecord(dict(
         [("Fn", [Selection(variable_id="Fn", instrument_id="F31")]),
-         ("mode", [Selection(variable_id="mode", instrument_id="F31")])] + [
+         ("mode", [Selection(variable_name="mode", instrument_id="F31")])] + [
         (f"Pd{i+1}", [Selection(variable_id=f"Pd_P3{i+1}")])
         for i in range(8)
     ]), hold_fields={"Fn", "mode"})
