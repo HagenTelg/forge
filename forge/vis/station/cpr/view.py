@@ -4,6 +4,7 @@ from ..default.view import detach, View, aerosol_views
 from ..default.aerosol.aethalometer import AE31, AE31Status
 from ..default.aerosol.flow import DilutionFlow
 from ..default.aerosol.temperature import Temperature
+from ..default.aerosol.ccn import CCNStatus
 from .counts import ParticleConcentration, EditingParticleConcentration, TSI3772CPCStatusSecondary
 from .clouds import Clouds
 from .hurricane import Hurricane
@@ -51,6 +52,9 @@ station_views['aerosol-avgh-clouds'] = Clouds('aerosol-avgh')
 
 station_views['aerosol-raw-hurricane'] = Hurricane('aerosol-raw')
 station_views['aerosol-realtime-hurricane'] = Hurricane('aerosol-realtime', realtime=True)
+
+station_views['aerosol-raw-ccnstatus'] = CCNStatus('aerosol-raw')
+station_views['aerosol-realtime-ccnstatus'] = CCNStatus('aerosol-raw', realtime=True)
 
 
 def get(station: str, view_name: str) -> typing.Optional[View]:

@@ -30,6 +30,12 @@ class ParticleConcentration(TimeSeries):
         n_cnc.data_field = 'cnc2'
         cnc.traces.append(n_cnc)
 
+        n_cnc = TimeSeries.Trace(cm_3)
+        n_cnc.legend = "CCN"
+        n_cnc.data_record = f'{mode}-cnc'
+        n_cnc.data_field = 'ccn'
+        cnc.traces.append(n_cnc)
+
 
 class EditingParticleConcentration(TimeSeries):
     def __init__(self, profile: str = 'aerosol', **kwargs):
@@ -59,6 +65,12 @@ class EditingParticleConcentration(TimeSeries):
         n_cnc.data_field = 'cnc2'
         raw.traces.append(n_cnc)
 
+        n_cnc = TimeSeries.Trace(cm_3)
+        n_cnc.legend = "Raw CCN"
+        n_cnc.data_record = f'{profile}-raw-cnc'
+        n_cnc.data_field = 'ccn'
+        raw.traces.append(n_cnc)
+
 
         edited = TimeSeries.Graph()
         edited.title = "Edited"
@@ -81,6 +93,12 @@ class EditingParticleConcentration(TimeSeries):
         n_cnc.legend = "Edited CNC2 (N72)"
         n_cnc.data_record = f'{profile}-editing-cnc'
         n_cnc.data_field = 'cnc2'
+        edited.traces.append(n_cnc)
+
+        n_cnc = TimeSeries.Trace(cm_3)
+        n_cnc.legend = "Edited CCN"
+        n_cnc.data_record = f'{profile}-editing-cnc'
+        n_cnc.data_field = 'ccn'
         edited.traces.append(n_cnc)
 
 

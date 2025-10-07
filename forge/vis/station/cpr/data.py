@@ -243,10 +243,12 @@ else:
         data_records[f"aerosol-{archive}-cnc"] = DataRecord({
             "cnc": [Selection(variable_name="number_concentration", require_tags={"cpc"}, exclude_tags={"secondary"})],
             "cnc2": [Selection(variable_name="number_concentration", instrument_id="N72")],
+            "ccn": [Selection(variable_name="number_concentration", require_tags={"dmtccn"})],
         })
     data_records["aerosol-realtime-cnc"] = RealtimeRecord({
         "cnc": [RealtimeSelection("N", variable_name="number_concentration", require_tags={"cpc"}, exclude_tags={"secondary"})],
         "cnc2": [RealtimeSelection("N", variable_name="number_concentration", instrument_id="N72")],
+        "ccn": [RealtimeSelection("N", variable_name="number_concentration", require_tags={"dmtccn"})],
     })
 
     data_records["aerosol-raw-cpcstatus2"] = DataRecord({
@@ -371,6 +373,33 @@ else:
         "IBsb": [RealtimeSelection("IBsb", variable_name="detector_b_intensity", instrument_code="purpleair", exclude_tags={"secondary"})],
         "Bs": [RealtimeSelection("Bs", variable_name="scattering_coefficient", instrument_code="purpleair", exclude_tags={"secondary"},
                                  wavelength_number=0)],
+    })
+
+    data_records["aerosol-raw-ccnstatus"] = DataRecord({
+        "Tinlet": [Selection(variable_name="inlet_temperature", instrument_code="dmtccn")],
+        "Ttec1": [Selection(variable_name="tec1_temperature", instrument_code="dmtccn")],
+        "Ttec2": [Selection(variable_name="tec2_temperature", instrument_code="dmtccn")],
+        "Ttec3": [Selection(variable_name="tec3_temperature", instrument_code="dmtccn")],
+        "Tsample": [Selection(variable_name="sample_temperature", instrument_code="dmtccn")],
+        "Topc": [Selection(variable_name="opc_temperature", instrument_code="dmtccn")],
+        "Tnafion": [Selection(variable_name="nafion_temperature", instrument_code="dmtccn")],
+        "Qsample": [Selection(variable_name="sample_flow", instrument_code="dmtccn")],
+        "Qsheath": [Selection(variable_name="sheath_flow", instrument_code="dmtccn")],
+        "SScalc": [Selection(variable_name="supersaturation_model", instrument_code="dmtccn")],
+        "SSset": [Selection(variable_name="supersaturation_setting", instrument_code="dmtccn")],
+    })
+    data_records["aerosol-realtime-ccnstatus"] = RealtimeRecord({
+        "Tinlet": [RealtimeSelection("Tinlet", variable_name="inlet_temperature", instrument_code="dmtccn")],
+        "Ttec1": [RealtimeSelection("Ttec1", variable_name="tec1_temperature", instrument_code="dmtccn")],
+        "Ttec2": [RealtimeSelection("Ttec2", variable_name="tec2_temperature", instrument_code="dmtccn")],
+        "Ttec3": [RealtimeSelection("Ttec3", variable_name="tec3_temperature", instrument_code="dmtccn")],
+        "Tsample": [RealtimeSelection("Tsample", variable_name="sample_temperature", instrument_code="dmtccn")],
+        "Topc": [RealtimeSelection("Topc", variable_name="opc_temperature", instrument_code="dmtccn")],
+        "Tnafion": [RealtimeSelection("Tnafion", variable_name="nafion_temperature", instrument_code="dmtccn")],
+        "Qsample": [RealtimeSelection("Q", variable_name="sample_flow", instrument_code="dmtccn")],
+        "Qsheath": [RealtimeSelection("Qsheath", variable_name="sheath_flow", instrument_code="dmtccn")],
+        "SScalc": [RealtimeSelection("SScalc", variable_name="supersaturation_model", instrument_code="dmtccn")],
+        "SSset": [RealtimeSelection("SSset", variable_name="supersaturation_setting", instrument_code="dmtccn")],
     })
 
 
