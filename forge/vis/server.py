@@ -88,7 +88,7 @@ async def _root(request: Request) -> Response:
         if default_station is not None:
             default_station = default_station.lower()
             if default_station in STATIONS:
-                return RedirectResponse(request.url_for('request_access') + f"?station={default_station}")
+                return RedirectResponse(str(request.url_for('request_access')) + f"?station={default_station}")
         return RedirectResponse(request.url_for('request_access'))
 
     if default_station is not None:

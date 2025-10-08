@@ -29,7 +29,7 @@ async def _mode_request(request: Request) -> Response:
                     return RedirectResponse(request.url_for('login'))
                 except NoMatchFound:
                     raise HTTPException(starlette.status.HTTP_403_FORBIDDEN, detail="Invalid authentication")
-            return RedirectResponse(request.url_for('request_access') + f"?station={station}")
+            return RedirectResponse(str(request.url_for('request_access')) + f"?station={station}")
         return RedirectResponse(request.url_for('mode', station=station, mode_name=mode.mode_name))
 
     mode = lookup_mode(request, station, mode_name)
