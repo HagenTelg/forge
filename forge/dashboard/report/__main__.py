@@ -99,12 +99,12 @@ def parse_arguments():
 
 
 def unit_is_failed(unit_name: str) -> bool:
-    import dbus
-    bus = dbus.SystemBus()
-    proxy = bus.get_object('org.freedesktop.systemd1', '/org/freedesktop/systemd1')
     try:
+        import dbus
+        bus = dbus.SystemBus()
+        proxy = bus.get_object('org.freedesktop.systemd1', '/org/freedesktop/systemd1')
         failed = proxy.ListUnitsFiltered(['failed'], dbus_interface='org.freedesktop.systemd1.Manager')
-    except dbus.DBusException:
+    except (dbus.DBusException, ImportError):
         return False
     for u in failed:
         if u[0] == unit_name:
