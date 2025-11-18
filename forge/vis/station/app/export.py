@@ -294,6 +294,8 @@ else:
         ] + [
             ExportCSV.Column([Selection(variable_id="T_V12")]),
             ExportCSV.Column([Selection(variable_id="U_V12")]),
+            ExportCSV.Column([Selection(variable_id="T_V13")]),
+            ExportCSV.Column([Selection(variable_id="U_V13")]),
         ])
     for archive in ("clean",):
         find_key(export_entries["aerosol"][archive], "intensive").columns.extend([
@@ -403,6 +405,14 @@ else:
         ] + [
             ExportCSV.Column([Selection(variable_id="U_V12", cut_size=cut_size)],
                              header="U" + record + "_V12")
+            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
+        ] + [
+            ExportCSV.Column([Selection(variable_id="T_V13", cut_size=cut_size)],
+                             header="T" + record + "_V13")
+            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
+        ] + [
+            ExportCSV.Column([Selection(variable_id="U_V13", cut_size=cut_size)],
+                             header="U" + record + "_V13")
             for record, cut_size in STANDARD_CUT_SIZE_SPLIT
         ])
         find_key(export_entries["aerosol"][archive], "intensive").columns.extend([
