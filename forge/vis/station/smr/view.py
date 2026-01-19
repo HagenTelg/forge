@@ -14,7 +14,7 @@ station_views = detach(aerosol_views, aerosol_public)
 
 station_views['aerosol-raw-maap'] = MAAP5012Optical('aerosol-raw')
 station_views['aerosol-realtime-maap'] = MAAP5012Optical('aerosol-realtime', realtime=True)
-station_views['aerosol-editing-maap'] = EditingMAAP5012('aerosol-editing')
+station_views['aerosol-editing-maap'] = EditingMAAP5012()
 station_views['aerosol-clean-maap'] = MAAP5012Optical('aerosol-clean')
 station_views['aerosol-avgh-maap'] = MAAP5012Optical('aerosol-avgh')
 station_views['aerosol-raw-maapstatus'] = MAAP5012Status('aerosol-raw')

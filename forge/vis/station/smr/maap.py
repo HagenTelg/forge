@@ -85,11 +85,25 @@ class EditingMAAP5012(TimeSeries):
             raw.traces.append(maap)
 
         for size in [("Whole", 'whole'), ("PM10", 'pm10'), ("PM2.5", 'pm25'), ("PM1", 'pm1')]:
+            aethalometer = TimeSeries.Trace(ugm3)
+            aethalometer.legend = f"Raw Aethalometer 660 nm ({size[0]})"
+            aethalometer.data_record = f'{profile}-raw-aethalometer-{size[1]}'
+            aethalometer.data_field = 'X5'
+            raw.traces.append(aethalometer)
+
+        for size in [("Whole", 'whole'), ("PM10", 'pm10'), ("PM2.5", 'pm25'), ("PM1", 'pm1')]:
             maap = TimeSeries.Trace(Mm_1)
             maap.legend = f"Raw MAAP Absorption ({size[0]})"
             maap.data_record = f'{profile}-raw-maap-{size[1]}'
             maap.data_field = 'Ba'
             raw.traces.append(maap)
+
+        for size in [("Whole", 'whole'), ("PM10", 'pm10'), ("PM2.5", 'pm25'), ("PM1", 'pm1')]:
+            aethalometer = TimeSeries.Trace(Mm_1)
+            aethalometer.legend = f"Raw Aethalometer 660 nm ({size[0]})"
+            aethalometer.data_record = f'{profile}-raw-aethalometer-{size[1]}'
+            aethalometer.data_field = 'Ba5'
+            raw.traces.append(aethalometer)
 
 
         edited = TimeSeries.Graph()
@@ -115,8 +129,22 @@ class EditingMAAP5012(TimeSeries):
             edited.traces.append(maap)
 
         for size in [("Whole", 'whole'), ("PM10", 'pm10'), ("PM2.5", 'pm25'), ("PM1", 'pm1')]:
+            aethalometer = TimeSeries.Trace(ugm3)
+            aethalometer.legend = f"Edited Aethalometer 660 nm ({size[0]})"
+            aethalometer.data_record = f'{profile}-editing-aethalometer-{size[1]}'
+            aethalometer.data_field = 'X5'
+            edited.traces.append(aethalometer)
+
+        for size in [("Whole", 'whole'), ("PM10", 'pm10'), ("PM2.5", 'pm25'), ("PM1", 'pm1')]:
             maap = TimeSeries.Trace(Mm_1)
             maap.legend = f"Edited MAAP Absorption ({size[0]})"
             maap.data_record = f'{profile}-editing-maap-{size[1]}'
             maap.data_field = 'Ba'
             edited.traces.append(maap)
+
+        for size in [("Whole", 'whole'), ("PM10", 'pm10'), ("PM2.5", 'pm25'), ("PM1", 'pm1')]:
+            aethalometer = TimeSeries.Trace(Mm_1)
+            aethalometer.legend = f"Raw Aethalometer 660 nm ({size[0]})"
+            aethalometer.data_record = f'{profile}-editing-aethalometer-{size[1]}'
+            aethalometer.data_field = 'Ba5'
+            edited.traces.append(aethalometer)

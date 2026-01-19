@@ -98,7 +98,7 @@ if use_cpd3("smr"):
         return export_profile_lookup(station, mode_name, station_profile_export)
 
 else:
-    from ..default.export import aerosol_exports, export_get, export_visible, ExportCSV, Selection, STANDARD_CUT_SIZE_SPLIT, STANDARD_THREE_WAVELENGTHS
+    from ..default.export import aerosol_exports, export_get, find_key, export_visible, ExportCSV, Selection, STANDARD_CUT_SIZE_SPLIT, STANDARD_THREE_WAVELENGTHS
     from copy import deepcopy
 
     export_entries = dict()
@@ -212,6 +212,15 @@ else:
                                         require_tags={"scattering"}, exclude_tags={"secondary"})]),
         ]))
 
+    ebas_export = find_key(export_entries["aerosol"]["raw"], "ebas")
+    if ebas_export:
+        ebas_export.ebas.add("maap_lev0")
+    ebas_export = find_key(export_entries["aerosol"]["clean"], "ebas")
+    if ebas_export:
+        ebas_export.ebas.add("maap_lev1")
+    ebas_export = find_key(export_entries["aerosol"]["avgh"], "ebas")
+    if ebas_export:
+        ebas_export.ebas.add("maap_lev2")
 
     def get(station: str, mode_name: str, export_key: str,
             start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
