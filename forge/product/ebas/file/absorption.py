@@ -472,6 +472,16 @@ class Level2File(SpectralFile, AerosolInstrument):
             var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '2')
         for var in humidity:
             var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '2')
+        if 'detection_limit' in self.file_metadata:
+            for var in pressure:
+                var.add_characteristic('Detection limit', '', self.instrument_type, var.metadata.comp_name, '2')
+                var.add_characteristic('Detection limit expl.', '', self.instrument_type, var.metadata.comp_name, '2')
+            for var in temperature:
+                var.add_characteristic('Detection limit', '', self.instrument_type, var.metadata.comp_name, '2')
+                var.add_characteristic('Detection limit expl.', '', self.instrument_type, var.metadata.comp_name, '2')
+            for var in humidity:
+                var.add_characteristic('Detection limit', '', self.instrument_type, var.metadata.comp_name, '2')
+                var.add_characteristic('Detection limit expl.', '', self.instrument_type, var.metadata.comp_name, '2')
 
         for nas in matrix:
             instrument[nas].set_serial_number(nas)

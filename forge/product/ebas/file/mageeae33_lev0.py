@@ -60,6 +60,14 @@ class File(SpectralFile, AerosolInstrument):
             'vol_std_pressure': '1013.25hPa',
             'zero_negative': 'Zero/negative possible',
             'zero_negative_desc': 'Zero and neg. values may appear due to statistical variations at very low concentrations',
+            'measurement_uncertainty': [20, "1/Mm"],
+            'measurement_uncertainty_expl': "typical value of unit-to-unit variability",
+            'multi_scattering_corr_fact': 1.39,
+            'max_attenuation': 100.0,
+            'comp_thresh_atten1': 10.0,
+            'comp_thresh_atten2': 30.0,
+            'comp_param_kmin': -0.005,
+            'comp_param_kmax': 0.0150,
         })
         return r
 

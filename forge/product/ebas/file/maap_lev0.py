@@ -1,6 +1,6 @@
 import typing
 from pathlib import Path
-from math import inf
+from math import inf, isfinite
 from forge.units import ZERO_C_IN_K
 from forge.temp import WorkingDirectory
 from forge.product.selection import InstrumentSelection
@@ -44,7 +44,7 @@ class File(SpectralFile, AerosolInstrument):
         r.update(self.level0_metadata)
         r.update({
             'std_method': 'Multi-angle_Correction=Petzold2004',
-            'method': f'{self.lab_code}_MAAP',
+            'method': f'{self.lab_code}_MAAP_5012',
             'unit': 'ug/m3',
             'comp_name': 'equivalent_black_carbon',
             'vol_std_temp': '273.15K',
@@ -68,27 +68,34 @@ class File(SpectralFile, AerosolInstrument):
                 comp_name="pressure",
                 unit="hPa",
                 matrix="instrument",
-                title="p_int",
+                title="pres_amb",
             )
-            temperature = matrix.variable(
+            inlet_temperature = matrix.variable(
                 comp_name="temperature",
                 unit="K",
                 matrix="instrument",
-                title="T_int",
+                title="temp_int",
+            )
+            internal_temperature = matrix.variable(
+                comp_name="temperature",
+                unit="K",
+                matrix="instrument",
+                title="temp_int",
             )
             humidity = matrix.variable(
                 comp_name="relative_humidity",
                 unit="%",
                 matrix="instrument",
-                title="RH",
+                title="rh_inl",
             )
             flow_rate = matrix.variable(
                 comp_name="flow_rate",
                 unit="l/min",
                 matrix="instrument",
-                title="flow",
+                title="flow_stp",
             )
             equivalent_black_carbon = matrix.spectral_variable()
+            ebc_efficiency = 6.6
             async for nas, selector, root in matrix.iter_data_files(data_directory):
                 flags[nas].integrate_file(root, selector)
                 instrument[nas].integrate_file(root)
@@ -96,7 +103,15 @@ class File(SpectralFile, AerosolInstrument):
                         root,
                         {"standard_name": "air_temperature"},
                 ):
-                    temperature[nas].integrate_variable(
+                    internal_temperature[nas].integrate_variable(
+                        var, selector(var, require_cut_size_match=False),
+                        converter=lambda x: x + ZERO_C_IN_K
+                    )
+                for var in self.select_variable(
+                        root,
+                        {"variable_name": "inlet_temperature"},
+                ):
+                    inlet_temperature[nas].integrate_variable(
                         var, selector(var, require_cut_size_match=False),
                         converter=lambda x: x + ZERO_C_IN_K
                     )
@@ -124,21 +139,32 @@ class File(SpectralFile, AerosolInstrument):
                         var, selector(var),
                     )
 
+                parameters_group = root.groups.get("parameters")
+                if parameters_group is not None:
+                    efficiency_var = parameters_group.variables.get("mass_absorption_efficiency")
+                    if efficiency_var is not None:
+                        values = efficiency_var[:].data.tolist()
+                        if len(values) > 0 and isfinite(values[0]):
+                            ebc_efficiency = values[0]
+
         for var in equivalent_black_carbon:
             var.apply_metadata(
-                title='BCconc{wavelength}',
+                title='ebc_conc{wavelength}',
                 comp_name='equivalent_black_carbon',
                 uncertainty=[6.0, '%'],
                 uncertainty_desc='typical value of unit-to-unit variability',
+                mass_abs_cross_section=ebc_efficiency,
                 unit='ug/m3',
             )
 
         for var in pressure:
             var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
-        for var in temperature:
+        for var in inlet_temperature:
+            var.add_characteristic('Location', 'instrument inlet', self.instrument_type, var.metadata.comp_name, '0')
+        for var in internal_temperature:
             var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
         for var in humidity:
-            var.add_characteristic('Location', 'instrument internal', self.instrument_type, var.metadata.comp_name, '0')
+            var.add_characteristic('Location', 'instrument outlet', self.instrument_type, var.metadata.comp_name, '0')
         for var in flow_rate:
             var.add_characteristic('Location', 'sample line', self.instrument_type, var.metadata.comp_name, '0')
 
@@ -148,6 +174,7 @@ class File(SpectralFile, AerosolInstrument):
             await self.assemble_file(
                 nas, output_directory,
                 equivalent_black_carbon[nas],
-                optional=[pressure[nas], temperature[nas], humidity[nas], flow_rate[nas]],
+                optional=[pressure[nas], inlet_temperature[nas], internal_temperature[nas],
+                          humidity[nas], flow_rate[nas]],
                 flags=flags[nas],
             )

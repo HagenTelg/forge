@@ -43,5 +43,8 @@ class File(Level1File):
         r.update({
             'std_method': 'Single-angle_Correction=Drinovec2015',
             'method': f'{self.lab_code}_AE33',
+            'detection_limit': [0.1, "1/Mm"],
+            'detection_limit_desc': "Determined by instrument noise characteristics, no detection limit flag used",
+            'measurement_uncertainty_expl': "typical value of unit-to-unit variability",
         })
         return r
