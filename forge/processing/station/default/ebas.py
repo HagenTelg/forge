@@ -54,11 +54,15 @@ def projects(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) ->
 def wdca_id(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     from forge.processing.station.lookup import station_data
     cc = station_data(station, 'site', 'country_code')(station, tags)
-    if not cc:
+    if not cc or len(cc) != 2:
         cc = "__"
+    else:
+        cc = cc.upper()
     sd = station_data(station, 'site', 'subdivision')(station, tags)
-    if not sd:
+    if not sd or len(sd) != 2:
         sd = "__"
+    else:
+        sd = sd.upper()
     return f"GAWA{cc}{sd}{station.upper()}"
 
 

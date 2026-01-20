@@ -13,7 +13,7 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
 
     result = file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)
 
-    if isinstance(result, CCNLevel0) or isinstance(result, CCNLevel1):
+    if issubclass(result, CCNLevel0) or isinstance(result, CCNLevel1):
         class WithCCN200(result):
             @property
             def instrument_selection(self) -> typing.Iterable[InstrumentSelection]:

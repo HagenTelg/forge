@@ -37,7 +37,7 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
     from ..default.ebas import file
     from forge.product.ebas.file.scattering import Level2File as ScatteringLevel2File
     result = file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)
-    if isinstance(result, ScatteringLevel2File):
+    if issubclass(result, ScatteringLevel2File):
         return result.with_limits(
             (-3, None),
             (-3, None),

@@ -74,7 +74,7 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
         type_code = "psap3wlegacy_lev0"
 
     result = file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)
-    if isinstance(result, ScatteringLevel2File):
+    if issubclass(result, ScatteringLevel2File):
         return result.with_limits_fine(
             (-5, None), (-10, None),
             (-5, None), (-10, None),

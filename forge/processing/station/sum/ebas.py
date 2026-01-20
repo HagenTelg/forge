@@ -49,7 +49,7 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
         'hum_temp_ctrl': None,
     })
 
-    if isinstance(result, ScatteringLevel2File):
+    if issubclass(result, ScatteringLevel2File):
         return result.with_limits(
             (-5, None),
             (-5, None),

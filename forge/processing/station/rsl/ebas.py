@@ -60,7 +60,7 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
         type_code = "tsi3772cpc_" + type_code[4:]
 
     result = file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)
-    if isinstance(result, AerosolInstrument):
+    if issubclass(result, AerosolInstrument):
         result = result.with_inlet({
             "pm1": ('Cyclone', 'Cyclone size selection at 1um aerodynamic diameter')
         })
