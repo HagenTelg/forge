@@ -44,6 +44,11 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
             type_code = "admagic250cpc_" + type_code[4:]
 
     result = file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)
+
+    result = result.with_file_metadata({
+        'hum_temp_ctrl': None,
+    })
+
     if isinstance(result, ScatteringLevel2File):
         return result.with_limits(
             (-5, None),
