@@ -42,6 +42,7 @@ class File(Level2File):
         r = super().file_metadata
         r.update({
             'std_method': None,
+            'comment': None,
             'method': f'{self.lab_code}_AE31',
         })
         return r

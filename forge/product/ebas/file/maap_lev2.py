@@ -34,6 +34,7 @@ class File(Level2File):
         r = super().file_metadata
         r.update({
             'std_method': 'Multi-angle_Correction=Petzold2004',
+            'comment': None,
             'method': f'{self.lab_code}_MAAP_5012',
         })
         return r

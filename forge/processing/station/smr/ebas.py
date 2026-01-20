@@ -161,7 +161,7 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
         })
     elif issubclass(result, AE33Level2File):
         return result.with_file_metadata({
-            'flow_rate': [5.0, "l/min"],
+            'flow_rate': 5.0,
         })
     return result
 

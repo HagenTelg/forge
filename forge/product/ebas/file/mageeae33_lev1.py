@@ -46,5 +46,6 @@ class File(Level1File):
             'detection_limit': [0.1, "1/Mm"],
             'detection_limit_desc': "Determined by instrument noise characteristics, no detection limit flag used",
             'measurement_uncertainty_expl': "typical value of unit-to-unit variability",
+            'comment': None,
         })
         return r
