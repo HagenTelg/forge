@@ -7,11 +7,11 @@ if typing.TYPE_CHECKING:
 
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI0050R"
+    return "FI0023R"
 
 
 def platform(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI0050S"
+    return "FI0023S"
 
 
 def lab_code(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
@@ -27,7 +27,7 @@ def setting(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> 
 
 
 def other_identifiers(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "1(SMEARII)"
+    return "1(SMEARI)"
 
 
 def wmo_region(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[int]:
@@ -44,30 +44,64 @@ def projects(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) ->
     return ["GAW-WDCA", "NOAA-ESRL", "ACTRIS"]
 
 
-def organization(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> "DataObject":
-    from nilutility.datatypes import DataObject
-
-    return DataObject(
-        OR_CODE="FI03L",
-        OR_NAME="University of Helsinki",
-        OR_ACRONYM="UHEL", OR_UNIT=None,
-        OR_ADDR_LINE1="PO BOX 64", OR_ADDR_LINE2=None,
-        OR_ADDR_ZIP="FI-00014", OR_ADDR_CITY="Helsinki", OR_ADDR_COUNTRY="Finland"
-    )
-
-
 def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.List["DataObject"]:
     from nilutility.datatypes import DataObject
 
     return [DataObject(
-        PS_LAST_NAME="Banerji", PS_FIRST_NAME='Sujai',
-        PS_EMAIL="sujai.banerji@helsinki.fi",
+        PS_LAST_NAME="Kulmala", PS_FIRST_NAME="Markku",
+        PS_EMAIL="markku.kulmala@helsinki.fi",
         PS_ORG_NAME="University of Helsinki",
-        PS_ORG_ACR="UHEL", PS_ORG_UNIT=None,
-        PS_ADDR_LINE1="PO BOX 64", PS_ADDR_LINE2=None,
-        PS_ADDR_ZIP="FI-00014", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
-        PS_ORCID=None,
+        PS_ORG_ACR="UHEL", PS_ORG_UNIT="Institute for Atmospheric and Earth System Research",
+        PS_ADDR_LINE1="Gustaf Hällströmin katu 2", PS_ADDR_LINE2=None,
+        PS_ADDR_ZIP="FI-00560", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
+        PS_ORCID="0000-0003-3464-7825",
+    ), DataObject(
+        PS_LAST_NAME="Petäjä", PS_FIRST_NAME="Tuukka",
+        PS_EMAIL="tuukka.petaja@helsinki.fi",
+        PS_ORG_NAME="University of Helsinki",
+        PS_ORG_ACR="UHEL", PS_ORG_UNIT="Institute for Atmospheric and Earth System Research",
+        PS_ADDR_LINE1="Gustaf Hällströmin katu 2", PS_ADDR_LINE2=None,
+        PS_ADDR_ZIP="FI-00560", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
+        PS_ORCID="0000-0002-1881-9044",
     )]
+
+
+def submitter(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.List["DataObject"]:
+    from nilutility.datatypes import DataObject
+
+    return [DataObject(
+        PS_LAST_NAME="Kulmala", PS_FIRST_NAME="Markku",
+        PS_EMAIL="markku.kulmala@helsinki.fi",
+        PS_ORG_NAME="University of Helsinki",
+        PS_ORG_ACR="UHEL", PS_ORG_UNIT="Institute for Atmospheric and Earth System Research",
+        PS_ADDR_LINE1="Gustaf Hällströmin katu 2", PS_ADDR_LINE2=None,
+        PS_ADDR_ZIP="FI-00560", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
+        PS_ORCID="0000-0003-3464-7825",
+    ), DataObject(
+        PS_LAST_NAME="Petäjä", PS_FIRST_NAME="Tuukka",
+        PS_EMAIL="tuukka.petaja@helsinki.fi",
+        PS_ORG_NAME="University of Helsinki",
+        PS_ORG_ACR="UHEL", PS_ORG_UNIT="Institute for Atmospheric and Earth System Research",
+        PS_ADDR_LINE1="Gustaf Hällströmin katu 2", PS_ADDR_LINE2=None,
+        PS_ADDR_ZIP="FI-00560", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
+        PS_ORCID="0000-0002-1881-9044",
+    ), DataObject(
+        PS_LAST_NAME="Tapio", PS_FIRST_NAME="Elomaa",
+        PS_EMAIL="tapio.elomaa@helsinki.fi",
+        PS_ORG_NAME="University of Helsinki",
+        PS_ORG_ACR="UHEL", PS_ORG_UNIT="Institute for Atmospheric and Earth System Research",
+        PS_ADDR_LINE1="Gustaf Hällströmin katu 2", PS_ADDR_LINE2=None,
+        PS_ADDR_ZIP="FI-00560", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
+        PS_ORCID=None,
+    ), DataObject(
+        PS_LAST_NAME="Hageman", PS_FIRST_NAME="Derek",
+        PS_EMAIL="derek.hageman@helsinki.fi",
+        PS_ORG_NAME="University of Helsinki",
+        PS_ORG_ACR="UHEL", PS_ORG_UNIT="Institute for Atmospheric and Earth System Research",
+        PS_ADDR_LINE1="Gustaf Hällströmin katu 2", PS_ADDR_LINE2=None,
+        PS_ADDR_ZIP="FI-00560", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
+        PS_ORCID=None,
+    ),]
 
 
 def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: int) -> typing.Type["EBASFile"]:

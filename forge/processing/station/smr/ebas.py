@@ -7,11 +7,11 @@ if typing.TYPE_CHECKING:
 
 
 def station(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI0023R"
+    return "FI0050R"
 
 
 def platform(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "FI0023S"
+    return "FI0050S"
 
 
 def lab_code(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
@@ -27,7 +27,7 @@ def setting(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> 
 
 
 def other_identifiers(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "2(SMEARI)"
+    return "2(SMEARII)"
 
 
 def wmo_region(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[int]:
@@ -72,7 +72,7 @@ def originator(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) 
         PS_EMAIL="tuukka.petaja@helsinki.fi",
         PS_ORG_NAME="University of Helsinki",
         PS_ORG_ACR="UHEL", PS_ORG_UNIT="Institute for Atmospheric and Earth System Research",
-        PS_ADDR_LINE1="Gustaf Hällströmin katu 2a", PS_ADDR_LINE2=None,
+        PS_ADDR_LINE1="Gustaf Hällströmin katu 2", PS_ADDR_LINE2=None,
         PS_ADDR_ZIP="FI-00560", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
         PS_ORCID="0000-0002-1881-9044",
     )]
@@ -94,7 +94,7 @@ def submitter(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -
         PS_EMAIL="tuukka.petaja@helsinki.fi",
         PS_ORG_NAME="University of Helsinki",
         PS_ORG_ACR="UHEL", PS_ORG_UNIT="Institute for Atmospheric and Earth System Research",
-        PS_ADDR_LINE1="Gustaf Hällströmin katu 2a", PS_ADDR_LINE2=None,
+        PS_ADDR_LINE1="Gustaf Hällströmin katu 2", PS_ADDR_LINE2=None,
         PS_ADDR_ZIP="FI-00560", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
         PS_ORCID="0000-0002-1881-9044",
     ), DataObject(
@@ -102,7 +102,7 @@ def submitter(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -
         PS_EMAIL="tapio.elomaa@helsinki.fi",
         PS_ORG_NAME="University of Helsinki",
         PS_ORG_ACR="UHEL", PS_ORG_UNIT="Institute for Atmospheric and Earth System Research",
-        PS_ADDR_LINE1="Gustaf Hällströmin katu 2a", PS_ADDR_LINE2=None,
+        PS_ADDR_LINE1="Gustaf Hällströmin katu 2", PS_ADDR_LINE2=None,
         PS_ADDR_ZIP="FI-00560", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
         PS_ORCID=None,
     ), DataObject(
@@ -110,7 +110,7 @@ def submitter(gaw_station: str, tags: typing.Optional[typing.Set[str]] = None) -
         PS_EMAIL="derek.hageman@helsinki.fi",
         PS_ORG_NAME="University of Helsinki",
         PS_ORG_ACR="UHEL", PS_ORG_UNIT="Institute for Atmospheric and Earth System Research",
-        PS_ADDR_LINE1="Gustaf Hällströmin katu 2a", PS_ADDR_LINE2=None,
+        PS_ADDR_LINE1="Gustaf Hällströmin katu 2", PS_ADDR_LINE2=None,
         PS_ADDR_ZIP="FI-00560", PS_ADDR_CITY="Helsinki", PS_ADDR_COUNTRY="Finland",
         PS_ORCID=None,
     ),]
