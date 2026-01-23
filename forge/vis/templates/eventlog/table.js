@@ -89,11 +89,12 @@ $(document).ready(function() {
 
 
     function rowSelected(selected) {
+        if (selected.classList.contains('selected')) {
+            clearEventSelection();
+            return
+        }
         for (let i=0; i<eventsTable.rows.length; i++) {
             const tr = eventsTable.rows[i];
-            if (tr === this) {
-                continue;
-            }
             tr.classList.remove('selected');
         }
         selected.classList.add('selected');
@@ -101,6 +102,14 @@ $(document).ready(function() {
 
         const event = eventFromRow(selected);
         PlotInteraction.notifyEventSelected(event);
+    }
+    function clearEventSelection() {
+        for (let i=0; i<eventsTable.rows.length; i++) {
+            const tr = eventsTable.rows[i];
+            tr.classList.remove('selected');
+        }
+        $('.requires-selected').attr('disabled', 'disabled');
+        PlotInteraction.notifyEventSelected(null);
     }
 
     function updateRow(tr, event) {

@@ -188,11 +188,12 @@ $(document).ready(function() {
     }
 
     function rowSelected(selected) {
+        if (selected.classList.contains('selected')) {
+            clearDirectiveSelection();
+            return;
+        }
         for (let i=0; i<directivesTable.rows.length; i++) {
             const tr = directivesTable.rows[i];
-            if (tr === this) {
-                continue;
-            }
             tr.classList.remove('selected');
         }
         selected.classList.add('selected');
