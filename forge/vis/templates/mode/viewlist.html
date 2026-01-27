@@ -54,6 +54,10 @@
         <li><a id="show_passed_summary" class="main-menu-item" href="{{ request.url_for('passed_modal', station=station, mode_name=mode.mode_name) }}" title="Show the passed data summary dialog">Show Passed</a></li>
         <li><a id="show_instrument_summary" class="main-menu-item" href="{{ request.url_for('instruments_modal', station=station, mode_name=mode.mode_name) }}" title="Show the available instruments summary dialog">Show Instruments</a></li>
 
+        {% if ENABLE_DASHBOARD %}
+        <li><a class="main-menu-item" href="{{ request.url_for('dashboard') }}?station={{ station }}">Status Dashboard</a></li>
+        {% endif %}
+
         {% include 'mode/topbar/menuitems.html' %}
       </ul>
     </li>

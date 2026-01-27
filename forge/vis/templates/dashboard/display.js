@@ -1,11 +1,19 @@
 function hideLoading() { document.getElementById('loading').style.display = 'none'; }
 
+const queryParameters = new URLSearchParams(window.location.search);
+
 let selectedStations = localStorage.getItem('forge-dashboard-stations');
 if (selectedStations) {
     selectedStations = new Set(selectedStations.split(' '));
 } else {
     selectedStations = new Set();
 }
+const querySelectedStation = queryParameters.get('station');
+if (querySelectedStation !== null) {
+    selectedStations.clear();
+    selectedStations.add(querySelectedStation);
+}
+
 const availableStations = new Set();
 function saveSelectedStations() {
     if (selectedStations.size === availableStations.size) {
