@@ -36,9 +36,14 @@ async def reindex(connection: Connection, station: str, archive: str, year: int)
     if not available_instruments:
         _LOGGER.debug("No available instruments for %s/%s/%d, removing index", station, archive, year)
         try:
-            await connection.remove_file(index_file_name(station, archive, year_start))
+            await connection.remove_file(index_file_name(station, archive, year_start / 1000.0))
         except FileNotFoundError:
             pass
+        if archive == "raw":
+            try:
+                await connection.remove_file(index_instrument_history_file_name(station, archive, year_start / 1000.0))
+            except FileNotFoundError:
+                pass
         return
 
     _LOGGER.debug("Found %d instruments for %s/%s/%d", len(available_instruments), station, archive, year)
@@ -82,10 +87,13 @@ async def reindex(connection: Connection, station: str, archive: str, year: int)
         _LOGGER.debug("No valid data found, removing index")
         try:
             await connection.remove_file(index_file_name(station, archive, year_start / 1000.0))
-            if archive == "raw":
-                await connection.remove_file(index_instrument_history_file_name(station, archive, year_start / 1000.0))
         except FileNotFoundError:
             pass
+        if archive == "raw":
+            try:
+                await connection.remove_file(index_instrument_history_file_name(station, archive, year_start / 1000.0))
+            except FileNotFoundError:
+                pass
         return
 
     index_contents = index.commit()
