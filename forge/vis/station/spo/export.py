@@ -80,6 +80,8 @@ else:
                 ExportCSV.Column([Selection(variable_name="number_concentration", instrument_id="N31")],),
                 ExportCSV.Column([Selection(variable_name="number_concentration", instrument_id="N41")],),
                 ExportCSV.Column([Selection(variable_name="number_concentration", instrument_id="N42")],),
+                ExportCSV.Column([Selection(variable_name="number_concentration", instrument_id="N43")],),
+                ExportCSV.Column([Selection(variable_name="number_concentration", instrument_id="N44")],),
             ]
 
     for archive in ("avgh",):
@@ -99,6 +101,16 @@ else:
             ] + [
                 ExportCSV.Column([Selection(variable_name="number_concentration", cut_size=cut_size,
                                             instrument_id="N42")],
+                                 header="N" + record + "_{instrument_id}")
+                for record, cut_size in STANDARD_CUT_SIZE_SPLIT
+            ] + [
+                ExportCSV.Column([Selection(variable_name="number_concentration", cut_size=cut_size,
+                                            instrument_id="N43")],
+                                 header="N" + record + "_{instrument_id}")
+                for record, cut_size in STANDARD_CUT_SIZE_SPLIT
+            ] + [
+                ExportCSV.Column([Selection(variable_name="number_concentration", cut_size=cut_size,
+                                            instrument_id="N44")],
                                  header="N" + record + "_{instrument_id}")
                 for record, cut_size in STANDARD_CUT_SIZE_SPLIT
             ]
