@@ -115,6 +115,23 @@ else:
                 for record, cut_size in STANDARD_CUT_SIZE_SPLIT
             ]
 
+    aerosol_exports["raw"].append(ExportCSV("dmpsdiag", "DMPS Diagnostics", [
+        ExportCSV.Column([Selection(variable_name="number_concentration", instrument_id="N31")], ),
+        ExportCSV.Column([Selection(variable_name="sample_flow", instrument_id="N31")], ),
+        ExportCSV.Column([Selection(variable_name="number_concentration", instrument_id="N41")], ),
+        ExportCSV.Column([Selection(variable_name="sample_flow", instrument_id="N41")], ),
+        ExportCSV.Column([Selection(variable_name="number_concentration", instrument_id="N42")], ),
+        ExportCSV.Column([Selection(variable_name="sample_flow", instrument_id="N42")], ),
+        ExportCSV.Column([Selection(variable_name="number_concentration", instrument_id="N43")], ),
+        ExportCSV.Column([Selection(variable_name="sample_flow", instrument_id="N43")], ),
+        ExportCSV.Column([Selection(variable_name="number_concentration", instrument_id="N44")], ),
+        ExportCSV.Column([Selection(variable_name="sample_flow", instrument_id="N44")], ),
+        ExportCSV.Column([Selection(variable_name="number_concentration", instrument_id="N44")], ),
+        ExportCSV.Column([Selection(variable_name="sample_flow", instrument_id="N44")], ),
+        ExportCSV.Column([Selection(variable_id="Q1", instrument_id="N11")], ),
+        ExportCSV.Column([Selection(variable_id="Q2", instrument_id="N11")], ),
+    ]))
+
     def get(station: str, mode_name: str, export_key: str,
             start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:
         return export_get(station, mode_name, export_key, start_epoch_ms, end_epoch_ms, directory, export_entries)
