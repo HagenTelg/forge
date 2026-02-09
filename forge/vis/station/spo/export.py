@@ -115,7 +115,7 @@ else:
                 for record, cut_size in STANDARD_CUT_SIZE_SPLIT
             ]
 
-    aerosol_exports["raw"].append(ExportCSV("dmpsdiag", "DMPS Diagnostics", [
+    export_entries["aerosol"]["raw"].append(ExportCSV("dmpsdiag", "DMPS Diagnostics", [
         ExportCSV.Column([Selection(variable_name="number_concentration", instrument_id="N31")], ),
         ExportCSV.Column([Selection(variable_name="sample_flow", instrument_id="N31")], ),
         ExportCSV.Column([Selection(variable_name="number_concentration", instrument_id="N41")], ),
