@@ -233,7 +233,7 @@ UIDEP over HTTP:
 ```toml
 [instrument.A81]
 type = "mageeae36"
-tcp = "http://140.172.50.74"
+url = "http://140.172.50.74"
 cut_size = false
 ```
 
