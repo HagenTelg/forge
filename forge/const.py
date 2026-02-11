@@ -1,6 +1,6 @@
 MAJOR_VERSION = 1
 MINOR_VERSION = 0
-PATCH_VERSION = 5
+PATCH_VERSION = 6
 __short_version__ = f'{MAJOR_VERSION}.{MINOR_VERSION}'
 __version__ = f'{__short_version__}.{PATCH_VERSION}'
 
@@ -26,6 +26,7 @@ STATIONS = frozenset({
     'bos',
     'bou',
     'brw',
+    'cao',
     'cgo',
     'clamps3',
     'clamps4',
