@@ -2,15 +2,15 @@ import typing
 
 
 def latitude(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[float]:
-    return 40.1250
+    return 47.68685
 
 
 def longitude(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[float]:
-    return -105.2369995117
+    return -122.25667
 
 
 def altitude(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[float]:
-    return 1689.0
+    return 20
 
 
 def country_code(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
@@ -18,20 +18,10 @@ def country_code(station: str, tags: typing.Optional[typing.Set[str]] = None) ->
 
 
 def subdivision(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    return "CO"
+    return "WA"
 
 
 def name(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
     if tags and 'radiation' in tags:
-        return "Table Mountain"
-    return "Boulder Table Mountain, Colorado"
-
-
-def inlet_height(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[float]:
-    if tags and 'ozone' in tags:
-        return 6.0
-    if tags and 'met' in tags:
-        return None
-    if tags and 'radiation' in tags:
-        return None
-    return 10.0
+        return "Seattle"
+    return "Seattle, Washington"
