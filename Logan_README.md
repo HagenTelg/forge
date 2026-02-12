@@ -9,6 +9,9 @@
 
 
 ## ToDo
-- [ ] Add SURFRAD stations that overlap with aeronet
-- [ ] Add standalone SURFRAD stations
-- [ ] Add SOLRAD
+
+# List of sites to add to vis/station
+- Might need to add met to stations.
+
+- Need to add historical edits (surfmod.dat) to scripts.
+- Systemmd needs to be updated.

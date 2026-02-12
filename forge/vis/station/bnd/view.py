@@ -1,12 +1,12 @@
 import typing
 from collections import OrderedDict
-from ..default.view import detach, View, aerosol_views, aerosol_public
+from ..default.view import detach, View, aerosol_views, aerosol_public, radiation_views
 from ..default.aerosol.wind import Wind
 from .counts import ParticleConcentration, EditingParticleConcentration, ADMagicCPC250StatusSecondary
 from .pressure import Pressure
 
 
-station_views = detach(aerosol_views, aerosol_public)
+station_views = detach(aerosol_views, aerosol_public, radiation_views)
 
 station_views['aerosol-raw-counts'] = ParticleConcentration('aerosol-raw')
 station_views['aerosol-realtime-counts'] = ParticleConcentration('aerosol-realtime', realtime=True)
