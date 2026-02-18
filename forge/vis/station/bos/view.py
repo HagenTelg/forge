@@ -1,5 +1,5 @@
 import typing
-from ..default.view import detach, View, aerosol_views, aerosol_public, ozone_views, ozone_public
+from ..default.view import detach, View, aerosol_views, aerosol_public, ozone_views, ozone_public, radiation_views, radiation_public
 from ..default.aerosol.pops import POPSStatus, POPSDistribution
 from ..default.aerosol.t640 import T640MassAethalometer, T640Status
 from ..default.aerosol.editing.t640 import EditingT640
@@ -14,7 +14,7 @@ from .green import Green
 from .pressure import Pressure
 
 
-station_views = detach(aerosol_views, ozone_views, aerosol_public, ozone_public)
+station_views = detach(aerosol_views, ozone_views, aerosol_public, ozone_public, radiation_views)
 
 station_views['aerosol-raw-counts'] = POPSCounts('aerosol-raw')
 station_views['aerosol-editing-counts'] = EditingParticleConcentration()
