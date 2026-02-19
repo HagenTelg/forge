@@ -46,7 +46,7 @@ class EditingTachometer(TimeSeries):
 
         for title, field in self.FAN_TACHOMETERS:
             trace = TimeSeries.Trace(rpm)
-            trace.legend = title
+            trace.legend = f"Raw {title}"
             trace.data_record = f'{profile}-raw-tach'
             trace.data_field = field
             raw.traces.append(trace)
@@ -63,7 +63,7 @@ class EditingTachometer(TimeSeries):
 
         for title, field in self.FAN_TACHOMETERS:
             trace = TimeSeries.Trace(rpm)
-            trace.legend = title
-            trace.data_record = f'{profile}-edited-tach'
+            trace.legend = f"Edited {title}"
+            trace.data_record = f'{profile}-editing-tach'
             trace.data_field = field
             edited.traces.append(trace)
