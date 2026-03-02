@@ -151,8 +151,14 @@ code_records: typing.Dict[str, Record] = {
     'radiation-raw-ingest-met': FileIngestRecord.simple_override(
         name="Ingest radiation meteorological data",
     ),
+    'radiation-editing-ingest-solmod': BasicRecord.simple_override(
+        name="Ingest radiation edits from solradmod.dat",
+    ),
+    'radiation-editing-ingest-surfmod': BasicRecord.simple_override(
+        name="Ingest radiation edits from surfmod.dat",
+    ),
     'radiation-editing-ingest-basemod': BasicRecord.simple_override(
-        name="Ingest radiation edits from basemod.dat",
+        name="Ingest radiation edits from basemod.dat/solar_obstruction.txt",
     ),
 
     'ozone-raw-ingest-srclrc': FileIngestRecord.simple_override(

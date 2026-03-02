@@ -21,11 +21,11 @@ STATIONS = frozenset({
     'arh',
     'arn',
     'beo',
-    'bmk', # GAW, BIS SOLRAD
+    'bmk',
     'bld',
     'bmw',
-    'bnd', # GAW, BON SURFRAD
-    'bos', # GAW, TBL SURFRAD
+    'bnd',
+    'bos',
     'bou',
     'brw',
     'cao',
@@ -41,8 +41,8 @@ STATIONS = frozenset({
     'etl',
     'euk',
     'fiaq',
-    'fpe', # GAW, FPK SURFRAD
-    'gcr', # GAW, GWN SURFRAD
+    'fpe',
+    'gcr',
     'gsn',
     'hac',
     'hih',
@@ -61,12 +61,12 @@ STATIONS = frozenset({
     'mlo',
     'mrad',
     'msa',
-    'msnsol', # Changed; No GAW
+    'msnsol',
     'msy',
     'nil',
     'nrlm',
     'nwr',
-    'ortsol', # Changed; No GAW
+    'ortsol',
     'pal',
     'pay',
     'pde',
@@ -77,7 +77,7 @@ STATIONS = frozenset({
     'rpb',
     'rsl',
     'sdz',
-    'seasol', # Changed; No GAW
+    'seasol',
     'sel',
     'sfa',
     'sfb',
@@ -86,19 +86,20 @@ STATIONS = frozenset({
     'sfe',
     'sff',
     'sgp',
-    'slcsol', # Changed; No GAW
+    'slc',
+    'slcsol',
     'smo',
     'smr',
     'snow',
     'sns',
     'spl',
     'spo',
-    'sva', # GAW, STE SOLRAD
+    'sva',
     'sum',
     'sxf',
     'thd',
     'trl',
-    'tal', # GAW, TLH SOLRAD
+    'tal',
     'tun',
     'ugr',
     'var',

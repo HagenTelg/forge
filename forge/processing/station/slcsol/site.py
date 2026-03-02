@@ -22,6 +22,4 @@ def subdivision(station: str, tags: typing.Optional[typing.Set[str]] = None) -> 
 
 
 def name(station: str, tags: typing.Optional[typing.Set[str]] = None) -> typing.Optional[str]:
-    if tags and 'radiation' in tags:
-        return "Salt Lake City"
-    return "Salt Lake City, Utah"
+    return "Salt Lake City"
