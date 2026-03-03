@@ -50,7 +50,7 @@ STATIONS = frozenset({
     'hnx',
     'iap',
     'ice',
-    'inl',
+    'inlsurf',
     'kps',
     'kwj',
     'lab',
