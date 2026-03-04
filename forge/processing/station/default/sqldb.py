@@ -27,10 +27,10 @@ def updates(station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["Ins
 
 def standard_updates(station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
     return {
-        "aerosol_hour": ("avgh", [InstrumentSelection(instrument_id=["XI"])]),
-        "aerosol_day": ("avgd", [InstrumentSelection(instrument_id=["XI"])]),
-        "aerosol_month": ("avgm", [InstrumentSelection(instrument_id=["XI"])]),
+        "aerosol_hour": ("clean", [InstrumentSelection(instrument_id=["XI"])]),
+        "aerosol_day": ("clean", [InstrumentSelection(instrument_id=["XI"])]),
+        "aerosol_month": ("clean", [InstrumentSelection(instrument_id=["XI"])]),
 
         "met_minute": ("clean", [InstrumentSelection(instrument_id=["XM1"])]),
-        "met_hour": ("avgh", [InstrumentSelection(instrument_id=["XM1"])]),
+        "met_hour": ("clean", [InstrumentSelection(instrument_id=["XM1"])]),
     }

@@ -19,7 +19,7 @@ def standard_submit(station: str) -> typing.Dict[str, typing.Tuple[str, typing.L
     from forge.product.selection import InstrumentSelection
     from forge.product.update.ncei import SFTP, Local
     return {
-        "aerosol": ("avgh", [InstrumentSelection(
+        "aerosol": ("clean", [InstrumentSelection(
             require_tags=["absorption"],
             exclude_tags=["secondary", "aethalometer", "thermomaap"],
         ), InstrumentSelection(

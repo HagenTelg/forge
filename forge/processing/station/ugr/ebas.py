@@ -99,7 +99,7 @@ def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["
         "maap_lev1": ("clean", [InstrumentSelection(
             instrument_id=["A31"],
         )]),
-        "maap_lev2": ("avgh", [InstrumentSelection(
+        "maap_lev2": ("clean", [InstrumentSelection(
             instrument_id=["A31"],
         )]),
     })

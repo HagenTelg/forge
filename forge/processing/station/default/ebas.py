@@ -213,6 +213,7 @@ def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["
 def standard_submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
     from forge.product.selection import InstrumentSelection
 
+    # Note that we trigger level 2 off clean since avgh gets updated in batch (e.x. met pass updates aerosol avgh)
     return {
         "absorption_lev0": ("clean", [InstrumentSelection(
             require_tags=["absorption"],
@@ -222,7 +223,7 @@ def standard_submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typi
             require_tags=["absorption"],
             exclude_tags=["secondary", "aethalometer", "thermomaap"],
         )]),
-        "absorption_lev2": ("avgh", [InstrumentSelection(
+        "absorption_lev2": ("clean", [InstrumentSelection(
             require_tags=["absorption"],
             exclude_tags=["secondary", "aethalometer", "thermomaap"],
         )]),
@@ -234,7 +235,7 @@ def standard_submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typi
             require_tags=["scattering"],
             exclude_tags=["secondary"],
         )]),
-        "scattering_lev2": ("avgh", [InstrumentSelection(
+        "scattering_lev2": ("clean", [InstrumentSelection(
             require_tags=["scattering"],
             exclude_tags=["secondary"],
         )]),
@@ -246,7 +247,7 @@ def standard_submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typi
             require_tags=["cpc"],
             exclude_tags=["secondary"],
         )]),
-        "cpc_lev2": ("avgh", [InstrumentSelection(
+        "cpc_lev2": ("clean", [InstrumentSelection(
             require_tags=["cpc"],
             exclude_tags=["secondary"],
         )]),

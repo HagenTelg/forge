@@ -7,7 +7,7 @@ if typing.TYPE_CHECKING:
 def updates(station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["InstrumentSelection"]]]:
     from forge.product.selection import InstrumentSelection
     return {
-        "aerosol_hour": ("avgh", [InstrumentSelection(instrument_id=["XI"])]),
-        "aerosol_day": ("avgd", [InstrumentSelection(instrument_id=["XI"])]),
-        "aerosol_month": ("avgm", [InstrumentSelection(instrument_id=["XI"])]),
+        "aerosol_hour": ("clean", [InstrumentSelection(instrument_id=["XI"])]),
+        "aerosol_day": ("clean", [InstrumentSelection(instrument_id=["XI"])]),
+        "aerosol_month": ("clean", [InstrumentSelection(instrument_id=["XI"])]),
     }

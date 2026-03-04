@@ -101,7 +101,7 @@ def submit(gaw_station: str) -> typing.Dict[str, typing.Tuple[str, typing.List["
             require_tags=["aethalometer"],
             exclude_tags=["secondary"],
         )]),
-        "aethalometer_lev2": ("avgh", [InstrumentSelection(
+        "aethalometer_lev2": ("clean", [InstrumentSelection(
             require_tags=["aethalometer"],
             exclude_tags=["secondary"],
         )])
