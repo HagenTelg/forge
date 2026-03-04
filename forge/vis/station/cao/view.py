@@ -13,7 +13,7 @@ station_views = detach(met_views)
 measurements = OrderedDict([
     ('{code}ambient', '{type} at 30m'),
     ('{code}2', '{type} at 100m'),
-    ('{code}3', '{type} at 495m'),
+    ('{code}3', '{type} at 508m'),
 ])
 station_views['met-raw-temperature'] = MetTemperature('met-raw-temperature', measurements=measurements)
 station_views['met-clean-temperature'] = MetTemperature('met-clean-temperature', measurements=measurements)
@@ -21,7 +21,7 @@ station_views['met-avgh-temperature'] = MetTemperature('met-avgh-temperature', m
 measurements = OrderedDict([
     ('{code}ambient', '{type} at 30m'),
     ('{code}2', '{type} at 100m'),
-    ('{code}3', '{type} at 495m'),
+    ('{code}3', '{type} at 508m'),
 ])
 station_views['met-editing-temperature'] = MetEditingTemperature(measurements=measurements)
 station_views['met-editing-rh'] = MetEditingRH(measurements=measurements)
@@ -30,7 +30,7 @@ station_views['met-editing-dewpoint'] = MetEditingDewpoint(measurements=measurem
 wind_measurements = OrderedDict([
     ('{code}ambient', '{type} at 30m'),
     ('{code}2', '{type} at 100m'),
-    ('{code}3', '{type} at 495m'),
+    ('{code}3', '{type} at 508m'),
 ])
 station_views['met-raw-wind'] = MetWind('met-raw-wind', measurements=wind_measurements)
 station_views['met-clean-wind'] = MetWind('met-clean-wind', measurements=wind_measurements)
@@ -38,7 +38,7 @@ station_views['met-avgh-wind'] = MetWind('met-avgh-wind', measurements=wind_meas
 measurements = OrderedDict([
     ('{code}ambient', '{mode} at 30m'),
     ('{code}2', '{mode} at 100m'),
-    ('{code}3', '{mode} at 495m'),
+    ('{code}3', '{mode} at 508m'),
 ])
 station_views['met-editing-windspeed'] = MetEditingWindSpeed(measurements=measurements)
 station_views['met-editing-winddirection'] = MetEditingWindDirection(measurements=measurements)

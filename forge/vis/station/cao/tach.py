@@ -6,7 +6,7 @@ class Tachometer(TimeSeries):
     FAN_TACHOMETERS = (
         ("30m", "C1"),
         ("100m", "C2"),
-        ("495m", "C3"),
+        ("508m", "C3"),
     )
 
     def __init__(self, mode: str, **kwargs):
