@@ -33,6 +33,7 @@ STATIONS = frozenset({
     'cpr',
     'cpt',
     'csu',
+    'dcc',
     'denasc',
     'egb',
     'etl',
