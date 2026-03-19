@@ -2,7 +2,7 @@ import typing
 from ..default.mode import Mode, ViewList, detach, aerosol_modes, aerosol_public
 
 
-station_modes = detach(aerosol_modes, aerosol_public)
+station_modes = detach(aerosol_modes)
 
 
 station_modes['aerosol-raw'].remove('aerosol-raw-counts')
@@ -21,11 +21,16 @@ station_modes['aerosol-realtime'].insert(ViewList.Entry('aerosol-realtime-psapst
 station_modes['aerosol-raw'].remove('aerosol-raw-clapstatus')
 station_modes['aerosol-realtime'].remove('aerosol-realtime-clapstatus')
 
-station_modes['aerosol-raw'].remove('aerosol-raw-wind')
-station_modes['aerosol-realtime'].remove('aerosol-realtime-wind')
-station_modes['aerosol-editing'].remove('aerosol-editing-wind')
-station_modes['aerosol-clean'].remove('aerosol-clean-wind')
-station_modes['aerosol-avgh'].remove('aerosol-avgh-wind')
+station_modes['aerosol-raw'].remove('aerosol-raw-nephelometerstatus')
+station_modes['aerosol-raw'].remove('aerosol-realtime-nephelometerstatus')
+
+station_modes['aerosol-raw'].remove('aerosol-raw-aethalometer')
+station_modes['aerosol-raw'].remove('aerosol-raw-aethalometerstatus')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-aethalometer')
+station_modes['aerosol-realtime'].remove('aerosol-realtime-aethalometerstatus')
+station_modes['aerosol-editing'].remove('aerosol-editing-aethalometer')
+station_modes['aerosol-clean'].remove('aerosol-clean-aethalometer')
+station_modes['aerosol-avgh'].remove('aerosol-avgh-aethalometer')
 
 station_modes['aerosol-raw'].remove('aerosol-raw-flow')
 station_modes['aerosol-raw'].remove('aerosol-raw-umacstatus')

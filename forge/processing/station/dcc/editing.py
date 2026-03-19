@@ -22,7 +22,24 @@ def absorption_corrections(data: AvailableData) -> None:
         bond_1999(absorption, scattering)
 
 
+def aerosol_contamination(data: AvailableData) -> None:
+    for aerosol, wind in data.select_instrument(
+            {"tags": "aerosol -met"},
+            {"instrument_id": "XM1"},
+            always_tuple=True,
+    ):
+        wind_sector_contamination(
+            aerosol, wind,
+            contaminated_sector=((180, 360),),
+            contaminated_minimum_speed=0.5,
+            extend_before_ms=10 * 60 * 1000,
+            extend_after_ms=10 * 60 * 1000,
+        )
+
+
 def run(data: AvailableData) -> None:
+    aerosol_contamination(data)
+
     standard_stp_corrections(data)
     absorption_corrections(data)
     standard_scattering_corrections(data)
