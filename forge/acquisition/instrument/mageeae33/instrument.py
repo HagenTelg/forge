@@ -14,6 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 _INSTRUMENT_TYPE = __name__.split('.')[-2]
 _FIELD_SPLIT = re.compile(rb"\s+")
 _SERIAL_NUMBER = re.compile(r"AE33-S\d+-(\d+)")
+_WEINGARTNER_CONSTANT = re.compile(r" \d+ \d+\.\d+ \d+\.\d+ \d+\.\d+ \d+\.\d+ \d+\.\d+ \d+\.\d+ \d+\.\d+ (\d+\.\d+) \d+\.\d+ \d+\.\d+ \d+ ")
 
 
 class _ExternalSensor:
@@ -332,7 +333,8 @@ class Instrument(StreamingInstrument):
                 e = 6833.0 / wl
             self._ebc_efficiency.append(e)
 
-        self._weingartner_constant = float(context.config.get('WEINGARTNER_CONSTANT', default=1.57))
+        self._configured_weingartner_constant = context.config.get('WEINGARTNER_CONSTANT')
+        self._weingartner_constant = float(self._configured_weingartner_constant or 1.57)
 
         self.data_Q1 = self.input("Q1")
         self.data_Q2 = self.input("Q2")
@@ -539,6 +541,10 @@ class Instrument(StreamingInstrument):
             'units': "m2 g",
             'C_format': "%5.2f",
         })
+        self.parameters_record.float_attr("weingartner_constant", self, '_weingartner_constant', attributes={
+            'long_name': "Weingartner Cref constant value",
+            'C_format': "%4.2f",
+        })
 
     def _command_spot_advance(self, _) -> None:
         _LOGGER.debug("Received spot advance command")
@@ -592,6 +598,11 @@ class Instrument(StreamingInstrument):
                 matched = _SERIAL_NUMBER.search(decoded)
                 if matched:
                     self.set_serial_number(matched.group(1))
+
+                if not self._configured_weingartner_constant:
+                    matched = _WEINGARTNER_CONSTANT.search(decoded)
+                    if matched:
+                        self._weingartner_constant = float(matched.group(1))
 
         await self.drain_reader(0.5)
         if self.writer:

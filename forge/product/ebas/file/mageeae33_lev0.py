@@ -48,6 +48,10 @@ class File(SpectralFile, AerosolInstrument):
         return 'filter_absorption_photometer'
 
     @property
+    def cref(self) -> float:
+        return 1.57
+
+    @property
     def file_metadata(self) -> typing.Dict[str, str]:
         r = super().file_metadata
         r.update(self.level0_metadata)
@@ -62,7 +66,6 @@ class File(SpectralFile, AerosolInstrument):
             'zero_negative_desc': 'Zero and neg. values may appear due to statistical variations at very low concentrations',
             'measurement_uncertainty': [20, "1/Mm"],
             'measurement_uncertainty_expl': "typical value of unit-to-unit variability",
-            'multi_scattering_corr_fact': 1.57,
             'max_attenuation': 100.0,
             'comp_thresh_atten1': 10.0,
             'comp_thresh_atten2': 30.0,
@@ -143,6 +146,7 @@ class File(SpectralFile, AerosolInstrument):
             attenuation_coefficient_1 = matrix.spectral_variable()
             attenuation_coefficient_2 = matrix.spectral_variable()
             wavelength_efficiency = {round(wl): 6833.0 / wl for wl in [370.0, 470.0, 520.0, 590.0, 660.0, 880.0, 950.0]}
+            cref = self.cref
             async for nas, selector, root in matrix.iter_data_files(data_directory):
                 flags[nas].integrate_file(root, selector)
                 instrument[nas].integrate_file(root)
@@ -272,6 +276,41 @@ class File(SpectralFile, AerosolInstrument):
                             if wlidx < len(values) and isfinite(values[wlidx]):
                                 wavelength_efficiency[wavelength] = values[wlidx]
 
+                    parameters_var = parameters_group.variables.get("instrument_parameters")
+                    if parameters_var is not None:
+                        lines = str(parameters_var[0]).split("\n")
+                        if len(lines) == 1:
+                            import re
+                            matched = re.search(r" \d+ \d+\.\d+ \d+\.\d+ \d+\.\d+ \d+\.\d+ \d+\.\d+ \d+\.\d+ \d+\.\d+ (\d+\.\d+) \d+\.\d+ \d+\.\d+ \d+ ", lines[0])
+                            if matched:
+                                cref = float(matched.group(1))
+
+                        elif len(lines) >= 2:
+                            import csv
+
+                            def split_line(line: str) -> typing.List[str]:
+                                r = csv.reader((line,))
+                                try:
+                                    return next(iter(r))
+                                except StopIteration:
+                                    return []
+
+                            header = split_line(lines[0])
+                            values = split_line(lines[1])
+                            kv: typing.Dict[str, str] = dict(zip([h.lower() for h in header], values))
+
+                            check = kv.get("c")
+                            if check:
+                                try:
+                                    cref = float(check)
+                                except ValueError:
+                                    pass
+
+                    cref_var = parameters_group.variables.get("weingartner_constant")
+                    if cref_var is not None:
+                        cref = float(cref_var[0])
+
+
                 def absorption_to_ebc(wavelength: float) -> typing.Optional[typing.Callable[[np.ndarray], np.ndarray]]:
                     efficiency = wavelength_efficiency.get(wavelength, nan)
                     if not isfinite(efficiency) or efficiency <= 0.0:
@@ -340,7 +379,7 @@ class File(SpectralFile, AerosolInstrument):
                 detection_limit=[0.03, "ug/m3"],
                 detection_limit_desc="Adapted from manufacturer specification",
                 uncertainty=[100.0, '%'],
-                multi_scattering_corr_fact=1.57,
+                multi_scattering_corr_fact=cref,
             )
             efficiency = wavelength_efficiency.get(var.wavelength, nan)
             if isfinite(efficiency):
@@ -355,7 +394,7 @@ class File(SpectralFile, AerosolInstrument):
                 detection_limit=[0.03, "ug/m3"],
                 detection_limit_desc="Adapted from manufacturer specification",
                 uncertainty=[100.0, '%'],
-                multi_scattering_corr_fact=1.57,
+                multi_scattering_corr_fact=cref,
             )
             efficiency = wavelength_efficiency.get(var.wavelength, nan)
             if isfinite(efficiency):
@@ -369,7 +408,7 @@ class File(SpectralFile, AerosolInstrument):
                 detection_limit=[0.03, "ug/m3"],
                 detection_limit_desc="Adapted from manufacturer specification",
                 uncertainty=[20.0, '%'],
-                multi_scattering_corr_fact=1.57,
+                multi_scattering_corr_fact=cref,
             )
             efficiency = wavelength_efficiency.get(var.wavelength, nan)
             if isfinite(efficiency):
@@ -393,6 +432,7 @@ class File(SpectralFile, AerosolInstrument):
         for nas in matrix:
             instrument[nas].set_serial_number(nas)
             self.apply_inlet(nas)
+            nas.metadata.multi_scattering_corr_fact = cref
             await self.assemble_file(
                 nas, output_directory,
                 equivalent_black_carbon_corrected[nas],

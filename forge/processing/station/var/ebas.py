@@ -110,4 +110,7 @@ def file(gaw_station: str, type_code: str, start_epoch_ms: int, end_epoch_ms: in
     if end_epoch_ms <= 1632268800000 and type_code.startswith("absorption_"):
         type_code = "psap3w_" + type_code[11:]
 
+    if type_code.startswith("aethalometer_"):
+        type_code = "mageeae36_" + type_code[13:]
+
     return file(gaw_station, type_code, start_epoch_ms, end_epoch_ms)

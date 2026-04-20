@@ -338,6 +338,10 @@ class _BaseInstrument(_InstrumentMixin):
             'units': "m2 g",
             'C_format': "%5.2f",
         })
+        self.parameters_record.float_attr("weingartner_constant", self, '_weingartner_constant', attributes={
+            'long_name': "Weingartner Cref constant value",
+            'C_format': "%4.2f",
+        })
 
     def _lookup_target(self, name: str) -> typing.Callable[[typing.Union[bytes, str]], None]:
         name = name.lower()
@@ -718,7 +722,7 @@ class InstrumentADP(StreamingInstrument, _BaseInstrument):
             try:
                 return next(iter(r))
             except StopIteration:
-                raise CommunicationsError("finvalid CSV line")
+                raise CommunicationsError("invalid CSV line")
         return line.strip().split()
 
     async def start_communications(self) -> None:
