@@ -312,6 +312,21 @@ class AccessController(BaseAccessController):
                                      name='authorize_apple'))
             self.enable_apple = True
 
+        self.enable_orcid = False
+        if CONFIGURATION.exists('AUTHENTICATION.ORCID'):
+            self.oauth.register(
+                'orcid',
+                client_id=CONFIGURATION.AUTHENTICATION.ORCID.CLIENT_ID,
+                client_secret=CONFIGURATION.AUTHENTICATION.ORCID.CLIENT_SECRET,
+                server_metadata_url='https://orcid.org/.well-known/openid-configuration',
+                client_kwargs={'scope': 'openid profile email'}
+            )
+            self.routes.append(Route('/orcid/login', endpoint=self.orcid_login, methods=['GET'],
+                                     name='login_orcid'))
+            self.routes.append(Route('/orcid/authorize', endpoint=self.orcid_authorize,
+                                     name='authorize_orcid'))
+            self.enable_orcid = True
+
     def _purge_sessions(self) -> None:
         if self._session_purge_started:
             return
@@ -388,6 +403,7 @@ class AccessController(BaseAccessController):
             enable_microsoft=self.enable_microsoft,
             enable_yahoo=self.enable_yahoo,
             enable_apple=self.enable_apple,
+            enable_orcid=self.enable_orcid,
         ))
 
     async def _clear_session(self, request: Request):
@@ -765,6 +781,12 @@ class AccessController(BaseAccessController):
     async def apple_authorize(self, request: Request) -> Response:
         return await self.oidc_authorize_generic(request, 'apple')
 
+    async def orcid_login(self, request: Request) -> Response:
+        return await self.oidc_login_generic(request, 'orcid', 'authorize_orcid')
+
+    async def orcid_authorize(self, request: Request) -> Response:
+        return await self.oidc_authorize_generic(request, 'orcid')
+
     @requires('authenticated')
     async def info_change(self, request: Request) -> Response:
         auth_layer = request.user.layer_type(AccessLayer)
@@ -1106,6 +1128,7 @@ class ControlInterface:
 
         def execute(engine: Engine):
             with Session(engine) as orm_session:
+                any_granted = False
                 for user in self._select_users(orm_session, **kwargs):
                     if immediate:
                         for station in stations:
@@ -1116,6 +1139,11 @@ class ControlInterface:
                                     continue
                                 orm_session.add(_Access(user=user.id, station=station.lower(), mode=mode, write=write))
                                 _LOGGER.info(f"Granting access for '{user.name}' {user.email} ({user.id}) - {station.upper()}/{mode}")
+                                any_granted = True
+                        continue
+
+                    if not user.email or not is_valid_email(user.email):
+                        _LOGGER.error(f"Unable to confirm access for '{user.name}' ({user.id}) because they do not have an email address")
                         continue
 
                     any_added = False
@@ -1155,8 +1183,9 @@ class ControlInterface:
                     email_templates.append((message, template_context))
 
                 orm_session.commit()
+            return any_granted
 
-        await self.db.execute(execute)
+        any_granted = await self.db.execute(execute)
 
         email_futures: typing.List[Future] = list()
         for message in email_templates:
@@ -1168,6 +1197,8 @@ class ControlInterface:
 
         if len(email_futures) > 0:
             await asyncio.wait([asyncio.wrap_future(f) for f in email_futures])
+
+        return any_granted
 
     async def revoke_access(self, **kwargs):
         def execute(engine: Engine):

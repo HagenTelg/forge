@@ -31,7 +31,9 @@ async def test_basic(interface):
     ]
 
     await interface.modify_user(email='test@example.com', set_name='New Name')
-    await interface.grant_access(['test'], ['test-test'], immediate=True, email='test@example.com')
+    granted = await interface.grant_access(['test'], ['test-test'], immediate=True,
+                                           email='test@example.com')
+    assert granted
     users = await interface.list_users()
     assert users == [
         {
