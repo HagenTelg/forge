@@ -692,7 +692,7 @@ class AccessController(BaseAccessController):
         await self._clear_session(request)
 
         # Remove the suffixes NOAA policy requires
-        def strip_noaa_suffixes(email: str, name: str) -> str:
+        def strip_noaa_suffixes(email: str, name: typing.Optional[str]) -> typing.Optional[str]:
             if not name:
                 return name
             if not email.lower().endswith('@noaa.gov'):
@@ -701,6 +701,23 @@ class AccessController(BaseAccessController):
                 if name.lower().endswith(suffix.lower()):
                     return name[:-len(suffix)].strip()
             return name
+
+        def assemble_name() -> typing.Optional[str]:
+            name = oidc_user.get('name')
+            if name:
+                return name
+            name_components = []
+            for c in ('given_name', 'middle_name', 'family_name'):
+                v = oidc_user.get(c)
+                if not v:
+                    continue
+                v = v.strip()
+                if not v:
+                    continue
+                name_components.append(v)
+            if name_components:
+                return ' '.join(name_components)
+            return None
 
         def execute(engine: Engine):
             with Session(engine) as orm_session:
@@ -711,7 +728,7 @@ class AccessController(BaseAccessController):
                     email = email[0:255] if email else ''
                     if client_name not in ('google', 'logingov'):
                         self._check_gov_login(email)
-                    name = oidc_user.get('name')
+                    name = assemble_name()
                     name = strip_noaa_suffixes(email, name)
                     name = name[0:255] if name else None
                     user = _User(email=email, name=name, last_seen=datetime.datetime.now(tz=datetime.timezone.utc))
