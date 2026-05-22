@@ -116,7 +116,11 @@ var Dewpoint = {};
         }
         svpTarget /= (rh / 100.0);
 
-        return svpSolve(svpTarget, td, forceWater);
+        let result = svpSolve(svpTarget, td, forceWater);
+        if (!isFinite(result)) {
+            return undefined;
+        }
+        return result - 273.15;
     }
 
     const recordFieldMatch = /^(TD|T|U)(.+)$/;
