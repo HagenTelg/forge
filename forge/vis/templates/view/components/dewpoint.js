@@ -111,7 +111,7 @@ var Dewpoint = {};
         td += 273.15;
 
         let svpTarget = svp(td, forceWater);
-        if (!isFinite(yTarget)) {
+        if (!isFinite(svpTarget)) {
             return undefined;
         }
         svpTarget /= (rh / 100.0);
