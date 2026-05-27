@@ -100,7 +100,6 @@ STATIONS = frozenset({
     'sxf',
     'thd',
     'trl',
-    'tal',
     'tun',
     'ugr',
     'var',
