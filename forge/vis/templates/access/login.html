@@ -157,6 +157,16 @@
     </a>
   </span>
 {% endif %}
+{% if enable_orcid %}
+  <span class="external-account-button">
+    <a href="{{ request.url_for('login_orcid') }}">
+      <div class="orcid-button">
+        <img class="orcid-button-icon" src="{{ request.url_for('static', path='/images/ORCID_Logo.svg') }}"/>
+        <span class="orcid-button-text">Sign in with ORCID</span>
+      </div>
+    </a>
+  </span>
+{% endif %}
 </div></div>
 
 <script>

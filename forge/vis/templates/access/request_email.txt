@@ -6,8 +6,14 @@ The comment with the request was:
 {% endif %}
 
 
+{% if user.email %}
 To approve access for this user and station run:
 
     forge-vis-access grant --user={{ user.id }} {{ station }}
+{% else %}
+Since the user does not have a valid email address, you must verify this is the correct person and notify them, then run:
+
+    forge-vis-access grant --user={{ user.id }} --no-confirm {{ station }}
+{% endif %}
 
 To grant more restricted access (e.g. to meteorological data only) refer to the command help.

@@ -7,6 +7,7 @@ from ..default.aerosol.ecotechnephelometer import NephelometerStatus
 from ..default.aerosol.psap import PSAPStatus
 from .optical import OpticalPSAP, EditingPSAP
 from .green import Green
+from .aethalometer import AE36, AE33Status, AE36OpticalStatus, EditingAE36
 
 
 station_views = detach(aerosol_views, aerosol_public)
@@ -19,6 +20,16 @@ station_views['aerosol-clean-opticalpsap'] = OpticalPSAP('aerosol-clean')
 station_views['aerosol-avgh-opticalpsap'] = OpticalPSAP('aerosol-avgh')
 station_views['aerosol-raw-psapstatus'] = PSAPStatus('aerosol-raw')
 station_views['aerosol-realtime-psapstatus'] = PSAPStatus('aerosol-realtime', realtime=True)
+
+station_views['aerosol-raw-aethalometer'] = AE36('aerosol-raw')
+station_views['aerosol-raw-aethalometerstatus'] = AE33Status('aerosol-raw')
+station_views['aerosol-realtime-aethalometer'] = AE36('aerosol-realtime', realtime=True)
+station_views['aerosol-realtime-aethalometerstatus'] = AE33Status('aerosol-realtime', realtime=True)
+station_views['aerosol-editing-aethalometer'] = EditingAE36()
+station_views['aerosol-editing-aethalometerstatus'] = AE36OpticalStatus('aerosol-editing')
+station_views['aerosol-clean-aethalometer'] = AE36('aerosol-clean')
+station_views['aerosol-avgh-aethalometer'] = AE36('aerosol-avgh')
+
 
 station_views['aerosol-raw-green'] = Green('aerosol-raw')
 station_views['aerosol-realtime-green'] = Green('aerosol-realtime', realtime=True)

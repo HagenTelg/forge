@@ -12,10 +12,17 @@ The comment with the request was:
 <blockquote>{{ comment }}</blockquote>
 {% endif %}
 
+{% if user.email %}
 <p>
 To approve access for this user and station run:
 </p>
 <pre><code>  forge-vis-access grant --user={{ user.id }} {{ station }}</code></pre>
+{% else %}
+<p>
+Since the user does not have a valid email address, you must verify this is the correct person and notify them, then run:
+</p>
+<pre><code>  forge-vis-access grant --user={{ user.id }} --no-confirm {{ station }}</code></pre>
+{% endif %}
 <p>
 To grant more restricted access (e.g. to meteorological data only) refer to the command help.
 </p>

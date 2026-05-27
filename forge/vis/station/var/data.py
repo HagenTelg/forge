@@ -265,6 +265,43 @@ else:
         "Uneph": [RealtimeSelection("Usample", variable_name="sample_humidity", require_tags={"scattering"}, exclude_tags={"secondary"})],
     })
 
+    for archive in ("raw", "editing", "clean", "avgh"):
+        for record, cut_size in STANDARD_CUT_SIZE_SPLIT:
+            data_records[f"aerosol-{archive}-aethalometer-{record}"] = DataRecord(dict(
+                [(f"Ba{wl+1}", [Selection(variable_id="Bac", wavelength_number=wl, cut_size=cut_size,
+                                          require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+                 for wl in range(7)] +
+                [(f"X{wl+1}", [Selection(variable_name="equivalent_black_carbon",
+                                         wavelength_number=wl, cut_size=cut_size,
+                                         require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+                 for wl in range(7)] +
+                [(f"Ir{wl+1}", [Selection(variable_id="Ir", wavelength_number=wl, cut_size=cut_size,
+                                          require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+                 for wl in range(7)] +
+                [(f"CF{wl+1}", [Selection(variable_name="correction_factor", wavelength_number=wl, cut_size=cut_size,
+                                          require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+                 for wl in range(7)]
+            ))
+    for record, cut_size in STANDARD_CUT_SIZE_SPLIT:
+        data_records[f"aerosol-realtime-aethalometer-{record}"] = RealtimeRecord(dict(
+            [(f"Ba{wl+1}", [RealtimeSelection(f"Ba{wl+1}", variable_id="Ba",
+                                              wavelength_number=wl, cut_size=cut_size,
+                                              require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+             for wl in range(7)] +
+            [(f"X{wl+1}", [RealtimeSelection(f"X{wl+1}", variable_name="equivalent_black_carbon",
+                                             wavelength_number=wl, cut_size=cut_size,
+                                             require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+             for wl in range(7)] +
+            [(f"Ir{wl+1}", [RealtimeSelection(f"Ir{wl+1}", variable_id="Ir",
+                                              wavelength_number=wl, cut_size=cut_size,
+                                              require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+             for wl in range(7)] +
+            [(f"CF{wl+1}", [RealtimeSelection(f"k{wl+1}",variable_name="correction_factor",
+                                              wavelength_number=wl, cut_size=cut_size,
+                                              require_tags={"aethalometer"}, exclude_tags={"secondary"})])
+             for wl in range(7)]
+        ))
+
     def get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
             send: typing.Callable[[typing.Dict], typing.Awaitable[None]]) -> typing.Optional[DataStream]:
         return data_get(station, data_name, start_epoch_ms, end_epoch_ms, send, data_records)

@@ -229,9 +229,11 @@ def main():
             stations = args.grant_station
             if len(stations) == 1:
                 stations = stations[0].split(',')
-            await interface.grant_access(stations, grant_modes,
-                                         immediate=args.no_confirm, write=(not args.read_only),
-                                         **vars(args))
+            granted = await interface.grant_access(stations, grant_modes,
+                                                   immediate=args.no_confirm, write=(not args.read_only),
+                                                   **vars(args))
+            if not granted:
+                print("No access granted, check user selection")
         elif args.command == 'revoke':
             await interface.revoke_access(**vars(args))
         elif args.command == 'logout':
