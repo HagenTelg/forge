@@ -216,7 +216,7 @@ var Mie = {};
 
                 for (j = 0, k = this.nAng * 2 - 2; j < this.nAng - 1; j++, k--) {
                     this.s1[k].eadd(Complex.mult(an, this.pi[j]).esub(Complex.mult(bn, this.tau[j])).emult(fn * p));
-                    this.s2[k].eadd(Complex.mult(bn * this.pi[j]).esub(Complex.mult(an * this.tau[j])).emult(fn * p));
+                    this.s2[k].eadd(Complex.mult(bn, this.pi[j]).esub(Complex.mult(an, this.tau[j])).emult(fn * p));
                 }
 
                 psi0 = psi1;
