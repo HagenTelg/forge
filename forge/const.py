@@ -75,6 +75,7 @@ STATIONS = frozenset({
     'pn1',
     'pn2',
     'pon',
+    'psu',
     'rpb',
     'rsl',
     'sdz',
