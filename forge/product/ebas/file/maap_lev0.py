@@ -143,9 +143,14 @@ class File(SpectralFile, AerosolInstrument):
                 if parameters_group is not None:
                     efficiency_var = parameters_group.variables.get("mass_absorption_efficiency")
                     if efficiency_var is not None:
-                        values = efficiency_var[:].data.tolist()
-                        if len(values) > 0 and isfinite(values[0]):
-                            ebc_efficiency = values[0]
+                        if len(efficiency_var.shape) == 0:
+                            value = float(efficiency_var[0])
+                            if isfinite(value):
+                                ebc_efficiency = value
+                        else:
+                            values = efficiency_var[:].data.tolist()
+                            if len(values) > 0 and isfinite(values[0]):
+                                ebc_efficiency = values[0]
 
         for var in equivalent_black_carbon:
             var.apply_metadata(
