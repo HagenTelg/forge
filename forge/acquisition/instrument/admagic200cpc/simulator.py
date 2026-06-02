@@ -33,6 +33,14 @@ class Simulator(StreamingSimulator):
 
         self.flags = 0
 
+        self.headers: bytes = (
+            b'year time, Concentration,DewPoint,Input T, Input RH\r\n'
+            b'Cond T, Init T,Mod T, Opt T, HeatSink T, Board T, Case T \r\n'
+            b'Power Supply Voltage, Diff. Press,Abs. Press.,flow (cc/min)\r\n'
+            b'log interval, corrected live time, measured dead time, raw counts, raw counts2\r\n'
+            b'Status(hex code), Status(ascii), Serial Number\r\n'
+        )
+
     async def _unpolled(self) -> typing.NoReturn:
         while True:
             ts = time.gmtime()
@@ -107,11 +115,7 @@ class Simulator(StreamingSimulator):
                     elif line.startswith(b'rtc,'):
                         self.writer.write(b'\r\nOK\r\n')
                     elif line == b'hdr':
-                        self.writer.write(b'year time, Concentration,DewPoint,Input T, Input RH\r\n')
-                        self.writer.write(b'Cond T, Init T,Mod T, Opt T, HeatSink T, Board T, Case T \r\n')
-                        self.writer.write(b'Power Supply Voltage, Diff. Press,Abs. Press.,flow (cc/min)\r\n')
-                        self.writer.write(b'log interval, corrected live time, measured dead time, raw counts, raw counts2\r\n')
-                        self.writer.write(b'Status(hex code), Status(ascii), Serial Number\r\n')
+                        self.writer.write(self.headers)
                     else:
                         raise ValueError
                 except (ValueError, IndexError):
