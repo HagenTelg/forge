@@ -116,7 +116,8 @@ class Instrument(StreamingInstrument):
             if not hdr:
                 raise CommunicationsError("no header response")
             hdr = b",".join(hdr)
-            if b"Concentration" not in hdr or b"raw counts2" not in hdr:
+            if not (b"Concentration" in hdr and b"raw counts2" in hdr) and \
+                    not (b"conc" in hdr and b"cnts2" in hdr):
                 raise CommunicationsError(f"header response: {hdr}")
 
             self.writer.write(b"wadc\r")

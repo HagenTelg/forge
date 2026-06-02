@@ -43,6 +43,44 @@ async def test_communications():
     await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
+
+@pytest.mark.asyncio
+async def test_alternate_header():
+    simulator: Simulator = None
+    instrument: Instrument = None
+    simulator, instrument = await create_streaming_instrument(Instrument, Simulator)
+    bus: BusInterface = instrument.context.bus
+
+    simulator.headers = b"  date_time      ,   conc, dewP, Tin,RHin,   Tcon,Tini,Tmod,Topt, Thtsnk, Tbd,Tamb,  psV,Pdiff,Pab,Flo,int, liveT,deadT,  cnts, cnts2,  StatusH,   StatusA, SN\r\n"
+
+    simulator_run = asyncio.ensure_future(simulator.run())
+    instrument_run = asyncio.ensure_future(instrument.run())
+
+    await wait_cancelable(bus.wait_for_communicating(), 30)
+
+    assert await bus.value('N') == simulator.data_N
+    assert await bus.value('Q') == simulator.data_Q
+    assert await bus.value('Qinstrument') == simulator.data_Q
+    assert await bus.value('Clower') == simulator.data_Clower
+    assert await bus.value('Cupper') == simulator.data_Cupper
+    assert await bus.value('P') == simulator.data_P
+    assert await bus.value('PD') == simulator.data_PD
+    assert await bus.value('V') == simulator.data_V
+
+    assert await bus.value('Tinlet') == simulator.data_Tinlet
+    assert await bus.value('Tconditioner') == simulator.data_Tconditioner
+    assert await bus.value('Tinitiator') == simulator.data_Tinitiator
+    assert await bus.value('Tmoderator') == simulator.data_Tmoderator
+    assert await bus.value('Toptics') == simulator.data_Toptics
+    assert await bus.value('Theatsink') == simulator.data_Theatsink
+    assert await bus.value('Tpcb') == simulator.data_Tpcb
+    assert await bus.value('Tcabinet') == simulator.data_Tcabinet
+    assert await bus.value('Uinlet') == simulator.data_Uinlet
+    assert await bus.value('TDinlet') == simulator.data_TDinlet
+
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
+
+
 @pytest.mark.asyncio
 async def test_flow_configuration():
     simulator: Simulator = None
