@@ -33,6 +33,8 @@ class _BaseInstrument(_InstrumentMixin):
         self._report_interval: float = float(context.config.get('REPORT_INTERVAL', default=1.0))
         self._instrument_timebase: float = self._report_interval
 
+        self._ebc_zero_is_mvc: bool = bool(context.config.get('ZERO_EBC_IS_MVC', default=True))
+
         if context.config.get('NINE_WAVELENGTH'):
             # AE36s
             self._wavelengths = [
@@ -389,6 +391,25 @@ class _BaseInstrument(_InstrumentMixin):
             self._spot_change_observed = True
         self.data_Fn(Fn)
 
+    def _tape_advance_in_progress(self) -> bool:
+        def _all_zero(check: typing.Iterable[Input]) -> bool:
+            for w in check:
+                if w.value != 0.0:
+                    return False
+            return True
+
+        if self._ebc_zero_is_mvc:
+            if not _all_zero(self.data_X_wavelength):
+                return False
+            if not _all_zero(self.data_Xa_wavelength):
+                return False
+            if not _all_zero(self.data_Xb_wavelength):
+                return False
+
+            return True
+
+        return False
+
     def _normalization_ready(self) -> bool:
         def _all_valid(check: typing.Iterable[Input]) -> bool:
             for w in check:
@@ -500,8 +521,12 @@ class _BaseInstrument(_InstrumentMixin):
             self._have_direct_Bac[index] = False
 
     def _complete_data_report(self) -> None:
-        self.notify_spot_advancing(self._normalization_changed)
-        if self._normalization_changed and self._normalization_ready():
+        if self._tape_advance_in_progress():
+            self._normalization_changed = True
+            self.notify_spot_advancing(self._normalization_changed)
+        elif self._normalization_changed and self._normalization_ready():
+            self.notify_spot_advancing(self._normalization_changed)
+
             self._normalization_changed = False
             if self._spot_change_observed:
                 In, Ins = self._normalized_intensities()
@@ -512,6 +537,8 @@ class _BaseInstrument(_InstrumentMixin):
                 self.data_In0([nan] * len(self._wavelengths), oneshot=True)
                 self.data_Ins0([nan] * len(self._wavelengths), oneshot=True)
             self._spot_change_observed = False
+        else:
+            self.notify_spot_advancing(self._normalization_changed)
 
         for i in range(len(self._wavelengths)):
             if not self._have_direct_Bac[i]:
