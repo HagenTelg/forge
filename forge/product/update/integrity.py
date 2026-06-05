@@ -122,7 +122,8 @@ class IntegrityTracker(Tracker):
                                    _modified_after_epoch_ms: int) -> "typing.AsyncIterable[typing.Tuple[int, int]]":
         yield start_epoch_ms, end_epoch_ms
 
-    def updated_to_outputs(self, start_epoch_ms: int, end_epoch_ms: int) -> typing.Iterable[typing.Tuple[int, int]]:
+    def updated_to_outputs(self, start_epoch_ms: int, end_epoch_ms: int,
+                           external: bool = False) -> typing.Iterable[typing.Tuple[int, int]]:
         yield start_epoch_ms, end_epoch_ms
 
     async def perform_update(self, start_epoch_ms: int, end_epoch_ms: int) -> None:
