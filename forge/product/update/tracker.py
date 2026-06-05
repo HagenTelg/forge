@@ -137,7 +137,8 @@ class Tracker(ABC):
         pass
 
     @abstractmethod
-    def updated_to_outputs(self, start_epoch_ms: int, end_epoch_ms: int) -> typing.Iterable[typing.Tuple[int, int]]:
+    def updated_to_outputs(self, start_epoch_ms: int, end_epoch_ms: int,
+                           external: bool = False) -> typing.Iterable[typing.Tuple[int, int]]:
         pass
 
     @property
@@ -265,12 +266,13 @@ class Tracker(ABC):
         self.save_state(sync=True)
         return any_updates
 
-    async def notify_update(self, start_epoch_ms: int, end_epoch_ms: int, save_state: bool = True) -> None:
-        self._apply_update(start_epoch_ms, end_epoch_ms)
+    async def notify_update(self, start_epoch_ms: int, end_epoch_ms: int, save_state: bool = True,
+                            external: bool = False) -> None:
+        self._apply_update(start_epoch_ms, end_epoch_ms, external=external)
         if save_state:
             self.save_state(sync=True)
 
-    def _apply_update(self, update_start: int, update_end: int) -> None:
+    def _apply_update(self, update_start: int, update_end: int, external: bool = False) -> None:
         class Merge(RangeMerge):
             def __init__(self, tracker: "Tracker"):
                 self.tracker = tracker
@@ -309,7 +311,7 @@ class Tracker(ABC):
             def get_end(self, index: int) -> typing.Union[int, float]:
                 return self.tracker._outputs[index].end_epoch_ms
 
-        for out_start, out_end in self.updated_to_outputs(update_start, update_end):
+        for out_start, out_end in self.updated_to_outputs(update_start, update_end, external=external):
             _LOGGER.debug("Update %d,%d resulted in output %d,%d",
                           update_start, update_end, out_start, out_end)
             merge = Merge(self)
@@ -615,7 +617,8 @@ class YearModifiedTracker(FileModifiedTracker):
 
             return False
 
-    def updated_to_outputs(self, start_epoch_ms: int, end_epoch_ms: int) -> typing.Iterable[typing.Tuple[int, int]]:
+    def updated_to_outputs(self, start_epoch_ms: int, end_epoch_ms: int,
+                           external: bool = False) -> typing.Iterable[typing.Tuple[int, int]]:
         for year in range(*containing_year_range(start_epoch_ms / 1000.0, end_epoch_ms / 1000.0)):
             yield year_bounds_ms(year)
 
@@ -664,8 +667,9 @@ class NRTTracker(FileModifiedTracker):
         async for c in super().candidate_to_updated(start_epoch_ms, end_epoch_ms, modified_after_epoch_ms):
             yield c
 
-    def updated_to_outputs(self, start_epoch_ms: int, end_epoch_ms: int) -> typing.Iterable[typing.Tuple[int, int]]:
-        if self.MAXIMUM_AGE:
+    def updated_to_outputs(self, start_epoch_ms: int, end_epoch_ms: int,
+                           external: bool = False) -> typing.Iterable[typing.Tuple[int, int]]:
+        if self.MAXIMUM_AGE and not external:
             cutoff_time = int(floor(time.time() * 1000)) - self.MAXIMUM_AGE
             if end_epoch_ms <= cutoff_time:
                 return
@@ -677,6 +681,6 @@ class NRTTracker(FileModifiedTracker):
         for hour in range(start_hour, end_hour):
             hour_start = hour * 60 * 60 * 1000
             hour_end = hour_start + 60 * 60 * 1000
-            if hour_end <= self.latest_commit:
+            if hour_end <= self.latest_commit and not external:
                 continue
             yield hour_start, hour_end

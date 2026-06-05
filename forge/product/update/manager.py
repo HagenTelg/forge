@@ -198,7 +198,7 @@ class UpdateController(ABC):
             return False
         for tracker, start_epoch_ms, end_epoch_ms in to_notify:
             _LOGGER.debug(f"Notifying external update {start_epoch_ms},{end_epoch_ms} to {str(tracker)}")
-            await tracker.notify_update(start_epoch_ms, end_epoch_ms, save_state=save_state)
+            await tracker.notify_update(start_epoch_ms, end_epoch_ms, save_state=save_state, external=True)
         return True
 
     async def _flush_external_commit(self, save_state: bool = True) -> None:
