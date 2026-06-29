@@ -4,7 +4,7 @@ from ..cpd3 import use_cpd3
 
 
 if use_cpd3("clamps3"):
-    from ..cpd3 import DataStream, DataReader, Name, RealtimeTranslator, data_profile_get
+    from ..cpd3 import DataStream, DataReader, Name, RealtimeTranslator, data_profile_get, detach, profile_data
 
     station_profile_data = {
         'aerosol': {
@@ -68,7 +68,8 @@ if use_cpd3("clamps3"):
                     RealtimeTranslator.Key('Q2_M11'): 'Qbypass',
                 },
             },
-        }
+        },
+        'radiation': profile_data.get('radiation')
     }
 
     def get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
