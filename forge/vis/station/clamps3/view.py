@@ -1,10 +1,10 @@
 import typing
-from ..default.view import  View
+from ..default.view import  detach, View, radiation_views
 from ..default.aerosol.t640 import T640Mass, T640Status
 from ..default.aerosol.editing.t640 import EditingT640
 
 
-station_views = {}
+station_views = detach(radiation_views)
 
 station_views['aerosol-raw-mass'] = T640Mass('aerosol-raw')
 station_views['aerosol-raw-t640status'] = T640Status('aerosol-raw')

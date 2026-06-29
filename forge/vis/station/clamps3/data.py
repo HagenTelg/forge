@@ -76,9 +76,10 @@ if use_cpd3("clamps3"):
         return data_profile_get(station, data_name, start_epoch_ms, end_epoch_ms, send, station_profile_data)
 
 else:
-    from ..default.data import data_get, DataStream, DataRecord, RealtimeRecord, Selection, RealtimeSelection, STANDARD_THREE_WAVELENGTHS, STANDARD_CUT_SIZE_SPLIT
+    from ..default.data import radiation_data, data_get, DataStream, DataRecord, RealtimeRecord, Selection, RealtimeSelection, STANDARD_THREE_WAVELENGTHS, STANDARD_CUT_SIZE_SPLIT
 
     data_records = dict()
+    data_records.update(radiation_data)
 
     data_records["aerosol-raw-t640status"] = DataRecord({
         "Tsample": [Selection(variable_name="sample_temperature", instrument_code="teledynet640")],

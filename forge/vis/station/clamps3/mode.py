@@ -1,6 +1,8 @@
 import typing
-from ..default.mode import Mode, ViewList, Realtime, DefaultAcquisition
+from ..default.mode import Mode, ViewList, Realtime, DefaultAcquisition, detach, radiation_modes
 
+
+station_modes = detach(radiation_modes)
 
 station_modes = {
     'aerosol-raw': ViewList('aerosol-raw', "Raw", [
