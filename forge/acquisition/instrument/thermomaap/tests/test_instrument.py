@@ -41,3 +41,24 @@ async def test_communications():
     await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
 
 
+@pytest.mark.asyncio
+async def test_ssa_corruption():
+    simulator: Simulator = None
+    instrument: Instrument = None
+    simulator, instrument = await create_streaming_instrument(Instrument, Simulator)
+    simulator.corrupt_ssa = True
+    simulator.model_run_time = 6.0
+    simulator.unpolled_delay = 2.0
+    bus: BusInterface = instrument.context.bus
+
+    simulator_run = asyncio.ensure_future(simulator.run())
+    instrument_run = asyncio.ensure_future(instrument.run())
+
+    await wait_cancelable(bus.wait_for_communicating(), 120)
+
+    assert await bus.value('Ir') == pytest.approx(simulator.data_Ir)
+    assert await bus.value('Bac') == simulator.data_Bac
+
+    await cleanup_streaming_instrument(simulator, instrument, instrument_run, simulator_run)
+
+

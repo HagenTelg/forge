@@ -36,6 +36,8 @@ class Simulator(StreamingSimulator):
         self.data_Q = 12.0
         self.data_PCT = 50.0
 
+        self.corrupt_ssa = False
+
     @property
     def data_Ir(self) -> float:
         return (self.data_Ip / self.data_If) / (self.data_Ip0 / self.data_If0)
@@ -74,7 +76,7 @@ class Simulator(StreamingSimulator):
 
             self._output_buffer += ((
                 "  17 "
-                f"{self.data_SSA:.6f} "
+                f"{self.data_SSA:.6f}{'' if self.corrupt_ssa else ' '}"
                 f"{100.0 * log(self.data_Ir):.3f} "
                 "0.93 "
                 f"{self.data_X:.2f} "

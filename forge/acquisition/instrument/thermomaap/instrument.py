@@ -566,17 +566,41 @@ class Instrument(StreamingInstrument):
         # self.data_Ba(apply_correction(X_uncorrected) * self._ebc_efficiency)
         self.data_Bac(X * self._ebc_efficiency)
 
+    @staticmethod
+    def _recover_ssa_ldo(SSA_LOD: bytes) -> typing.Tuple[bytes, bytes]:
+        parts = SSA_LOD.rsplit(b'-', 1)
+        if len(parts) == 2:
+            return parts[0], b'-' + parts[1]
+
+        parts = SSA_LOD.split(b'.', 1)
+        if len(parts) == 2 and len(parts[1]) > 6:
+            return parts[0] + b'.' + parts[1][:6], parts[1][6:]
+
+        raise CommunicationsError(f"invalid SSA/LOD {SSA_LOD}")
+
     def _process_pf12_end(self, line: bytes) -> None:
         fields = line.split()
-        try:
-            (
-                _,  # Iterations to converge,
-                SSA, LOD,
-                _,  # Filter loading
-                X, X_uncorrected
-            ) = fields
-        except ValueError:
-            raise CommunicationsError(f"invalid number of fields in {line}")
+        if len(fields) == 5:
+            try:
+                (
+                    _,  # Iterations to converge,
+                    SSA_LOD,  # Possibly corrupt SSA and LOD concatenated
+                    _,  # Filter loading
+                    X, X_uncorrected
+                ) = fields
+            except ValueError:
+                raise CommunicationsError(f"invalid number of fields in {line}")
+            SSA, LOD = self._recover_ssa_ldo(SSA_LOD)
+        else:
+            try:
+                (
+                    _,  # Iterations to converge,
+                    SSA, LOD,
+                    _,  # Filter loading
+                    X, X_uncorrected
+                ) = fields
+            except ValueError:
+                raise CommunicationsError(f"invalid number of fields in {line}")
 
         self.data_SSA(parse_number(SSA))
 
@@ -588,22 +612,41 @@ class Instrument(StreamingInstrument):
 
     def _process_pf12_complete(self, line: bytes) -> None:
         fields = line.split()
-        try:
-            (
-                raw_data, raw_time,
-                Ip, Is135, Is165, If,
-                Ip0,
-                _,  # Zero 135 signal
-                _,  # Zero 165 signal
-                If0,
-                volume,
-                _,  # Iterations to converge,
-                SSA, LOD,
-                _,  # Filter loading
-                X, X_uncorrected
-            ) = fields
-        except ValueError:
-            raise CommunicationsError(f"invalid number of fields in {line}")
+        if len(fields) == 16:
+            try:
+                (
+                    raw_data, raw_time,
+                    Ip, Is135, Is165, If,
+                    Ip0,
+                    _,  # Zero 135 signal
+                    _,  # Zero 165 signal
+                    If0,
+                    volume,
+                    _,  # Iterations to converge,
+                    SSA_LOD,
+                    _,  # Filter loading
+                    X, X_uncorrected
+                ) = fields
+            except ValueError:
+                raise CommunicationsError(f"invalid number of fields in {line}")
+            SSA, LOD = self._recover_ssa_ldo(SSA_LOD)
+        else:
+            try:
+                (
+                    raw_data, raw_time,
+                    Ip, Is135, Is165, If,
+                    Ip0,
+                    _,  # Zero 135 signal
+                    _,  # Zero 165 signal
+                    If0,
+                    volume,
+                    _,  # Iterations to converge,
+                    SSA, LOD,  # Possibly corrupt SSA and LOD concatenated
+                    _,  # Filter loading
+                    X, X_uncorrected
+                ) = fields
+            except ValueError:
+                raise CommunicationsError(f"invalid number of fields in {line}")
 
         parse_date_and_time(raw_data, raw_time)
         self.data_Ip(parse_number(Ip))
