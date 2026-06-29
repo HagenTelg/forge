@@ -1,6 +1,6 @@
 import typing
 import json
-from datatime import datetime
+from datetime import datetime
 from pathlib import Path
 
 current_dir = Path(__file__).parent
