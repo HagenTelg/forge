@@ -4,7 +4,7 @@ from ..default.mode import Mode, ViewList, Realtime, DefaultAcquisition, detach,
 
 station_modes = detach(radiation_modes)
 
-station_modes = {
+station_modes.update({
     'aerosol-raw': ViewList('aerosol-raw', "Raw", [
         ViewList.Entry('aerosol-raw-mass', "Mass Concentration"),
         ViewList.Entry('aerosol-raw-t640status', "T640 Status"),
@@ -14,7 +14,7 @@ station_modes = {
         ViewList.Entry('aerosol-realtime-t640status', "T640 Status"),
     ]),
     'acquisition': DefaultAcquisition(),
-}
+})
 
 
 def get(station: str, mode_name: str) -> typing.Optional[Mode]:
