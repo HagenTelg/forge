@@ -172,11 +172,11 @@ class _InletDrier(_ExternalSensor):
                                             attributes={'long_name': "air humidity at the drier inlet"}),
             self.instrument.variable_air_dewpoint(self.data_TDu, "inlet_drier_inlet_dewpoint", code="TDu",
                                                   attributes={'long_name': "air dewpoint at the drier inlet"}),
-            self.instrument.variable_temperature(self.data_Tu, "inlet_drier_outlet_temperature", code="Tx",
+            self.instrument.variable_temperature(self.data_T, "inlet_drier_outlet_temperature", code="Tx",
                                                  attributes={'long_name': "air temperature at the drier outlet"}),
-            self.instrument.variable_rh(self.data_Uu, "inlet_drier_outlet_humidity", code="Ux",
+            self.instrument.variable_rh(self.data_U, "inlet_drier_outlet_humidity", code="Ux",
                                         attributes={'long_name': "air humidity at the drier outlet"}),
-            self.instrument.variable_dewpoint(self.data_TDu, "inlet_drier_outlet_dewpoint", code="TDx",
+            self.instrument.variable_dewpoint(self.data_TD, "inlet_drier_outlet_dewpoint", code="TDx",
                                               attributes={'long_name': "air dewpoint at the drier outlet"}),
         )
 
