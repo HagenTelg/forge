@@ -1011,6 +1011,13 @@ else:
 
         "Tneph4": [Selection(variable_name="sample_temperature", instrument_id="S14")],
         "Uneph4": [Selection(variable_name="sample_humidity", instrument_id="S14")],
+
+        "Taethdrier": [Selection(variable_name="inlet_drier_inlet_temperature", instrument_id="A81")],
+        "Uaethdrier": [Selection(variable_name="inlet_drier_inlet_humidity", instrument_id="A81")],
+        "TDaethdrier": [Selection(variable_name="inlet_drier_inlet_dewpoint", instrument_id="A81")],
+        "Taethdrieroutlet": [Selection(variable_name="inlet_drier_outlet_temperature", instrument_id="A81")],
+        "Uaethdrieroutlet": [Selection(variable_name="inlet_drier_outlet_humidity", instrument_id="A81")],
+        "TDaethdrieroutlet": [Selection(variable_name="inlet_drier_outlet_dewpoint", instrument_id="A81")],
     })
     data_records["aerosol-realtime-temperature"] = RealtimeRecord({
         "Tinlet": [RealtimeSelection("T_V51", variable_id="T_V51")], "Uinlet": [RealtimeSelection("U_V51", variable_id="U_V51")],
@@ -1038,6 +1045,13 @@ else:
 
         "Tneph4": [RealtimeSelection("Tsample", variable_name="sample_temperature", instrument_id="S14")],
         "Uneph4": [RealtimeSelection("Usample", variable_name="sample_humidity", instrument_id="S14")],
+
+        "Taethdrier": [RealtimeSelection("Tu_InletDrier", variable_name="inlet_drier_inlet_temperature", instrument_id="A81")],
+        "Uaethdrier": [RealtimeSelection("Uu_InletDrier", variable_name="inlet_drier_inlet_humidity", instrument_id="A81")],
+        "TDaethdrier": [RealtimeSelection("TDu_InletDrier", variable_name="inlet_drier_inlet_dewpoint", instrument_id="A81")],
+        "Taethdrieroutlet": [RealtimeSelection("T_InletDrier", variable_name="inlet_drier_outlet_temperature", instrument_id="A81")],
+        "Uaethdrieroutlet": [RealtimeSelection("U_InletDrier", variable_name="inlet_drier_outlet_humidity", instrument_id="A81")],
+        "TDaethdrieroutlet": [RealtimeSelection("TD_InletDrier", variable_name="inlet_drier_outlet_dewpoint", instrument_id="A81")],
     })
 
 

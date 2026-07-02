@@ -444,6 +444,40 @@ else:
             ExportCSV.Column([Selection(variable_id="DT", instrument_code="dmtccn")]),
         ]))
 
+    for archive in ("raw", "clean", "avgh"):
+        export_entries[archive].append(ExportCSV("aethalometer", "Aethalometer", [
+            ExportCSV.Column([Selection(variable_id="Ba", wavelength_number=wl,
+                                        require_tags={"aethalometer"}, exclude_tags={"secondary"})],
+                             header="Ba" + str(wl+1) + "_{instrument_id}", default_header=f"Ba{wl+1}", always_present=True)
+            for wl in range(7)
+        ] + [
+            ExportCSV.Column([Selection(variable_name="equivalent_black_carbon", wavelength_number=wl,
+                                        require_tags={"aethalometer"}, exclude_tags={"secondary"})],
+                             header="X" + str(wl+1) + "_{instrument_id}", default_header=f"X{wl+1}", always_present=True)
+            for wl in range(7)
+        ] + [
+            ExportCSV.Column([Selection(variable_id="Ir", wavelength_number=wl,
+                                        require_tags={"aethalometer"}, exclude_tags={"secondary"})],
+                             header="Ir" + str(wl+1) + "_{instrument_id}", default_header=f"Ir{wl+1}")
+            for wl in range(7)
+        ] + [
+            ExportCSV.Column([
+                Selection(variable_name="correction_factor", wavelength_number=wl,
+                          require_tags={"aethalometer", "mageeae33"}, exclude_tags={"secondary"}),
+                Selection(variable_name="correction_factor", wavelength_number=wl,
+                          require_tags={"aethalometer", "mageeae36"}, exclude_tags={"secondary"}),
+            ],
+                             header="ZFACTOR" + str(wl+1) + "_{instrument_id}", default_header=f"ZFACTOR{wl+1}")
+            for wl in range(7)
+        ] + [
+            ExportCSV.Column([Selection(variable_name="inlet_drier_inlet_temperature", require_tags={"aethalometer"}, exclude_tags={"secondary"})]),
+            ExportCSV.Column([Selection(variable_name="inlet_drier_inlet_humidity", require_tags={"aethalometer"}, exclude_tags={"secondary"})]),
+            ExportCSV.Column([Selection(variable_name="inlet_drier_inlet_dewpoint", require_tags={"aethalometer"}, exclude_tags={"secondary"})]),
+            ExportCSV.Column([Selection(variable_name="inlet_drier_outlet_temperature", require_tags={"aethalometer"}, exclude_tags={"secondary"})]),
+            ExportCSV.Column([Selection(variable_name="inlet_drier_outlet_humidity", require_tags={"aethalometer"}, exclude_tags={"secondary"})]),
+            ExportCSV.Column([Selection(variable_name="inlet_drier_outlet_dewpoint", require_tags={"aethalometer"}, exclude_tags={"secondary"})]),
+        ]))
+
 
     def get(station: str, mode_name: str, export_key: str,
             start_epoch_ms: int, end_epoch_ms: int, directory: str) -> typing.Optional[Export]:

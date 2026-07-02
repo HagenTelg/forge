@@ -690,6 +690,7 @@ class Instrument(StreamingInstrument):
                 (Fn, sensor_type_1, sensor_type_2, sensor_type_3, *sensor_fields) = fields
             except ValueError:
                 raise CommunicationsError(f"invalid number of fields in {line}")
+            fields = sensor_fields
 
             for sensor_type in (sensor_type_1, sensor_type_2, sensor_type_3):
                 try:

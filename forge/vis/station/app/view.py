@@ -74,6 +74,8 @@ measurements = OrderedDict([
     ('{code}nephupstream', '{code}_V13 (upstream)'),
     ('{code}neph3', '{code}_S13 (sample)'),
     ('{code}neph4', '{code}_S14 (sample)'),
+    ('{code}aethdrier', '{code}u_A81 (drier inlet)'),
+    ('{code}aethdrieroulet', '{code}x_A81 (drier outlet)'),
 ])
 omit_traces={'TDnephinlet', 'TDnephinlet2'}
 station_views['aerosol-raw-temperature'] = Temperature('aerosol-raw', measurements, omit_traces=omit_traces)
