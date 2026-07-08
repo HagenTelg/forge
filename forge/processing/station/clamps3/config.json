@@ -1,0 +1,14 @@
+{
+  "clamps3": [
+    {
+      "start_time": "2025-08-01T00:00:00Z",
+      "end_time": "2099-12-31T23:59:59Z",
+      "latitude": 39.949722,
+      "longitude": -105.196388,
+      "altitude": 5730.0,
+      "country_code": "US",
+      "subdivision": "CO",
+      "name": "CLAMPS3"
+    }
+]
+}

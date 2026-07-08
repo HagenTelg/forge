@@ -4,7 +4,7 @@ from ..cpd3 import use_cpd3
 
 
 if use_cpd3("clamps3"):
-    from ..cpd3 import DataStream, DataReader, Name, RealtimeTranslator, data_profile_get
+    from ..cpd3 import DataStream, DataReader, Name, RealtimeTranslator, data_profile_get, detach, profile_data
 
     station_profile_data = {
         'aerosol': {
@@ -68,7 +68,8 @@ if use_cpd3("clamps3"):
                     RealtimeTranslator.Key('Q2_M11'): 'Qbypass',
                 },
             },
-        }
+        },
+        'radiation': profile_data.get('radiation')
     }
 
     def get(station: str, data_name: str, start_epoch_ms: int, end_epoch_ms: int,
@@ -76,9 +77,10 @@ if use_cpd3("clamps3"):
         return data_profile_get(station, data_name, start_epoch_ms, end_epoch_ms, send, station_profile_data)
 
 else:
-    from ..default.data import data_get, DataStream, DataRecord, RealtimeRecord, Selection, RealtimeSelection, STANDARD_THREE_WAVELENGTHS, STANDARD_CUT_SIZE_SPLIT
+    from ..default.data import radiation_data, data_get, DataStream, DataRecord, RealtimeRecord, Selection, RealtimeSelection, STANDARD_THREE_WAVELENGTHS, STANDARD_CUT_SIZE_SPLIT
 
     data_records = dict()
+    data_records.update(radiation_data)
 
     data_records["aerosol-raw-t640status"] = DataRecord({
         "Tsample": [Selection(variable_name="sample_temperature", instrument_code="teledynet640")],

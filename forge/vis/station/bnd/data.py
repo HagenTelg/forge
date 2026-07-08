@@ -181,11 +181,12 @@ if use_cpd3("bnd"):
         return data_profile_get(station, data_name, start_epoch_ms, end_epoch_ms, send, station_profile_data)
 
 else:
-    from ..default.data import aerosol_data, aerosol_public, data_get, DataStream, DataRecord, RealtimeRecord, Selection, RealtimeSelection, STANDARD_THREE_WAVELENGTHS, STANDARD_CUT_SIZE_SPLIT
+    from ..default.data import aerosol_data, aerosol_public, radiation_data, data_get, DataStream, DataRecord, RealtimeRecord, Selection, RealtimeSelection, STANDARD_THREE_WAVELENGTHS, STANDARD_CUT_SIZE_SPLIT
 
     data_records = dict()
     data_records.update(aerosol_data)
     data_records.update(aerosol_public)
+    data_records.update(radiation_data)
 
 
     for archive in ("raw", "editing", "clean", "avgh"):
