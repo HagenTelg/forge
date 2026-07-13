@@ -144,7 +144,8 @@ if use_cpd3("app"):
         return export_profile_lookup(station, mode_name, station_profile_export)
 
 else:
-    from ..default.export import aerosol_exports, export_get, find_key, export_visible, ExportCSV, Selection
+    from ..default.export import aerosol_exports, export_get, find_key, export_visible, ExportCSV, Selection, \
+        STANDARD_THREE_WAVELENGTHS, STANDARD_CUT_SIZE_SPLIT
     from copy import deepcopy
 
     export_entries = dict()
@@ -153,7 +154,7 @@ else:
     for archive in ("raw", "clean", "avgh"):
         find_key(export_entries["aerosol"][archive], "aethalometer").display = "Aethalometer (Primary/A41)"
 
-        aerosol_exports[archive].append(ExportCSV("aethalometer", "Aethalometer (A42)", [
+        aerosol_exports[archive].append(ExportCSV("aethalometer2", "Aethalometer (A42)", [
             ExportCSV.Column([Selection(variable_id="Ba", wavelength_number=wl,
                                         require_tags={"aethalometer"}, instrument_id="A42")],
                              header="Ba" + str(wl+1) + "_{instrument_id}", default_header=f"Ba{wl+1}", always_present=True)
@@ -214,6 +215,59 @@ else:
             ExportCSV.Column([Selection(variable_id="U", instrument_code="dmtccn")]),
             ExportCSV.Column([Selection(variable_id="P", instrument_code="dmtccn")]),
             ExportCSV.Column([Selection(variable_id="DT", instrument_code="dmtccn")]),
+        ]))
+        
+    for archive in ("raw", "clean",):
+        find_key(export_entries["aerosol"][archive], "scattering").display = "Scattering (Primary/S11)"
+        
+        export_entries["aerosol"][archive].append(ExportCSV("scattering2", "Scattering (S12)", [
+            ExportCSV.Column([Selection(variable_name="scattering_coefficient", wavelength=wavelength,
+                                        require_tags={"scattering"}, instrument_id="S12")],
+                             header="Bs" + code + "_{instrument_id}", default_header=f"Bs{code}", always_present=True)
+            for code, wavelength in STANDARD_THREE_WAVELENGTHS
+        ] + [
+            ExportCSV.Column([Selection(variable_name="backscattering_coefficient", wavelength=wavelength,
+                                        require_tags={"scattering"}, instrument_id="S12")],
+                             header="Bbs" + code + "_{instrument_id}")
+            for code, wavelength in STANDARD_THREE_WAVELENGTHS
+        ] + [
+            ExportCSV.Column([Selection(variable_name="sample_temperature",
+                                        require_tags={"scattering"}, instrument_id="S12")]),
+            ExportCSV.Column([Selection(variable_name="sample_humidity",
+                                        require_tags={"scattering"}, instrument_id="S12")]),
+            ExportCSV.Column([Selection(variable_name="sample_pressure",
+                                        require_tags={"scattering"}, instrument_id="S12")]),
+        ]))
+    for archive in ("avgh",):
+        find_key(export_entries["aerosol"][archive], "scattering").display = "Scattering (Primary/S11)"
+        
+        export_entries["aerosol"][archive].append(ExportCSV("scattering2", "Scattering (S12)", [
+            ExportCSV.Column([Selection(variable_name="scattering_coefficient", wavelength=wavelength, cut_size=cut_size,
+                                        require_tags={"scattering"}, instrument_id="S12")],
+                             header="Bs" + code + record + "_{instrument_id}")
+            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
+            for code, wavelength in STANDARD_THREE_WAVELENGTHS
+        ] + [
+            ExportCSV.Column([Selection(variable_name="backscattering_coefficient", wavelength=wavelength, cut_size=cut_size,
+                                        require_tags={"scattering"}, instrument_id="S12")],
+                             header="Bbs" + code + record + "_{instrument_id}")
+            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
+            for code, wavelength in STANDARD_THREE_WAVELENGTHS
+        ] + [
+            ExportCSV.Column([Selection(variable_name="sample_temperature", cut_size=cut_size,
+                                        require_tags={"scattering"}, instrument_id="S12")],
+                             header="T" + record + "_{instrument_id}")
+            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
+        ] + [
+            ExportCSV.Column([Selection(variable_name="sample_humidity", cut_size=cut_size,
+                                        require_tags={"scattering"}, instrument_id="S12")],
+                             header="U" + record + "_{instrument_id}")
+            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
+        ] + [
+            ExportCSV.Column([Selection(variable_name="sample_pressure", cut_size=cut_size,
+                                        require_tags={"scattering"}, instrument_id="S12")],
+                             header="P" + record + "_{instrument_id}")
+            for record, cut_size in STANDARD_CUT_SIZE_SPLIT
         ]))
 
     ebas_export = find_key(export_entries["aerosol"]["raw"], "ebas")
