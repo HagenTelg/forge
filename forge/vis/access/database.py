@@ -1044,6 +1044,14 @@ class ControlInterface:
         def prepare_like(raw):
             if '*' in raw:
                 return raw.replace('*', '%')
+            if '?' in raw:
+                return raw.replace('?', '_')
+            if raw.startswith('^'):
+                if raw.endswith('$'):
+                    return raw[1:-1]
+                return f'{raw[1:]}%'
+            elif raw.endswith('$'):
+                return f'%{raw[:-1]}'
             return f'%{raw}%'
 
         def to_time(raw):
