@@ -445,7 +445,7 @@ else:
         ]))
 
     for archive in ("raw", "clean", "avgh"):
-        export_entries[archive].append(ExportCSV("aethalometer", "Aethalometer", [
+        export_entries["aerosol"][archive].append(ExportCSV("aethalometer", "Aethalometer", [
             ExportCSV.Column([Selection(variable_id="Ba", wavelength_number=wl,
                                         require_tags={"aethalometer"}, exclude_tags={"secondary"})],
                              header="Ba" + str(wl+1) + "_{instrument_id}", default_header=f"Ba{wl+1}", always_present=True)
