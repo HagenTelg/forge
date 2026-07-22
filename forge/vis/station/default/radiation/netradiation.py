@@ -14,9 +14,7 @@ function net(direct, diffuse, up_sw, down_lw, up_lw, zsa) {
         return undefined;
     }
     const u0 = Math.cos(zsa * Math.PI/180.0);
-    if (u0 <= 0.0) {
-        return undefined;
-    }
+
     if (direct > 1500.0) {
         return undefined;
     }
@@ -32,9 +30,7 @@ function netshortwave(direct, diffuse, up_sw, zsa) {
         return undefined;
     }
     const u0 = Math.cos(zsa * Math.PI/180.0);
-    if (u0 <= 0.0) {
-        return undefined;
-    }
+
     if (direct > 1500.0) {
         return undefined;
     }
