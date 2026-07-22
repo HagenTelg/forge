@@ -846,6 +846,14 @@ for archive in ("raw", "editing", "clean", "avgh"):
         "direct": [Selection(variable_id="Rdn", require_tags={"radiation"}, exclude_tags={"secondary"})],
         "zsa": [Selection(variable_id="ZSA", require_tags={"radiation"}, exclude_tags={"secondary"})],
     })
+    radiation_data[f"radiation-{archive}-parratio"] = DataRecord({
+        "par": [Selection(variable_id="Rp", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "global": [Selection(variable_id="Rdg", require_tags={"radiation"}, exclude_tags={"secondary"})],
+    })
+    radiation_data[f"radiation-{archive}-uvratio"] = DataRecord({
+        "uv": [Selection(variable_id="Rv", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "global": [Selection(variable_id="Rdg", require_tags={"radiation"}, exclude_tags={"secondary"})],
+    })
     radiation_data[f"radiation-{archive}-pirdownratio"] = DataRecord({
         "pir": [Selection(variable_id="Rdi", require_tags={"radiation"}, exclude_tags={"secondary"})],
         "temperature": [Selection(variable_id="T1", instrument_id="XM1")],

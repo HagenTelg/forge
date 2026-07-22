@@ -134,6 +134,46 @@ function calc(pir, temperature) {
     return new GenericOperations.SingleOutput(dataName, calc, 'ratio', 'pir', 'temperature');
 })"""
 
+    class CalculatePARGlobal(SolarTimeSeries.Processing):
+        def __init__(self):
+            super().__init__()
+            self.components.append('generic_operations')
+            self.script = r"""(function(dataName) {
+function calc(par, global) {
+    if (!isFinite(par) || !isFinite(global)) {
+        return undefined;
+    }
+    if (par < 0.0 || par > 2000.0) {
+        return undefined;
+    }
+    if (global <= 10.0) {
+        return undefined;
+    }
+    return par / global;
+}
+    return new GenericOperations.SingleOutput(dataName, calc, 'ratio', 'par', 'global');
+})"""
+
+    class CalculateUVGlobal(SolarTimeSeries.Processing):
+        def __init__(self):
+            super().__init__()
+            self.components.append('generic_operations')
+            self.script = r"""(function(dataName) {
+function calc(uv, global) {
+    if (!isFinite(uv) || !isFinite(global)) {
+        return undefined;
+    }
+    if (uv < 0.0 || uv > 2000.0) {
+        return undefined;
+    }
+    if (global <= 10.0) {
+        return undefined;
+    }
+    return uv / global;
+}
+    return new GenericOperations.SingleOutput(dataName, calc, 'ratio', 'uv', 'global');
+})"""
+
     def __init__(self, mode: str, latitude: typing.Optional[float] = None, longitude: typing.Optional[float] = None,
                  **kwargs):
         super().__init__(latitude, longitude, **kwargs)
@@ -197,6 +237,41 @@ function calc(pir, temperature) {
         trace.data_field = 'ratio'
         diffuse_total.traces.append(trace)
         self.processing[trace.data_record] = self.CalculateDiffuseTotal()
+
+        parratio = SolarTimeSeries.Graph()
+        parratio.title = "PAR/Global"
+        parratio.contamination = f'{mode}-contamination'
+        self.graphs.append(parratio)
+
+        ratio = SolarTimeSeries.Axis()
+        ratio.format_code = '.3f'
+        ratio.range = [0.0, 1.0]
+        parratio.axes.append(ratio)
+
+        trace = SolarTimeSeries.Trace(ratio)
+        trace.legend = "PAR / Global"
+        trace.data_record = f'{mode}-parratio'
+        trace.data_field = 'ratio'
+        parratio.traces.append(trace)
+        self.processing[trace.data_record] = self.CalculatePARGlobal()
+
+        uvratio = SolarTimeSeries.Graph()
+        uvratio.title = "UV/Global"
+        uvratio.contamination = f'{mode}-contamination'
+        self.graphs.append(uvratio)
+
+        ratio = SolarTimeSeries.Axis()
+        ratio.title = "UV/Global"
+        ratio.format_code = '.3f'
+        ratio.range = [0.0, 1.0]
+        uvratio.axes.append(ratio)
+
+        trace = SolarTimeSeries.Trace(ratio)
+        trace.legend = "UV / Global"
+        trace.data_record = f'{mode}-uvratio'
+        trace.data_field = 'ratio'
+        uvratio.traces.append(trace)
+        self.processing[trace.data_record] = self.CalculateUVGlobal()
 
 
         pir_temperature = SolarTimeSeries.Graph()
