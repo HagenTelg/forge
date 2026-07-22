@@ -49,7 +49,7 @@ class ExportedFile:
 
 
 class _ExportRequest:
-    _DIRECTORY = CONFIGURATION.get('EXPORT.DIRECTORY', '/var/tmp')
+    _DIRECTORY = CONFIGURATION.get('EXPORT.DIRECTORY', os.environ.get('TMPDIR', '/var/tmp'))
 
     def __init__(self, station: str, mode_name: str, export_key: str,
                  start_epoch_ms: int, end_epoch_ms: int):
@@ -136,7 +136,7 @@ class _ExportRequest:
             try:
                 result = await exporter()
             except:
-                _LOGGER.error(f"Error in export for {self.station},{self.mode_name},{self.export_key},{self.start_epoch_ms},{self.end_epoch_ms}", exc_info=True)
+                _LOGGER.error(f"Error in export for {self.station},{self.mode_name},{self.export_key},{self.start_epoch_ms},{self.end_epoch_ms} at {directory}", exc_info=True)
                 self._apply_result(None)
                 return None
             if not result:
@@ -149,11 +149,17 @@ class _ExportRequest:
                     with open(result.source_file, 'rb') as src:
                         await asyncio.get_event_loop().run_in_executor(_THREAD_POOL, copyfileobj, src, target)
                 except OSError:
+                    _LOGGER.error(f"Error in copy for {self.station},{self.mode_name},{self.export_key},{self.start_epoch_ms},{self.end_epoch_ms} at {result.source_file} to {target.name}", exc_info=True)
                     self._apply_result(None)
                     return None
                 file = ExportedFile(target, client_name=result.client_name, media_type=result.media_type)
             else:
-                await asyncio.get_event_loop().run_in_executor(_THREAD_POOL, self._create_zip, directory, target.name)
+                try:
+                    await asyncio.get_event_loop().run_in_executor(_THREAD_POOL, self._create_zip, directory, target.name)
+                except:
+                    _LOGGER.error(f"Error in zip for {self.station},{self.mode_name},{self.export_key},{self.start_epoch_ms},{self.end_epoch_ms} at {directory} to {target.name}", exc_info=True)
+                    self._apply_result(None)
+                    return None
                 name = result.client_name
                 if not name:
                     name = self._export_zip_name()
