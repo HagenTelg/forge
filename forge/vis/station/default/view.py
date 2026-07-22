@@ -50,6 +50,7 @@ from .ozone.statistics.concentration import StatisticsOzoneConcentration
 
 from .radiation.shortwave import Shortwave, ShortwaveSimplified
 from .radiation.longwave import Longwave, LongwaveSimplified, PyrgeometerTemperature
+from .radiation.netradiation import NetRadiation
 from .radiation.ratio import Ratios as RadiationRatios
 from .radiation.status import Status as RadiationStatus
 from .radiation.compare import ShortwaveCompare
@@ -160,6 +161,7 @@ radiation_views: typing.Dict[str, View] = {
     'radiation-raw-ratio': RadiationRatios('radiation-raw'),
     'radiation-raw-bsrnqc': BSRNQC('radiation-raw'),
     'radiation-raw-pyranometertemperature': PyrgeometerTemperature('radiation-raw'),
+    'radiation-raw-netradiation': NetRadiation('radiation-raw'),
     'radiation-raw-status': RadiationStatus('radiation-raw'),
     'radiation-raw-shortwavecompare': ShortwaveCompare('radiation-raw'),
     'radiation-raw-ambient': RadiationAmbient('radiation-raw'),
@@ -170,6 +172,7 @@ radiation_views: typing.Dict[str, View] = {
     'radiation-editing-shortwave': ShortwaveSimplified('radiation-editing'),
     'radiation-editing-longwave': LongwaveSimplified('radiation-editing'),
     'radiation-editing-pyranometertemperature': PyrgeometerTemperature('radiation-editing'),
+    'radiation-editing-netradiation': NetRadiation('radiation-editing'),
     'radiation-editing-shortwavecompare': ShortwaveCompare('radiation-editing'),
     'radiation-editing-ambient': RadiationAmbient('radiation-editing'),
     'radiation-editing-solarposition': SolarPosition(),
@@ -179,6 +182,7 @@ radiation_views: typing.Dict[str, View] = {
     'radiation-clean-ratio': RadiationRatios('radiation-clean'),
     'radiation-clean-bsrnqc': BSRNQC('radiation-clean'),
     'radiation-clean-pyranometertemperature': PyrgeometerTemperature('radiation-clean'),
+    'radiation-clean-netradiation': NetRadiation('radiation-clean'),
     'radiation-clean-status': RadiationStatus('radiation-clean'),
     'radiation-clean-shortwavecompare': ShortwaveCompare('radiation-clean'),
     'radiation-clean-ambient': RadiationAmbient('radiation-editing'),

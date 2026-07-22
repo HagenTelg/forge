@@ -892,6 +892,14 @@ for archive in ("raw", "editing", "clean", "avgh"):
         "Rdi": [Selection(variable_id="Rdi", require_tags={"radiation"}, exclude_tags={"secondary"})],
         "Rui": [Selection(variable_id="Rui", require_tags={"radiation"}, exclude_tags={"secondary"})],
     })
+    radiation_data[f"radiation-{archive}-netradiation"] = DataRecord({
+        "direct": [Selection(variable_id="Rdn", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "diffuse": [Selection(variable_id="Rdf", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "up_sw": [Selection(variable_id="Rug", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "down_lw": [Selection(variable_id="Rdi", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "up_lw": [Selection(variable_id="Rui", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "zsa": [Selection(variable_id="ZSA", require_tags={"radiation"}, exclude_tags={"secondary"})],
+    })
 
 
 data_records = dict()
