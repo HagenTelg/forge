@@ -843,7 +843,7 @@ for archive in ("raw", "editing", "clean", "avgh"):
     })
     radiation_data[f"radiation-{archive}-diffuseratio"] = DataRecord({
         "diffuse": [Selection(variable_id="Rdf", require_tags={"radiation"}, exclude_tags={"secondary"})],
-        "global": [Selection(variable_id="Rdg", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "direct": [Selection(variable_id="Rdn", require_tags={"radiation"}, exclude_tags={"secondary"})],
         "zsa": [Selection(variable_id="ZSA", require_tags={"radiation"}, exclude_tags={"secondary"})],
     })
     radiation_data[f"radiation-{archive}-pirdownratio"] = DataRecord({
