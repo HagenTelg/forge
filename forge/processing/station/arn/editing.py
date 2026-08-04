@@ -14,7 +14,7 @@ def absorption_corrections(data: AvailableData):
     # switched (since data will include the partial minute during the switch).
     for clap, neph in data.select_instrument((
             {"instrument": "clap"},
-    ), {"instrument_id": "S11"}, start="2012-05-30"):
+    ), {"instrument_id": "S11"}, start="2012-05-30", end="2026-08-02"):
         for absorption in clap.select_variable((
                 {"variable_name": "light_absorption"},
                 {"standard_name": "volume_absorption_coefficient_in_air_due_to_dried_aerosol_particles"},
@@ -124,7 +124,7 @@ def run(data: AvailableData) -> None:
     for start, end in (
         ("2023-08-30T11:30:00Z", "2024-01-10T03:24:00Z"),
         ("2024-01-12T10:38:00Z", "2024-11-21T13:00:00Z"),
-        ("2024-11-25T13:00:00Z", None),
+        ("2024-11-25T13:00:00Z", "2026-08-02"),
     ):
         for S11, A11, sample_flow, dilution_flow in data.select_multiple(
                 {"instrument_id": "S11"},
@@ -174,6 +174,23 @@ def run(data: AvailableData) -> None:
                 4.95,  # 4.95 extra sample flow, Mar email 2023-08-30
             ), (
                 10.3,
+            )
+        )
+
+    # CLAP removed from dilution, Mar email 2026-08-03
+    for S11, sample_flow, dilution_flow in data.select_multiple(
+            {"instrument_id": "S11"},
+            {"instrument_id": "Q11"},
+            {"instrument_id": "Q12"},
+            start="2026-08-02",
+    ):
+        dilution(
+            (S11, ),
+            (
+                {"data": sample_flow, "flow": {"variable_name": "sample_flow"}},
+                25,  # Extra flow taken after impactor but before neph
+            ), (
+                {"data": dilution_flow, "flow": {"variable_name": "sample_flow"}},
             )
         )
 
