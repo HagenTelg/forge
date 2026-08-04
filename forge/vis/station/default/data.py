@@ -843,8 +843,16 @@ for archive in ("raw", "editing", "clean", "avgh"):
     })
     radiation_data[f"radiation-{archive}-diffuseratio"] = DataRecord({
         "diffuse": [Selection(variable_id="Rdf", require_tags={"radiation"}, exclude_tags={"secondary"})],
-        "global": [Selection(variable_id="Rdg", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "direct": [Selection(variable_id="Rdn", require_tags={"radiation"}, exclude_tags={"secondary"})],
         "zsa": [Selection(variable_id="ZSA", require_tags={"radiation"}, exclude_tags={"secondary"})],
+    })
+    radiation_data[f"radiation-{archive}-parratio"] = DataRecord({
+        "par": [Selection(variable_id="Rp", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "global": [Selection(variable_id="Rdg", require_tags={"radiation"}, exclude_tags={"secondary"})],
+    })
+    radiation_data[f"radiation-{archive}-uvratio"] = DataRecord({
+        "uv": [Selection(variable_id="Rv", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "global": [Selection(variable_id="Rdg", require_tags={"radiation"}, exclude_tags={"secondary"})],
     })
     radiation_data[f"radiation-{archive}-pirdownratio"] = DataRecord({
         "pir": [Selection(variable_id="Rdi", require_tags={"radiation"}, exclude_tags={"secondary"})],
@@ -883,6 +891,14 @@ for archive in ("raw", "editing", "clean", "avgh"):
         "Rdf": [Selection(variable_id="Rdf", require_tags={"radiation"}, exclude_tags={"secondary"})],
         "Rdi": [Selection(variable_id="Rdi", require_tags={"radiation"}, exclude_tags={"secondary"})],
         "Rui": [Selection(variable_id="Rui", require_tags={"radiation"}, exclude_tags={"secondary"})],
+    })
+    radiation_data[f"radiation-{archive}-netradiation"] = DataRecord({
+        "direct": [Selection(variable_id="Rdn", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "diffuse": [Selection(variable_id="Rdf", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "up_sw": [Selection(variable_id="Rug", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "down_lw": [Selection(variable_id="Rdi", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "up_lw": [Selection(variable_id="Rui", require_tags={"radiation"}, exclude_tags={"secondary"})],
+        "zsa": [Selection(variable_id="ZSA", require_tags={"radiation"}, exclude_tags={"secondary"})],
     })
 
 

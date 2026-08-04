@@ -83,25 +83,34 @@ function calc(up, down, zsa) {
     return new GenericOperations.SingleOutput(dataName, calc, 'albedo', 'up', 'down', 'zsa');
 })"""
 
-    class CalculateDiffuseGlobal(SolarTimeSeries.Processing):
+    class CalculateDiffuseTotal(SolarTimeSeries.Processing):
         def __init__(self):
             super().__init__()
             self.components.append('generic_operations')
             self.script = r"""(function(dataName) {
-function calc(diffuse, global, zsa) {
-    if (!isFinite(diffuse) || !isFinite(global) || !isFinite(zsa)) {
+function calc(diffuse, direct, zsa) {
+    if (!isFinite(diffuse) || !isFinite(direct)|| !isFinite(zsa)) {
+        return undefined;
+    }
+    if (zsa >= 93.0) {
         return undefined;
     }
     const u0 = Math.cos(zsa * Math.PI/180.0);
+    if (direct <= 0.01 || direct > 1500.0) {
+        return undefined;
+    }
     if (diffuse <= 0.01 || diffuse > 1500 * 0.95 * u0 ** 1.2 + 50) {
         return undefined;
     }
-    if (global <= 0.01 || global > 1500 * 1.5 * u0 ** 1.2 + 100) {
+    const total = direct * u0 + diffuse;
+    
+    if (total <= 50.0) {
         return undefined;
     }
-    return diffuse / global;
+
+    return diffuse / total;
 }
-    return new GenericOperations.SingleOutput(dataName, calc, 'ratio', 'diffuse', 'global', 'zsa');
+    return new GenericOperations.SingleOutput(dataName, calc, 'ratio', 'diffuse', 'direct', 'zsa');
 })"""
 
     class CalculatePIRTemperature(SolarTimeSeries.Processing):
@@ -123,6 +132,46 @@ function calc(pir, temperature) {
     return pir / temperature;
 }
     return new GenericOperations.SingleOutput(dataName, calc, 'ratio', 'pir', 'temperature');
+})"""
+
+    class CalculatePARGlobal(SolarTimeSeries.Processing):
+        def __init__(self):
+            super().__init__()
+            self.components.append('generic_operations')
+            self.script = r"""(function(dataName) {
+function calc(par, global) {
+    if (!isFinite(par) || !isFinite(global)) {
+        return undefined;
+    }
+    if (par < 0.0 || par > 2000.0) {
+        return undefined;
+    }
+    if (global <= 10.0) {
+        return undefined;
+    }
+    return par / global;
+}
+    return new GenericOperations.SingleOutput(dataName, calc, 'ratio', 'par', 'global');
+})"""
+
+    class CalculateUVGlobal(SolarTimeSeries.Processing):
+        def __init__(self):
+            super().__init__()
+            self.components.append('generic_operations')
+            self.script = r"""(function(dataName) {
+function calc(uv, global) {
+    if (!isFinite(uv) || !isFinite(global)) {
+        return undefined;
+    }
+    if (uv < 0.0 || uv > 2000.0) {
+        return undefined;
+    }
+    if (global <= 10.0) {
+        return undefined;
+    }
+    return uv / global;
+}
+    return new GenericOperations.SingleOutput(dataName, calc, 'ratio', 'uv', 'global');
 })"""
 
     def __init__(self, mode: str, latitude: typing.Optional[float] = None, longitude: typing.Optional[float] = None,
@@ -172,22 +221,57 @@ function calc(pir, temperature) {
         self.processing[trace.data_record] = self.CalculateAlbedo()
 
 
-        diffuse_global = SolarTimeSeries.Graph()
-        diffuse_global.title = "Diffuse/Global"
-        diffuse_global.contamination = f'{mode}-contamination'
-        self.graphs.append(diffuse_global)
+        diffuse_total = SolarTimeSeries.Graph()
+        diffuse_total.title = "Diffuse/Total"
+        diffuse_total.contamination = f'{mode}-contamination'
+        self.graphs.append(diffuse_total)
 
         ratio = SolarTimeSeries.Axis()
         ratio.format_code = '.3f'
         ratio.range = [0.0, 5.0]
-        diffuse_global.axes.append(ratio)
+        diffuse_total.axes.append(ratio)
 
         trace = SolarTimeSeries.Trace(ratio)
-        trace.legend = "Diffuse / Global"
+        trace.legend = "Diffuse / Total"
         trace.data_record = f'{mode}-diffuseratio'
         trace.data_field = 'ratio'
-        diffuse_global.traces.append(trace)
-        self.processing[trace.data_record] = self.CalculateDiffuseGlobal()
+        diffuse_total.traces.append(trace)
+        self.processing[trace.data_record] = self.CalculateDiffuseTotal()
+
+        parratio = SolarTimeSeries.Graph()
+        parratio.title = "PAR/Global"
+        parratio.contamination = f'{mode}-contamination'
+        self.graphs.append(parratio)
+
+        ratio = SolarTimeSeries.Axis()
+        ratio.format_code = '.3f'
+        ratio.range = [0.0, 1.0]
+        parratio.axes.append(ratio)
+
+        trace = SolarTimeSeries.Trace(ratio)
+        trace.legend = "PAR / Global"
+        trace.data_record = f'{mode}-parratio'
+        trace.data_field = 'ratio'
+        parratio.traces.append(trace)
+        self.processing[trace.data_record] = self.CalculatePARGlobal()
+
+        uvratio = SolarTimeSeries.Graph()
+        uvratio.title = "UV/Global"
+        uvratio.contamination = f'{mode}-contamination'
+        self.graphs.append(uvratio)
+
+        ratio = SolarTimeSeries.Axis()
+        ratio.title = "UV/Global"
+        ratio.format_code = '.3f'
+        ratio.range = [0.0, 1.0]
+        uvratio.axes.append(ratio)
+
+        trace = SolarTimeSeries.Trace(ratio)
+        trace.legend = "UV / Global"
+        trace.data_record = f'{mode}-uvratio'
+        trace.data_field = 'ratio'
+        uvratio.traces.append(trace)
+        self.processing[trace.data_record] = self.CalculateUVGlobal()
 
 
         pir_temperature = SolarTimeSeries.Graph()
