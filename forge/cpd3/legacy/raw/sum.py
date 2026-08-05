@@ -38,7 +38,7 @@ C.run(STATION, {
     "G82": [C('thermo49+secondary', start='2022-05-09', end='2022-05-26'), ],
     "N11": [C('dmtccn', start='2011-05-06', end='2011-07-22'), ],
     "N12": [C('pmslasair', start='2011-05-06', end='2011-07-22'), ],
-    "Q11": [ C('tsimfm', start='2016-10-26'), ],
+    "Q11": [ C('tsimfm', start='2011-03-21T11:27:00Z'), ],
     "XM1": [ C(GMLMet.with_variables({
         "1": "at 2m",
         "2": "at 10m",
