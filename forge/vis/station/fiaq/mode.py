@@ -4,6 +4,11 @@ from ..default.mode import Mode, detach, aerosol_modes, ozone_modes, radiation_m
 
 station_modes = detach(aerosol_modes, ozone_modes, radiation_modes)
 
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-mass', "Mass"),
+                                    'aerosol-raw-aethalometer')
+station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-t640status', "T640 Status"),
+                                    'aerosol-raw-cpcstatus')
+
 station_modes['ozone-raw'].insert(ViewList.Entry('ozone-raw-nox', "NOₓ"),
                                   'ozone-raw-concentration')
 station_modes['ozone-realtime'].insert(ViewList.Entry('ozone-realtime-nox', "NOₓ"),
