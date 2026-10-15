@@ -794,7 +794,7 @@ class Instrument(StreamingInstrument):
         if not isfinite(temperature):
             return temperature
         if self._temperatures_in_kelvin:
-            return temperature + 273.15
+            return temperature - 273.15
         return temperature
 
     @property
