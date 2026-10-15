@@ -430,6 +430,7 @@ class Instrument(StreamingInstrument):
         self._command_retry: int = int(context.config.get('COMMAND_RETRY', default=5))
         self._polar_mode: typing.Optional[bool] = context.config.get('POLAR')
         self._enable_backscatter: typing.Optional[bool] = context.config.get('BACKSCATTER')
+        self._kelvin_temperature: typing.Optional[bool] = context.config.get('KELVIN')
         self._address: int = int(context.config.get('ADDRESS', default=0))
 
         self._air_flush_time: float = float(context.config.get('FLUSH_TIME', default=62.0))
@@ -460,7 +461,8 @@ class Instrument(StreamingInstrument):
         self._have_system_flags: bool = True
         self._sleep_time: float = 0.0
         self._instrument_update_time: float = 3.0
-        self._instrument_polar: bool = self._polar_mode
+        self._instrument_polar: typing.Optional[bool] = self._polar_mode
+        self._instrument_kelvin: typing.Optional[bool] = self._kelvin_temperature
         if self._polar_mode:
             self._instrument_update_time = 60.0
         if self._report_interval:
@@ -783,6 +785,19 @@ class Instrument(StreamingInstrument):
         return bool(self._instrument_polar)
 
     @property
+    def _temperatures_in_kelvin(self):
+        if self._kelvin_temperature is not None:
+            return bool(self._kelvin_temperature)
+        return bool(self._instrument_kelvin)
+
+    def _to_deg_c(self, temperature: float) -> float:
+        if not isfinite(temperature):
+            return temperature
+        if self._temperatures_in_kelvin:
+            return temperature + 273.15
+        return temperature
+
+    @property
     def _total_scattering_index(self) -> typing.Optional[int]:
         if not self._is_polar:
             return 0
@@ -849,8 +864,8 @@ class Instrument(StreamingInstrument):
             raise CommunicationsError(f"invalid DIO state {dio_state} date in {line}")
 
         self.data_major_state(major_state)
-        Tsample = self.data_Tsample(parse_number(Tsample))
-        self.data_Tcell(parse_number(Tcell))
+        Tsample = self.data_Tsample(self._to_deg_c(parse_number(Tsample)))
+        self.data_Tcell(self._to_deg_c(parse_number(Tcell)))
         self.data_Usample(parse_number(Usample))
         Psample = self.data_Psample(parse_number(Psample))
 
@@ -1005,8 +1020,13 @@ class Instrument(StreamingInstrument):
             self.set_firmware_version(fw_major + b'.' + fw_minor + b'.' + fw_rev)
 
         temperature_unit = parameters.get(b'temperature unit')
-        if temperature_unit and not temperature_unit.lower().endswith(b'c'):
-            raise CommunicationsError(f"invalid temperature unit {temperature_unit}")
+        if temperature_unit:
+            if temperature_unit.lower().endswith(b'c'):
+                self._instrument_kelvin = False
+            elif temperature_unit.lower().endswith(b'k'):
+                self._instrument_kelvin = True
+            else:
+                raise CommunicationsError(f"invalid temperature unit {temperature_unit}")
 
         pressure_unit = parameters.get(b"atmpressureunit")
         if pressure_unit:
