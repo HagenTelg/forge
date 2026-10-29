@@ -28,6 +28,11 @@ selections = [
     Selection("Concentration (EBC, Aethalometer)", [
         r'^X[BGRQ0-9]*c?_',
     ]),
+    Selection("Solar Tracker", [
+        r"^Rdf[0-9]*_",
+        r"^Rdn[0-9]*_",
+        r"^Rdi_",
+    ]),
     Selection("Downwelling Radiation", [
         r'^Rd.*_R',
     ]),
