@@ -9,7 +9,12 @@ def run(data: AvailableData) -> None:
     for absorption in data.select_instrument((
             {"instrument": "bmitap", "tags": "-secondary"},
             {"instrument": "clap", "tags": "-secondary"},
-    ), start="2018-08-24T06:10:00Z", end="2020-12-31"):
+    ), start="2018-08-24T06:10:00Z"):
+        azumi_filter(absorption)
+    for absorption in data.select_instrument((
+            {"instrument": "bmitap", "instrument_id": "A12"},
+            {"instrument": "clap", "instrument_id": "A12"},
+    ), end="2021-09-07"):
         azumi_filter(absorption)
 
     default_run(data)
