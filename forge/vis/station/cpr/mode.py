@@ -1,9 +1,9 @@
 import typing
-from ..default.mode import Mode, ViewList, detach, aerosol_modes
+from ..default.mode import Mode, ViewList, detach, aerosol_modes, aerosol_public
 from .acquisition import Acquisition
 
 
-station_modes = detach(aerosol_modes)
+station_modes = detach(aerosol_modes, aerosol_public)
 
 
 station_modes['aerosol-raw'].insert(ViewList.Entry('aerosol-raw-clouds', "Clouds"),

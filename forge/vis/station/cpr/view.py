@@ -1,6 +1,6 @@
 import typing
 from collections import OrderedDict
-from ..default.view import detach, View, aerosol_views
+from ..default.view import detach, View, aerosol_views, aerosol_public
 from ..default.aerosol.aethalometer import AE31, AE31Status
 from ..default.aerosol.flow import DilutionFlow
 from ..default.aerosol.temperature import Temperature
@@ -10,7 +10,7 @@ from .clouds import Clouds
 from .hurricane import Hurricane
 
 
-station_views = detach(aerosol_views)
+station_views = detach(aerosol_views, aerosol_public)
 
 station_views['aerosol-raw-counts'] = ParticleConcentration('aerosol-raw')
 station_views['aerosol-realtime-counts'] = ParticleConcentration('aerosol-realtime', realtime=True)
