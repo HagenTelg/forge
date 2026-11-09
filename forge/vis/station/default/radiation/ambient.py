@@ -16,8 +16,17 @@ class Ambient(TimeSeries):
 
         if trh is None:
             trh = OrderedDict([
-                ('{code}ambient', '{type}'),
+                ('{code}10m', '{type} at 10m'),
+                ('{code}ambient', '{type} at 2m'),
+                ('{code}16m', '{type} at 16m'),
+                ('{code}30m', '{type} at 30m'),
+                ('{code}38m', '{type} at 38m'),
             ])
+            unavailable_humidity = {'U16m', 'U30m', 'U38m'}
+            if omit_traces is None:
+                omit_traces = unavailable_humidity
+            else:
+                omit_traces = set(omit_traces).union(unavailable_humidity)
         if winds is None:
             winds = OrderedDict([
                 ('{code}ambient', '{type}'),
