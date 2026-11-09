@@ -876,6 +876,12 @@ for archive in ("raw", "editing", "clean", "avgh"):
         "U3": [Selection(variable_id="U3", instrument_id="XM1")],
         "T3": [Selection(variable_id="T3", instrument_id="XM1")],
         "TD3": [Selection(variable_id="TD3", instrument_id="XM1")],
+        "U4": [Selection(variable_id="U4", instrument_id="XM1")],
+        "T4": [Selection(variable_id="T4", instrument_id="XM1")],
+        "TD4": [Selection(variable_id="TD4", instrument_id="XM1")],
+        "U5": [Selection(variable_id="U5", instrument_id="XM1")],
+        "T5": [Selection(variable_id="T5", instrument_id="XM1")],
+        "TD5": [Selection(variable_id="TD5", instrument_id="XM1")],
     })
     radiation_data[f"radiation-{archive}-pressure"] = DataRecord({
         "Pambient": [Selection(variable_id="P", instrument_id="XM1")],

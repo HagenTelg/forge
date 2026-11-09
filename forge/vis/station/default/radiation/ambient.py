@@ -16,7 +16,11 @@ class Ambient(TimeSeries):
 
         if trh is None:
             trh = OrderedDict([
-                ('{code}ambient', '{type}'),
+                ('{code}2', '{type} at 10m'),
+                ('{code}ambient', '{type} at 2m'),
+                ('{code}3', '{type} at 16m'),
+                ('{code}4', '{type} at 30m'),
+                ('{code}5', '{type} at 38m'),
             ])
         if winds is None:
             winds = OrderedDict([
